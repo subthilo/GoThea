@@ -182,8 +182,47 @@ function connectWebSocket() {
   };
 }
 
+// 5. Environment & Staging Check
+async function checkEnvironment() {
+  try {
+    const res = await fetch("/api/v1/env");
+    if (res.ok) {
+      const data = await res.json();
+      const stagingBanner = document.getElementById("staging-banner");
+      if (data.is_staging) {
+        stagingBanner.style.display = "block";
+      } else {
+        stagingBanner.style.display = "none";
+      }
+    }
+  } catch (err) {
+    console.error("Fehler beim Prüfen der Umgebung:", err);
+  }
+}
+
+// Staging Reset Event
+const btnResetStaging = document.getElementById("btn-reset-staging");
+if (btnResetStaging) {
+  btnResetStaging.addEventListener("click", async () => {
+    if (!confirm("Möchtest du die Staging-Testdaten wirklich zurücksetzen?")) return;
+    try {
+      const res = await fetch("/api/v1/staging/reset", { method: "POST" });
+      if (res.ok) {
+        alert("Staging-Datenbank wurde erfolgreich zurückgesetzt.");
+        await loadProfile();
+        await loadTaxonomy();
+      } else {
+        alert("Fehler beim Zurücksetzen.");
+      }
+    } catch (e) {
+      alert("Netzwerkfehler.");
+    }
+  });
+}
+
 // Init
 async function initApp() {
+  await checkEnvironment();
   await loadProfile();
   await loadTaxonomy();
   connectWebSocket();

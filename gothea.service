@@ -1,11 +1,12 @@
 [Unit]
-Description=GoThea Web App
+Description=GoThea Web App (Production)
 After=network.target
 
 [Service]
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/GoThea
+Environment=APP_ENV=production
 ExecStart=/home/pi/GoThea/.venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=3

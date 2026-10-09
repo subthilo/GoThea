@@ -1,15 +1,6 @@
-import os
-from pathlib import Path
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
-
-# Basisverzeichnis für persistente Daten
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = Path(os.getenv("DATA_DIR", str(PROJECT_ROOT / "data")))
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-DB_PATH = DATA_DIR / "app_data.db"
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
+from backend.app.config import DATABASE_URL
 
 engine = create_engine(
     DATABASE_URL,

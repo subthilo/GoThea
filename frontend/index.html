@@ -13,6 +13,14 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+  <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
+  <div class="staging-banner" id="staging-banner" style="display: none;">
+    <div class="staging-content">
+      <span>🧪 <strong>STAGING UMGEBUNG (Port 8001)</strong> – Testdaten aktiv, Produktionsdaten unberührt</span>
+      <button id="btn-reset-staging" class="btn-staging-reset">🔄 Auf Werkszustand zurücksetzen</button>
+    </div>
+  </div>
+
   <div class="app-container">
     <!-- Header -->
     <header class="header">
