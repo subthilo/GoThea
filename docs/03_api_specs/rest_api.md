@@ -4,6 +4,32 @@
 
 ---
 
+## 0. Umgebungs- & Staging-Status
+
+### `GET /api/v1/env`
+* **Beschreibung:** Liefert Informationen zur aktuellen Umgebung (Staging vs. Produktion).
+* **Response (200 OK):**
+```json
+{
+  "app_env": "staging",
+  "is_staging": true,
+  "db_name": "app_data.db",
+  "env_label": "STAGING (Testdaten)"
+}
+```
+
+### `POST /api/v1/staging/reset`
+* **Beschreibung:** Setzt die Datenbank auf den Werkszustand zurück (nur im Staging-Modus erlaubt, in Produktion gesperrt mit `403 Forbidden`).
+* **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Staging-Datenbank wurde erfolgreich auf den Werkszustand zurückgesetzt."
+}
+```
+
+---
+
 ## 1. Profil & Klassenstufe
 
 ### `GET /api/v1/profile`
