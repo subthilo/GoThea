@@ -1,5 +1,5 @@
 // GoThea Whiteboard Engine (Milestone 5 Frontend)
-// Low-Latency Apple Pencil / Touch 2D Canvas with HiDPI, Palm Rejection & AI Tutor Overlay
+// Ultra-Low-Latency Apple Pencil & Touch Canvas with Coalesced Events, Pressure Smoothing & AI Overlay
 
 (function() {
   // DOM Elements
@@ -20,10 +20,10 @@
   const btnSave = document.getElementById("btn-wb-save");
 
   if (!inkCanvas || !overlayCanvas || !viewport) {
-    return; // Tab nicht vorhanden
+    return;
   }
 
-  const inkCtx = inkCanvas.getContext("2d");
+  const inkCtx = inkCanvas.getContext("2d", { desynchronized: true });
   const overlayCtx = overlayCanvas.getContext("2d");
 
   // State
@@ -33,8 +33,9 @@
   let currentTool = "pen"; // 'pen', 'highlighter', 'eraser'
   let currentColor = "#f8fafc";
   let currentBaseWidth = 4;
-  let penOnlyMode = true; // Palm rejection: ignore finger touch when active
-  let strokes = []; // Array aller Striche für Replay & Undo/Redo
+  let currentSmoothWidth = 4;
+  let penOnlyMode = true; // Palm rejection: ignore finger touch
+  let strokes = [];
   let redoStack = [];
   let currentStroke = null;
   let lastPoint = null;
@@ -47,27 +48,30 @@
     if (rect.width === 0 || rect.height === 0) return;
 
     dpr = window.devicePixelRatio || 1;
-    inkCanvas.width = rect.width * dpr;
-    inkCanvas.height = rect.height * dpr;
-    overlayCanvas.width = rect.width * dpr;
-    overlayCanvas.height = rect.height * dpr;
+    const w = Math.floor(rect.width * dpr);
+    const h = Math.floor(rect.height * dpr);
 
-    inkCanvas.style.width = `${rect.width}px`;
-    inkCanvas.style.height = `${rect.height}px`;
-    overlayCanvas.style.width = `${rect.width}px`;
-    overlayCanvas.style.height = `${rect.height}px`;
+    if (inkCanvas.width !== w || inkCanvas.height !== h) {
+      inkCanvas.width = w;
+      inkCanvas.height = h;
+      overlayCanvas.width = w;
+      overlayCanvas.height = h;
 
-    inkCtx.scale(dpr, dpr);
-    overlayCtx.scale(dpr, dpr);
+      inkCanvas.style.width = `${rect.width}px`;
+      inkCanvas.style.height = `${rect.height}px`;
+      overlayCanvas.style.width = `${rect.width}px`;
+      overlayCanvas.style.height = `${rect.height}px`;
 
-    redrawAllStrokes();
+      inkCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      overlayCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      redrawAllStrokes();
+    }
   }
 
-  window.addEventListener("resize", () => {
-    resizeCanvases();
-  });
+  window.addEventListener("resize", resizeCanvases);
 
-  // Re-adjust canvas whenever the whiteboard tab is activated
+  // Tab activation
   document.querySelectorAll(".nav-tab").forEach(tab => {
     tab.addEventListener("click", () => {
       if (tab.dataset.tab === "whiteboard") {
@@ -76,86 +80,115 @@
     });
   });
 
-  // 2. Stroke Rendering & Smoothing
-  function getCanvasCoords(e) {
+  // 2. High-Precision Coordinate & Pressure Extractor
+  function getEventPoint(e) {
     const rect = inkCanvas.getBoundingClientRect();
+    const pressure = (typeof e.pressure === "number" && e.pressure > 0) ? e.pressure : 0.5;
     return {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
-      pressure: e.pressure && e.pressure > 0 ? e.pressure : 0.5,
+      pressure: pressure,
       pointerType: e.pointerType || "mouse"
     };
   }
 
-  function redrawAllStrokes() {
-    inkCtx.clearRect(0, 0, inkCanvas.width / dpr, inkCanvas.height / dpr);
+  // 3. Tool Styles Setup
+  function applyToolStyle(ctx, tool, color, baseWidth) {
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
-    strokes.forEach(stroke => {
-      drawSingleStroke(stroke);
-    });
+    if (tool === "eraser") {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+      ctx.lineWidth = baseWidth * 5;
+    } else if (tool === "highlighter") {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = baseWidth * 3.5;
+    } else {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1.0;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = baseWidth;
+    }
   }
 
-  function drawSingleStroke(stroke) {
+  function redrawAllStrokes() {
+    inkCtx.save();
+    inkCtx.setTransform(1, 0, 0, 1, 0, 0);
+    inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
+    inkCtx.restore();
+
+    for (let i = 0; i < strokes.length; i++) {
+      drawStoredStroke(strokes[i]);
+    }
+  }
+
+  function drawStoredStroke(stroke) {
     if (!stroke.points || stroke.points.length === 0) return;
 
     inkCtx.save();
-    inkCtx.lineCap = "round";
-    inkCtx.lineJoin = "round";
+    applyToolStyle(inkCtx, stroke.tool, stroke.color, stroke.width);
 
-    if (stroke.tool === "eraser") {
-      inkCtx.globalCompositeOperation = "destination-out";
-      inkCtx.strokeStyle = "rgba(0,0,0,1)";
-      inkCtx.lineWidth = stroke.width * 4;
-    } else if (stroke.tool === "highlighter") {
-      inkCtx.globalCompositeOperation = "source-over";
-      inkCtx.globalAlpha = 0.35;
-      inkCtx.strokeStyle = stroke.color;
-      inkCtx.lineWidth = stroke.width * 3.5;
-    } else {
-      inkCtx.globalCompositeOperation = "source-over";
-      inkCtx.globalAlpha = 1.0;
-      inkCtx.strokeStyle = stroke.color;
-      inkCtx.lineWidth = stroke.width;
-    }
-
-    if (stroke.points.length === 1) {
-      const p = stroke.points[0];
+    const pts = stroke.points;
+    if (pts.length === 1) {
       inkCtx.beginPath();
-      inkCtx.arc(p.x, p.y, (stroke.width * (0.5 + p.pressure * 0.8)) / 2, 0, Math.PI * 2);
+      inkCtx.arc(pts[0].x, pts[0].y, Math.max(1, stroke.width / 2), 0, Math.PI * 2);
       inkCtx.fillStyle = stroke.tool === "eraser" ? "#000" : stroke.color;
       inkCtx.fill();
-      inkCtx.restore();
-      return;
+    } else {
+      inkCtx.beginPath();
+      inkCtx.moveTo(pts[0].x, pts[0].y);
+      for (let j = 1; j < pts.length; j++) {
+        inkCtx.lineTo(pts[j].x, pts[j].y);
+      }
+      inkCtx.stroke();
     }
 
-    inkCtx.beginPath();
-    inkCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
-
-    for (let i = 1; i < stroke.points.length - 1; i++) {
-      const xc = (stroke.points[i].x + stroke.points[i + 1].x) / 2;
-      const yc = (stroke.points[i].y + stroke.points[i + 1].y) / 2;
-      inkCtx.quadraticCurveTo(stroke.points[i].x, stroke.points[i].y, xc, yc);
-    }
-
-    const last = stroke.points[stroke.points.length - 1];
-    inkCtx.lineTo(last.x, last.y);
-    inkCtx.stroke();
     inkCtx.restore();
   }
 
-  // 3. Pointer Events (Pencil & Touch Handling)
+  // 4. Ultra-Fluid Live Drawing Loop
+  function drawLiveSegment(pt) {
+    if (!lastPoint) {
+      lastPoint = pt;
+      return;
+    }
+
+    // Dynamic pressure smoothing (avoids jerky/dotted line width changes)
+    let targetWidth;
+    if (currentTool === "eraser") {
+      targetWidth = currentBaseWidth * 5;
+    } else if (currentTool === "highlighter") {
+      targetWidth = currentBaseWidth * 3.5;
+    } else {
+      targetWidth = Math.max(1.5, currentBaseWidth * (0.35 + pt.pressure * 1.3));
+    }
+    currentSmoothWidth = currentSmoothWidth * 0.6 + targetWidth * 0.4;
+
+    inkCtx.lineWidth = currentSmoothWidth;
+    inkCtx.beginPath();
+    inkCtx.moveTo(lastPoint.x, lastPoint.y);
+    inkCtx.lineTo(pt.x, pt.y);
+    inkCtx.stroke();
+
+    lastPoint = pt;
+  }
+
   function handlePointerDown(e) {
     // Palm Rejection: Ignore touch if pencil-only is turned on
     if (penOnlyMode && e.pointerType === "touch") {
       return;
     }
+    e.preventDefault();
 
-    inkCanvas.setPointerCapture(e.pointerId);
     isDrawing = true;
-    redoStack = []; // Reset Redo Stack bei neuem Strich
+    redoStack = [];
 
-    const pt = getCanvasCoords(e);
+    const pt = getEventPoint(e);
     lastPoint = pt;
+    currentSmoothWidth = currentBaseWidth;
 
     currentStroke = {
       tool: currentTool,
@@ -164,67 +197,32 @@
       points: [pt]
     };
 
-    // Barge-In Signal an WebSocket (falls KI gerade spricht oder aktiv ist)
-    notifyTutorInterrupt();
+    // Context einmalig einstellen
+    applyToolStyle(inkCtx, currentTool, currentColor, currentBaseWidth);
 
-    // Sofort ersten Punkt visualisieren
-    inkCtx.save();
-    inkCtx.lineCap = "round";
-    inkCtx.lineJoin = "round";
-    if (currentTool === "eraser") {
-      inkCtx.globalCompositeOperation = "destination-out";
-      inkCtx.lineWidth = currentBaseWidth * 4;
-      inkCtx.strokeStyle = "#000";
-    } else if (currentTool === "highlighter") {
-      inkCtx.globalAlpha = 0.35;
-      inkCtx.lineWidth = currentBaseWidth * 3.5;
-      inkCtx.strokeStyle = currentColor;
-    } else {
-      inkCtx.lineWidth = currentBaseWidth * (0.5 + pt.pressure * 0.8);
-      inkCtx.strokeStyle = currentColor;
-    }
-
+    // Initialen Punkt zeichnen
     inkCtx.beginPath();
-    inkCtx.arc(pt.x, pt.y, inkCtx.lineWidth / 2, 0, Math.PI * 2);
+    const dotRadius = currentTool === "eraser" ? (currentBaseWidth * 2.5) : Math.max(1, currentBaseWidth / 2);
+    inkCtx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
     inkCtx.fillStyle = currentTool === "eraser" ? "#000" : currentColor;
     inkCtx.fill();
-    inkCtx.restore();
   }
 
   function handlePointerMove(e) {
     if (!isDrawing || !currentStroke) return;
     if (penOnlyMode && e.pointerType === "touch") return;
+    e.preventDefault();
 
-    const pt = getCanvasCoords(e);
-    currentStroke.points.push(pt);
+    // Coalesced Events: Greift Hardware-Updates mit voller Rate (120Hz/240Hz) ab
+    const events = (e.getCoalescedEvents && e.getCoalescedEvents().length > 0)
+      ? e.getCoalescedEvents()
+      : [e];
 
-    // Live Liniensegment zeichnen
-    inkCtx.save();
-    inkCtx.lineCap = "round";
-    inkCtx.lineJoin = "round";
-
-    if (currentTool === "eraser") {
-      inkCtx.globalCompositeOperation = "destination-out";
-      inkCtx.lineWidth = currentBaseWidth * 4;
-      inkCtx.strokeStyle = "#000";
-    } else if (currentTool === "highlighter") {
-      inkCtx.globalAlpha = 0.35;
-      inkCtx.lineWidth = currentBaseWidth * 3.5;
-      inkCtx.strokeStyle = currentColor;
-    } else {
-      inkCtx.lineWidth = currentBaseWidth * (0.5 + pt.pressure * 0.8);
-      inkCtx.strokeStyle = currentColor;
+    for (let i = 0; i < events.length; i++) {
+      const pt = getEventPoint(events[i]);
+      currentStroke.points.push(pt);
+      drawLiveSegment(pt);
     }
-
-    inkCtx.beginPath();
-    inkCtx.moveTo(lastPoint.x, lastPoint.y);
-    const xc = (lastPoint.x + pt.x) / 2;
-    const yc = (lastPoint.y + pt.y) / 2;
-    inkCtx.quadraticCurveTo(lastPoint.x, lastPoint.y, xc, yc);
-    inkCtx.stroke();
-    inkCtx.restore();
-
-    lastPoint = pt;
   }
 
   function handlePointerUp(e) {
@@ -236,16 +234,19 @@
       sendCanvasUpdate([currentStroke]);
       scheduleAutoSave();
     }
+
     currentStroke = null;
     lastPoint = null;
   }
 
-  inkCanvas.addEventListener("pointerdown", handlePointerDown);
-  inkCanvas.addEventListener("pointermove", handlePointerMove);
-  inkCanvas.addEventListener("pointerup", handlePointerUp);
-  inkCanvas.addEventListener("pointercancel", handlePointerUp);
+  // Pointer Event-Listener mit passive: false für e.preventDefault()
+  inkCanvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
+  inkCanvas.addEventListener("pointermove", handlePointerMove, { passive: false });
+  inkCanvas.addEventListener("pointerup", handlePointerUp, { passive: false });
+  inkCanvas.addEventListener("pointercancel", handlePointerUp, { passive: false });
+  inkCanvas.addEventListener("pointerleave", handlePointerUp, { passive: false });
 
-  // 4. KI-Overlay Visualisierung
+  // 5. KI-Overlay Visualisierung
   function drawOverlayActions(actions) {
     overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
 
@@ -259,50 +260,41 @@
         overlayCtx.roundRect(item.coords.x, item.coords.y, item.coords.w, item.coords.h, 12);
         overlayCtx.fill();
         overlayCtx.stroke();
-
-        // Pulsierendes Leuchten
-        overlayCtx.shadowColor = item.color || "#f59e0b";
-        overlayCtx.shadowBlur = 12;
-        overlayCtx.stroke();
         overlayCtx.restore();
       } else if (item.action === "latex_hint") {
         overlayCtx.save();
-        overlayCtx.fillStyle = "#ffffff";
-        overlayCtx.font = "600 16px -apple-system, BlinkMacSystemFont, sans-serif";
         const coords = item.coords || { x: 100, y: 100 };
 
-        // Hint-Badge
         overlayCtx.fillStyle = "rgba(30, 41, 59, 0.95)";
         overlayCtx.strokeStyle = "#6366f1";
         overlayCtx.lineWidth = 1.5;
         overlayCtx.beginPath();
-        overlayCtx.roundRect(coords.x - 10, coords.y - 25, 380, 42, 8);
+        overlayCtx.roundRect(coords.x - 10, coords.y - 25, 420, 44, 8);
         overlayCtx.fill();
         overlayCtx.stroke();
 
         overlayCtx.fillStyle = "#f8fafc";
-        overlayCtx.fillText(item.latex || "Hinweis des KI-Tutors", coords.x + 6, coords.y);
+        overlayCtx.font = "600 16px -apple-system, BlinkMacSystemFont, sans-serif";
+        overlayCtx.fillText(item.latex || "Hinweis des KI-Tutors", coords.x + 6, coords.y + 4);
         overlayCtx.restore();
       } else if (item.action === "clear") {
         overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
       }
     });
 
-    // Automatisches Ausblenden des Overlays nach 12 Sekunden
     setTimeout(() => {
       overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
     }, 12000);
   }
 
-  // 5. Backend-Persistenz & Auto-Save
+  // 6. Backend-Persistenz (Auto-Save OHNE teures toDataURL)
   function scheduleAutoSave() {
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(async () => {
       if (!currentSession) return;
       try {
         const payload = {
-          board_state_json: JSON.stringify(strokes),
-          snapshot_data_url: inkCanvas.toDataURL("image/png")
+          board_state_json: JSON.stringify(strokes)
         };
         await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/state`, {
           method: "PUT",
@@ -312,7 +304,7 @@
       } catch (err) {
         console.error("Auto-Save Fehler:", err);
       }
-    }, 1200);
+    }, 1500);
   }
 
   async function initSession() {
@@ -378,7 +370,7 @@
     }
   }
 
-  // 6. WebSocket Verbindung (Echtzeit-Kanal)
+  // 7. WebSocket Verbindung
   function connectTutorWebSocket() {
     if (!currentSession) return;
     if (tutorSocket) {
@@ -409,20 +401,10 @@
       tutorSocket.onclose = () => {
         wsDot.style.background = "#ef4444";
         wsDot.style.boxShadow = "0 0 8px #ef4444";
-        wsStatus.textContent = "Getrennt (Offline-Modus)";
+        wsStatus.textContent = "Offline-Modus";
       };
     } catch (e) {
       console.error("WebSocket Verbindungsfehler:", e);
-    }
-  }
-
-  function notifyTutorInterrupt() {
-    if (tutorSocket && tutorSocket.readyState === WebSocket.OPEN) {
-      tutorSocket.send(JSON.stringify({
-        type: "user_interrupt",
-        reason: "pencil_touch",
-        timestamp: Date.now()
-      }));
     }
   }
 
@@ -436,7 +418,7 @@
     }
   }
 
-  // 7. Toolbar Event-Handler
+  // 8. Toolbar Event-Handler
   // Werkzeugauswahl
   document.querySelectorAll(".wb-tool-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -461,7 +443,6 @@
       document.querySelectorAll(".wb-color-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       currentColor = btn.dataset.color;
-      // Falls Radierer aktiv war, zurück zum Stift schalten
       if (currentTool === "eraser") {
         document.querySelectorAll(".wb-tool-btn").forEach(b => b.classList.remove("active"));
         const penBtn = document.querySelector('.wb-tool-btn[data-tool="pen"]');
@@ -537,7 +518,7 @@
     });
   }
 
-  // Neuer Sitzungs-Button
+  // Neue Sitzung
   if (btnNewSession) {
     btnNewSession.addEventListener("click", async () => {
       if (confirm("Möchtest du eine neue Tafel für das gewählte Fach beginnen?")) {
@@ -553,7 +534,7 @@
     });
   }
 
-  // KI-Tipp Anfordern (Löst Demonstration auf Overlay aus)
+  // KI-Tipp Anfordern
   if (btnRequestHint) {
     btnRequestHint.addEventListener("click", async () => {
       if (!currentSession) return;
@@ -581,9 +562,8 @@
     });
   }
 
-  // Tastenkombinationen (Undo: Cmd/Ctrl+Z, Redo: Cmd/Ctrl+Y, Stift: P, Eraser: E)
+  // Tastenkombinationen
   window.addEventListener("keydown", (e) => {
-    // Nur aktiv, wenn Tab "whiteboard" sichtbar ist
     const tabWb = document.getElementById("tab-whiteboard");
     if (!tabWb || !tabWb.classList.contains("active")) return;
 
@@ -596,10 +576,10 @@
     }
   });
 
-  // Start Initialization
+  // Start
   setTimeout(() => {
     resizeCanvases();
     initSession();
-  }, 200);
+  }, 150);
 
 })();

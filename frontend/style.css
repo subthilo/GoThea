@@ -1014,11 +1014,15 @@ body {
   width: 100%;
   height: 100%;
   touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  cursor: crosshair;
 }
 
 .wb-overlay-layer {
   pointer-events: none;
   z-index: 5;
+  cursor: default;
 }
 
 /* Schwebende iPad Toolbar */
