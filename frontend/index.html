@@ -145,12 +145,107 @@
         </div>
       </section>
 
-      <!-- Tab 4: Whiteboard (Vorschau auf M5) -->
+      <!-- Tab 4: Whiteboard (Interaktive Tafel) -->
       <section id="tab-whiteboard" class="tab-pane">
-        <div class="empty-placeholder">
-          <div class="placeholder-icon">🎨</div>
-          <h2>Multimodales Whiteboard</h2>
-          <p>Wird in Meilenstein 5 aktiviert (Latenzarme Apple Pencil Erfassung, Sokratischer KI-Tutor).</p>
+        <div class="wb-container">
+          <!-- Top Bar: Fach-Auswahl, Titel, Status, Fullscreen -->
+          <div class="wb-header-bar">
+            <div class="wb-session-info">
+              <span class="wb-label">Fach:</span>
+              <select id="wb-subject-select" class="wb-select">
+                <!-- Dynamisch mit Schulfächern befüllt -->
+              </select>
+              <div class="wb-conn-badge">
+                <span class="wb-session-dot" id="wb-ws-dot"></span>
+                <span class="wb-session-status" id="wb-ws-status">Tafel aktiv</span>
+              </div>
+            </div>
+            <div class="wb-header-actions">
+              <button id="btn-wb-new-session" class="wb-btn-subtle" title="Neue Tafel beginnen">✨ Neu</button>
+              <button id="btn-wb-request-hint" class="wb-btn-primary" title="Sokratischen Tipp auf Tafel anzeigen">🦉 KI-Tipp anzeigen</button>
+              <button id="btn-wb-fullscreen" class="wb-btn-icon" title="Vollbildmodus umschalten">⛶</button>
+            </div>
+          </div>
+
+          <!-- Zeichenfläche / Viewport -->
+          <div class="wb-viewport pattern-chalkboard" id="wb-viewport">
+            <!-- Base Ink Canvas (Zeichenebene des Schülers) -->
+            <canvas id="wb-canvas" class="wb-canvas-layer"></canvas>
+            <!-- Overlay Canvas (Transparente Ebene für KI-Tipps & Overlays) -->
+            <canvas id="wb-overlay" class="wb-canvas-layer wb-overlay-layer"></canvas>
+
+            <!-- Schwebende iPad-Toolbar (Frosted Glass) -->
+            <div class="wb-floating-toolbar" id="wb-toolbar">
+              <!-- Werkzeuge -->
+              <div class="wb-tool-group">
+                <button class="wb-tool-btn active" data-tool="pen" title="Füller / Stift">
+                  <span class="tool-icon">✏️</span>
+                  <span class="tool-name">Stift</span>
+                </button>
+                <button class="wb-tool-btn" data-tool="highlighter" title="Textmarker">
+                  <span class="tool-icon">🖊️</span>
+                  <span class="tool-name">Marker</span>
+                </button>
+                <button class="wb-tool-btn" data-tool="eraser" title="Radierer">
+                  <span class="tool-icon">🧹</span>
+                  <span class="tool-name">Radierer</span>
+                </button>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- Strichbreiten -->
+              <div class="wb-tool-group">
+                <button class="wb-size-btn" data-size="2" title="Fein (2px)"><span class="dot-sm"></span></button>
+                <button class="wb-size-btn active" data-size="4" title="Normal (4px)"><span class="dot-md"></span></button>
+                <button class="wb-size-btn" data-size="8" title="Dick (8px)"><span class="dot-lg"></span></button>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- Farbpalette -->
+              <div class="wb-color-group">
+                <button class="wb-color-btn active" data-color="#f8fafc" style="background: #f8fafc;" title="Kreideweiß"></button>
+                <button class="wb-color-btn" data-color="#3b82f6" style="background: #3b82f6;" title="Blau"></button>
+                <button class="wb-color-btn" data-color="#10b981" style="background: #10b981;" title="Mintgrün"></button>
+                <button class="wb-color-btn" data-color="#fbbf24" style="background: #fbbf24;" title="Gelb"></button>
+                <button class="wb-color-btn" data-color="#f43f5e" style="background: #f43f5e;" title="Koralle"></button>
+                <button class="wb-color-btn" data-color="#a855f7" style="background: #a855f7;" title="Lila"></button>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- Tafel-Hintergrund -->
+              <div class="wb-tool-group">
+                <select id="wb-pattern-select" class="wb-select-sm" title="Hintergrund-Muster">
+                  <option value="pattern-chalkboard" selected>⬛ Tafel</option>
+                  <option value="pattern-grid">📐 Mathe</option>
+                  <option value="pattern-lines">📄 Liniert</option>
+                  <option value="pattern-white">⬜ Weiß</option>
+                </select>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- Stift-Modus (Palm Rejection) -->
+              <div class="wb-tool-group">
+                <button id="btn-wb-pen-only" class="wb-mode-btn active" title="Touch-Filter: Handfläche wird ignoriert">
+                  <span id="wb-pen-icon">✍️</span>
+                  <span id="wb-pen-label">Pencil</span>
+                </button>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- Aktionen -->
+              <div class="wb-tool-group">
+                <button id="btn-wb-undo" class="wb-action-btn" title="Rückgängig (Cmd+Z)">↩️</button>
+                <button id="btn-wb-redo" class="wb-action-btn" title="Wiederholen (Cmd+Y)">↪️</button>
+                <button id="btn-wb-clear" class="wb-action-btn" title="Tafel leeren">🗑️</button>
+                <button id="btn-wb-save" class="wb-action-btn" title="Bild herunterladen">📷</button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -248,5 +343,6 @@
   </div>
 
   <script src="/static/app.js"></script>
+  <script src="/static/whiteboard.js"></script>
 </body>
 </html>

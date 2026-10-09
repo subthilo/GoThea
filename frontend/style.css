@@ -845,3 +845,365 @@ body {
 .modal-close:hover {
   color: #fff;
 }
+
+/* ==========================================================================
+   Whiteboard Subsystem (Canvas, Floating Toolbar, Patterns, iPad Touch)
+   ========================================================================== */
+
+.wb-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 160px);
+  min-height: 520px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.wb-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background: rgba(18, 22, 32, 0.95);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 10;
+}
+
+.wb-session-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wb-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.wb-select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.wb-conn-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.wb-session-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.wb-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-btn-subtle {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wb-btn-subtle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.wb-btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.wb-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.wb-btn-icon {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Zeichenfläche (Viewport) */
+.wb-viewport {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* Muster / Hintergründe */
+.pattern-chalkboard {
+  background-color: #121620;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+.pattern-grid {
+  background-color: #121620;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.pattern-lines {
+  background-color: #121620;
+  background-image: linear-gradient(to bottom, transparent 27px, rgba(99, 102, 241, 0.2) 28px);
+  background-size: 100% 28px;
+}
+
+.pattern-white {
+  background-color: #f8fafc;
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Canvas Ebenen */
+.wb-canvas-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.wb-overlay-layer {
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Schwebende iPad Toolbar */
+.wb-floating-toolbar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(22, 27, 36, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.wb-tool-group,
+.wb-color-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wb-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
+}
+
+.wb-tool-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wb-tool-btn .tool-icon {
+  font-size: 1.15rem;
+}
+
+.wb-tool-btn .tool-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.wb-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.wb-tool-btn.active {
+  background: rgba(99, 102, 241, 0.25);
+  color: #fff;
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+/* Strichstärken */
+.wb-size-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wb-size-btn .dot-sm { width: 4px; height: 4px; border-radius: 50%; background: #fff; }
+.wb-size-btn .dot-md { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
+.wb-size-btn .dot-lg { width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+
+.wb-size-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.wb-size-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+/* Farbknöpfe */
+.wb-color-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.wb-color-btn:hover {
+  transform: scale(1.15);
+}
+
+.wb-color-btn.active {
+  transform: scale(1.2);
+  border-color: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.wb-select-sm {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.wb-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wb-mode-btn.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #10b981;
+}
+
+.wb-action-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.15rem;
+  padding: 6px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.wb-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Vollbildmodus für Whiteboard */
+body.wb-fullscreen-mode .app-container {
+  max-width: 100vw;
+  padding: 0;
+  margin: 0;
+}
+
+body.wb-fullscreen-mode .header,
+body.wb-fullscreen-mode .staging-banner {
+  display: none !important;
+}
+
+body.wb-fullscreen-mode .content {
+  padding: 0;
+}
+
+body.wb-fullscreen-mode .wb-container {
+  height: 100vh;
+  border-radius: 0;
+  border: none;
+}
+

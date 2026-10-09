@@ -204,3 +204,51 @@
 ### `POST /api/v1/staging/seed-dummy-tests`
 * **Beschreibung:** Erstellt 3 realistische Test-Klassenarbeiten (Biologie, Mathe, Deutsch) für Entwicklungs- und Demonstrationszwecke (nur in Staging aktiv).
 
+---
+
+## 4. Multimodale Whiteboard Engine
+
+### `GET /api/v1/whiteboard/sessions`
+* **Beschreibung:** Listet alle vergangenen und aktiven Tafelsitzungen auf.
+* **Query-Parameter:**
+  * `limit` (optional, default 20): Begrenzung der Ergebnisliste.
+
+### `GET /api/v1/whiteboard/sessions/active`
+* **Beschreibung:** Liefert die aktuell offene, unvollendete Tafelsitzung (falls vorhanden, sonst `null`).
+
+### `POST /api/v1/whiteboard/sessions`
+* **Beschreibung:** Startet eine neue Lernsitzung auf der Tafel für ein Schulfach und optionales Thema/Prüfung.
+* **Request Body:**
+```json
+{
+  "subject_id": "sub_math",
+  "topic_id": "top_math_7_rational",
+  "title": "Rationale Zahlen Rechenübung",
+  "grade_level": 7
+}
+```
+
+### `GET /api/v1/whiteboard/sessions/{session_id}`
+* **Beschreibung:** Liefert Details und gespeicherte Vektorstriche (`board_state_json`) einer Sitzung.
+
+### `PUT /api/v1/whiteboard/sessions/{session_id}/state`
+* **Beschreibung:** Auto-Save Endpunkt zur Persistierung der gezeichneten Vektorstriche und des Canvas-Snapshots.
+* **Request Body:**
+```json
+{
+  "board_state_json": "[...]",
+  "snapshot_data_url": "data:image/png;base64,...",
+  "summary_notes": "Aufgabe 2 gerechnet"
+}
+```
+
+### `POST /api/v1/whiteboard/sessions/{session_id}/close`
+* **Beschreibung:** Beendet die Tafelsitzung und setzt den End-Zeitstempel.
+
+### `POST /api/v1/whiteboard/sessions/{session_id}/mock-tutor-hint`
+* **Beschreibung:** Erzeugt sokratische Hinweis-Aktionen für das transparente KI-Overlay (`highlight_box`, `latex_hint`).
+
+### `WebSocket /ws/tutor/{session_id}`
+* **Beschreibung:** Latenzarmer Echtzeit-Kanal für Apple Pencil Updates (`canvas_update`), Stift-Unterbrechungen (`user_interrupt`), Heartbeats (`ping`/`pong`) und sokratische KI-Overlay-Aktionen (`board_actions`).
+
+
