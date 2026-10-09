@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>GoThea</title>
+  <!-- iPad / iOS Vollbild-Optimierung -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GoThea">
+  <meta name="theme-color" content="#121316">
+
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <div class="logo">GoThea</div>
+      <div class="status-badge" id="status-badge">
+        <span class="status-dot"></span>
+        <span id="status-text">Verbinde...</span>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="empty-state">
+        <div class="status-card">
+          <h1>Bereit für Entwicklung</h1>
+          <p class="subtitle">Deployment-Pipeline erfolgreich eingerichtet.</p>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Host:</span>
+              <span class="value" id="host-name">192.168.1.135</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Backend:</span>
+              <span class="value" id="backend-status">Prüfe...</span>
+            </div>
+            <div class="info-item">
+              <span class="label">WebSocket:</span>
+              <span class="value" id="ws-status">Getrennt</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
