@@ -8,41 +8,142 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GoThea">
-  <meta name="theme-color" content="#121316">
+  <meta name="theme-color" content="#0f1115">
 
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <div class="app-container">
+    <!-- Header -->
     <header class="header">
-      <div class="logo">GoThea</div>
+      <div class="brand">
+        <span class="logo-icon">🦉</span>
+        <div class="brand-text">
+          <span class="logo">GoThea</span>
+          <span class="badge-grade" id="badge-grade">7. Klasse</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="dashboard">📊 Übersicht</button>
+        <button class="nav-tab" data-tab="subjects">📚 Fächer & Themen</button>
+        <button class="nav-tab" data-tab="planner">📅 Lernplan</button>
+        <button class="nav-tab" data-tab="whiteboard">🎨 Tafel</button>
+        <button class="nav-tab" data-tab="profile">👤 Profil</button>
+      </nav>
+
       <div class="status-badge" id="status-badge">
         <span class="status-dot"></span>
         <span id="status-text">Verbinde...</span>
       </div>
     </header>
 
+    <!-- Main Views -->
     <main class="content">
-      <div class="empty-state">
-        <div class="status-card">
-          <h1>Bereit für Entwicklung</h1>
-          <p class="subtitle">Deployment-Pipeline erfolgreich eingerichtet.</p>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">Host:</span>
-              <span class="value" id="host-name">192.168.1.135</span>
+      <!-- Tab 1: Dashboard -->
+      <section id="tab-dashboard" class="tab-pane active">
+        <div class="welcome-banner">
+          <div>
+            <h1 id="user-greeting">Hallo, Thea! 👋</h1>
+            <p class="subtitle" id="user-subtitle">7. Klasse Gymnasium • Land Brandenburg (Niveaustufe E)</p>
+          </div>
+          <div class="status-pill">
+            <span class="pulse-dot"></span>
+            <span>M1 Aktiv: Datenkern & Taxonomie</span>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-icon">📚</span>
+            <div>
+              <div class="stat-val" id="stat-subjects-count">0</div>
+              <div class="stat-label">Aktive Schulfächer</div>
             </div>
-            <div class="info-item">
-              <span class="label">Backend:</span>
-              <span class="value" id="backend-status">Prüfe...</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">📑</span>
+            <div>
+              <div class="stat-val" id="stat-topics-count">0</div>
+              <div class="stat-label">Themenkatalog (Klasse 7)</div>
             </div>
-            <div class="info-item">
-              <span class="label">WebSocket:</span>
-              <span class="value" id="ws-status">Getrennt</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">⚡</span>
+            <div>
+              <div class="stat-val" id="backend-ping">Online</div>
+              <div class="stat-label">FastAPI & SQLite WAL</div>
             </div>
           </div>
         </div>
-      </div>
+
+        <h2 class="section-title">Deine Schulfächer</h2>
+        <div class="subjects-grid" id="dashboard-subjects-grid">
+          <!-- Dynamisch befüllt via API -->
+        </div>
+      </section>
+
+      <!-- Tab 2: Fächer & Themen Detail -->
+      <section id="tab-subjects" class="tab-pane">
+        <div class="pane-header">
+          <h2>Fächer- und Themenkatalog</h2>
+          <p class="subtitle">Dynamische Taxonomie mit Brandenburger Rahmenlehrplan (RLP Niveaustufe E)</p>
+        </div>
+        <div class="subjects-detailed-list" id="subjects-detailed-list">
+          <!-- Dynamisch befüllt via API -->
+        </div>
+      </section>
+
+      <!-- Tab 3: Lernplan (Vorschau auf M2) -->
+      <section id="tab-planner" class="tab-pane">
+        <div class="empty-placeholder">
+          <div class="placeholder-icon">📅</div>
+          <h2>Lernplan & Countdown-Engine</h2>
+          <p>Wird in Meilenstein 2 aktiviert (Countdown-Berechnung N(k,g), Vorbereitungsphasen, Sperrtage).</p>
+        </div>
+      </section>
+
+      <!-- Tab 4: Whiteboard (Vorschau auf M5) -->
+      <section id="tab-whiteboard" class="tab-pane">
+        <div class="empty-placeholder">
+          <div class="placeholder-icon">🎨</div>
+          <h2>Multimodales Whiteboard</h2>
+          <p>Wird in Meilenstein 5 aktiviert (Latenzarme Apple Pencil Erfassung, Sokratischer KI-Tutor).</p>
+        </div>
+      </section>
+
+      <!-- Tab 5: Profil -->
+      <section id="tab-profile" class="tab-pane">
+        <div class="profile-card">
+          <h2>Schülerprofil & Schulform</h2>
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="prof-name" class="input-field" value="Thea">
+          </div>
+          <div class="form-group">
+            <label>Klassenstufe (1–13)</label>
+            <select id="prof-grade" class="input-field">
+              <option value="5">5. Klasse</option>
+              <option value="6">6. Klasse</option>
+              <option value="7" selected>7. Klasse (Aktuell)</option>
+              <option value="8">8. Klasse</option>
+              <option value="9">9. Klasse</option>
+              <option value="10">10. Klasse</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Schulform</label>
+            <select id="prof-school" class="input-field">
+              <option value="Gymnasium" selected>Gymnasium</option>
+              <option value="Gesamtschule">Gesamtschule</option>
+              <option value="Oberschule">Oberschule</option>
+            </select>
+          </div>
+          <button id="btn-save-profile" class="btn-primary">Profil aktualisieren</button>
+          <div id="prof-feedback" class="feedback-msg"></div>
+        </div>
+      </section>
     </main>
   </div>
 

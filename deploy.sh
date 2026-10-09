@@ -5,16 +5,27 @@ PI_USER="pi"
 PI_HOST="192.168.1.135"
 REMOTE_DIR="/home/$PI_USER/GoThea"
 
-echo "🚀 [1/3] Synchronisiere Code mit Raspberry Pi ($PI_HOST)..."
+echo "🧪 [1/4] Führe lokale Testsuite aus..."
+if [ -d ".venv" ]; then
+    .venv/bin/pytest -v
+else
+    pytest -v
+fi
+echo "✅ Alle Tests erfolgreich bestanden!"
+
+echo "🚀 [2/4] Synchronisiere Code mit Raspberry Pi ($PI_HOST)..."
 rsync -avz --delete \
   --exclude '.git' \
   --exclude '.venv' \
   --exclude '__pycache__' \
   --exclude '*.pyc' \
+  --exclude '.pytest_cache' \
+  --exclude '.coverage' \
   --exclude '.DS_Store' \
+  --exclude 'data/' \
   ./ "$PI_USER@$PI_HOST:$REMOTE_DIR/"
 
-echo "⚙️  [2/3] Konfiguriere Umgebung & Service auf dem Pi..."
+echo "⚙️  [3/4] Konfiguriere Umgebung & Service auf dem Pi..."
 ssh "$PI_USER@$PI_HOST" bash << 'EOF'
 set -e
 cd /home/pi/GoThea
@@ -40,5 +51,5 @@ if [ -f "gothea.service" ]; then
 fi
 EOF
 
-echo "✅ [3/3] Deployment abgeschlossen!"
+echo "✅ [4/4] Deployment abgeschlossen!"
 echo "👉 Auf dem iPad im Browser aufrufen: http://$PI_HOST:8000"
