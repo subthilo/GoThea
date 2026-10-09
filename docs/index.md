@@ -26,6 +26,7 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 
 ### [04. Testberichte](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/)
 * **[04.1 Iteration 01 – Datenkern & Taxonomie](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_01_profile_taxonomy.md):** 15 Tests, 100% Passed, 92% Coverage.
+* **[04.2 Iteration 02 – Lernplan & Countdown-Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_02_planner_engine.md):** 23 Tests, 100% Passed, 92% Coverage.
 
 ---
 
@@ -35,8 +36,8 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 | :--- | :--- | :---: | :---: |
 | **M0: Setup** | Raspberry Pi Deployment, SSH, PWA-Grundgerüst | ✅ Abgeschlossen | Manuell (OK) |
 | **M1: Core DB & Taxonomie** | SQLite WAL, User, Fächer & Themen (7. Klasse BB), Staging/Prod | ✅ Abgeschlossen | 15/15 Passed (92% Cov) |
-| **M2: Lernplan-Engine** | Countdown-Algorithmus, Prüfungen, Phasen, Sperrtage | ⏳ Als Nächstes | In Vorbereitung |
-| **M3: IServ-Connector** | CalDAV, WebDAV, AES-256 Vault | ⏳ Geplant | - |
+| **M2: Lernplan-Engine** | Countdown-Algorithmus, Prüfungen, Phasen, Sperrtage | ✅ Abgeschlossen | 23/23 Passed (92% Cov) |
+| **M3: IServ-Connector** | CalDAV, WebDAV, AES-256 Vault | ⏳ Als Nächstes | Geplant |
 | **M4: Material-Upload** | 2-Stufen Human-in-the-Loop Ingestion | ⏳ Geplant | - |
 | **M5: Whiteboard Engine** | iPad Canvas, PointerEvents, Overlays | ⏳ Geplant | - |
 | **M6: KI-Tutor & Audio** | Sokratischer Governor, Vision, Streaming TTS | ⏳ Geplant | - |

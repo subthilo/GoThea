@@ -121,3 +121,86 @@
   "rlp_level_code": "E"
 }
 ```
+
+---
+
+## 3. Lernplan- & Countdown-Engine
+
+### `GET /api/v1/tests`
+* **Beschreibung:** Listet alle anstehenden und vergangenen Prüfungen auf.
+* **Query-Parameter:**
+  * `status` (optional, string): z. B. `upcoming` oder `completed`.
+
+### `POST /api/v1/tests`
+* **Beschreibung:** Legt eine neue Arbeit/Klausur an.
+* **Request Body:**
+```json
+{
+  "subject_id": "sub_math",
+  "topic_id": "top_math_7_rational",
+  "title": "2. Klassenarbeit Rationale Zahlen",
+  "test_kind": "Klassenarbeit",
+  "test_date": "2026-10-24",
+  "weight": 1.0,
+  "notes": "Vorzeichenregeln, Brüche, Multiplikation"
+}
+```
+
+### `DELETE /api/v1/tests/{test_id}`
+* **Beschreibung:** Löscht eine Prüfung.
+
+### `GET /api/v1/plan`
+* **Beschreibung:** Berechnet dynamisch den 7-Tage-Lernplan, heutige Aufgaben und Countdown-Karten basierend auf $N(k,g)$, $B(k,g)$ und Sperrtagen.
+* **Response (200 OK):**
+```json
+{
+  "calculated_at": "2026-10-10T12:00:00",
+  "upcoming_tests": [...],
+  "today_tasks": [
+    {
+      "task_identifier": "tst_123_2026-10-10",
+      "test_id": "tst_123",
+      "subject_name": "Mathematik",
+      "subject_icon": "📐",
+      "subject_color": "#2563eb",
+      "test_kind": "Klassenarbeit",
+      "days_until_test": 6,
+      "phase_number": 2,
+      "phase_name": "Phase 2: Aktives Üben & Vertiefen",
+      "phase_description": "Typische Rechen- und Textaufgaben eigenständig lösen.",
+      "target_minutes": 25,
+      "is_completed": false,
+      "is_exam_day": false
+    }
+  ],
+  "today_total_minutes": 25,
+  "next_7_days": [...]
+}
+```
+
+### `POST /api/v1/plan/complete-task`
+* **Beschreibung:** Schaltet den Erledigt-Status einer täglichen Lernaufgabe um (Häkchen setzen / entfernen).
+* **Request Body:**
+```json
+{
+  "task_identifier": "tst_123_2026-10-10",
+  "completed": true
+}
+```
+
+### `GET /api/v1/plan/block` & `POST /api/v1/plan/block`
+* **Beschreibung:** Verwaltet Sperrtage (z. B. Wandertage, Geburtstage, Sportturniere), an denen keine Lernblöcke geplant werden dürfen.
+* **Request Body (POST):**
+```json
+{
+  "block_date": "2026-10-18",
+  "reason": "Schulausflug"
+}
+```
+
+### `DELETE /api/v1/plan/block/{block_id}`
+* **Beschreibung:** Entfernt einen Sperrtag.
+
+### `POST /api/v1/staging/seed-dummy-tests`
+* **Beschreibung:** Erstellt 3 realistische Test-Klassenarbeiten (Biologie, Mathe, Deutsch) für Entwicklungs- und Demonstrationszwecke (nur in Staging aktiv).
+

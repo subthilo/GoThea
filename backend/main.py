@@ -11,6 +11,7 @@ from backend.app.services.seeder import seed_database
 from backend.app.routers.profile import router as profile_router
 from backend.app.routers.taxonomy import router as taxonomy_router
 from backend.app.routers.env import router as env_router
+from backend.app.routers.planner import router as planner_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -33,6 +34,7 @@ app = FastAPI(title="GoThea Multimodale Lernzentrale", lifespan=lifespan)
 app.include_router(profile_router)
 app.include_router(taxonomy_router)
 app.include_router(env_router)
+app.include_router(planner_router)
 
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():
