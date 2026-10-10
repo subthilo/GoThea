@@ -24,6 +24,7 @@
 
   // Dokument-Vorlage Underlay Elemente
   const wbDocUnderlay = document.getElementById("wb-doc-underlay");
+  const wbDocTopbar = document.getElementById("wb-doc-topbar");
   const wbDocTitleText = document.getElementById("wb-doc-title-text");
   const wbDocPager = document.getElementById("wb-doc-pager");
   const wbDocPageIndicator = document.getElementById("wb-doc-page-indicator");
@@ -32,6 +33,12 @@
   const btnWbRemoveDoc = document.getElementById("btn-wb-remove-doc");
   const wbDocSheet = document.getElementById("wb-doc-sheet");
   const wbDocImg = document.getElementById("wb-doc-img");
+
+  // Zoom Steuerung
+  const btnWbZoomIn = document.getElementById("btn-wb-zoom-in");
+  const btnWbZoomOut = document.getElementById("btn-wb-zoom-out");
+  const btnWbZoomReset = document.getElementById("btn-wb-zoom-reset");
+  const wbZoomLevelText = document.getElementById("wb-zoom-level-text");
 
   let activeWorksheet = null;
 
@@ -61,13 +68,12 @@
   let dpr = window.devicePixelRatio || 1;
   let saveDebounceTimer = null;
 
-  // Vertikales Scrolling / Unendliche Tafel
+  // Viewport Transform & Zoom
   let panX = 0;
   let panY = 0;
+  let scale = 1.0;
   let activeTouches = new Map(); // pointerId -> { x, y }
   let isTwoFingerPanning = false;
-  let lastPinchCenterY = 0;
-  let lastTouchMoveCenterY = null;
   let scrollbarFadeTimer = null;
 
   // 1. Canvas Resize & HiDPI Alignment
@@ -109,11 +115,13 @@
   function getEventPoint(e) {
     const rect = inkCanvas.getBoundingClientRect();
     const pressure = (typeof e.pressure === "number" && e.pressure > 0) ? e.pressure : 0.5;
+    const screenX = e.clientX - rect.left;
+    const screenY = e.clientY - rect.top;
     return {
-      x: e.clientX - rect.left - panX,
-      y: e.clientY - rect.top - panY,
-      screenX: e.clientX - rect.left,
-      screenY: e.clientY - rect.top,
+      x: (screenX - panX) / scale,
+      y: (screenY - panY) / scale,
+      screenX: screenX,
+      screenY: screenY,
       pressure: pressure,
       pointerType: e.pointerType || "mouse"
     };
@@ -131,16 +139,67 @@
     return { minX, maxX, minY, maxY };
   }
 
-  // 3. Viewport Panning & Scrolling
+  // 3. Viewport Panning & Zooming
   function updateViewportPan() {
-    inkCtx.setTransform(dpr, 0, 0, dpr, panX * dpr, panY * dpr);
-    overlayCtx.setTransform(dpr, 0, 0, dpr, panX * dpr, panY * dpr);
+    inkCtx.setTransform(dpr * scale, 0, 0, dpr * scale, panX * dpr, panY * dpr);
+    overlayCtx.setTransform(dpr * scale, 0, 0, dpr * scale, panX * dpr, panY * dpr);
     viewport.style.backgroundPositionY = `${panY}px`;
+    viewport.style.backgroundPositionX = `${panX}px`;
+    viewport.style.backgroundSize = `${24 * scale}px ${24 * scale}px`;
+
     if (wbDocSheet) {
-      wbDocSheet.style.transform = `translateX(-50%) translateY(${panY}px)`;
+      const rect = viewport.getBoundingClientRect();
+      const sheetWidth = Math.min(860, Math.max(300, rect.width * 0.92));
+      const sheetVirtX = (rect.width - sheetWidth) / 2;
+      const sheetVirtY = 60;
+      wbDocSheet.style.width = `${sheetWidth}px`;
+      wbDocSheet.style.transform = `translate(${sheetVirtX * scale + panX}px, ${sheetVirtY * scale + panY}px) scale(${scale})`;
     }
+
     redrawAllStrokes();
     updateScrollUI();
+  }
+
+  function setZoomLevel(newScale, centerScreenX = null, centerScreenY = null) {
+    const rect = viewport.getBoundingClientRect();
+    const cx = centerScreenX !== null ? centerScreenX : rect.width / 2;
+    const cy = centerScreenY !== null ? centerScreenY : rect.height / 2;
+
+    const clampedScale = Math.max(1.0, Math.min(3.5, Math.round(newScale * 100) / 100));
+    if (Math.abs(clampedScale - scale) < 0.01) return;
+
+    // Virtueller Punkt unter dem Zoom-Zentrum
+    const vx = (cx - panX) / scale;
+    const vy = (cy - panY) / scale;
+
+    scale = clampedScale;
+
+    if (scale === 1.0) {
+      panX = 0;
+      panY = Math.min(0, panY);
+    } else {
+      panX = cx - vx * scale;
+      panY = cy - vy * scale;
+    }
+
+    updateViewportPan();
+    updateZoomUI();
+  }
+
+  function updateZoomUI() {
+    if (wbZoomLevelText) {
+      wbZoomLevelText.textContent = `${Math.round(scale * 100)}%`;
+    }
+  }
+
+  if (btnWbZoomIn) {
+    btnWbZoomIn.addEventListener("click", () => setZoomLevel(scale + 0.35));
+  }
+  if (btnWbZoomOut) {
+    btnWbZoomOut.addEventListener("click", () => setZoomLevel(scale - 0.35));
+  }
+  if (btnWbZoomReset) {
+    btnWbZoomReset.addEventListener("click", () => setZoomLevel(1.0));
   }
 
   function scrollWorksheetToPage(pageNum) {
@@ -152,20 +211,8 @@
     }
     const pageCard = document.getElementById(`wb-doc-page-${targetPage}`);
     if (pageCard) {
-      const targetPanY = -pageCard.offsetTop;
-      const startY = panY;
-      const startTime = performance.now();
-      const duration = 250;
-      function step(now) {
-        const progress = Math.min(1, (now - startTime) / duration);
-        const ease = 1 - Math.pow(1 - progress, 3);
-        panY = startY + (targetPanY - startY) * ease;
-        updateViewportPan();
-        if (progress < 1) {
-          requestAnimationFrame(step);
-        }
-      }
-      requestAnimationFrame(step);
+      const targetPanY = -(pageCard.offsetTop * scale) + (60 * scale);
+      smoothScrollPanTo(targetPanY);
     }
   }
 
@@ -179,6 +226,7 @@
 
     if (wbDocUnderlay && wbDocSheet) {
       wbDocUnderlay.style.display = "block";
+      if (wbDocTopbar) wbDocTopbar.style.display = "flex";
       if (wbDocTitleText) wbDocTitleText.textContent = material.title;
 
       // Vorlage Seiten aufbauen
@@ -207,9 +255,12 @@
     const blueBtn = document.querySelector('.wb-color-btn[data-color="#3b82f6"]');
     if (blueBtn) blueBtn.click();
 
-    // Scroll zurück zum Anfang
+    // Scroll & Zoom zurück zum Anfang
+    scale = 1.0;
+    panX = 0;
     panY = 0;
     updateViewportPan();
+    updateZoomUI();
   };
 
   if (btnWbPrevPage) {
@@ -232,7 +283,13 @@
     btnWbRemoveDoc.addEventListener("click", () => {
       activeWorksheet = null;
       if (wbDocUnderlay) wbDocUnderlay.style.display = "none";
+      if (wbDocTopbar) wbDocTopbar.style.display = "none";
       if (wbDocSheet) wbDocSheet.innerHTML = "";
+      scale = 1.0;
+      panX = 0;
+      panY = 0;
+      updateViewportPan();
+      updateZoomUI();
       const whiteBtn = document.querySelector('.wb-color-btn[data-color="#f8fafc"]');
       if (whiteBtn) whiteBtn.click();
     });
@@ -284,6 +341,8 @@
   if (btnScrollTop) {
     btnScrollTop.addEventListener("click", () => {
       const startPanY = panY;
+      const startPanX = panX;
+      const startScale = scale;
       const startTime = performance.now();
       const duration = 250;
 
@@ -291,12 +350,18 @@
         const progress = Math.min(1, (time - startTime) / duration);
         const ease = 1 - Math.pow(1 - progress, 3);
         panY = startPanY * (1 - ease);
+        panX = startPanX * (1 - ease);
+        scale = startScale + (1.0 - startScale) * ease;
         updateViewportPan();
+        updateZoomUI();
         if (progress < 1) {
           requestAnimationFrame(anim);
         } else {
           panY = 0;
+          panX = 0;
+          scale = 1.0;
           updateViewportPan();
+          updateZoomUI();
         }
       }
       requestAnimationFrame(anim);
@@ -306,9 +371,21 @@
   // Mac Trackpad & Mausrad-Scrolling
   viewport.addEventListener("wheel", (e) => {
     e.preventDefault();
-    panY -= e.deltaY;
-    if (panY > 0) panY = 0; // Kein Scrollen über den oberen Rand hinaus
-    updateViewportPan();
+    if (e.ctrlKey) {
+      const rect = viewport.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.08 : 0.92;
+      setZoomLevel(scale * factor, cx, cy);
+    } else {
+      panY -= e.deltaY;
+      panX -= e.deltaX;
+      if (scale === 1.0) {
+        panX = 0;
+        if (panY > 0) panY = 0;
+      }
+      updateViewportPan();
+    }
   }, { passive: false });
 
   // 4. Geometry Math for Object Eraser (Stroke Hit-Testing)
@@ -423,11 +500,11 @@
 
     let targetWidth;
     if (currentTool === "pixel_eraser" || currentTool === "eraser") {
-      targetWidth = currentBaseWidth * 5;
+      targetWidth = (currentBaseWidth * 5) / scale;
     } else if (currentTool === "highlighter") {
-      targetWidth = currentBaseWidth * 3.5;
+      targetWidth = (currentBaseWidth * 3.5) / scale;
     } else {
-      targetWidth = Math.max(1.5, currentBaseWidth * (0.35 + pt.pressure * 1.3));
+      targetWidth = Math.max(1.0, (currentBaseWidth * (0.35 + pt.pressure * 1.3)) / scale);
     }
     currentSmoothWidth = currentSmoothWidth * 0.6 + targetWidth * 0.4;
 
@@ -441,7 +518,7 @@
   }
 
   function checkAndEraseObjectsAtPoint(pt) {
-    const radius = Math.max(16, currentBaseWidth * 4);
+    const radius = Math.max(16, (currentBaseWidth * 4) / scale);
     let hitAny = false;
 
     for (let i = strokes.length - 1; i >= 0; i--) {
@@ -493,7 +570,8 @@
     isDrawing = true;
     const pt = getEventPoint(e);
     lastPoint = pt;
-    currentSmoothWidth = currentBaseWidth;
+    const strokeWidth = currentBaseWidth / scale;
+    currentSmoothWidth = strokeWidth;
 
     if (currentTool === "object_eraser") {
       dragDeletedItems = [];
@@ -504,15 +582,15 @@
     currentStroke = {
       tool: currentTool,
       color: currentColor,
-      width: currentBaseWidth,
+      width: strokeWidth,
       points: [pt]
     };
 
-    applyToolStyle(inkCtx, currentTool, currentColor, currentBaseWidth);
+    applyToolStyle(inkCtx, currentTool, currentColor, strokeWidth);
 
     inkCtx.beginPath();
     const isEraser = currentTool === "pixel_eraser" || currentTool === "eraser";
-    const dotRadius = isEraser ? (currentBaseWidth * 2.5) : Math.max(1, currentBaseWidth / 2);
+    const dotRadius = isEraser ? (strokeWidth * 2.5) : Math.max(0.5, strokeWidth / 2);
     inkCtx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
     inkCtx.fillStyle = isEraser ? "#000" : currentColor;
     inkCtx.fill();
@@ -642,9 +720,11 @@
     }
   }, { passive: false });
 
-  // 1:1 Physikalisches Zwei-Finger-Scrollen (Touch Events)
-  let touchStartCenterY = null;
-  let touchStartPanY = null;
+  // 1:1 Physikalisches Zwei-Finger-Pinch-to-Zoom & Pan (Touch Events)
+  let touchStartDist = null;
+  let touchStartScale = 1.0;
+  let pinchVirtualX = null;
+  let pinchVirtualY = null;
 
   inkCanvas.addEventListener("touchstart", (e) => {
     // IMMER e.preventDefault(), um WebKit Edit-Menu ('Teilen...') bei schnellem Stiftansetzen zu blockieren
@@ -657,34 +737,74 @@
         lastPoint = null;
         redrawAllStrokes();
       }
-      touchStartCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      touchStartPanY = panY;
+      const rect = inkCanvas.getBoundingClientRect();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const cx = (t1.clientX + t2.clientX) / 2 - rect.left;
+      const cy = (t1.clientY + t2.clientY) / 2 - rect.top;
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+      touchStartDist = dist;
+      touchStartScale = scale;
+
+      pinchVirtualX = (cx - panX) / scale;
+      pinchVirtualY = (cy - panY) / scale;
     }
   }, { passive: false, capture: true });
 
   inkCanvas.addEventListener("touchmove", (e) => {
     e.preventDefault();
-    if (e.touches.length === 2 && touchStartCenterY !== null) {
-      const currentCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      const diffY = currentCenterY - touchStartCenterY;
-      panY = Math.min(0, touchStartPanY + diffY);
+    if (e.touches.length === 2 && touchStartDist !== null) {
+      const rect = inkCanvas.getBoundingClientRect();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const cx = (t1.clientX + t2.clientX) / 2 - rect.left;
+      const cy = (t1.clientY + t2.clientY) / 2 - rect.top;
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+      // Pinch Zoom
+      if (touchStartDist > 15) {
+        const ratio = dist / touchStartDist;
+        scale = Math.max(1.0, Math.min(3.5, touchStartScale * ratio));
+      }
+
+      let newPanX = cx - pinchVirtualX * scale;
+      let newPanY = cy - pinchVirtualY * scale;
+
+      if (scale <= 1.01) {
+        scale = 1.0;
+        newPanX = 0;
+        newPanY = Math.min(0, newPanY);
+      } else {
+        const maxPanX = rect.width * 0.5;
+        const minPanX = -rect.width * (scale - 0.5);
+        newPanX = Math.max(minPanX, Math.min(maxPanX, newPanX));
+        newPanY = Math.min(80 * scale, newPanY);
+      }
+
+      panX = newPanX;
+      panY = newPanY;
+
       updateViewportPan();
+      updateZoomUI();
     }
   }, { passive: false, capture: true });
 
   inkCanvas.addEventListener("touchend", (e) => {
     e.preventDefault();
     if (e.touches.length < 2) {
-      touchStartCenterY = null;
-      touchStartPanY = null;
+      touchStartDist = null;
+      pinchVirtualX = null;
+      pinchVirtualY = null;
       isTwoFingerPanning = false;
     }
   }, { passive: false, capture: true });
 
   inkCanvas.addEventListener("touchcancel", (e) => {
     e.preventDefault();
-    touchStartCenterY = null;
-    touchStartPanY = null;
+    touchStartDist = null;
+    pinchVirtualX = null;
+    pinchVirtualY = null;
     isTwoFingerPanning = false;
   }, { passive: false, capture: true });
 

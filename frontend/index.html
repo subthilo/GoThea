@@ -186,29 +186,29 @@
 
           <!-- Zeichenfläche / Viewport -->
           <div class="wb-viewport pattern-chalkboard" id="wb-viewport">
-            <!-- Dokument-Vorlage (Hinterlegtes Arbeitsblatt / Hefterfoto) -->
+            <!-- 1. Dokument-Vorlage Ebene (HINTER dem Zeichen-Canvas) -->
             <div id="wb-doc-underlay" class="wb-doc-underlay" style="display: none;">
-              <div class="wb-doc-topbar">
-                <div class="wb-doc-info">
-                  <span class="wb-doc-badge">📄 Arbeitsblatt-Vorlage</span>
-                  <span id="wb-doc-title-text" class="wb-doc-title-text">Titel</span>
-                  <div id="wb-doc-pager" class="wb-doc-pager" style="display: none;">
-                    <button type="button" id="btn-wb-prev-page" class="btn-pager">◀</button>
-                    <span id="wb-doc-page-indicator">Seite 1 / 1</span>
-                    <button type="button" id="btn-wb-next-page" class="btn-pager">▶</button>
-                  </div>
-                </div>
-                <button type="button" id="btn-wb-remove-doc" class="btn-wb-remove-doc" title="Vorlage ausblenden">✖ Vorlage schließen</button>
-              </div>
-              <div class="wb-doc-sheet" id="wb-doc-sheet">
-                <img id="wb-doc-img" class="wb-doc-img" alt="Arbeitsblatt-Vorlage">
-              </div>
+              <div class="wb-doc-sheet" id="wb-doc-sheet"></div>
             </div>
 
-            <!-- Base Ink Canvas (Zeichenebene des Schülers) -->
+            <!-- 2. Base Ink Canvas (Zeichenebene des Schülers VOR der Vorlage) -->
             <canvas id="wb-canvas" class="wb-canvas-layer"></canvas>
-            <!-- Overlay Canvas (Transparente Ebene für KI-Tipps & Overlays) -->
+            <!-- 3. Overlay Canvas (Transparente Ebene für KI-Tipps & Overlays) -->
             <canvas id="wb-overlay" class="wb-canvas-layer wb-overlay-layer"></canvas>
+
+            <!-- 4. Dokument-Leiste (Steuerung VOR dem Canvas) -->
+            <div id="wb-doc-topbar" class="wb-doc-topbar" style="display: none;">
+              <div class="wb-doc-info">
+                <span class="wb-doc-badge">📄 Arbeitsblatt-Vorlage</span>
+                <span id="wb-doc-title-text" class="wb-doc-title-text">Titel</span>
+                <div id="wb-doc-pager" class="wb-doc-pager" style="display: none;">
+                  <button type="button" id="btn-wb-prev-page" class="btn-pager">◀</button>
+                  <span id="wb-doc-page-indicator">Seite 1 / 1</span>
+                  <button type="button" id="btn-wb-next-page" class="btn-pager">▶</button>
+                </div>
+              </div>
+              <button type="button" id="btn-wb-remove-doc" class="btn-wb-remove-doc" title="Vorlage ausblenden">✖ Vorlage schließen</button>
+            </div>
 
             <!-- Scroll-Indikator & Nach-Oben-Button -->
             <button id="btn-wb-scroll-top" class="wb-scroll-top-btn" title="Zum Anfang der Tafel">⤒ Zum Anfang</button>
@@ -269,6 +269,17 @@
                   <option value="pattern-lines">📄 Liniert</option>
                   <option value="pattern-white">⬜ Weiß</option>
                 </select>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- Zoom-Regler (Großansicht für feines Schreiben) -->
+              <div class="wb-tool-group">
+                <button type="button" id="btn-wb-zoom-out" class="wb-action-btn" title="Herauszoomen" style="font-size: 0.95rem;">➖</button>
+                <button type="button" id="btn-wb-zoom-reset" class="wb-mode-btn" title="Auf 100% zurücksetzen">
+                  <span id="wb-zoom-level-text" style="font-weight: 700; font-size: 0.78rem;">100%</span>
+                </button>
+                <button type="button" id="btn-wb-zoom-in" class="wb-action-btn" title="Hereinzoomen (Großansicht zum Schreiben)" style="font-size: 0.95rem;">➕</button>
               </div>
 
               <div class="wb-divider"></div>
