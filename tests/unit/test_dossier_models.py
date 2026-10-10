@@ -152,3 +152,43 @@ def test_material_parent_child_book_chapters(db_session):
 
     remaining_chaps = db_session.query(Material).filter_by(parent_id=book_id).all()
     assert len(remaining_chaps) == 0
+
+def test_ensure_schema_migrations_compatibility_and_idempotency():
+    from sqlalchemy import text
+    from backend.app.database import ensure_schema_migrations
+
+    # 1. Altes Schema simulieren (materials-Tabelle OHNE neue Spalten)
+    test_engine = create_engine("sqlite:///:memory:")
+    with test_engine.connect() as conn:
+        conn.execute(text("""
+            CREATE TABLE materials (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                subject_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                filename TEXT NOT NULL,
+                file_path TEXT NOT NULL
+            );
+        """))
+        conn.commit()
+
+    # Vor Migration prüfen
+    with test_engine.connect() as conn:
+        cols_before = [r[1] for r in conn.execute(text("PRAGMA table_info(materials);")).fetchall()]
+        assert "dossier_id" not in cols_before
+        assert "parent_id" not in cols_before
+
+    # 2. Migration ausführen
+    ensure_schema_migrations(test_engine)
+
+    # Nach Migration prüfen
+    with test_engine.connect() as conn:
+        cols_after = [r[1] for r in conn.execute(text("PRAGMA table_info(materials);")).fetchall()]
+        assert "dossier_id" in cols_after
+        assert "dossier_order" in cols_after
+        assert "parent_id" in cols_after
+        assert "start_page" in cols_after
+        assert "end_page" in cols_after
+
+    # 3. Idempotenz prüfen: Zweiter Aufruf darf keine Fehler werfen
+    ensure_schema_migrations(test_engine)
