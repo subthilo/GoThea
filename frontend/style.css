@@ -1763,6 +1763,11 @@ body.wb-fullscreen-mode .wb-container {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+.inbox-spin-icon {
+  display: inline-block;
+  animation: mat-spin 0.7s linear infinite;
+}
+
 .btn-inbox-process {
   background: linear-gradient(135deg, #6366f1, #4f46e5);
   color: #fff;

@@ -548,8 +548,21 @@ const btnSubmitMaterial = document.getElementById("btn-submit-material");
 async function checkInboxStatus() {
   if (!inboxCard) return;
   try {
+    if (!currentEnvInfo) {
+      try {
+        const envRes = await fetch("/api/v1/env");
+        if (envRes.ok) currentEnvInfo = await envRes.json();
+      } catch (e) {}
+    }
+
     const res = await fetch("/api/v1/inbox/status");
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.error("Inbox Status HTTP Fehler:", res.status);
+      if (inboxSubtitle) {
+        inboxSubtitle.textContent = `Fehler beim Prüfen des Netzwerkordners (HTTP ${res.status}).`;
+      }
+      return;
+    }
     const data = await res.json();
 
     const pending = data.pending_count || 0;
@@ -698,8 +711,21 @@ async function processInbox() {
 }
 
 if (btnRefreshInbox) {
-  btnRefreshInbox.addEventListener("click", () => {
-    checkInboxStatus();
+  btnRefreshInbox.addEventListener("click", async () => {
+    const origHtml = btnRefreshInbox.innerHTML;
+    btnRefreshInbox.disabled = true;
+    btnRefreshInbox.innerHTML = `<span class="inbox-spin-icon">🔄</span> Prüfe...`;
+    try {
+      await checkInboxStatus();
+      btnRefreshInbox.innerHTML = `✓ Geprüft`;
+    } catch (e) {
+      btnRefreshInbox.innerHTML = `⚠️ Fehler`;
+    } finally {
+      setTimeout(() => {
+        btnRefreshInbox.innerHTML = origHtml;
+        btnRefreshInbox.disabled = false;
+      }, 1000);
+    }
   });
 }
 
