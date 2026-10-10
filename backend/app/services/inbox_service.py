@@ -237,12 +237,15 @@ def process_single_inbox_file(
     topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
 
     # Dossier bestimmen oder anlegen
-    if kind == "Buch":
+    if kind in ("Buch", "Buchauszug"):
         dossier_title = f"Lehrbuch: {title}"
         dossier_kind = "lehrbuch"
     elif kind == "Hefterseite":
         dossier_title = f"Hefter: {topic.name if topic else subject.name}"
         dossier_kind = "hefter"
+    elif kind in ("Klassenarbeit", "Test"):
+        dossier_title = f"Testsammlung: {subject.name}"
+        dossier_kind = "testsammlung"
     else:
         dossier_title = f"Arbeitsblätter: {topic.name if topic else subject.name}"
         dossier_kind = "uebungsmappe"

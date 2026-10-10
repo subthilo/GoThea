@@ -14,7 +14,8 @@ def test_clean_title_from_filename():
 def test_detect_kind_from_filename_and_text():
     assert detect_kind_from_filename_and_text("hefter_mitschrift.pdf", "") == "Hefterseite"
     assert detect_kind_from_filename_and_text("buch_kapitel_3.pdf", "") == "Buchauszug"
-    assert detect_kind_from_filename_and_text("mathe_test_probe.pdf", "") == "Übungszettel"
+    assert detect_kind_from_filename_and_text("mathe_test_probe.pdf", "") == "Test"
+    assert detect_kind_from_filename_and_text("bio_klassenarbeit_1.pdf", "") == "Klassenarbeit"
     assert detect_kind_from_filename_and_text("arbeitsblatt_01.pdf", "") == "Arbeitsblatt"
 
 def test_chunk_text_empty():

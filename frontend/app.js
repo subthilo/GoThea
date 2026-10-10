@@ -709,6 +709,17 @@ if (btnProcessInbox) {
   });
 }
 
+let activeKindFilter = "all";
+
+document.querySelectorAll("#materials-filter-bar .filter-pill").forEach((pill) => {
+  pill.addEventListener("click", () => {
+    document.querySelectorAll("#materials-filter-bar .filter-pill").forEach((p) => p.classList.remove("active"));
+    pill.classList.add("active");
+    activeKindFilter = pill.dataset.kind || "all";
+    renderMaterialsList(currentMaterials);
+  });
+});
+
 async function loadMaterials() {
   if (!materialsList) return;
   try {
@@ -729,23 +740,43 @@ function renderMaterialsList(materials) {
   if (!materialsList) return;
   materialsList.innerHTML = "";
 
-  if (materials.length === 0) {
+  const filtered = materials.filter((m) => {
+    if (activeKindFilter === "all") return true;
+    if (activeKindFilter === "Arbeitsblatt") return m.kind === "Arbeitsblatt";
+    if (activeKindFilter === "Hefter") return (m.kind || "").includes("Heft");
+    if (activeKindFilter === "Buch") return (m.kind || "").includes("Buch");
+    if (activeKindFilter === "Test") {
+      const k = m.kind || "";
+      return k.includes("Test") || k.includes("Klassenarbeit") || k.includes("Übung") || k.includes("Klausur");
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    const hint = activeKindFilter === "all"
+      ? `Tippe oben auf <strong>„➕ Dokument hochladen“</strong> oder ziehe Schulbücher, Hefter, Arbeitsblätter oder Klassenarbeiten in deinen Finder-Netzwerkordner.`
+      : `Noch keine Dokumente in der Kategorie <strong>${activeKindFilter}</strong> vorhanden.`;
+
     materialsList.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 36px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
         <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">📭</span>
-        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Noch keine Lernmaterialien hochgeladen</div>
-        <p style="font-size: 0.85rem; max-width: 440px; margin: 0 auto;">Tippe oben auf <strong>„➕ Material hochladen“</strong>, um Arbeitsblätter, Mitschriften oder Hefterseiten für deine Fächer hinzuzufügen.</p>
+        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Keine Dokumente gefunden</div>
+        <p style="font-size: 0.85rem; max-width: 440px; margin: 0 auto;">${hint}</p>
       </div>
     `;
     return;
   }
 
-  materials.forEach((m) => {
+  filtered.forEach((m) => {
     const card = document.createElement("div");
     card.className = "material-card";
 
     const isPdf = m.mime_type.includes("pdf");
-    const docIcon = isPdf ? "📄" : "🖼️";
+    let docIcon = "📄";
+    if (m.kind && m.kind.includes("Buch")) docIcon = "📚";
+    else if (m.kind && m.kind.includes("Heft")) docIcon = "📁";
+    else if (m.kind && (m.kind.includes("Klassenarbeit") || m.kind.includes("Test"))) docIcon = "📝";
+    else if (!isPdf) docIcon = "🖼️";
     const sizeKb = Math.round(m.file_size / 1024);
     const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
 

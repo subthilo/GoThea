@@ -99,7 +99,7 @@
             <h2>Fächer- und Themenkatalog</h2>
             <p class="subtitle">Dynamische Taxonomie mit Brandenburger Rahmenlehrplan (RLP Niveaustufe E)</p>
           </div>
-          <button id="btn-open-material-modal" class="btn-primary-sm">➕ Material hochladen</button>
+          <button id="btn-open-material-modal" class="btn-primary-sm">➕ Dokument hochladen</button>
         </div>
         <div class="subjects-detailed-list" id="subjects-detailed-list">
           <!-- Dynamisch befüllt via API -->
@@ -109,8 +109,8 @@
         <div class="materials-section" style="margin-top: 36px;">
           <div class="section-title-row">
             <div>
-              <h3>📂 Arbeitsblätter, Hefter & Materialien</h3>
-              <p class="subtitle" style="margin-top: 4px;">Zugeordnete Dokumente mit Textextraktion und semantischer Gliederung</p>
+              <h3>📚 Dokumente & Lernmaterialien</h3>
+              <p class="subtitle" style="margin-top: 4px;">Schulbücher, Hefter, Arbeitsblätter & Tests – automatisch analysiert und den Schulfächern zugeordnet</p>
             </div>
             <span class="badge-minutes" id="materials-count-badge">0 Dokumente</span>
           </div>
@@ -153,6 +153,15 @@
               <div class="inbox-spinner" id="inbox-spinner"></div>
               <div id="inbox-status-msg">Verarbeite Dokumente...</div>
             </div>
+          </div>
+
+          <!-- Filter-Pills für Dokumentarten -->
+          <div class="materials-filter-bar" id="materials-filter-bar">
+            <button class="filter-pill active" data-kind="all">Alle Dokumente</button>
+            <button class="filter-pill" data-kind="Arbeitsblatt">📄 Arbeitsblätter</button>
+            <button class="filter-pill" data-kind="Hefter">📁 Hefter & Notizen</button>
+            <button class="filter-pill" data-kind="Buch">📚 Schulbücher</button>
+            <button class="filter-pill" data-kind="Test">📝 Tests & Arbeiten</button>
           </div>
 
           <div id="materials-list" class="materials-grid">
@@ -444,14 +453,14 @@
   <div id="modal-material" class="modal-backdrop" style="display: none;">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 id="modal-material-title">📄 Material hinzufügen</h3>
+        <h3 id="modal-material-title">📄 Dokument hinzufügen</h3>
         <button class="modal-close" id="btn-close-material-modal">&times;</button>
       </div>
       <div class="modal-body">
         <!-- Stufe 1: Upload & Dateiwahl -->
         <div id="mat-step-upload">
           <p class="subtitle" style="margin-bottom: 16px;">
-            Lade ein Arbeitsblatt, ein Foto deiner Hefterseite oder ein Buchkapitel hoch.
+            Lade ein Schulbuch, ein Arbeitsblatt, eine Hefterseite oder eine Klassenarbeit hoch.
           </p>
           <div class="mat-dropzone" id="mat-dropzone">
             <span class="mat-dropzone-icon">📥</span>
@@ -498,8 +507,9 @@
             <select id="mat-confirm-kind" class="input-field">
               <option value="Arbeitsblatt" selected>Arbeitsblatt</option>
               <option value="Hefterseite">Hefterseite / Mitschrift</option>
-              <option value="Übungszettel">Übungszettel / Test</option>
-              <option value="Buchauszug">Buchauszug</option>
+              <option value="Buchauszug">Buchauszug / Schulbuch</option>
+              <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
+              <option value="Test">Test / Übungszettel</option>
             </select>
           </div>
           <div class="form-group">

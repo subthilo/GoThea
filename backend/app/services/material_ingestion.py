@@ -38,8 +38,10 @@ def detect_kind_from_filename_and_text(filename: str, text: str) -> str:
         return "Hefterseite"
     if any(k in lower_f or k in lower_t for k in ["buch", "lehrbuch", "seite", "kapitel"]):
         return "Buchauszug"
-    if any(k in lower_f or k in lower_t for k in ["test", "probe", "klassenarbeit", "kontrolle", "klausur"]):
-        return "Übungszettel"
+    if any(k in lower_f or k in lower_t for k in ["klassenarbeit", "klausur"]):
+        return "Klassenarbeit"
+    if any(k in lower_f or k in lower_t for k in ["test", "probe", "kontrolle", "uebungszettel"]):
+        return "Test"
     return "Arbeitsblatt"
 
 def extract_pdf_data(file_bytes: bytes) -> Tuple[int, str]:
