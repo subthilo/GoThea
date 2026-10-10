@@ -26,6 +26,19 @@ def reset_staging_database(db: Session = Depends(get_db)):
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     seed_database(db)
+
+    # Staging Materialdateien aufräumen
+    from backend.app.config import MATERIALS_DIR, TEMP_UPLOADS_DIR
+    try:
+        for f in MATERIALS_DIR.glob("*"):
+            if f.is_file():
+                f.unlink()
+        for f in TEMP_UPLOADS_DIR.glob("*"):
+            if f.is_file():
+                f.unlink()
+    except Exception:
+        pass
+
     return {
         "status": "success",
         "message": "Staging-Datenbank wurde erfolgreich auf den Werkszustand zurückgesetzt."

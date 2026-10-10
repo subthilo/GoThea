@@ -14,3 +14,9 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_PATH = DATA_DIR / "app_data.db"
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
+
+MATERIALS_DIR = DATA_DIR / "materials"
+MATERIALS_DIR.mkdir(parents=True, exist_ok=True)
+
+TEMP_UPLOADS_DIR = DATA_DIR / "temp_uploads"
+TEMP_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)

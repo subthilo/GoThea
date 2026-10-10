@@ -109,3 +109,33 @@
 | `board_state_json` | TEXT | NULLABLE | Vektorstriche (Strokes, Tools, BBoxes) |
 | `snapshot_data_url` | TEXT | NULLABLE | PNG Base64 Vorschau |
 | `summary_notes` | TEXT | NULLABLE | Notizen der Sitzung |
+
+### 8. `materials` (Lernmaterialien & Arbeitsblätter)
+| Feld | Typ | Constraints | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `id` | TEXT | PRIMARY KEY | Material-ID (`mat_...`) |
+| `user_id` | TEXT | FK -> users(id) | Schüler |
+| `subject_id` | TEXT | FK -> subjects(id) | Schulfach |
+| `topic_id` | TEXT | FK -> topics(id), NULLABLE | Thema |
+| `title` | TEXT | NOT NULL | Dokumententitel |
+| `kind` | TEXT | DEFAULT 'Arbeitsblatt' | 'Arbeitsblatt', 'Hefterseite', 'Buchauszug', 'Übungszettel' |
+| `filename` | TEXT | NOT NULL | Physischer Dateiname im Storage |
+| `file_path` | TEXT | NOT NULL | Absoluter Pfad auf dem Pi |
+| `file_size` | INTEGER | NOT NULL | Dateigröße in Bytes |
+| `mime_type` | TEXT | DEFAULT 'application/pdf' | MIME-Typ (`application/pdf`, `image/png`, etc.) |
+| `page_count` | INTEGER | DEFAULT 1 | Seitenzahl des Dokuments |
+| `extracted_text` | TEXT | NULLABLE | Extrahierter Volltext |
+| `summary` | TEXT | NULLABLE | Zusammenfassung oder Notiz |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Upload-Zeitpunkt (indiziert) |
+
+### 9. `material_chunks` (Semantische Text- und Übungsabschnitte)
+| Feld | Typ | Constraints | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `id` | TEXT | PRIMARY KEY | Chunk-ID (`chk_...`) |
+| `material_id` | TEXT | FK -> materials(id), CASCADE | Zugehöriges Dokument |
+| `chunk_index` | INTEGER | NOT NULL | Sequenznummer im Dokument |
+| `content` | TEXT | NOT NULL | Textabschnitt / Formeln / Regeln |
+| `chunk_type` | TEXT | DEFAULT 'general' | 'rule', 'exercise', 'vocabulary', 'general' |
+| `page_number` | INTEGER | DEFAULT 1 | Seitenzahl im Quelldokument |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Erstellungszeitpunkt |
+

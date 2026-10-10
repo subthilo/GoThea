@@ -28,6 +28,7 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 * **[04.1 Iteration 01 – Datenkern & Taxonomie](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_01_profile_taxonomy.md):** 15 Tests, 100% Passed, 92% Coverage.
 * **[04.2 Iteration 02 – Lernplan & Countdown-Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_02_planner_engine.md):** 23 Tests, 100% Passed, 92% Coverage.
 * **[04.3 Iteration 03 – Whiteboard & Canvas Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_03_whiteboard_engine.md):** 32 Tests, 100% Passed, 93% Coverage.
+* **[04.4 Iteration 04 – Smarte Material-Ingestion](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_04_material_ingestion.md):** 43 Tests, 100% Passed, 92% Coverage.
 
 ---
 
@@ -39,6 +40,7 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 | **M1: Core DB & Taxonomie** | SQLite WAL, User, Fächer & Themen (7. Klasse BB), Staging/Prod | ✅ Abgeschlossen | 15/15 Passed (92% Cov) |
 | **M2: Lernplan-Engine** | Countdown-Algorithmus, Prüfungen, Phasen, Sperrtage | ✅ Abgeschlossen | 23/23 Passed (92% Cov) |
 | **M5: Whiteboard Engine** | iPad Canvas, PointerEvents, Overlays, WebSocket | ✅ Abgeschlossen | 32/32 Passed (93% Cov) |
+| **M4: Material-Upload** | 2-Stufen Human-in-the-Loop Ingestion, PDF/Fotos, Chunks | ✅ Abgeschlossen | 43/43 Passed (92% Cov) |
 | **M3: IServ-Connector** | CalDAV, WebDAV, AES-256 Vault | ⏳ Geplant | - |
-| **M4: Material-Upload** | 2-Stufen Human-in-the-Loop Ingestion | ⏳ Geplant | - |
 | **M6: KI-Tutor & Audio** | Sokratischer Governor, Vision, Streaming TTS | ⏳ Geplant | - |
+

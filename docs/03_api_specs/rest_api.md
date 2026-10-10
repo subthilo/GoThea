@@ -251,4 +251,58 @@
 ### `WebSocket /ws/tutor/{session_id}`
 * **Beschreibung:** Latenzarmer Echtzeit-Kanal für Apple Pencil Updates (`canvas_update`), Stift-Unterbrechungen (`user_interrupt`), Heartbeats (`ping`/`pong`) und sokratische KI-Overlay-Aktionen (`board_actions`).
 
+---
+
+## 5. Smarte Material-Ingestion (Arbeitsblätter & Hefter)
+
+### `POST /api/v1/materials/pre-analyze`
+* **Beschreibung:** Stufe 1 des Human-in-the-Loop Workflows. Extrahiert Metadaten, Seitenanzahl und Text aus PDF oder Bild und prognostiziert Fach, Thema und Dokumentenart.
+* **Content-Type:** `multipart/form-data`
+* **Body:** `file`: Upload-Binärdatei (max. 50 MB)
+* **Response (200 OK):**
+```json
+{
+  "upload_token": "upl_a1b2c3d4e5f6",
+  "filename": "biologie_pflanzenzelle_uebung.pdf",
+  "file_size": 240800,
+  "mime_type": "application/pdf",
+  "page_count": 2,
+  "predicted_subject_id": "sub_bio",
+  "predicted_topic_id": "top_bio_7_zellen",
+  "predicted_title": "Biologie Pflanzenzelle Uebung",
+  "predicted_kind": "Arbeitsblatt",
+  "preview_snippet": "Aufbau der Pflanzenzelle: Zellwand, Vakuole und Chloroplasten..."
+}
+```
+
+### `POST /api/v1/materials/confirm`
+* **Beschreibung:** Stufe 2 des Human-in-the-Loop Workflows. Bestätigt die geprüften/editierten Metadaten, speichert das Dokument dauerhaft und erzeugt semantische Chunks.
+* **Request Body:**
+```json
+{
+  "upload_token": "upl_a1b2c3d4e5f6",
+  "subject_id": "sub_bio",
+  "topic_id": "top_bio_7_zellen",
+  "title": "Aufbau der Pflanzenzelle",
+  "kind": "Arbeitsblatt",
+  "summary": "Wichtiges Merkblatt für die Klassenarbeit"
+}
+```
+* **Response (201 Created):** `MaterialRead`-Objekt mit ID `mat_...` und `chunks_count`.
+
+### `GET /api/v1/materials`
+* **Beschreibung:** Listet alle gespeicherten Lernmaterialien auf.
+* **Query-Parameter:**
+  * `subject_id` (optional): Filter nach Schulfach.
+  * `topic_id` (optional): Filter nach Thema.
+
+### `GET /api/v1/materials/{material_id}`
+* **Beschreibung:** Liefert Detailinformationen eines Materials inklusive Volltext und semantischer Chunks.
+
+### `GET /api/v1/materials/{material_id}/file`
+* **Beschreibung:** Liefert die Rohdatei des Materials zur Anzeige im Browser oder zum Download.
+
+### `DELETE /api/v1/materials/{material_id}`
+* **Beschreibung:** Löscht das Material, alle Chunks und die physische Datei vom Dateisystem (204 No Content).
+
 

@@ -95,11 +95,28 @@
       <!-- Tab 2: Fächer & Themen Detail -->
       <section id="tab-subjects" class="tab-pane">
         <div class="pane-header">
-          <h2>Fächer- und Themenkatalog</h2>
-          <p class="subtitle">Dynamische Taxonomie mit Brandenburger Rahmenlehrplan (RLP Niveaustufe E)</p>
+          <div>
+            <h2>Fächer- und Themenkatalog</h2>
+            <p class="subtitle">Dynamische Taxonomie mit Brandenburger Rahmenlehrplan (RLP Niveaustufe E)</p>
+          </div>
+          <button id="btn-open-material-modal" class="btn-primary-sm">➕ Material hochladen</button>
         </div>
         <div class="subjects-detailed-list" id="subjects-detailed-list">
           <!-- Dynamisch befüllt via API -->
+        </div>
+
+        <!-- Materialien-Abschnitt -->
+        <div class="materials-section" style="margin-top: 36px;">
+          <div class="section-title-row">
+            <div>
+              <h3>📂 Arbeitsblätter, Hefter & Materialien</h3>
+              <p class="subtitle" style="margin-top: 4px;">Zugeordnete Dokumente mit Textextraktion und semantischer Gliederung</p>
+            </div>
+            <span class="badge-minutes" id="materials-count-badge">0 Dokumente</span>
+          </div>
+          <div id="materials-list" class="materials-grid">
+            <!-- Dynamisch via API befüllt -->
+          </div>
         </div>
       </section>
 
@@ -348,6 +365,82 @@
           </select>
         </div>
         <button id="btn-submit-block" class="btn-primary">Sperrtag speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Material hochladen (2-Stufen Human-in-the-Loop) -->
+  <div id="modal-material" class="modal-backdrop" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-material-title">📄 Material hinzufügen</h3>
+        <button class="modal-close" id="btn-close-material-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Stufe 1: Upload & Dateiwahl -->
+        <div id="mat-step-upload">
+          <p class="subtitle" style="margin-bottom: 16px;">
+            Lade ein Arbeitsblatt, ein Foto deiner Hefterseite oder ein Buchkapitel hoch.
+          </p>
+          <div class="mat-dropzone" id="mat-dropzone">
+            <span class="mat-dropzone-icon">📥</span>
+            <div class="mat-dropzone-text">Datei hierher ziehen oder tippen</div>
+            <div class="mat-dropzone-sub">PDF oder Foto (iPad-Kamera unterstützt)</div>
+            <input type="file" id="mat-file-input" accept="application/pdf,image/*" style="display: none;">
+            <button type="button" class="btn-secondary-sm" id="btn-trigger-file" style="margin-top: 10px;">📎 Datei auswählen</button>
+          </div>
+          <div id="mat-upload-spinner" style="display: none; text-align: center; padding: 24px;">
+            <div class="mat-spinner"></div>
+            <p style="margin-top: 12px; color: var(--accent-light); font-weight: 600;">🦉 Analysiere Dokument & Schlagwörter...</p>
+          </div>
+        </div>
+
+        <!-- Stufe 2: Human-in-the-Loop Bestätigungsdialog -->
+        <div id="mat-step-confirm" style="display: none;">
+          <div class="mat-preview-card" id="mat-preview-card">
+            <div class="mat-preview-header">
+              <span id="mat-preview-icon" style="font-size: 1.6rem;">📄</span>
+              <div style="flex: 1; overflow: hidden;">
+                <div id="mat-preview-filename" style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">dateiname.pdf</div>
+                <div class="mat-preview-meta" id="mat-preview-meta" style="font-size: 0.8rem; color: var(--text-secondary);">0 Seiten • 0 KB</div>
+              </div>
+            </div>
+            <div class="mat-preview-snippet" id="mat-preview-snippet" style="display: none;"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Schulfach *</label>
+            <select id="mat-confirm-subject" class="input-field"></select>
+          </div>
+          <div class="form-group">
+            <label>Thema (Lehrplan E)</label>
+            <select id="mat-confirm-topic" class="input-field">
+              <option value="">-- Kein spezifisches Thema --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Titel des Materials *</label>
+            <input type="text" id="mat-confirm-title" class="input-field" placeholder="z. B. Pflanzenzelle Übung">
+          </div>
+          <div class="form-group">
+            <label>Dokumentenart</label>
+            <select id="mat-confirm-kind" class="input-field">
+              <option value="Arbeitsblatt" selected>Arbeitsblatt</option>
+              <option value="Hefterseite">Hefterseite / Mitschrift</option>
+              <option value="Übungszettel">Übungszettel / Test</option>
+              <option value="Buchauszug">Buchauszug</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Notiz / Zusammenfassung (optional)</label>
+            <input type="text" id="mat-confirm-summary" class="input-field" placeholder="z. B. Für Klassenarbeit am 24.10.">
+          </div>
+
+          <div class="modal-actions-row" style="display: flex; gap: 12px; margin-top: 20px;">
+            <button type="button" id="btn-back-material-step" class="btn-secondary-sm" style="flex: 1;">Zurück</button>
+            <button type="button" id="btn-submit-material" class="btn-primary" style="flex: 2;">Bestätigen & Speichern</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -57,6 +57,7 @@ async function loadTaxonomy() {
     if (subRes.ok && topRes.ok) {
       currentSubjects = await subRes.json();
       const allTopics = await topRes.json();
+      allTopicsCache = allTopics;
 
       statSubjectsCount.textContent = currentSubjects.length;
       statTopicsCount.textContent = allTopics.length;
@@ -475,11 +476,351 @@ if (btnResetStaging) {
         await loadProfile();
         await loadTaxonomy();
         await loadPlan();
+        await loadMaterials();
       } else {
         alert("Fehler beim Zurücksetzen.");
       }
     } catch (e) {
       alert("Netzwerkfehler.");
+    }
+  });
+}
+
+// ==========================================================================
+// Material Ingestion Subsystem (Milestone 4)
+// ==========================================================================
+
+let currentMaterials = [];
+let currentUploadToken = null;
+let allTopicsCache = [];
+
+const materialsList = document.getElementById("materials-list");
+const materialsCountBadge = document.getElementById("materials-count-badge");
+const btnOpenMaterialModal = document.getElementById("btn-open-material-modal");
+const modalMaterial = document.getElementById("modal-material");
+const btnCloseMaterialModal = document.getElementById("btn-close-material-modal");
+
+const matStepUpload = document.getElementById("mat-step-upload");
+const matStepConfirm = document.getElementById("mat-step-confirm");
+const matDropzone = document.getElementById("mat-dropzone");
+const matFileInput = document.getElementById("mat-file-input");
+const btnTriggerFile = document.getElementById("btn-trigger-file");
+const matUploadSpinner = document.getElementById("mat-upload-spinner");
+
+const matPreviewFilename = document.getElementById("mat-preview-filename");
+const matPreviewMeta = document.getElementById("mat-preview-meta");
+const matPreviewSnippet = document.getElementById("mat-preview-snippet");
+const matPreviewIcon = document.getElementById("mat-preview-icon");
+
+const matConfirmSubject = document.getElementById("mat-confirm-subject");
+const matConfirmTopic = document.getElementById("mat-confirm-topic");
+const matConfirmTitle = document.getElementById("mat-confirm-title");
+const matConfirmKind = document.getElementById("mat-confirm-kind");
+const matConfirmSummary = document.getElementById("mat-confirm-summary");
+const btnBackMaterialStep = document.getElementById("btn-back-material-step");
+const btnSubmitMaterial = document.getElementById("btn-submit-material");
+
+async function loadMaterials() {
+  if (!materialsList) return;
+  try {
+    const res = await fetch("/api/v1/materials");
+    if (res.ok) {
+      currentMaterials = await res.json();
+      if (materialsCountBadge) {
+        materialsCountBadge.textContent = `${currentMaterials.length} Dokument${currentMaterials.length === 1 ? "" : "e"}`;
+      }
+      renderMaterialsList(currentMaterials);
+    }
+  } catch (err) {
+    console.error("Fehler beim Laden der Materialien:", err);
+  }
+}
+
+function renderMaterialsList(materials) {
+  if (!materialsList) return;
+  materialsList.innerHTML = "";
+
+  if (materials.length === 0) {
+    materialsList.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 36px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
+        <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">📭</span>
+        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Noch keine Lernmaterialien hochgeladen</div>
+        <p style="font-size: 0.85rem; max-width: 440px; margin: 0 auto;">Tippe oben auf <strong>„➕ Material hochladen“</strong>, um Arbeitsblätter, Mitschriften oder Hefterseiten für deine Fächer hinzuzufügen.</p>
+      </div>
+    `;
+    return;
+  }
+
+  materials.forEach((m) => {
+    const card = document.createElement("div");
+    card.className = "material-card";
+
+    const isPdf = m.mime_type.includes("pdf");
+    const docIcon = isPdf ? "📄" : "🖼️";
+    const sizeKb = Math.round(m.file_size / 1024);
+    const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+
+    card.innerHTML = `
+      <div>
+        <div class="mat-card-header">
+          <div class="mat-card-title">${m.title}</div>
+          <span class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light); border: 1px solid rgba(99, 102, 241, 0.3);">
+            ${m.kind}
+          </span>
+        </div>
+        <div class="mat-card-meta">
+          <span style="color: ${m.subject_color || 'var(--text-primary)'}; font-weight: 600;">
+            ${m.subject_icon || '📚'} ${m.subject_name || 'Fach'}
+          </span>
+          ${m.topic_name ? `<span>• 📑 ${m.topic_name}</span>` : ""}
+          <span>• ${docIcon} ${m.page_count} S. (${sizeStr})</span>
+        </div>
+        ${m.summary ? `<div class="mat-card-summary">“${m.summary}”</div>` : ""}
+      </div>
+      <div class="mat-card-actions">
+        <a href="/api/v1/materials/${m.id}/file" target="_blank" class="btn-mat-action" title="Datei in neuem Tab öffnen">
+          👁️ Öffnen
+        </a>
+        <button class="btn-mat-action btn-mat-wb" data-subject="${m.subject_id}" title="Fach auf der Tafel öffnen">
+          🎨 Tafel
+        </button>
+        <button class="btn-mat-action btn-mat-del" data-id="${m.id}" title="Material löschen">
+          🗑️
+        </button>
+      </div>
+    `;
+
+    card.querySelector(".btn-mat-wb").addEventListener("click", () => {
+      const tabWbBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
+      if (tabWbBtn) tabWbBtn.click();
+      const wbSubSelect = document.getElementById("wb-subject-select");
+      if (wbSubSelect && m.subject_id) {
+        wbSubSelect.value = m.subject_id;
+        wbSubSelect.dispatchEvent(new Event("change"));
+      }
+    });
+
+    card.querySelector(".btn-mat-del").addEventListener("click", async () => {
+      if (!confirm(`Möchtest du das Material „${m.title}“ wirklich löschen?`)) return;
+      try {
+        const delRes = await fetch(`/api/v1/materials/${m.id}`, { method: "DELETE" });
+        if (delRes.ok) {
+          await loadMaterials();
+        } else {
+          alert("Fehler beim Löschen.");
+        }
+      } catch (err) {
+        alert("Netzwerkfehler beim Löschen.");
+      }
+    });
+
+    materialsList.appendChild(card);
+  });
+}
+
+function updateMaterialTopicOptions(subjectId, selectedTopicId = null) {
+  if (!matConfirmTopic) return;
+  matConfirmTopic.innerHTML = '<option value="">-- Kein spezifisches Thema --</option>';
+  const subjectTopics = allTopicsCache.filter((t) => t.subject_id === subjectId);
+  subjectTopics.forEach((t) => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = `${t.name} (Stufe ${t.rlp_level_code || 'E'})`;
+    if (selectedTopicId && t.id === selectedTopicId) {
+      opt.selected = true;
+    }
+    matConfirmTopic.appendChild(opt);
+  });
+}
+
+async function handleFileUpload(file) {
+  if (!file) return;
+
+  if (matDropzone) matDropzone.style.display = "none";
+  if (matUploadSpinner) matUploadSpinner.style.display = "block";
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch("/api/v1/materials/pre-analyze", {
+      method: "POST",
+      body: formData
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      alert(errData.detail || "Fehler bei der Analyse.");
+      resetMaterialModal();
+      return;
+    }
+
+    const data = await res.json();
+    currentUploadToken = data.upload_token;
+
+    matStepUpload.style.display = "none";
+    matStepConfirm.style.display = "block";
+
+    matPreviewFilename.textContent = data.filename;
+    const sizeKb = Math.round(data.file_size / 1024);
+    const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+    matPreviewMeta.textContent = `${data.page_count} Seite${data.page_count === 1 ? "" : "n"} • ${sizeStr}`;
+    matPreviewIcon.textContent = data.mime_type.includes("pdf") ? "📄" : "🖼️";
+
+    if (data.preview_snippet) {
+      matPreviewSnippet.style.display = "block";
+      matPreviewSnippet.textContent = `„${data.preview_snippet}“`;
+    } else {
+      matPreviewSnippet.style.display = "none";
+    }
+
+    matConfirmSubject.innerHTML = "";
+    currentSubjects.forEach((s) => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.icon} ${s.name}`;
+      if (data.predicted_subject_id && s.id === data.predicted_subject_id) {
+        opt.selected = true;
+      }
+      matConfirmSubject.appendChild(opt);
+    });
+
+    updateMaterialTopicOptions(matConfirmSubject.value, data.predicted_topic_id);
+
+    matConfirmTitle.value = data.predicted_title || "Lernmaterial";
+    matConfirmKind.value = data.predicted_kind || "Arbeitsblatt";
+    matConfirmSummary.value = "";
+  } catch (err) {
+    alert("Netzwerkfehler beim Upload.");
+    resetMaterialModal();
+  }
+}
+
+function resetMaterialModal() {
+  currentUploadToken = null;
+  if (matFileInput) matFileInput.value = "";
+  if (matDropzone) matDropzone.style.display = "flex";
+  if (matUploadSpinner) matUploadSpinner.style.display = "none";
+  if (matStepUpload) matStepUpload.style.display = "block";
+  if (matStepConfirm) matStepConfirm.style.display = "none";
+}
+
+if (matConfirmSubject) {
+  matConfirmSubject.addEventListener("change", () => {
+    updateMaterialTopicOptions(matConfirmSubject.value);
+  });
+}
+
+if (btnOpenMaterialModal) {
+  btnOpenMaterialModal.addEventListener("click", () => {
+    resetMaterialModal();
+    if (modalMaterial) modalMaterial.style.display = "flex";
+  });
+}
+
+if (btnCloseMaterialModal) {
+  btnCloseMaterialModal.addEventListener("click", () => {
+    if (modalMaterial) modalMaterial.style.display = "none";
+    resetMaterialModal();
+  });
+}
+
+if (modalMaterial) {
+  modalMaterial.addEventListener("click", (e) => {
+    if (e.target === modalMaterial) {
+      modalMaterial.style.display = "none";
+      resetMaterialModal();
+    }
+  });
+}
+
+if (btnTriggerFile && matFileInput) {
+  btnTriggerFile.addEventListener("click", () => matFileInput.click());
+}
+
+if (matDropzone && matFileInput) {
+  matDropzone.addEventListener("click", (e) => {
+    if (e.target !== btnTriggerFile) {
+      matFileInput.click();
+    }
+  });
+
+  matDropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    matDropzone.classList.add("drag-over");
+  });
+
+  matDropzone.addEventListener("dragleave", () => {
+    matDropzone.classList.remove("drag-over");
+  });
+
+  matDropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    matDropzone.classList.remove("drag-over");
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  });
+}
+
+if (matFileInput) {
+  matFileInput.addEventListener("change", (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileUpload(e.target.files[0]);
+    }
+  });
+}
+
+if (btnBackMaterialStep) {
+  btnBackMaterialStep.addEventListener("click", () => {
+    resetMaterialModal();
+  });
+}
+
+if (btnSubmitMaterial) {
+  btnSubmitMaterial.addEventListener("click", async () => {
+    if (!currentUploadToken) {
+      alert("Keine gültige Sitzung vorhanden.");
+      return;
+    }
+    const titleVal = matConfirmTitle.value.trim();
+    if (!titleVal) {
+      alert("Bitte gib einen Titel für das Material ein.");
+      return;
+    }
+
+    const payload = {
+      upload_token: currentUploadToken,
+      subject_id: matConfirmSubject.value,
+      topic_id: matConfirmTopic.value || null,
+      title: titleVal,
+      kind: matConfirmKind.value,
+      summary: matConfirmSummary.value.trim() || null
+    };
+
+    btnSubmitMaterial.disabled = true;
+    btnSubmitMaterial.textContent = "Speichere...";
+
+    try {
+      const res = await fetch("/api/v1/materials/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        if (modalMaterial) modalMaterial.style.display = "none";
+        resetMaterialModal();
+        await loadMaterials();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.detail || "Fehler beim Speichern des Materials.");
+      }
+    } catch (err) {
+      alert("Netzwerkfehler.");
+    } finally {
+      btnSubmitMaterial.disabled = false;
+      btnSubmitMaterial.textContent = "Bestätigen & Speichern";
     }
   });
 }
@@ -490,6 +831,7 @@ async function initApp() {
   await loadProfile();
   await loadTaxonomy();
   await loadPlan();
+  await loadMaterials();
   connectWebSocket();
 }
 
