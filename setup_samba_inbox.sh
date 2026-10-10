@@ -1,0 +1,101 @@
+#!/bin/bash
+set -e
+
+PI_USER="${PI_USER:-pi}"
+PI_HOST="${PI_HOST:-192.168.1.135}"
+INBOX_DIR="/home/$PI_USER/GoThea/inbox"
+SHARE_NAME="GoThea-Inbox"
+
+echo "================================================================="
+echo "🍓 GoThea – Samba (SMB) Setup für Mac Finder Dropzone"
+echo "================================================================="
+echo "Target Pi: $PI_USER@$PI_HOST"
+echo "Inbox Pfad: $INBOX_DIR"
+echo "Freigabename: $SHARE_NAME"
+echo ""
+
+# 1. Verbindung prüfen
+echo "📡 [1/4] Prüfe SSH-Verbindung zum Pi..."
+ssh -o ConnectTimeout=5 "$PI_USER@$PI_HOST" "hostname" > /dev/null
+echo "✅ SSH-Verbindung erfolgreich!"
+
+# 2. Inbox-Verzeichnis anlegen
+echo "📁 [2/4] Erstelle Inbox-Verzeichnis auf dem Pi..."
+ssh "$PI_USER@$PI_HOST" "mkdir -p '$INBOX_DIR' && chmod 777 '$INBOX_DIR'"
+echo "✅ Verzeichnis $INBOX_DIR ist bereit (Rechte: 777)."
+
+# 3. Samba installieren & konfigurieren
+echo "📦 [3/4] Installiere & konfiguriere Samba auf dem Pi (kann ca. 30-60s dauern)..."
+ssh "$PI_USER@$PI_HOST" bash -s "$SHARE_NAME" "$INBOX_DIR" << 'EOF'
+set -e
+SHARE="$1"
+PATH_DIR="$2"
+
+# A. Samba installieren falls nicht vorhanden
+if ! which smbd > /dev/null 2>&1; then
+    echo "  -> Aktualisiere Paketlisten und installiere Samba..."
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq samba samba-common-bin
+fi
+
+# B. Backup von smb.conf anlegen
+if [ ! -f /etc/samba/smb.conf.gothea_bak ]; then
+    sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.gothea_bak
+fi
+
+# C. Prüfen, ob globale macOS / vfs_fruit Einstellungen vorhanden sind
+if ! grep -q "fruit:metadata" /etc/samba/smb.conf; then
+    echo "  -> Aktiviere macOS Apple-Extensions (vfs_fruit) in [global]..."
+    sudo sed -i '/\[global\]/a \   min protocol = SMB2\n   ea support = yes\n   vfs objects = catia fruit streams_xattr\n   fruit:metadata = stream\n   fruit:model = MacMini\n   fruit:posix_rename = yes\n   map to guest = bad user' /etc/samba/smb.conf
+fi
+
+# D. Freigabe [GoThea-Inbox] einrichten
+if grep -q "\[$SHARE\]" /etc/samba/smb.conf; then
+    echo "  -> Freigabe [$SHARE] existiert bereits in /etc/samba/smb.conf."
+else
+    echo "  -> Füge Freigabe [$SHARE] zu /etc/samba/smb.conf hinzu..."
+    cat << SMB_SECTION | sudo tee -a /etc/samba/smb.conf > /dev/null
+
+[$SHARE]
+   comment = GoThea Dokumenten Dropzone (Verstoffwechselung)
+   path = $PATH_DIR
+   browseable = yes
+   read only = no
+   guest ok = yes
+   writeable = yes
+   create mask = 0777
+   directory mask = 0777
+   force user = pi
+   force group = pi
+   public = yes
+SMB_SECTION
+fi
+
+# E. Dienste neu starten & aktivieren
+echo "  -> Starte Samba-Dienste neu..."
+sudo systemctl enable smbd nmbd > /dev/null 2>&1 || true
+sudo systemctl restart smbd nmbd
+
+# F. Lokalen Test ausführen
+smbclient -L localhost -N > /dev/null 2>&1 || true
+EOF
+
+echo "✅ Samba erfolgreich auf dem Pi eingerichtet und gestartet!"
+
+# 4. Anleitung für macOS Finder
+echo ""
+echo "================================================================="
+echo "🎉 ERFOLG! Der Netzwerkordner ist jetzt aktiv!"
+echo "================================================================="
+echo ""
+echo "👉 So verbindest du dich im Mac Finder:"
+echo "   1. Drücke im Finder: ⌘K (Gehe zu -> Mit Server verbinden...)"
+echo "   2. Gib folgende Serveradresse ein:"
+echo "      smb://$PI_HOST/$SHARE_NAME"
+echo "      (oder: smb://Mothership.local/$SHARE_NAME)"
+echo "   3. Klicke auf 'Verbinden'."
+echo "   4. Wähle 'Als Gast verbinden' (oder Name: pi)."
+echo ""
+echo "📁 Ab jetzt kannst du PDFs, Scans und Bücher einfach in diesen"
+echo "   gemounteten Ordner schaufeln!"
+echo "================================================================="
