@@ -349,7 +349,7 @@
     if (e.pointerType === "touch") {
       activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-      // Sobald 2 Finger aufliegen -> Zwei-Finger-Scroll-Modus starten!
+      // Sobald 2 Finger aufliegen -> kein Zeichnen, Zwei-Finger-Scroll übernimmt
       if (activeTouches.size >= 2) {
         isTwoFingerPanning = true;
         if (isDrawing) {
@@ -358,8 +358,6 @@
           lastPoint = null;
           redrawAllStrokes();
         }
-        const pts = Array.from(activeTouches.values());
-        lastPinchCenterY = (pts[0].y + pts[1].y) / 2;
         return;
       }
 
@@ -408,22 +406,7 @@
   function handlePointerMove(e) {
     e.preventDefault();
 
-    if (e.pointerType === "touch" && activeTouches.has(e.pointerId)) {
-      activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-      if (isTwoFingerPanning && activeTouches.size >= 2) {
-        const pts = Array.from(activeTouches.values());
-        const currentCenterY = (pts[0].y + pts[1].y) / 2;
-        const deltaY = currentCenterY - lastPinchCenterY;
-        lastPinchCenterY = currentCenterY;
-
-        panY += deltaY;
-        if (panY > 0) panY = 0;
-        updateViewportPan();
-        return;
-      }
-    }
-
+    // Wenn zwei Finger auf dem Glas liegen, zeichnen wir nicht
     if (isTwoFingerPanning) return;
     if (!isDrawing) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
@@ -511,36 +494,47 @@
     }
   }, { capture: true });
 
-  // Native Safari Two-Finger Scroll Fallback
-  inkCanvas.addEventListener("touchmove", (e) => {
-    if (e.touches.length >= 2) {
+  // 1:1 Physikalisches Zwei-Finger-Scrollen (Touch Events)
+  let touchStartCenterY = null;
+  let touchStartPanY = null;
+
+  inkCanvas.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
       e.preventDefault();
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const centerY = (t1.clientY + t2.clientY) / 2;
-      if (lastTouchMoveCenterY !== null) {
-        const dy = centerY - lastTouchMoveCenterY;
-        panY += dy;
-        if (panY > 0) panY = 0;
-        updateViewportPan();
+      isTwoFingerPanning = true;
+      if (isDrawing) {
+        isDrawing = false;
+        currentStroke = null;
+        lastPoint = null;
+        redrawAllStrokes();
       }
-      lastTouchMoveCenterY = centerY;
+      touchStartCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      touchStartPanY = panY;
+    }
+  }, { passive: false });
+
+  inkCanvas.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2 && touchStartCenterY !== null) {
+      e.preventDefault();
+      const currentCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const diffY = currentCenterY - touchStartCenterY;
+      panY = Math.min(0, touchStartPanY + diffY);
+      updateViewportPan();
     }
   }, { passive: false });
 
   inkCanvas.addEventListener("touchend", (e) => {
     if (e.touches.length < 2) {
-      lastTouchMoveCenterY = null;
+      touchStartCenterY = null;
+      touchStartPanY = null;
+      isTwoFingerPanning = false;
     }
   }, { passive: false });
 
-  inkCanvas.addEventListener("touchstart", (e) => {
-    if (e.touches.length >= 2) {
-      e.preventDefault();
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      lastTouchMoveCenterY = (t1.clientY + t2.clientY) / 2;
-    }
+  inkCanvas.addEventListener("touchcancel", (e) => {
+    touchStartCenterY = null;
+    touchStartPanY = null;
+    isTwoFingerPanning = false;
   }, { passive: false });
 
   // 8. KI-Overlay Visualisierung
