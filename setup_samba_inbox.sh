@@ -19,13 +19,13 @@ echo "📡 [1/4] Prüfe SSH-Verbindung zum Pi..."
 ssh -o ConnectTimeout=5 "$PI_USER@$PI_HOST" "hostname" > /dev/null
 echo "✅ SSH-Verbindung erfolgreich!"
 
-# 2. Inbox-Verzeichnis anlegen
-echo "📁 [2/4] Erstelle Inbox-Verzeichnis auf dem Pi..."
-ssh "$PI_USER@$PI_HOST" "mkdir -p '$INBOX_DIR' && chmod 777 '$INBOX_DIR'"
-echo "✅ Verzeichnis $INBOX_DIR ist bereit (Rechte: 777)."
+# 2. Inbox-Verzeichnisse anlegen (staging & prod)
+echo "📁 [2/4] Erstelle getrennte Inbox-Verzeichnisse für Staging & Prod..."
+ssh "$PI_USER@$PI_HOST" "mkdir -p '$INBOX_DIR/staging' '$INBOX_DIR/prod' && chmod -R 777 '$INBOX_DIR'"
+echo "✅ Verzeichnisse $INBOX_DIR/staging und $INBOX_DIR/prod bereit (Rechte: 777)."
 
 # 3. Samba installieren & konfigurieren
-echo "📦 [3/4] Installiere & konfiguriere Samba auf dem Pi (kann ca. 30-60s dauern)..."
+echo "📦 [3/4] Konfiguriere Samba-Freigaben auf dem Pi..."
 ssh "$PI_USER@$PI_HOST" bash -s "$SHARE_NAME" "$INBOX_DIR" << 'EOF'
 set -e
 SHARE="$1"
@@ -49,15 +49,15 @@ if ! grep -q "fruit:metadata" /etc/samba/smb.conf; then
     sudo sed -i '/\[global\]/a \   min protocol = SMB2\n   ea support = yes\n   vfs objects = catia fruit streams_xattr\n   fruit:metadata = stream\n   fruit:model = MacMini\n   fruit:posix_rename = yes\n   map to guest = bad user' /etc/samba/smb.conf
 fi
 
-# D. Freigabe [GoThea-Inbox] einrichten
-if grep -q "\[$SHARE\]" /etc/samba/smb.conf; then
-    echo "  -> Freigabe [$SHARE] existiert bereits in /etc/samba/smb.conf."
-else
-    echo "  -> Füge Freigabe [$SHARE] zu /etc/samba/smb.conf hinzu..."
-    cat << SMB_SECTION | sudo tee -a /etc/samba/smb.conf > /dev/null
+# D. Freigaben einrichten: GoThea-Inbox (Gesamt), GoThea-Staging, GoThea-Prod
+sudo sed -i '/\[GoThea-Inbox\]/,$d' /etc/samba/smb.conf
+sudo sed -i '/\[GoThea-Staging\]/,$d' /etc/samba/smb.conf
+sudo sed -i '/\[GoThea-Prod\]/,$d' /etc/samba/smb.conf
 
-[$SHARE]
-   comment = GoThea Dokumenten Dropzone (Verstoffwechselung)
+cat << SMB_SECTION | sudo tee -a /etc/samba/smb.conf > /dev/null
+
+[GoThea-Inbox]
+   comment = GoThea Hauptordner (enthält staging und prod)
    path = $PATH_DIR
    browseable = yes
    read only = no
@@ -68,19 +68,41 @@ else
    force user = pi
    force group = pi
    public = yes
+
+[GoThea-Staging]
+   comment = GoThea STAGING Dropzone (Testdaten Port 8001)
+   path = $PATH_DIR/staging
+   browseable = yes
+   read only = no
+   guest ok = yes
+   writeable = yes
+   create mask = 0777
+   directory mask = 0777
+   force user = pi
+   force group = pi
+   public = yes
+
+[GoThea-Prod]
+   comment = GoThea PRODUKTION Dropzone (Echtdaten Port 8000)
+   path = $PATH_DIR/prod
+   browseable = yes
+   read only = no
+   guest ok = yes
+   writeable = yes
+   create mask = 0777
+   directory mask = 0777
+   force user = pi
+   force group = pi
+   public = yes
 SMB_SECTION
-fi
 
 # E. Dienste neu starten & aktivieren
 echo "  -> Starte Samba-Dienste neu..."
 sudo systemctl enable smbd nmbd > /dev/null 2>&1 || true
 sudo systemctl restart smbd nmbd
-
-# F. Lokalen Test ausführen
-smbclient -L localhost -N > /dev/null 2>&1 || true
 EOF
 
-echo "✅ Samba erfolgreich auf dem Pi eingerichtet und gestartet!"
+echo "✅ Samba erfolgreich auf dem Pi aktualisiert und neu gestartet!"
 
 # 4. Anleitung für macOS Finder
 echo ""
