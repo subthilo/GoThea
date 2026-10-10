@@ -45,3 +45,31 @@
 * **Bildungsserver Berlin-Brandenburg (BBB):** Rahmenlehrplan Online, Standardillustrierende Aufgaben.
 * **WirLernenOnline (WLO) & MUNDO API:** Freie Bildungsmedien gefiltert nach Bundesland BB, Fach und Klassenstufe.
 * **Schulbücher (§ 53 UrhG):** Privilegierte Privatkopie von physischen Heftern/Büchern auf dem persönlichen Pi.
+
+---
+
+## 4. In-App Dokumenten-Viewer (Modal Popup)
+
+Statt externer Browser-Tabs (die auf iPadOS Safari oft von Pop-Up-Blockern unterdrückt werden oder die PWA verlassen), öffnet GoThea Dokumente in einem responsiven, modalen In-App-Viewer (`#modal-material-viewer`):
+
+* **Scharfe Retina-Vorschau:** Abruf der Einzelseiten als 150 DPI PNG über `GET /api/v1/materials/{id}/preview?page={page}`.
+* **Navigation & Paginierung:** Multi-Page Paginierung (`Seite X von Y`) mit Vor-/Zurück-Buttons.
+* **Nahtlose Whiteboard-Übergabe:** Über den Aktionsbutton **„🎨 Auf Tafel bearbeiten“** wird das geöffnete Dokument direkt als interaktive Arbeitsblatt-Vorlage in die Whiteboard-Engine geladen (`loadMaterialAsWorksheet(materialId, pageCount)`).
+* **Dateidownload:** Separater Button **„💾 Herunterladen“** zur Übergabe an die iPadOS Dateien-App via `GET /api/v1/materials/{id}/file`.
+
+---
+
+## 5. High-Performance Rendering Engine (Dual-Engine Architektur)
+
+Um Dokumente auch auf ressourcenschonender Edge-Hardware (Raspberry Pi 4, 32-Bit ARM `armv7l`) ohne Speicherengpässe oder lange Ladezeiten bereitzustellen:
+
+* **Primäre Engine (Linux & Raspberry Pi): System-natives Poppler `pdftoppm`**
+  * Verwendet `/usr/bin/pdftoppm` mit den Parametern `-png -r 150 -f {page} -l {page} -singlefile`.
+  * Ausführung in nativer C-Performance (< 50 ms pro Seite), extrem geringer RAM-Footprint.
+  * Keine C++ Kompilierung beim `pip install`-Schritt (verhindert Build-Timeouts auf 32-Bit ARM).
+* **Fallback Engine (macOS & Entwicklung): PyMuPDF (`fitz`)**
+  * Wird automatisch genutzt, falls `pdftoppm` nicht im Pfad gefunden wird (z. B. auf lokalen Entwickler-Macs).
+* **Bild-Direktauslieferung:**
+  * Hochgeladene Fotos (PNG/JPEG) von Heftern werden ohne Umwandlung direkt mit entsprechendem MIME-Type ausgeliefert.
+* **Optimierte Abhängigkeiten:**
+  * `pymupdf` wurde aus `requirements.txt` entfernt, sodass der Raspberry Pi schlank und ohne schwere Toolchains deployt werden kann.

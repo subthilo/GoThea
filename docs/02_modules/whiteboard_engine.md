@@ -39,23 +39,33 @@ Das Whiteboard bietet zwei spezialisierte Radierer-Modi, die direkt über die sc
 
 ---
 
-## 3. Unbegrenzte vertikale Tafel (Infinite Canvas) & Zwei-Finger-Scrollen
+## 3. Unbegrenzte vertikale Tafel (Infinite Canvas), Pinch-to-Zoom & Zoom-Steuerung
 
-Schüler können Rechenwege und Mitschriften nach unten beliebig fortführen:
+Schüler können Rechenwege nach unten beliebig fortführen und für detailgenaues Ausfüllen von Arbeitsblattlücken stufenlos heranzoomen:
 
 * **1:1 Physikalisches Zwei-Finger-Scrollen:**
-  * Wenn zwei Finger das iPad-Glas berühren (`touches.length === 2`), wird das Zeichnen unterbrochen und der Scroll-Modus aktiviert.
-  * Die relative Distanz zum Start-Mittelpunkt ($\Delta y = y_{center} - y_{startCenter}$) wird 1:1 direkt auf den vertikalen Offset `panY` übertragen (keine künstliche Trägheit, keine Latenz).
-* **Virtuelles Koordinatensystem:**
-  * Strichkoordinaten werden intern im weltweiten Tafelkoordinatensystem gespeichert ($y_{board} = y_{screen} - panY$).
-  * `setTransform(dpr, 0, 0, dpr, panX * dpr, panY * dpr)` verschiebt sowohl die Zeichenebene als auch die KI-Overlay-Ebene synchron.
-* **Muster-Offset:**
-  * Das gewählte Hintergrundmuster (Kariert, Liniert, Kreide) scrollt via `backgroundPositionY = panY` nahtlos mit.
+  * Wenn zwei Finger das iPad-Glas berühren (`touches.length === 2`), wird das Zeichnen unterbrochen.
+  * Bewegen sich die Finger parallel, wird die Verschiebung 1:1 auf `panY` und `panX` übertragen.
+* **Pinch-to-Zoom Gestensteuerung (100% – 350%):**
+  * Ändert sich der Abstand zwischen den Fingern ($\Delta d > 8\text{px}$), wechselt das Board nahtlos in den Pinch-Zoom-Modus.
+  * Der Zoomfaktor `scale` wird kontinuierlich im Bereich von $1.0$ (100%) bis $3.5$ (350%) moduliert.
+* **Toolbar-Zoomsteuerung:**
+  * Direkte Zoom-Buttons in der schwebenden iPad-Toolbar:
+    * `➖`: Verkleinern um 25% bis zum Minimum von 100%.
+    * `100%`: Ein-Klick-Reset auf Standardgröße und mittige Zentrierung.
+    * `➕`: Vergrößern um 25% bis zum Maximum von 350%.
+* **Virtuelles Koordinatensystem & Zoom-Transformation:**
+  * Strichkoordinaten werden invariant im weltweiten Tafelkoordinatensystem gespeichert:
+    $$x_{board} = \frac{x_{screen} - panX}{scale}, \quad y_{board} = \frac{y_{screen} - panY}{scale}$$
+  * Rendering: `ctx.setTransform(dpr * scale, 0, 0, dpr * scale, panX * dpr, panY * dpr)` verschiebt und skaliert sowohl die Schüler-Zeichenebene als auch das KI-Overlay absolut synchron.
+  * Das Arbeitsblatt-Underlay folgt derselben Transformation via hardwarebeschleunigtem CSS: `transform: translate(panX, panY) scale(scale); transform-origin: 0 0;`.
+* **Proportionale Strichstärken-Skalierung (Fine Pen Scaling):**
+  * Um zu verhindern, dass Stiftstriche bei 2.5-fachem Zoom unnatürlich fett werden und Lücken überdecken, skaliert GoThea die Strichstärke beim Zeichnen invers zum Zoomfaktor:
+    $$\text{stroke.width} = \frac{\text{baseWidth}}{scale}$$
+  * Ermöglicht dem Schüler das Schreiben kleiner, exakter Zahlen und Wörter in engste Arbeitsblattzeilen, die nach dem Herauszoomen auf 100% gestochen scharf und passgenau bleiben.
 * **Scroll-UI:**
   * Dezente, automatisch ausblendende Scrollbar am rechten Rand (`.wb-scroll-track` und `.wb-scroll-thumb`).
-  * „⤒ Zum Anfang“-Button: Erscheint automatisch ab 60px Scroll-Tiefe und führt bei Klick eine sanfte kubische Rückkehranimation (`1 - (1-t)^3`) zum Tafelanfang durch.
-* **Desktop-Kompatibilität:**
-  * Unterstützt auch Trackpad-Zwei-Finger-Scrollen und Mausrad (`wheel`-Event).
+  * „⤒ Zum Anfang“-Button: Erscheint automatisch ab 60px Scroll-Tiefe und animiert weich (`1 - (1-t)^3`) zum Tafelursprung zurück.
 
 ---
 
@@ -69,13 +79,35 @@ Alle Aktionen werden auf einem reversiblen Stack protokolliert:
 
 ---
 
-## 5. Dual-Layer-Architektur & KI-Overlay
+## 5. Multi-Layer Stacking Architektur & Arbeitsblatt-Hinterlegung
 
-* **Ink Canvas (`wb-canvas`):** Die persistierte Zeichenebene des Schülers.
-* **Overlay Canvas (`wb-overlay`):** Eine vollkommen transparente Ebene (`pointer-events: none;`, `z-index: 5`) direkt über dem Ink Canvas:
-  * Empfängt sokratische Hilfestellungen vom Backend.
-  * Unterstützt farbige Markierungsboxen (`highlight_box`) und LaTeX-Formelhinweise (`latex_hint`).
-  * Lässt den Schüler weiterzeichnen, während Hinweise eingeblendet werden.
+GoThea trennt die Anzeigeschichten streng nach Z-Index, um komfortables Schreiben **auf** Dokumenten zu ermöglichen, ohne das Original zu beschädigen:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ Ebene 5 (z-index: 10): Schwebende Werkzeugleiste (#wb-toolbar)         │
+├────────────────────────────────────────────────────────────────────────┤
+│ Ebene 4 (z-index: 8):  Dokument-Leiste (#wb-doc-topbar, z.B. Schließen)│
+├────────────────────────────────────────────────────────────────────────┤
+│ Ebene 3 (z-index: 5):  KI-Overlay (#wb-overlay: Boxen, Formel-Tipps)   │
+├────────────────────────────────────────────────────────────────────────┤
+│ Ebene 2 (z-index: 2):  Schüler-Canvas (#wb-canvas: Apple Pencil Ink)   │
+├────────────────────────────────────────────────────────────────────────┤
+│ Ebene 1 (z-index: 1):  Dokument-Underlay (#wb-doc-underlay, Vorlage)   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+* **Ebene 1 – Dokument-Underlay (`#wb-doc-underlay`):**
+  * Enthält gerenderte Seiten des Arbeitsblatts oder Schulhefters als Seitenstapel (`.wb-doc-page-card`).
+  * Multi-Page-Support: Bei mehrseitigen PDFs werden alle Seiten untereinander als DIN-A4-Karten angeordnet.
+* **Ebene 2 – Schüler-Schreibebene (`#wb-canvas`):**
+  * Transparenter Canvas mit `z-index: 2`, der **über** dem Dokument liegt.
+  * Stift- und Marker-Eingaben erscheinen direkt auf dem gedruckten Text oder in den Formularfeldern des Arbeitsblatts.
+* **Radierer-Schutz (Eraser Immunity):**
+  * Weder der Pixel-Radierer (`destination-out`), noch der Objekt-Radierer, noch „Tafel leeren“ berühren das Dokument auf Ebene 1.
+  * Das Arbeitsblatt bleibt permanent und fehlerfrei erhalten; radiert wird ausschließlich die Schülertinte auf Ebene 2.
+* **Ebene 3 – KI-Overlay Canvas (`#wb-overlay`):**
+  * Transparent (`pointer-events: none;`, `z-index: 5`) für sokratische Hinweise (`highlight_box`, `latex_hint`).
 
 ---
 

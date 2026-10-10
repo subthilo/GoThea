@@ -302,6 +302,14 @@
 ### `GET /api/v1/materials/{material_id}/file`
 * **Beschreibung:** Liefert die Rohdatei des Materials zur Anzeige im Browser oder zum Download.
 
+### `GET /api/v1/materials/{material_id}/preview`
+* **Beschreibung:** Rendert eine bestimmte Seite eines PDF-Dokuments oder Bildmaterials serverseitig als gestochen scharfes PNG-Bild (150 DPI Retina). Wird für das In-App Dokumenten-Popup und die interaktive Tafel-Hinterlegung verwendet.
+* **Query-Parameter:**
+  * `page` (optional, integer, default: 1): 1-basierter Index der zu rendernden Dokumentseite.
+* **Response (200 OK):**
+  * `Content-Type`: `image/png` (oder Original-Bild-MIME-Type bei Bilddateien).
+  * Body: Binäre PNG-Bilddaten.
+
 ### `DELETE /api/v1/materials/{material_id}`
 * **Beschreibung:** Löscht das Material, alle Chunks und die physische Datei vom Dateisystem (204 No Content).
 

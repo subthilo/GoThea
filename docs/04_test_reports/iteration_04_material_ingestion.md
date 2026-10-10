@@ -42,6 +42,7 @@
    - Stufe 2: Human-in-the-Loop Bestätigung mit Thema und Notiz via `POST /api/v1/materials/confirm` (HTTP 201).
    - Abfrage über Listen-Endpunkt mit Fachfilter (`GET /api/v1/materials?subject_id=sub_bio`).
    - Detailabfrage und Download der physischen Binärdatei (`GET /api/v1/materials/{id}/file`).
+   - Preview-Rendering (`GET /api/v1/materials/{id}/preview?page=1`) mit Rückgabe hochauflösender PNG-Bilddaten (150 DPI Retina).
    - Löschung via `DELETE /api/v1/materials/{id}` (HTTP 204). (PASSED)
 3. `test_confirm_invalid_token_fails`: Ungültige oder abgelaufene Upload-Tokens werden mit HTTP 400 abgefangen. (PASSED)
 4. `test_confirm_invalid_subject_fails`: Nicht existierende Fächer erzeugen HTTP 404. (PASSED)
@@ -63,8 +64,8 @@ backend/app/models/taxonomy.py                  27      0   100%
 backend/app/models/test.py                      20      0   100%
 backend/app/models/user.py                      12      0   100%
 backend/app/models/whiteboard.py                23      0   100%
-backend/app/routers/env.py                      17      1    94%
-backend/app/routers/materials.py                83     12    86%
+backend/app/routers/env.py                      27      7    74%
+backend/app/routers/materials.py                95     17    82%
 backend/app/routers/planner.py                 105     17    84%
 backend/app/routers/profile.py                  25      4    84%
 backend/app/routers/taxonomy.py                 46      1    98%
@@ -74,11 +75,11 @@ backend/app/schemas/planner.py                  65      0   100%
 backend/app/schemas/profile.py                  16      0   100%
 backend/app/schemas/taxonomy.py                 29      0   100%
 backend/app/schemas/whiteboard.py               48      0   100%
-backend/app/services/material_ingestion.py     138     16    88%
+backend/app/services/material_ingestion.py     169     30    82%
 backend/app/services/planner.py                121     15    88%
 backend/app/services/seeder.py                  21      0   100%
 ----------------------------------------------------------------
-TOTAL                                         1048     82    92%
+TOTAL                                         1101    107    90%
 ```
 
 ---
@@ -92,4 +93,11 @@ TOTAL                                         1048     82    92%
 * **2-Stufen Human-in-the-Loop Dialog:**
   - *Stufe 1:* Lade-Animation während der Serveranalyse.
   - *Stufe 2:* Interaktiver Bestätigungsdialog mit Dokumentenvorschau, Dropdown für Fach & Lehrplan-Thema (Niveaustufe E), anpassbarem Titel und Notizen.
-* **Materialkarten im Fachkatalog:** Schneller Überblick über alle Dokumente mit Seitenzahlen, Dateigröße, Schnellanzeige und Verknüpfung zur interaktiven Tafel.
+* **In-App Dokumenten-Viewer (Modal Popup):**
+  - Schnelle Anzeige im App-Kontext ohne Safari-Tab-Wechsel oder Pop-up-Blocker.
+  - Multi-Page-Paginierung und Ein-Klick-Übergabe an das Whiteboard („🎨 Auf Tafel bearbeiten“).
+* **Interaktives Whiteboard-Underlay mit Radierer-Schutz:**
+  - Mehrseitige Arbeitsblätter werden als Ebene 1 (`z-index: 1`) hinter den Zeichencanvas (`z-index: 2`) gelegt.
+  - Schüler schreiben direkt auf dem Arbeitsblatt, während Radierer und Tafel-Leeren das Dokument unangetastet lassen.
+* **Pinch-to-Zoom & Feinschrift:**
+  - Stufenloser Zwei-Finger-Zoom (100%–350%) mit inverser Strichstärkenanpassung für bequemes Eintragen in kleine Arbeitsblatt-Lücken.
