@@ -489,18 +489,52 @@
   inkCanvas.addEventListener("contextmenu", blockNativeGesture, { capture: true });
   viewport.addEventListener("contextmenu", blockNativeGesture, { capture: true });
   document.addEventListener("contextmenu", (e) => {
-    if (e.target && e.target.closest && e.target.closest("#tab-whiteboard")) {
+    if (!e.target.closest("input, textarea")) {
       e.preventDefault();
     }
   }, { capture: true });
+
+  // Globale Unterdrückung von iOS Safari Textselektion & 'Teilen...'-Callouts
+  document.addEventListener("selectstart", (e) => {
+    if (!e.target.closest("input, textarea")) {
+      e.preventDefault();
+    }
+  }, { capture: true });
+
+  document.addEventListener("selectionchange", () => {
+    const activeEl = document.activeElement;
+    if (!activeEl || (!activeEl.matches("input, textarea") && !activeEl.isContentEditable)) {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        sel.removeAllRanges();
+      }
+    }
+  });
+
+  const blockGesture = (e) => {
+    e.preventDefault();
+  };
+  inkCanvas.addEventListener("gesturestart", blockGesture, { passive: false, capture: true });
+  inkCanvas.addEventListener("gesturechange", blockGesture, { passive: false, capture: true });
+  inkCanvas.addEventListener("gestureend", blockGesture, { passive: false, capture: true });
+  viewport.addEventListener("gesturestart", blockGesture, { passive: false, capture: true });
+  viewport.addEventListener("gesturechange", blockGesture, { passive: false, capture: true });
+  viewport.addEventListener("gestureend", blockGesture, { passive: false, capture: true });
+
+  viewport.addEventListener("touchstart", (e) => {
+    if (!e.target.closest(".wb-floating-toolbar, button, select, input, textarea")) {
+      e.preventDefault();
+    }
+  }, { passive: false });
 
   // 1:1 Physikalisches Zwei-Finger-Scrollen (Touch Events)
   let touchStartCenterY = null;
   let touchStartPanY = null;
 
   inkCanvas.addEventListener("touchstart", (e) => {
+    // IMMER e.preventDefault(), um WebKit Edit-Menu ('Teilen...') bei schnellem Stiftansetzen zu blockieren
+    e.preventDefault();
     if (e.touches.length === 2) {
-      e.preventDefault();
       isTwoFingerPanning = true;
       if (isDrawing) {
         isDrawing = false;
@@ -511,31 +545,33 @@
       touchStartCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       touchStartPanY = panY;
     }
-  }, { passive: false });
+  }, { passive: false, capture: true });
 
   inkCanvas.addEventListener("touchmove", (e) => {
+    e.preventDefault();
     if (e.touches.length === 2 && touchStartCenterY !== null) {
-      e.preventDefault();
       const currentCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const diffY = currentCenterY - touchStartCenterY;
       panY = Math.min(0, touchStartPanY + diffY);
       updateViewportPan();
     }
-  }, { passive: false });
+  }, { passive: false, capture: true });
 
   inkCanvas.addEventListener("touchend", (e) => {
+    e.preventDefault();
     if (e.touches.length < 2) {
       touchStartCenterY = null;
       touchStartPanY = null;
       isTwoFingerPanning = false;
     }
-  }, { passive: false });
+  }, { passive: false, capture: true });
 
   inkCanvas.addEventListener("touchcancel", (e) => {
+    e.preventDefault();
     touchStartCenterY = null;
     touchStartPanY = null;
     isTwoFingerPanning = false;
-  }, { passive: false });
+  }, { passive: false, capture: true });
 
   // 8. KI-Overlay Visualisierung
   function drawOverlayActions(actions) {
