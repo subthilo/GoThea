@@ -24,6 +24,8 @@ rsync -avz --delete \
   --exclude '.coverage' \
   --exclude '.DS_Store' \
   --exclude 'data/' \
+  --exclude 'experiments/' \
+  --exclude '.env' \
   ./ "$PI_USER@$PI_HOST:$REMOTE_DIR/"
 
 echo "⚙️  [3/4] Konfiguriere Services auf dem Pi für Target: $TARGET_ENV..."
