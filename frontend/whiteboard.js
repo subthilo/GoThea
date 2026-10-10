@@ -1,5 +1,5 @@
 // GoThea Whiteboard Engine (Milestone 5 Frontend)
-// Ultra-Low-Latency Apple Pencil & Touch Canvas with Pixel-Eraser, Object-Eraser, Coalesced Events & AI Overlay
+// Ultra-Low-Latency Apple Pencil Canvas with Infinite Vertical Expansion, Two-Finger Scroll, Pixel/Object Eraser & AI Overlay
 
 (function() {
   // DOM Elements
@@ -18,6 +18,9 @@
   const btnRedo = document.getElementById("btn-wb-redo");
   const btnClear = document.getElementById("btn-wb-clear");
   const btnSave = document.getElementById("btn-wb-save");
+  const btnScrollTop = document.getElementById("btn-wb-scroll-top");
+  const scrollTrack = document.getElementById("wb-scroll-track");
+  const scrollThumb = document.getElementById("wb-scroll-thumb");
 
   if (!inkCanvas || !overlayCanvas || !viewport) {
     return;
@@ -34,7 +37,7 @@
   let currentColor = "#f8fafc";
   let currentBaseWidth = 4;
   let currentSmoothWidth = 4;
-  let penOnlyMode = true; // Palm rejection: ignore finger touch
+  let penOnlyMode = true; // Palm rejection: ignore finger touch for drawing
   let activePointerId = null; // Track current active pencil/pen pointer
   let strokes = [];
   let undoStack = []; // Stores action history { type: 'add'|'delete'|'clear', ... }
@@ -44,6 +47,15 @@
   let dragDeletedItems = []; // For object_eraser drag session
   let dpr = window.devicePixelRatio || 1;
   let saveDebounceTimer = null;
+
+  // Vertikales Scrolling / Unendliche Tafel
+  let panX = 0;
+  let panY = 0;
+  let activeTouches = new Map(); // pointerId -> { x, y }
+  let isTwoFingerPanning = false;
+  let lastPinchCenterY = 0;
+  let lastTouchMoveCenterY = null;
+  let scrollbarFadeTimer = null;
 
   // 1. Canvas Resize & HiDPI Alignment
   function resizeCanvases() {
@@ -65,10 +77,7 @@
       overlayCanvas.style.width = `${rect.width}px`;
       overlayCanvas.style.height = `${rect.height}px`;
 
-      inkCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      overlayCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      redrawAllStrokes();
+      updateViewportPan();
     }
   }
 
@@ -83,13 +92,15 @@
     });
   });
 
-  // 2. High-Precision Coordinate & Pressure Extractor
+  // 2. High-Precision Coordinate & Pressure Extractor (Board Virtual Coordinates)
   function getEventPoint(e) {
     const rect = inkCanvas.getBoundingClientRect();
     const pressure = (typeof e.pressure === "number" && e.pressure > 0) ? e.pressure : 0.5;
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: e.clientX - rect.left - panX,
+      y: e.clientY - rect.top - panY,
+      screenX: e.clientX - rect.left,
+      screenY: e.clientY - rect.top,
       pressure: pressure,
       pointerType: e.pointerType || "mouse"
     };
@@ -107,7 +118,85 @@
     return { minX, maxX, minY, maxY };
   }
 
-  // 3. Geometry Math for Object Eraser (Stroke Hit-Testing)
+  // 3. Viewport Panning & Scrolling
+  function updateViewportPan() {
+    inkCtx.setTransform(dpr, 0, 0, dpr, panX * dpr, panY * dpr);
+    overlayCtx.setTransform(dpr, 0, 0, dpr, panX * dpr, panY * dpr);
+    viewport.style.backgroundPositionY = `${panY}px`;
+    redrawAllStrokes();
+    updateScrollUI();
+  }
+
+  function updateScrollUI() {
+    // "Zum Anfang" Button ein-/ausblenden
+    if (btnScrollTop) {
+      if (panY < -60) {
+        btnScrollTop.style.display = "flex";
+      } else {
+        btnScrollTop.style.display = "none";
+      }
+    }
+
+    // Scrollbar-Position berechnen
+    if (scrollTrack && scrollThumb) {
+      scrollTrack.classList.add("visible");
+      clearTimeout(scrollbarFadeTimer);
+      scrollbarFadeTimer = setTimeout(() => {
+        scrollTrack.classList.remove("visible");
+      }, 1200);
+
+      let maxStrokeY = 0;
+      for (let i = 0; i < strokes.length; i++) {
+        if (strokes[i].bbox && strokes[i].bbox.maxY > maxStrokeY) {
+          maxStrokeY = strokes[i].bbox.maxY;
+        }
+      }
+      const viewH = viewport.clientHeight || 600;
+      const totalH = Math.max(viewH, -panY + viewH, maxStrokeY + 400);
+
+      const trackH = scrollTrack.clientHeight || (viewH - 24);
+      const thumbH = Math.max(30, Math.min(trackH, (viewH / totalH) * trackH));
+      scrollThumb.style.height = `${thumbH}px`;
+
+      const maxScroll = Math.max(1, totalH - viewH);
+      const scrollRatio = Math.min(1, Math.max(0, (-panY) / maxScroll));
+      const thumbTop = scrollRatio * (trackH - thumbH);
+      scrollThumb.style.top = `${thumbTop}px`;
+    }
+  }
+
+  // Button: Sanft zum Anfang der Tafel springen
+  if (btnScrollTop) {
+    btnScrollTop.addEventListener("click", () => {
+      const startPanY = panY;
+      const startTime = performance.now();
+      const duration = 250;
+
+      function anim(time) {
+        const progress = Math.min(1, (time - startTime) / duration);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        panY = startPanY * (1 - ease);
+        updateViewportPan();
+        if (progress < 1) {
+          requestAnimationFrame(anim);
+        } else {
+          panY = 0;
+          updateViewportPan();
+        }
+      }
+      requestAnimationFrame(anim);
+    });
+  }
+
+  // Mac Trackpad & Mausrad-Scrolling
+  viewport.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    panY -= e.deltaY;
+    if (panY > 0) panY = 0; // Kein Scrollen über den oberen Rand hinaus
+    updateViewportPan();
+  }, { passive: false });
+
+  // 4. Geometry Math for Object Eraser (Stroke Hit-Testing)
   function distToSegment(px, py, x1, y1, x2, y2) {
     const dx = x2 - x1;
     const dy = y2 - y1;
@@ -153,7 +242,7 @@
     return false;
   }
 
-  // 4. Tool Styles Setup
+  // 5. Tool Styles Setup
   function applyToolStyle(ctx, tool, color, baseWidth) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -210,7 +299,7 @@
     inkCtx.restore();
   }
 
-  // 5. Ultra-Fluid Live Drawing Loop
+  // 6. Ultra-Fluid Live Drawing Loop
   function drawLiveSegment(pt) {
     if (!lastPoint) {
       lastPoint = pt;
@@ -240,7 +329,6 @@
     const radius = Math.max(16, currentBaseWidth * 4);
     let hitAny = false;
 
-    // Check backwards from newest to oldest
     for (let i = strokes.length - 1; i >= 0; i--) {
       if (strokeHitsPoint(strokes[i], pt.x, pt.y, radius)) {
         const removed = strokes.splice(i, 1)[0];
@@ -254,19 +342,35 @@
     }
   }
 
+  // 7. Pointer Events Handling
   function handlePointerDown(e) {
-    // 1. IMMER preventDefault aufrufen, damit Safari NIE das 'Teilen...' Menü öffnet!
     e.preventDefault();
 
-    // Palm Rejection: Berührungen mit Handfläche/Finger ignorieren im Pencil-Modus
-    if (penOnlyMode && e.pointerType === "touch") {
-      return;
+    if (e.pointerType === "touch") {
+      activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // Sobald 2 Finger aufliegen -> Zwei-Finger-Scroll-Modus starten!
+      if (activeTouches.size >= 2) {
+        isTwoFingerPanning = true;
+        if (isDrawing) {
+          isDrawing = false;
+          currentStroke = null;
+          lastPoint = null;
+          redrawAllStrokes();
+        }
+        const pts = Array.from(activeTouches.values());
+        lastPinchCenterY = (pts[0].y + pts[1].y) / 2;
+        return;
+      }
+
+      // Im Pencil-Modus wird 1 einzelner Touch ignoriert
+      if (penOnlyMode) {
+        return;
+      }
     }
 
-    // Wenn bereits ein Pointer zeichnet, Zweitberührungen ignorieren
-    if (activePointerId !== null && activePointerId !== e.pointerId) {
-      return;
-    }
+    if (isTwoFingerPanning) return;
+    if (activePointerId !== null && activePointerId !== e.pointerId) return;
 
     activePointerId = e.pointerId;
     try {
@@ -291,10 +395,8 @@
       points: [pt]
     };
 
-    // Context einmalig einstellen
     applyToolStyle(inkCtx, currentTool, currentColor, currentBaseWidth);
 
-    // Initialen Punkt zeichnen
     inkCtx.beginPath();
     const isEraser = currentTool === "pixel_eraser" || currentTool === "eraser";
     const dotRadius = isEraser ? (currentBaseWidth * 2.5) : Math.max(1, currentBaseWidth / 2);
@@ -305,6 +407,24 @@
 
   function handlePointerMove(e) {
     e.preventDefault();
+
+    if (e.pointerType === "touch" && activeTouches.has(e.pointerId)) {
+      activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (isTwoFingerPanning && activeTouches.size >= 2) {
+        const pts = Array.from(activeTouches.values());
+        const currentCenterY = (pts[0].y + pts[1].y) / 2;
+        const deltaY = currentCenterY - lastPinchCenterY;
+        lastPinchCenterY = currentCenterY;
+
+        panY += deltaY;
+        if (panY > 0) panY = 0;
+        updateViewportPan();
+        return;
+      }
+    }
+
+    if (isTwoFingerPanning) return;
     if (!isDrawing) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
     if (penOnlyMode && e.pointerType === "touch") return;
@@ -332,6 +452,15 @@
 
   function handlePointerUp(e) {
     e.preventDefault();
+
+    if (e.pointerType === "touch") {
+      activeTouches.delete(e.pointerId);
+      if (activeTouches.size < 2) {
+        isTwoFingerPanning = false;
+      }
+    }
+
+    if (isTwoFingerPanning) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
     if (currentTool === "object_eraser") {
@@ -382,24 +511,39 @@
     }
   }, { capture: true });
 
-  // Native Touch Events auf dem Canvas abfangen, damit WebKit keine Textselektion startet
-  inkCanvas.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-  }, { passive: false, capture: true });
-
+  // Native Safari Two-Finger Scroll Fallback
   inkCanvas.addEventListener("touchmove", (e) => {
-    e.preventDefault();
-  }, { passive: false, capture: true });
+    if (e.touches.length >= 2) {
+      e.preventDefault();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const centerY = (t1.clientY + t2.clientY) / 2;
+      if (lastTouchMoveCenterY !== null) {
+        const dy = centerY - lastTouchMoveCenterY;
+        panY += dy;
+        if (panY > 0) panY = 0;
+        updateViewportPan();
+      }
+      lastTouchMoveCenterY = centerY;
+    }
+  }, { passive: false });
 
   inkCanvas.addEventListener("touchend", (e) => {
-    e.preventDefault();
-  }, { passive: false, capture: true });
+    if (e.touches.length < 2) {
+      lastTouchMoveCenterY = null;
+    }
+  }, { passive: false });
 
-  inkCanvas.addEventListener("touchcancel", (e) => {
-    e.preventDefault();
-  }, { passive: false, capture: true });
+  inkCanvas.addEventListener("touchstart", (e) => {
+    if (e.touches.length >= 2) {
+      e.preventDefault();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      lastTouchMoveCenterY = (t1.clientY + t2.clientY) / 2;
+    }
+  }, { passive: false });
 
-  // 6. KI-Overlay Visualisierung
+  // 8. KI-Overlay Visualisierung
   function drawOverlayActions(actions) {
     overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
 
@@ -440,7 +584,7 @@
     }, 12000);
   }
 
-  // 7. Backend-Persistenz (Auto-Save OHNE teures toDataURL)
+  // 9. Backend-Persistenz (Auto-Save OHNE teures toDataURL)
   function scheduleAutoSave() {
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(async () => {
@@ -484,7 +628,8 @@
               strokes.forEach(s => {
                 if (!s.bbox && s.points) s.bbox = computeBoundingBox(s.points);
               });
-              redrawAllStrokes();
+              panY = 0;
+              updateViewportPan();
             } catch (e) {
               strokes = [];
             }
@@ -519,7 +664,8 @@
         strokes = [];
         undoStack = [];
         redoStack = [];
-        redrawAllStrokes();
+        panY = 0;
+        updateViewportPan();
         connectTutorWebSocket();
       }
     } catch (e) {
@@ -527,7 +673,7 @@
     }
   }
 
-  // 8. WebSocket Verbindung
+  // 10. WebSocket Verbindung
   function connectTutorWebSocket() {
     if (!currentSession) return;
     if (tutorSocket) {
@@ -575,8 +721,7 @@
     }
   }
 
-  // 9. Toolbar Event-Handler
-  // Werkzeugauswahl (Stift, Marker, Pixelradierer, Objektradierer)
+  // 11. Toolbar Event-Handler
   document.querySelectorAll(".wb-tool-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".wb-tool-btn").forEach(b => b.classList.remove("active"));
@@ -585,7 +730,6 @@
     });
   });
 
-  // Strichstärken
   document.querySelectorAll(".wb-size-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".wb-size-btn").forEach(b => b.classList.remove("active"));
@@ -594,7 +738,6 @@
     });
   });
 
-  // Farben (schaltet automatisch vom Radierer zum Stift um)
   document.querySelectorAll(".wb-color-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".wb-color-btn").forEach(b => b.classList.remove("active"));
@@ -609,14 +752,12 @@
     });
   });
 
-  // Muster-Wechsel
   if (patternSelect) {
     patternSelect.addEventListener("change", (e) => {
       viewport.className = `wb-viewport ${e.target.value}`;
     });
   }
 
-  // Stift-Modus (Palm Rejection)
   if (btnPenOnly) {
     btnPenOnly.addEventListener("click", () => {
       penOnlyMode = !penOnlyMode;
@@ -628,7 +769,6 @@
     });
   }
 
-  // Leistungsstarkes Undo / Redo (unterstützt Striche, Objektradierer & Clear)
   if (btnUndo) {
     btnUndo.addEventListener("click", () => {
       if (undoStack.length === 0) return;
@@ -641,7 +781,6 @@
         }
         redoStack.push(action);
       } else if (action.type === "delete_strokes") {
-        // Gelöschte Objekte wiederherstellen
         for (let i = action.items.length - 1; i >= 0; i--) {
           const item = action.items[i];
           strokes.splice(item.index, 0, item.stroke);
@@ -683,7 +822,6 @@
     });
   }
 
-  // Tafel leeren (mit Undo-Rettung)
   if (btnClear) {
     btnClear.addEventListener("click", () => {
       if (strokes.length === 0) return;
@@ -698,7 +836,6 @@
     });
   }
 
-  // Snapshot herunterladen
   if (btnSave) {
     btnSave.addEventListener("click", () => {
       const link = document.createElement("a");
@@ -708,7 +845,6 @@
     });
   }
 
-  // Neue Sitzung
   if (btnNewSession) {
     btnNewSession.addEventListener("click", async () => {
       if (confirm("Möchtest du eine neue Tafel für das gewählte Fach beginnen?")) {
@@ -717,14 +853,12 @@
     });
   }
 
-  // Fach wechseln
   if (subjectSelect) {
     subjectSelect.addEventListener("change", async () => {
       await createNewSession();
     });
   }
 
-  // KI-Tipp Anfordern
   if (btnRequestHint) {
     btnRequestHint.addEventListener("click", async () => {
       if (!currentSession) return;
@@ -744,7 +878,6 @@
     });
   }
 
-  // Vollbild-Modus
   if (btnFullscreen) {
     btnFullscreen.addEventListener("click", () => {
       document.body.classList.toggle("wb-fullscreen-mode");
@@ -752,7 +885,6 @@
     });
   }
 
-  // Tastenkombinationen (Undo: Cmd/Ctrl+Z, Redo: Cmd/Ctrl+Y, P: Stift, H: Marker, E: Radierer toggle)
   window.addEventListener("keydown", (e) => {
     const tabWb = document.getElementById("tab-whiteboard");
     if (!tabWb || !tabWb.classList.contains("active")) return;
@@ -770,7 +902,6 @@
       const hBtn = document.querySelector('.wb-tool-btn[data-tool="highlighter"]');
       if (hBtn) hBtn.click();
     } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "e") {
-      // Toggle between pixel_eraser and object_eraser
       if (currentTool === "pixel_eraser") {
         const objBtn = document.querySelector('.wb-tool-btn[data-tool="object_eraser"]');
         if (objBtn) objBtn.click();
