@@ -313,4 +313,53 @@
 ### `DELETE /api/v1/materials/{material_id}`
 * **Beschreibung:** Löscht das Material, alle Chunks und die physische Datei vom Dateisystem (204 No Content).
 
+---
+
+## 6. Inbox / Samba-Dropzone (Batch-Ingestion)
+
+### `GET /api/v1/inbox/status`
+* **Beschreibung:** Liefert den aktuellen Füllstand des Inbox-Netzwerkordners (Samba-Dropzone) und die Anzahl eventueller Quarantäne-Fehler.
+* **Response (200 OK):**
+```json
+{
+  "inbox_dir": "/home/pi/GoThea/inbox",
+  "pending_count": 3,
+  "files": [
+    {
+      "filename": "mathe_blatt1.pdf",
+      "file_size": 204850,
+      "mime_type": "application/pdf",
+      "modified_at": "2026-10-10T20:30:00"
+    }
+  ],
+  "errors_count": 0
+}
+```
+
+### `POST /api/v1/inbox/process`
+* **Beschreibung:** Startet die atomare Verstoffwechselung aller wartenden Dateien im Inbox-Ordner. Verschiebt verarbeitete Dateien nach `materials/`, ordnet sie Mappen (`dossiers`) zu und leert den Inbox-Ordner.
+* **Response (200 OK):**
+```json
+{
+  "total_detected": 3,
+  "processed_count": 3,
+  "errors_count": 0,
+  "processed_items": [
+    {
+      "material_id": "mat_a1b2c3d4",
+      "title": "Mathe Blatt1",
+      "kind": "Arbeitsblatt",
+      "subject_id": "sub_math",
+      "subject_name": "Mathematik",
+      "topic_id": "top_math_7_rational",
+      "topic_name": "Rationale Zahlen",
+      "dossier_id": "dos_e5f6g7h8",
+      "dossier_title": "Arbeitsblätter: Rationale Zahlen",
+      "page_count": 2
+    }
+  ],
+  "quarantined_items": []
+}
+```
+
 
