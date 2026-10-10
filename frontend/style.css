@@ -972,9 +972,10 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+  touch-action: none !important;
 }
 
 /* Muster / Hintergründe */
@@ -1013,9 +1014,10 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  touch-action: none;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
+  touch-action: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
   cursor: crosshair;
 }
 

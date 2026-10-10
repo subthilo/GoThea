@@ -35,6 +35,7 @@
   let currentBaseWidth = 4;
   let currentSmoothWidth = 4;
   let penOnlyMode = true; // Palm rejection: ignore finger touch
+  let activePointerId = null; // Track current active pencil/pen pointer
   let strokes = [];
   let redoStack = [];
   let currentStroke = null;
@@ -177,11 +178,23 @@
   }
 
   function handlePointerDown(e) {
-    // Palm Rejection: Ignore touch if pencil-only is turned on
+    // 1. IMMER preventDefault aufrufen, damit Safari NIE das 'Teilen...' Menü öffnet!
+    e.preventDefault();
+
+    // Palm Rejection: Berührungen mit Handfläche/Finger ignorieren im Pencil-Modus
     if (penOnlyMode && e.pointerType === "touch") {
       return;
     }
-    e.preventDefault();
+
+    // Wenn bereits ein Pointer zeichnet, Zweitberührungen ignorieren
+    if (activePointerId !== null && activePointerId !== e.pointerId) {
+      return;
+    }
+
+    activePointerId = e.pointerId;
+    try {
+      inkCanvas.setPointerCapture(e.pointerId);
+    } catch (_) {}
 
     isDrawing = true;
     redoStack = [];
@@ -209,9 +222,10 @@
   }
 
   function handlePointerMove(e) {
-    if (!isDrawing || !currentStroke) return;
-    if (penOnlyMode && e.pointerType === "touch") return;
     e.preventDefault();
+    if (!isDrawing || !currentStroke) return;
+    if (activePointerId !== null && e.pointerId !== activePointerId) return;
+    if (penOnlyMode && e.pointerType === "touch") return;
 
     // Coalesced Events: Greift Hardware-Updates mit voller Rate (120Hz/240Hz) ab
     const events = (e.getCoalescedEvents && e.getCoalescedEvents().length > 0)
@@ -226,15 +240,23 @@
   }
 
   function handlePointerUp(e) {
-    if (!isDrawing) return;
-    isDrawing = false;
+    e.preventDefault();
+    if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
-    if (currentStroke && currentStroke.points.length > 0) {
+    if (isDrawing && currentStroke && currentStroke.points.length > 0) {
       strokes.push(currentStroke);
       sendCanvasUpdate([currentStroke]);
       scheduleAutoSave();
     }
 
+    try {
+      if (activePointerId !== null && inkCanvas.hasPointerCapture(e.pointerId)) {
+        inkCanvas.releasePointerCapture(e.pointerId);
+      }
+    } catch (_) {}
+
+    isDrawing = false;
+    activePointerId = null;
     currentStroke = null;
     lastPoint = null;
   }
@@ -244,7 +266,37 @@
   inkCanvas.addEventListener("pointermove", handlePointerMove, { passive: false });
   inkCanvas.addEventListener("pointerup", handlePointerUp, { passive: false });
   inkCanvas.addEventListener("pointercancel", handlePointerUp, { passive: false });
-  inkCanvas.addEventListener("pointerleave", handlePointerUp, { passive: false });
+
+  // 100% Unterdrückung des iOS Safari 'Teilen...' Menüs und nativer Gesten
+  const blockNativeGesture = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  inkCanvas.addEventListener("contextmenu", blockNativeGesture, { capture: true });
+  viewport.addEventListener("contextmenu", blockNativeGesture, { capture: true });
+  document.addEventListener("contextmenu", (e) => {
+    if (e.target && e.target.closest && e.target.closest("#tab-whiteboard")) {
+      e.preventDefault();
+    }
+  }, { capture: true });
+
+  // Native Touch Events auf dem Canvas abfangen, damit WebKit keine Textselektion startet
+  inkCanvas.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+  }, { passive: false, capture: true });
+
+  inkCanvas.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+  }, { passive: false, capture: true });
+
+  inkCanvas.addEventListener("touchend", (e) => {
+    e.preventDefault();
+  }, { passive: false, capture: true });
+
+  inkCanvas.addEventListener("touchcancel", (e) => {
+    e.preventDefault();
+  }, { passive: false, capture: true });
 
   // 5. KI-Overlay Visualisierung
   function drawOverlayActions(actions) {
