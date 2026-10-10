@@ -1,7 +1,10 @@
 import io
+import os
 import re
 import uuid
 import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional, Tuple, List, Dict, Any
 from pypdf import PdfReader
@@ -224,13 +227,36 @@ def render_material_page_as_image(file_path: str, mime_type: str, page_num: int 
         raise FileNotFoundError("Materialdatei nicht gefunden.")
 
     if "pdf" in mime_type.lower():
+        # 1. Bevorzugt auf Linux / Raspberry Pi: System-natives pdftoppm (sehr schnell, robust, vorinstalliert)
+        pdftoppm_bin = shutil.which("pdftoppm") or ("/usr/bin/pdftoppm" if Path("/usr/bin/pdftoppm").exists() else None)
+        if pdftoppm_bin:
+            try:
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    out_prefix = os.path.join(tmpdir, "page")
+                    cmd = [
+                        pdftoppm_bin,
+                        "-png",
+                        "-r", "150",
+                        "-f", str(page_num),
+                        "-l", str(page_num),
+                        "-singlefile",
+                        str(path),
+                        out_prefix
+                    ]
+                    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    out_png = f"{out_prefix}.png"
+                    if res.returncode == 0 and os.path.exists(out_png):
+                        return Path(out_png).read_bytes(), "image/png"
+            except Exception:
+                pass
+
+        # 2. PyMuPDF (fitz) falls verfügbar (z. B. macOS Entwicklungsumgebung)
         try:
             import fitz
             doc = fitz.open(str(path))
             total_pages = len(doc)
             target_page = max(0, min(page_num - 1, total_pages - 1))
             page = doc.load_page(target_page)
-            # 150 DPI für scharfe Retina-Darstellung
             pix = page.get_pixmap(dpi=150)
             return pix.tobytes("png"), "image/png"
         except Exception:
