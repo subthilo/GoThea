@@ -16,6 +16,7 @@ from backend.app.routers.env import router as env_router
 from backend.app.routers.planner import router as planner_router
 from backend.app.routers.whiteboard import router as whiteboard_router, ws_router as whiteboard_ws_router
 from backend.app.routers.materials import router as materials_router
+from backend.app.routers.inbox import router as inbox_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -43,6 +44,7 @@ app.include_router(planner_router)
 app.include_router(whiteboard_router)
 app.include_router(whiteboard_ws_router)
 app.include_router(materials_router)
+app.include_router(inbox_router)
 
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():

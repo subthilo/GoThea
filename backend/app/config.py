@@ -20,3 +20,7 @@ MATERIALS_DIR.mkdir(parents=True, exist_ok=True)
 
 TEMP_UPLOADS_DIR = DATA_DIR / "temp_uploads"
 TEMP_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+INBOX_DIR = Path(os.getenv("INBOX_DIR", str(PROJECT_ROOT / "inbox")))
+INBOX_DIR.mkdir(parents=True, exist_ok=True)
+INBOX_ERRORS_DIR = INBOX_DIR / "_errors"
