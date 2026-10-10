@@ -265,6 +265,7 @@ def process_single_inbox_file(
     return ProcessedItemDetail(
         material_id=material.id,
         title=material.title,
+        filename=material.filename,
         kind=material.kind,
         subject_id=material.subject_id,
         subject_name=subject.name if subject else None,

@@ -1,6 +1,6 @@
 # 🎓 GoThea – Multimodale Lernzentrale & Sokratischer KI-Tutor
 
-[![Test Suite](https://img.shields.io/badge/Tests-43%2F43%20Passed-success?style=flat-square&logo=pytest)](docs/04_test_reports/iteration_04_material_ingestion.md)
+[![Test Suite](https://img.shields.io/badge/Tests-58%2F58%20Passed-success?style=flat-square&logo=pytest)](docs/04_test_reports/iteration_04_material_ingestion.md)
 [![Code Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen?style=flat-square)](docs/04_test_reports/iteration_04_material_ingestion.md)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)](backend/)
 [![Platform](https://img.shields.io/badge/Hardware-Raspberry%20Pi%204%2F5%20%26%20iPadOS-orange?style=flat-square&logo=raspberrypi)](docs/01_architecture/overview.md)
@@ -113,6 +113,16 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 
 ### 2. Smarte Material-Ingestion & Vorlagen (In-App Viewer)
 * **Native iPadOS Safari Uploads:** Direkter Zugriff auf die iOS *Dateien-App* (iCloud Drive, Schul-Cloud, USB), die *Fotomediathek* und die *iPad-Kamera* zum Abfotografieren physischer Hefterseiten.
+* **Automatisierte Samba-Inbox / Dropzone (`inbox/staging/` & `inbox/prod/`):**
+  * Dokumente (PDFs, Scans) einfach über das Netzwerk in die Inbox werfen.
+  * Ein Klick auf **„📥 Jetzt einsortieren“** verarbeitet ganze Dokumentenstapel atomar.
+* **Multimodale KI-Inhaltsanalyse & Renaming (`document_analyzer.py`):**
+  * Erkennt auch bei unleserlichen Scans ohne Text (`Hebel.pdf`, `fgjg.pdf`) per **Vision (`gpt-4o-mini`)** das Schulfach, das konkrete Lehrplanthema und die Dokumentart.
+  * Ersetzt kryptische Dateinamen durch normierte Namen (`Fach_Thema_Art_Titel.pdf`) und vergibt saubere inhaltliche Titel.
+  * Legt neue Themen im Lehrplan automatisch an.
+* **Digitale Mappenführung (`dossiers`):**
+  * Automatische Sortierung in Übungsmappen, Fachhefter, Lehrbücher und Testsammlungen.
+  * Filterung im Materialien-Tab nach Dokumentarten (*📄 Arbeitsblätter*, *📁 Hefter & Notizen*, *📚 Schulbücher*, *📝 Tests & Arbeiten*).
 * **2-Stufen Human-in-the-Loop Pipeline:**
   1. *Stufe 1:* Schnelle Vorab-Analyse via Vision/Text (schlägt Fach, Thema, Titel und Dokumentart vor).
   2. *Stufe 2:* Interaktiver Bestätigungsdialog mit manueller Korrekturmöglichkeit.
@@ -142,8 +152,8 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 * **Dynamische Taxonomie:** Vollständige CRUD-Schnittstelle für Fächer (Farben, Icons) und Themen.
 
 ### 5. Staging- vs. Produktions-Umgebung auf dem Pi
-* **Port 8000 (Produktion):** Persistente Echtdaten der Schülerin (`data/prod/app_data.db`).
-* **Port 8001 (Staging):** Isolierte Testumgebung (`data/staging/app_data.db`) mit Ein-Klick-Reset-Funktion und Dummy-Daten-Generierung.
+* **Port 8000 (Produktion):** Persistente Echtdaten der Schülerin (`data/prod/app_data.db`, `inbox/prod`).
+* **Port 8001 (Staging):** Isolierte Testumgebung (`data/staging/app_data.db`, `inbox/staging`) mit Ein-Klick-Reset-Funktion und Dummy-Daten-Generierung.
 
 ---
 
@@ -152,13 +162,15 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 | Bereich | Technologie | Beschreibung / Zweck |
 | :--- | :--- | :--- |
 | **Backend Framework** | **Python 3.9+ / FastAPI** | Asynchrones, hochperformantes REST- und WebSocket-Backend |
+| **KI / Multimodal Ingestion** | **OpenAI `gpt-4o-mini` (Vision)** | Schnelle Bild- & Textanalyse von Scans, Titelerkennung, JSON-Mode |
+| **KI / Didaktischer Tutor** | **`gpt-6-luna` & `gpt-6.1-sol`** | Sokratischer Live-Tutor (iPad Whiteboard / Audio) & Tafel-Diagnose |
 | **Datenbank** | **SQLite (WAL-Modus)** | Lokale Edge-Datenbank, latenzarm, ausfallsicher, zero-maintenance |
-| **ORM** | **SQLAlchemy 2.0** | Typisierte Datenbankmodelle mit sauberem Migrationspfad |
+| **ORM** | **SQLAlchemy 2.0** | Typisierte Datenbankmodelle (`dossiers`, `materials`, `taxonomy`) |
 | **PDF Rendering** | **Poppler `pdftoppm`** | Natives C-Tool auf Linux/Pi für ultraschnelles Seiten-Rendering |
 | **Frontend Core** | **HTML5 / Vanilla JavaScript (ES6+)** | Leichtgewichtig, frameworklos für maximale iPadOS-Safari-Performance |
 | **Styling** | **Modern Vanilla CSS** | HSL-Farbsystem, dynamisches Theme, iOS Human Interface Design |
-| **Testsuite** | **pytest / pytest-cov** | 43 Unit- & Integrationstests mit 90% Code Coverage |
-| **Deployment** | **systemd & Bash (`deploy.sh`)** | Dual-Service-Management auf Raspberry Pi OS |
+| **Testsuite** | **pytest / pytest-cov** | 58 Unit- & Integrationstests mit 90% Code Coverage |
+| **Deployment** | **systemd & Bash (`deploy.sh`)** | Dual-Service-Management auf Raspberry Pi OS (Staging & Prod) |
 
 ---
 

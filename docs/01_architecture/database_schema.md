@@ -11,7 +11,8 @@
 
 ```
 [ users ] (Schülerprofil)
-   ├── 1:N ──> [ iserv_accounts ] (Verschlüsselte IServ Zugangsdaten)
+   ├── 1:N ──> [ dossiers ] (Digitale Mappen & Hefter)
+   │             └── 1:N ──> [ materials ] (Geordnete Dokumente & Blätter)
    ├── 1:N ──> [ tests ] (Prüfungstermine)
    │             ├── 1:N ──> [ completed_tasks ] (Erledigte Plan-Einheiten)
    │             └── 1:N ──> [ tutor_sessions ] (Live-Lernsitzungen)
@@ -19,9 +20,11 @@
 
 [ subjects ] (Schulfächer)
    ├── 1:N ──> [ topics ] (Themen nach Klassenstufe & RLP Niveaustufe)
+   ├── 1:N ──> [ dossiers ] (Fachhefter, Lehrbücher, Sammlungen)
    ├── 1:N ──> [ tests ]
    ├── 1:N ──> [ study_blocks ] (Sperrtage je Fach oder global)
    └── 1:N ──> [ materials ] (Bücher, Hefter, Arbeitsblätter)
+                 ├── 1:N ──> [ materials ] (Hierarchie: Buch -> Kapitel)
                  └── 1:N ──> [ material_chunks ] (Semantische Text- & Formelabschnitte)
 ```
 
@@ -110,25 +113,45 @@
 | `snapshot_data_url` | TEXT | NULLABLE | PNG Base64 Vorschau |
 | `summary_notes` | TEXT | NULLABLE | Notizen der Sitzung |
 
-### 8. `materials` (Lernmaterialien & Arbeitsblätter)
+### 8. `dossiers` (Digitale Mappen, Hefter & Sammlungen)
+| Feld | Typ | Constraints | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `id` | TEXT | PRIMARY KEY | Mappen-ID (`dos_...`) |
+| `user_id` | TEXT | FK -> users(id) | Schüler |
+| `subject_id` | TEXT | FK -> subjects(id) | Schulfach |
+| `topic_id` | TEXT | FK -> topics(id), NULLABLE | Thema |
+| `title` | TEXT | NOT NULL | Name der Mappe (z. B. "Hefter: Rationale Zahlen") |
+| `kind` | TEXT | DEFAULT 'hefter' | 'hefter', 'lehrbuch', 'testsammlung', 'uebungsmappe' |
+| `color_code` | TEXT | DEFAULT '#2563eb' | Farbcode |
+| `icon` | TEXT | DEFAULT '📁' | Mappen-Icon |
+| `description` | TEXT | NULLABLE | Beschreibung |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Erstellungszeitpunkt |
+| `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Letzte Änderung |
+
+### 9. `materials` (Lernmaterialien & Arbeitsblätter)
 | Feld | Typ | Constraints | Beschreibung |
 | :--- | :--- | :--- | :--- |
 | `id` | TEXT | PRIMARY KEY | Material-ID (`mat_...`) |
 | `user_id` | TEXT | FK -> users(id) | Schüler |
 | `subject_id` | TEXT | FK -> subjects(id) | Schulfach |
 | `topic_id` | TEXT | FK -> topics(id), NULLABLE | Thema |
-| `title` | TEXT | NOT NULL | Dokumententitel |
-| `kind` | TEXT | DEFAULT 'Arbeitsblatt' | 'Arbeitsblatt', 'Hefterseite', 'Buchauszug', 'Übungszettel' |
-| `filename` | TEXT | NOT NULL | Physischer Dateiname im Storage |
-| `file_path` | TEXT | NOT NULL | Absoluter Pfad auf dem Pi |
+| `dossier_id` | TEXT | FK -> dossiers(id), NULLABLE | Zugeordnete Mappe / Hefter |
+| `dossier_order` | INTEGER | NOT NULL, DEFAULT 1 | Reihenfolge innerhalb der Mappe |
+| `parent_id` | TEXT | FK -> materials(id), NULLABLE | Übergeordnetes Werk (bei Buchkapiteln) |
+| `title` | TEXT | NOT NULL | Inhaltlicher Dokumententitel |
+| `kind` | TEXT | DEFAULT 'Arbeitsblatt' | 'Arbeitsblatt', 'Hefterseite', 'Buchauszug', 'Buch', 'Test', 'Klassenarbeit' |
+| `filename` | TEXT | NOT NULL | Logischer / normierter Dateiname (`Fach_Thema_Art_Titel.pdf`) |
+| `file_path` | TEXT | NOT NULL | Physischer Dateipfad auf dem Server (`data/materials/mat_...pdf`) |
 | `file_size` | INTEGER | NOT NULL | Dateigröße in Bytes |
 | `mime_type` | TEXT | DEFAULT 'application/pdf' | MIME-Typ (`application/pdf`, `image/png`, etc.) |
 | `page_count` | INTEGER | DEFAULT 1 | Seitenzahl des Dokuments |
-| `extracted_text` | TEXT | NULLABLE | Extrahierter Volltext |
+| `start_page` | INTEGER | NULLABLE | Buch-Seitennummer Start |
+| `end_page` | INTEGER | NULLABLE | Buch-Seitennummer Ende |
+| `extracted_text` | TEXT | NULLABLE | Extrahierter digitaler Volltext |
 | `summary` | TEXT | NULLABLE | Zusammenfassung oder Notiz |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Upload-Zeitpunkt (indiziert) |
 
-### 9. `material_chunks` (Semantische Text- und Übungsabschnitte)
+### 10. `material_chunks` (Semantische Text- und Übungsabschnitte)
 | Feld | Typ | Constraints | Beschreibung |
 | :--- | :--- | :--- | :--- |
 | `id` | TEXT | PRIMARY KEY | Chunk-ID (`chk_...`) |
@@ -138,4 +161,5 @@
 | `chunk_type` | TEXT | DEFAULT 'general' | 'rule', 'exercise', 'vocabulary', 'general' |
 | `page_number` | INTEGER | DEFAULT 1 | Seitenzahl im Quelldokument |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Erstellungszeitpunkt |
+
 

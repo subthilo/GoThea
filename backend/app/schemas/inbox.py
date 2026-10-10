@@ -17,6 +17,7 @@ class InboxStatusResponse(BaseModel):
 class ProcessedItemDetail(BaseModel):
     material_id: str
     title: str
+    filename: Optional[str] = None
     kind: str
     subject_id: str
     subject_name: Optional[str] = None

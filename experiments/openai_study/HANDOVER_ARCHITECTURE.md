@@ -161,12 +161,17 @@ Der pädagogische Router in `core/prompts.py` (`get_socratic_prompt_for_subject`
 
 ---
 
-## 🚀 Migrations-Schritte in den App-Kern (Roadmap)
+## 🚀 Migrations-Schritte in den App-Kern (Status & Roadmap)
 
-1. **Backend Service:** `tutor_engine.py` und `prompts.py` als `backend/app/services/socratic_tutor.py` integrieren.
-2. **Datenbank-Migration:** Tabelle `dossiers` anlegen und `materials` um die 3 Spalten erweitern.
-3. **API-Endpunkte:**
-   * WebSocket: `/api/v1/tutor/ws` für latenzarmes Live-Streaming (Audio/Text).
-   * REST: `/api/v1/materials/split-book` für den automatischen Buch-Upload.
-   * REST: `/api/v1/dossiers/` für CRUD- und Drag-and-Drop-Operationen.
-4. **Whiteboard-Anbindung:** Generierte Tafel-PNGs direkt in `#wb-doc-underlay` laden; Apple Pencil Handschrift per Vision-Endpoint diagnostizieren.
+1. **✅ Bereits abgeschlossen & live auf Staging:**
+   * **Datenbank-Modelle:** `dossiers` implementiert, `materials` um `dossier_id`, `dossier_order`, `parent_id` erweitert (inklusive SQLite-Migrationskompatibilität).
+   * **Inbox Batch-Pipeline & Renaming:** Multimodaler Inhalts-Analyzer (`backend/app/services/document_analyzer.py`) mit Vision-Extraktion für Papierscans, 23-Fächer-Zuordnung, automatischer Titelerzeugung, normierter Dateinamenvergabe und Quarantäne-Absicherung.
+   * **Modell-Trennung:** `gpt-4o-mini` für schnelle, wirtschaftliche Dokumentenvorverarbeitung und JSON-Generierung aktiviert.
+   * **Frontend-Integration:** Mappen-Filterung im Materialien-Tab und Live-Status für die Inbox-Dropzone auf Staging (:8001) und Produktion (:8000).
+
+2. **Nächste Schritte für den interaktiven Tutor:**
+   * **Live Tutor Engine:** `tutor_engine.py` und `prompts.py` als `backend/app/services/socratic_tutor.py` für den Whiteboard-Live-Chat integrieren (Modell: `gpt-6-luna` für < 500 ms Streaming).
+   * **Whiteboard-Handschrift-Diagnose:** Vision-Endpoint (`gpt-6.1-sol`) zur pixelgenauen Fehleranalyse von Zwischenschritten auf dem Canvas verbinden.
+   * **Buch-Splitting:** `/api/v1/materials/split-book` Endpoint für automatische Offline-Kapitelzerlegung von Lehrbüchern bereitstellen.
+   * **WebSocket:** `/api/v1/tutor/ws` für latenzarmes Live-Streaming (Audio/Text) am iPad etablieren.
+

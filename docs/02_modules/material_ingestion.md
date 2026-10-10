@@ -73,3 +73,61 @@ Um Dokumente auch auf ressourcenschonender Edge-Hardware (Raspberry Pi 4, 32-Bit
   * Hochgeladene Fotos (PNG/JPEG) von Heftern werden ohne Umwandlung direkt mit entsprechendem MIME-Type ausgeliefert.
 * **Optimierte Abhängigkeiten:**
   * `pymupdf` wurde aus `requirements.txt` entfernt, sodass der Raspberry Pi schlank und ohne schwere Toolchains deployt werden kann.
+
+---
+
+## 6. Automatisierte Inbox / Dropzone-Pipeline (Batch-Ingestion & Renaming)
+
+Neben dem interaktiven Einzel-Upload im Frontend bietet GoThea eine automatisierte Batch-Ingestion-Pipeline für Dokumente, die per Samba-Netzwerkfreigabe in den Ordner `inbox/staging/` oder `inbox/prod/` geschoben werden.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                   INBOX / DROPZONE BATCH WORKFLOW                      │
+│                                                                        │
+│  1. Samba-Dropzone (`inbox/staging/` oder `inbox/prod/`)              │
+│  - Anwender legt Rohscans ab (z. B. "fgjg.pdf", "Hebel.pdf", "asd.pdf")│
+│                                      │                                 │
+│                                      ▼                                 │
+│  2. Ingestion-Trigger (`POST /api/v1/inbox/process` oder Web-UI)       │
+│  - System prüft Dateien atomar (Validierung MIME & Dateigröße)         │
+│                                      │                                 │
+│                                      ▼                                 │
+│  3. Multimodale Dokumentenanalyse (`document_analyzer.py`)             │
+│  - Prüft auf digitalen Text:                                           │
+│    • Falls ≥ 80 Zeichen Text: Schnelle Text-Analyse (< 500ms)          │
+│    • Falls reiner Scan / Foto: Seite 1 wird via `pdftoppm` in Memory   │
+│      als 100 DPI JPEG gerendert und per Vision analysiert.             │
+│  - Modell: `gpt-4o-mini` (JSON Object Mode, Temp: 0.1)                 │
+│  - Offline-Fallback: Heuristische Keywords & Dateinamenmuster          │
+│                                      │                                 │
+│                                      ▼                                 │
+│  4. Metadaten-Extraktion & Klassifizierung                             │
+│  - Fach: Zuordnung zu einem der 23 Schulfächer                         │
+│  - Thema: Abgleich mit `topics` oder automatisches Anlegen neuer Themen│
+│  - Dokumentart: Arbeitsblatt | Hefterseite | Schulbuch | Test | Arbeit │
+│  - Inhaltlicher Titel: Präziser Titel (z. B. "Aufbau der Pflanzenzelle")│
+│  - Normierter Dateiname: `Fach_Thema_Art_Titel.pdf`                    │
+│                                      │                                 │
+│                                      ▼                                 │
+│  5. Atomare Dateiablage & Digitale Mappenführung (`dossiers`)          │
+│  - Verschieben der physischen Datei nach `data/<env>/materials/`       │
+│  - Einsortieren in thematische Mappe (Übungsmappe, Hefter, Sammlung)   │
+│  - Speicherung mit normiertem Dateinamen in der Datenbank              │
+│  - Text-Chunking & Volltext-Vorbereitung                               │
+│                                      │                                 │
+│                                      ▼                                 │
+│  6. Fehlerquarantäne (`_errors/`)                                      │
+│  - Defekte/0-Byte-Dateien werden nach `inbox/<env>/_errors/` isoliert   │
+│  - Fehlerbericht `[name].error.txt` erklärt das Problem                │
+│  - Die Batch-Verarbeitung der restlichen Dateien läuft stabil weiter   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Modell-Allokation: Vorverarbeitung vs. Didaktischer Tutor
+
+* **`gpt-4o-mini` (Vorverarbeitung / Ingestion):**
+  * Aufgaben: Text- und Bild-OCR, Inhaltsanalyse von Deckblättern, Fächerzuordnung, Titelerstellung, JSON-Normalisierung.
+  * Vorteile: Sehr hohe Ausführungsgeschwindigkeit, fehlerfreies JSON-Schema, minimale Token-Kosten.
+* **`gpt-6-luna` & `gpt-6.1-sol` (Lernbegleiter & Didaktik):**
+  * Aufgaben: Sokratischer Live-Tutor auf dem iPad Whiteboard, latenzarme Audio-Unterstützung (< 500 ms Streaming), pixelgenaue Fehleranalyse von Rechenschritten und Schülerskizzen.
+

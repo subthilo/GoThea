@@ -555,6 +555,23 @@ Der Upload von Dokumenten ist auf dem iPad **vollständig nativ, barrierefrei un
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
+### 10.3 Automatisierte Inbox / Samba-Dropzone Pipeline (Batch-Verarbeitung)
+
+Neben dem interaktiven Einzel-Upload über das Web-UI verfügt GoThea über eine automatisierte Dropzone-Architektur für den schnellen Netzwerk-Import über den Mac Finder, Windows Explorer oder iPad Dateien-App:
+
+* **Getrennte Netzwerkordner:**
+  * Staging: `inbox/staging/` (Port 8001)
+  * Produktion: `inbox/prod/` (Port 8000)
+* **Multimodaler Inhalts-Analyzer (`document_analyzer.py`):**
+  * Verarbeitet Scans und Dateien mit kryptischen Roh-Namen (z. B. `fgjg.pdf`, `Hebel.pdf`).
+  * Text-Erkennung für digitale Dokumente ($\ge 80$ Zeichen).
+  * Vision-Pipeline für reine Bild- und Papierscans (Seite 1 wird in-memory über system-natives `pdftoppm` als 100 DPI JPEG gerendert und an `gpt-4o-mini` übergeben).
+  * Vollautomatisches Renaming: Erzeugt normierte Dateinamen nach dem Schema `[Fach]_[Thema]_[Dokumentart]_[Titel].pdf` und legt fehlende Themen in der Lehrplan-Datenbank automatisch an.
+* **Digitale Mappenführung (`dossiers`):**
+  * Verknüpft Dokumente automatisch mit übergeordneten Mappen (Übungsmappen, Fachhefter, Lehrbücher, Testsammlungen).
+* **Ausfallsichere Quarantäne:**
+  * Defekte Dateien werden nach `inbox/<env>/_errors/` verschoben und mit einem `.error.txt`-Bericht dokumentiert. Der Batch-Lauf für alle weiteren Dokumente wird niemals unterbrochen.
+
 ---
 
 ## 11. Online-Materialien & OER-Schnittstellen (Land Brandenburg)

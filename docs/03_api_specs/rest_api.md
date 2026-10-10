@@ -337,7 +337,7 @@
 ```
 
 ### `POST /api/v1/inbox/process`
-* **Beschreibung:** Startet die atomare Verstoffwechselung aller wartenden Dateien im Inbox-Ordner. Verschiebt verarbeitete Dateien nach `materials/`, ordnet sie Mappen (`dossiers`) zu und leert den Inbox-Ordner.
+* **Beschreibung:** Startet die atomare Verstoffwechselung aller wartenden Dateien im Inbox-Ordner. Führt eine multimodale Inhaltsanalyse (Vision/Text) durch, bestimmt Fach, Thema, Titel und einen normierten Dateinamen, verschiebt physische Dateien nach `materials/`, ordnet sie Mappen (`dossiers`) zu und leert den Inbox-Ordner.
 * **Response (200 OK):**
 ```json
 {
@@ -347,14 +347,15 @@
   "processed_items": [
     {
       "material_id": "mat_a1b2c3d4",
-      "title": "Mathe Blatt1",
+      "title": "Hebel: Grundlagen und Anwendungen",
+      "filename": "Physik_Einfache_Maschinen_Arbeitsblatt_Hebel_Grundlagen_und_Anwendungen.pdf",
       "kind": "Arbeitsblatt",
-      "subject_id": "sub_math",
-      "subject_name": "Mathematik",
-      "topic_id": "top_math_7_rational",
-      "topic_name": "Rationale Zahlen",
+      "subject_id": "sub_physics",
+      "subject_name": "Physik",
+      "topic_id": "top_phys_einfache_maschinen",
+      "topic_name": "Einfache Maschinen",
       "dossier_id": "dos_e5f6g7h8",
-      "dossier_title": "Arbeitsblätter: Rationale Zahlen",
+      "dossier_title": "Arbeitsblätter: Einfache Maschinen",
       "page_count": 2
     }
   ],
