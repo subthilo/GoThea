@@ -211,6 +211,54 @@ PÄDAGOGISCHE LEITLINIEN (STRIKTE EINHALTUNG):
    Unterrichtsmaterialien und dem Brandenburger Rahmenlehrplan.
 ```
 
+### 5.2 Die Interaktive Whiteboard-Tutoring-Schleife (Sense → Diagnose → Guide → Track → Remediate)
+
+Das Whiteboard ist die zentrale Interaktionsfläche zwischen Schüler und KI. Der Lernprozess ist als geschlossener, adaptiver 5-Phasen-Kreislauf modelliert:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                   DER 5-PHASEN INTERAKTIONS- UND DIAGNOSE-KREISLAUF             │
+│                                                                                  │
+│  1. SENSE (Wahrnehmung)                                                          │
+│  - Schüler bearbeitet Thema / Arbeitsblatt mit dem Apple Pencil                  │
+│  - Tafel-Zustand wird bei Schreibpausen (Debounce ~2.5s) oder auf Knopfdruck     │
+│    ("Hilf mir") als Vektor-Diff & Snapshot an das Backend übertragen             │
+│                                      │                                           │
+│                                      ▼                                           │
+│  2. DIAGNOSE (Schritt-für-Schritt Analyse)                                       │
+│  - Vision- & Reasoning-LLM analysiert die Handschrift Zeile für Zeile           │
+│  - Erkennt nicht nur das Endergebnis, sondern Zwischenschritte & Denkansatz      │
+│  - Lokalisiert exakt den ersten fehlerhaften Term oder logischen Bruch          │
+│                                      │                                           │
+│                                      ▼                                           │
+│  3. GUIDE (Sokratisches Scaffolding direkt auf der Tafel)                        │
+│  - Visuell: KI blendet farbige Markierungsbox (#wb-overlay) um die Zeile ein    │
+│  - Auditiv / Text: KI stellt eine kurze Leitfrage (z. B. Vorzeichen-Hinweis)    │
+│  - Keine fertige Lösung – Schüler behält die kognitive Führung                   │
+│                                      │                                           │
+│                                      ▼                                           │
+│  4. TRACK (Knowledge Tracing in 'competency_records')                            │
+│  - System kategorisiert den Fehlertyp (z. B. "Distributivgesetz mit Minus")     │
+│  - Aktualisiert 'mastery_score' und trägt Fehlermuster in 'frequent_errors' ein  │
+│  - Speichert Lösungsversuche in 'tutor_sessions'                                 │
+│                                      │                                           │
+│                                      ▼                                           │
+│  5. REMEDIATE (Gezieltes Adressieren von Schwachstellen)                         │
+│  - Lernplan-Engine priorisiert das fehlerbehaftete Teilkonzept                   │
+│  - Schlägt im nächsten Übungsblock maßgeschneiderte Vertiefungsaufgaben vor      │
+│  - Wiederholung, bis das Teilkonzept sicher beherrscht wird (Mastery Learning)   │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Funktionsweise der Schritt-für-Schritt Unterstützung:
+1. **Arbeiten auf der Vorlage:** Der Schüler rechnet direkt in den Zeilen eines hochgeladenen Arbeitsblatts oder auf freier Tafel.
+2. **Unterbrechungsfreier Denkfluss:** Die KI unterbricht den Schüler nicht während des Schreibens. Erst wenn der Schüler innehält oder aktiv Unterstützung anfordert, greift der Tutor ein.
+3. **Konkrete visuelle Zeiger:** Statt abstrakter Textnachrichten nutzt die KI das transparente `#wb-overlay` (`board_actions`), um präzise auf Formeln, Rechnungen oder biologische Skizzen zu zeigen.
+4. **Altersgerechte Dosierung:** Bei Schülern der 7. Klasse werden Hilfestellungen in maximal 3 gestuften Hinweisen (Prompting-Hierarchie) gegeben:
+   * *Stufe 1:* Orientierungshinweis („Schau dir die zweite Zeile noch einmal an.“)
+   * *Stufe 2:* Konzeptueller Hinweis („Was passiert mit den Vorzeichen, wenn vor der Klammer ein Minus steht?“)
+   * *Stufe 3:* Konkreter Rechenhinweis („Rechne zuerst $-2 \cdot (-3)$ aus.“)
+
 ## 6. Lernplan- und Countdown-Algorithmus (Altersadaptiv)
 
 Der Lernplan reagiert deterministisch auf Prüfungstermine, Lernfortschritte und temporäre Sperrtage und skaliert die Anforderungen mit der Klassenstufe.
