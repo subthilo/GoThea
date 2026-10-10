@@ -200,7 +200,10 @@ def confirm_and_save_material(
         mime_type=mime_type,
         page_count=page_count,
         extracted_text=extracted_text or None,
-        summary=request.summary
+        summary=request.summary,
+        dossier_id=request.dossier_id,
+        dossier_order=request.dossier_order or 1,
+        parent_id=request.parent_id
     )
     db.add(material)
     db.flush()

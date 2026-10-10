@@ -23,6 +23,10 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
     btn.classList.add("active");
     const target = document.getElementById(`tab-${btn.dataset.tab}`);
     if (target) target.classList.add("active");
+
+    if (btn.dataset.tab === "subjects") {
+      checkInboxStatus();
+    }
   });
 });
 
@@ -184,11 +188,14 @@ function connectWebSocket() {
 }
 
 // 5. Environment & Staging Check
+let currentEnvInfo = null;
+
 async function checkEnvironment() {
   try {
     const res = await fetch("/api/v1/env");
     if (res.ok) {
       const data = await res.json();
+      currentEnvInfo = data;
       const stagingBanner = document.getElementById("staging-banner");
       const btnSeedDummies = document.getElementById("btn-seed-dummies");
       if (data.is_staging) {
@@ -197,6 +204,9 @@ async function checkEnvironment() {
       } else {
         stagingBanner.style.display = "none";
         if (btnSeedDummies) btnSeedDummies.style.display = "none";
+      }
+      if (inboxEnvBadge) {
+        inboxEnvBadge.textContent = data.is_staging ? "Finder: GoThea-Staging" : "Finder: GoThea-Prod";
       }
     }
   } catch (err) {
@@ -477,6 +487,7 @@ if (btnResetStaging) {
         await loadTaxonomy();
         await loadPlan();
         await loadMaterials();
+        await checkInboxStatus();
       } else {
         alert("Fehler beim Zurücksetzen.");
       }
@@ -512,6 +523,19 @@ const matPreviewMeta = document.getElementById("mat-preview-meta");
 const matPreviewSnippet = document.getElementById("mat-preview-snippet");
 const matPreviewIcon = document.getElementById("mat-preview-icon");
 
+// Inbox / Samba Dropzone DOM
+const inboxCard = document.getElementById("inbox-card");
+const inboxEnvBadge = document.getElementById("inbox-env-badge");
+const inboxSubtitle = document.getElementById("inbox-subtitle");
+const inboxFileList = document.getElementById("inbox-file-list");
+const inboxBadgeDot = document.getElementById("inbox-badge-dot");
+const btnRefreshInbox = document.getElementById("btn-refresh-inbox");
+const btnProcessInbox = document.getElementById("btn-process-inbox");
+const inboxProcessStatus = document.getElementById("inbox-process-status");
+const inboxStatusMsg = document.getElementById("inbox-status-msg");
+const inboxSpinner = document.getElementById("inbox-spinner");
+const navInboxBadge = document.getElementById("nav-inbox-badge");
+
 const matConfirmSubject = document.getElementById("mat-confirm-subject");
 const matConfirmTopic = document.getElementById("mat-confirm-topic");
 const matConfirmTitle = document.getElementById("mat-confirm-title");
@@ -519,6 +543,171 @@ const matConfirmKind = document.getElementById("mat-confirm-kind");
 const matConfirmSummary = document.getElementById("mat-confirm-summary");
 const btnBackMaterialStep = document.getElementById("btn-back-material-step");
 const btnSubmitMaterial = document.getElementById("btn-submit-material");
+
+// Prüft den Inhalt der Samba Dropzone (GET /api/v1/inbox/status)
+async function checkInboxStatus() {
+  if (!inboxCard) return;
+  try {
+    const res = await fetch("/api/v1/inbox/status");
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const pending = data.pending_count || 0;
+    const files = data.files || [];
+    const shareName = (currentEnvInfo && currentEnvInfo.is_staging) ? "GoThea-Staging" : "GoThea-Prod";
+
+    if (inboxEnvBadge) {
+      inboxEnvBadge.textContent = `Finder: ${shareName}`;
+    }
+
+    // Navigation Tab Badge aktualisieren
+    if (navInboxBadge) {
+      if (pending > 0) {
+        navInboxBadge.textContent = pending;
+        navInboxBadge.style.display = "inline-block";
+      } else {
+        navInboxBadge.style.display = "none";
+      }
+    }
+
+    // Card-Zustand anpassen
+    if (pending > 0) {
+      inboxCard.classList.add("has-pending");
+      if (inboxBadgeDot) inboxBadgeDot.style.display = "block";
+      if (inboxSubtitle) {
+        inboxSubtitle.textContent = `${pending} neue${pending === 1 ? "s" : ""} Dokument${pending === 1 ? "" : "e"} im Ordner bereit zum Einsortieren.`;
+      }
+      if (btnProcessInbox) {
+        btnProcessInbox.disabled = false;
+        btnProcessInbox.innerHTML = `📥 Jetzt einsortieren (${pending})`;
+      }
+    } else {
+      inboxCard.classList.remove("has-pending");
+      if (inboxBadgeDot) inboxBadgeDot.style.display = "none";
+      if (inboxSubtitle) {
+        inboxSubtitle.textContent = `Keine wartenden Dateien im Netzwerkordner.`;
+      }
+      if (btnProcessInbox) {
+        btnProcessInbox.disabled = true;
+        btnProcessInbox.innerHTML = `📥 Jetzt einsortieren`;
+      }
+    }
+
+    // Dateiliste rendern
+    if (inboxFileList) {
+      inboxFileList.innerHTML = "";
+      if (files.length === 0) {
+        inboxFileList.innerHTML = `
+          <div class="inbox-empty-hint">
+            <span>✨</span>
+            <span>Ziehe PDFs oder Bilder in deinen Mac-Finder Netzwerkordner <code>${shareName}</code>, um sie automatisch hier einzulesen.</span>
+          </div>
+        `;
+      } else {
+        files.forEach((f) => {
+          const chip = document.createElement("div");
+          chip.className = "inbox-file-chip";
+          const isPdf = (f.mime_type || "").includes("pdf") || (f.filename || "").toLowerCase().endsWith(".pdf");
+          const icon = isPdf ? "📄" : "🖼️";
+          const sizeKb = Math.round((f.file_size || 0) / 1024);
+          const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+
+          chip.innerHTML = `
+            <span>${icon}</span>
+            <span style="font-weight: 600;">${f.filename}</span>
+            <span class="inbox-file-size">${sizeStr}</span>
+          `;
+          inboxFileList.appendChild(chip);
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Fehler beim Prüfen des Inbox-Status:", err);
+  }
+}
+
+// Startet die Ingestion der Inbox (POST /api/v1/inbox/process)
+async function processInbox() {
+  if (!btnProcessInbox || btnProcessInbox.disabled) return;
+  btnProcessInbox.disabled = true;
+
+  if (inboxProcessStatus) {
+    inboxProcessStatus.className = "inbox-process-status";
+    inboxProcessStatus.style.display = "flex";
+    if (inboxSpinner) inboxSpinner.style.display = "block";
+    if (inboxStatusMsg) {
+      inboxStatusMsg.textContent = "Dokumente werden analysiert, Text extrahiert & Fächern zugeordnet...";
+    }
+  }
+
+  try {
+    const res = await fetch("/api/v1/inbox/process", { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      const pCount = data.processed_count || 0;
+      const eCount = data.errors_count || 0;
+
+      if (inboxSpinner) inboxSpinner.style.display = "none";
+
+      if (pCount > 0 && eCount === 0) {
+        inboxProcessStatus.className = "inbox-process-status success";
+        if (inboxStatusMsg) {
+          inboxStatusMsg.textContent = `✅ Erfolgreich: ${pCount} Dokument${pCount === 1 ? "" : "e"} analysiert und einsortiert!`;
+        }
+      } else if (pCount > 0 && eCount > 0) {
+        inboxProcessStatus.className = "inbox-process-status warning";
+        if (inboxStatusMsg) {
+          inboxStatusMsg.textContent = `⚠️ ${pCount} Dokument${pCount === 1 ? "" : "e"} verarbeitet, ${eCount} fehlerhafte Datei(en) nach _errors/ verschoben.`;
+        }
+      } else if (pCount === 0 && eCount > 0) {
+        inboxProcessStatus.className = "inbox-process-status warning";
+        if (inboxStatusMsg) {
+          inboxStatusMsg.textContent = `⚠️ Fehler bei ${eCount} Datei(en). Details in _errors/.`;
+        }
+      } else {
+        inboxProcessStatus.className = "inbox-process-status";
+        if (inboxStatusMsg) {
+          inboxStatusMsg.textContent = "Keine neuen Dateien zur Verarbeitung gefunden.";
+        }
+      }
+
+      await loadMaterials();
+      await checkInboxStatus();
+
+      setTimeout(() => {
+        if (inboxProcessStatus) inboxProcessStatus.style.display = "none";
+      }, 6000);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      if (inboxSpinner) inboxSpinner.style.display = "none";
+      inboxProcessStatus.className = "inbox-process-status warning";
+      if (inboxStatusMsg) {
+        inboxStatusMsg.textContent = `❌ Fehler bei der Verarbeitung: ${err.detail || "Serverfehler"}`;
+      }
+    }
+  } catch (err) {
+    console.error("Netzwerkfehler beim Verarbeiten des Posteingangs:", err);
+    if (inboxSpinner) inboxSpinner.style.display = "none";
+    inboxProcessStatus.className = "inbox-process-status warning";
+    if (inboxStatusMsg) {
+      inboxStatusMsg.textContent = "❌ Netzwerkfehler beim Verarbeiten.";
+    }
+  } finally {
+    await checkInboxStatus();
+  }
+}
+
+if (btnRefreshInbox) {
+  btnRefreshInbox.addEventListener("click", () => {
+    checkInboxStatus();
+  });
+}
+
+if (btnProcessInbox) {
+  btnProcessInbox.addEventListener("click", () => {
+    processInbox();
+  });
+}
 
 async function loadMaterials() {
   if (!materialsList) return;
@@ -564,9 +753,12 @@ function renderMaterialsList(materials) {
       <div>
         <div class="mat-card-header">
           <div class="mat-card-title">${m.title}</div>
-          <span class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light); border: 1px solid rgba(99, 102, 241, 0.3);">
-            ${m.kind}
-          </span>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            ${m.dossier_title ? `<span class="mat-dossier-badge" title="Zugeordneter Hefter">📁 ${m.dossier_title}</span>` : ""}
+            <span class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light); border: 1px solid rgba(99, 102, 241, 0.3);">
+              ${m.kind}
+            </span>
+          </div>
         </div>
         <div class="mat-card-meta">
           <span style="color: ${m.subject_color || 'var(--text-primary)'}; font-weight: 600;">
@@ -574,6 +766,7 @@ function renderMaterialsList(materials) {
           </span>
           ${m.topic_name ? `<span>• 📑 ${m.topic_name}</span>` : ""}
           <span>• ${docIcon} ${m.page_count} S. (${sizeStr})</span>
+          ${m.start_page && m.end_page ? `<span>• S. ${m.start_page}–${m.end_page}</span>` : ""}
         </div>
         ${m.summary ? `<div class="mat-card-summary">“${m.summary}”</div>` : ""}
       </div>
@@ -947,6 +1140,7 @@ async function initApp() {
   await loadTaxonomy();
   await loadPlan();
   await loadMaterials();
+  await checkInboxStatus();
   connectWebSocket();
 }
 

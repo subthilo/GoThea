@@ -94,7 +94,13 @@ def confirm_material(
         subject_name=subject.name,
         subject_icon=subject.icon,
         subject_color=subject.color_code,
-        topic_name=material.topic.name if material.topic else None
+        topic_name=material.topic.name if material.topic else None,
+        dossier_id=material.dossier_id,
+        dossier_order=material.dossier_order,
+        parent_id=material.parent_id,
+        start_page=material.start_page,
+        end_page=material.end_page,
+        dossier_title=material.dossier.title if material.dossier else None
     )
 
 @router.get("", response_model=List[MaterialRead])
@@ -132,7 +138,13 @@ def list_materials(
             subject_name=mat.subject.name if mat.subject else None,
             subject_icon=mat.subject.icon if mat.subject else None,
             subject_color=mat.subject.color_code if mat.subject else None,
-            topic_name=mat.topic.name if mat.topic else None
+            topic_name=mat.topic.name if mat.topic else None,
+            dossier_id=mat.dossier_id,
+            dossier_order=mat.dossier_order,
+            parent_id=mat.parent_id,
+            start_page=mat.start_page,
+            end_page=mat.end_page,
+            dossier_title=mat.dossier.title if mat.dossier else None
         ))
     return results
 
@@ -166,6 +178,12 @@ def get_material_detail(
         subject_icon=mat.subject.icon if mat.subject else None,
         subject_color=mat.subject.color_code if mat.subject else None,
         topic_name=mat.topic.name if mat.topic else None,
+        dossier_id=mat.dossier_id,
+        dossier_order=mat.dossier_order,
+        parent_id=mat.parent_id,
+        start_page=mat.start_page,
+        end_page=mat.end_page,
+        dossier_title=mat.dossier.title if mat.dossier else None,
         extracted_text=mat.extracted_text,
         chunks=mat.chunks
     )

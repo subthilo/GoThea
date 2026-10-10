@@ -35,7 +35,7 @@
       <!-- Navigation Tabs -->
       <nav class="nav-tabs">
         <button class="nav-tab active" data-tab="dashboard">📊 Übersicht</button>
-        <button class="nav-tab" data-tab="subjects">📚 Fächer & Themen</button>
+        <button class="nav-tab" data-tab="subjects">📚 Fächer & Themen<span id="nav-inbox-badge" class="nav-counter-badge" style="display: none;">0</span></button>
         <button class="nav-tab" data-tab="planner">📅 Lernplan</button>
         <button class="nav-tab" data-tab="whiteboard">🎨 Tafel</button>
         <button class="nav-tab" data-tab="profile">👤 Profil</button>
@@ -114,6 +114,47 @@
             </div>
             <span class="badge-minutes" id="materials-count-badge">0 Dokumente</span>
           </div>
+
+          <!-- Netzwerk-Posteingang (Samba Dropzone) Karte -->
+          <div id="inbox-card" class="inbox-card">
+            <div class="inbox-header">
+              <div class="inbox-title-group">
+                <div class="inbox-icon-wrap">
+                  <span class="inbox-icon">📬</span>
+                  <span class="inbox-badge-dot" id="inbox-badge-dot" style="display: none;"></span>
+                </div>
+                <div>
+                  <div class="inbox-title">
+                    <span>Netzwerk-Posteingang</span>
+                    <span class="inbox-env-badge" id="inbox-env-badge">Finder: GoThea-Staging</span>
+                  </div>
+                  <p class="inbox-subtitle" id="inbox-subtitle">
+                    Prüfe Netzwerkordner auf neue Dokumente...
+                  </p>
+                </div>
+              </div>
+              <div class="inbox-actions">
+                <button id="btn-refresh-inbox" class="btn-inbox-refresh" title="Netzwerkordner erneut prüfen">
+                  🔄 Prüfen
+                </button>
+                <button id="btn-process-inbox" class="btn-inbox-process" disabled>
+                  📥 Jetzt einsortieren
+                </button>
+              </div>
+            </div>
+
+            <!-- Dateiliste / Chips -->
+            <div id="inbox-file-list" class="inbox-file-list">
+              <!-- Dynamisch via API befüllt -->
+            </div>
+
+            <!-- Verarbeitungs-Status & Feedback Box -->
+            <div id="inbox-process-status" class="inbox-process-status" style="display: none;">
+              <div class="inbox-spinner" id="inbox-spinner"></div>
+              <div id="inbox-status-msg">Verarbeite Dokumente...</div>
+            </div>
+          </div>
+
           <div id="materials-list" class="materials-grid">
             <!-- Dynamisch via API befüllt -->
           </div>

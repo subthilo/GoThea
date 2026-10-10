@@ -120,3 +120,46 @@ def test_confirm_invalid_topic_fails(client):
     res = client.post("/api/v1/materials/confirm", json=payload)
     assert res.status_code == 404
     assert "thema" in res.json()["detail"].lower()
+
+def test_confirm_material_with_dossier_and_pages(client, db_session):
+    from backend.app.models.dossier import Dossier
+    # 1. Dossier anlegen
+    dossier = Dossier(
+        id="dos_test_bio_hefter",
+        user_id="usr_thea_default",
+        subject_id="sub_bio",
+        title="Biologie Hefter 1. Halbjahr",
+        kind="hefter"
+    )
+    db_session.add(dossier)
+    db_session.commit()
+
+    # 2. Upload vorab analysieren
+    pdf_bytes = create_sample_pdf_bytes("Biologie Kapitel 2 Zellteilung")
+    files = {"file": ("kapitel_2.pdf", pdf_bytes, "application/pdf")}
+    res_pre = client.post("/api/v1/materials/pre-analyze", files=files)
+    assert res_pre.status_code == 200
+    token = res_pre.json()["upload_token"]
+
+    # 3. Mit dossier_id bestätigen
+    confirm_payload = {
+        "upload_token": token,
+        "subject_id": "sub_bio",
+        "dossier_id": "dos_test_bio_hefter",
+        "dossier_order": 2,
+        "title": "Kapitel 2: Zellteilung",
+        "kind": "Hefter"
+    }
+    res_confirm = client.post("/api/v1/materials/confirm", json=confirm_payload)
+    assert res_confirm.status_code == 201
+    mat = res_confirm.json()
+    assert mat["dossier_id"] == "dos_test_bio_hefter"
+    assert mat["dossier_title"] == "Biologie Hefter 1. Halbjahr"
+
+    # 4. Liste prüfen
+    res_list = client.get("/api/v1/materials?subject_id=sub_bio")
+    assert res_list.status_code == 200
+    items = res_list.json()
+    found = next((m for m in items if m["id"] == mat["id"]), None)
+    assert found is not None
+    assert found["dossier_title"] == "Biologie Hefter 1. Halbjahr"

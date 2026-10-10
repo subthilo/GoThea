@@ -60,6 +60,7 @@ class MaterialRead(BaseModel):
     subject_icon: Optional[str] = None
     subject_color: Optional[str] = None
     topic_name: Optional[str] = None
+    dossier_title: Optional[str] = None
 
 class MaterialDetailRead(MaterialRead):
     extracted_text: Optional[str] = None
