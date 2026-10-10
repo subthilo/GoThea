@@ -78,7 +78,11 @@ TOTAL                                    736     54    93%
 ## 4. Frontend & iPad Hardware-Optimierung
 
 * **HiDPI Retina Canvas:** Canvas-Puffer wird automatisch mit `window.devicePixelRatio` skaliert, gestochen scharfe Schrift auf iPad Pro und Air.
-* **Apple Pencil & Palm Rejection:** Wahl zwischen *Pencil-Modus* (ignoriert Handflächen- und Fingerberührung) und *Touch-Modus*.
-* **Drucksensitivität & Glättung:** Dynamische Linienbreite basierend auf `e.pressure` gepaart mit quadratischer Bézier-Kurvenglättung.
+* **Apple Pencil & Palm Rejection:** Wahl zwischen *Pencil-Modus* (ignoriert Handflächen- und Fingerberührung) und *Touch-Modus*. Blockiert alle nativen Safari-Gesten (`touchstart`, `contextmenu`, `preventDefault()`), um das "Teilen..."-Menü und Eingabepausen 100% zu verhindern.
+* **Drucksensitivität & Glättung:** Dynamische Linienbreite basierend auf `e.pressure` gepaart mit kontinuierlichen, abgerundeten Liniensegmenten ohne Abrisse.
+* **Dualer Radierer-Modus (Pixel vs. Objekt):**
+  * 🧹 **Pixel-Radierer:** Präzises Freiradieren einzelner Bildpunkte (`destination-out`) mit anpassbarer Pinselbreite.
+  * 🎯 **Objekt-Radierer:** Berührt einen beliebigen Teil eines geschriebenen Buchstabens, einer Zahl oder einer Kurve und löscht den gesamten Strich sofort (vektorbasierter Schnittstellentest mit Bounding-Box-Vorfilterung und Punkt-zu-Segment-Abstandsberechnung).
+* **Universelles Undo / Redo:** Unterstützt das Rückgängigmachen und Wiederherstellen von Zeichenstrichen, Objektradierungen und Tafel-Leeren.
 * **Dual-Layer Architektur:** Trennung zwischen Schüler-Mitschrift (Ink-Layer) und KI-Tutor Hinweisen (transparenter Overlay-Layer).
-* **Schwebende Frosted-Glass Toolbar:** Stift, Textmarker, Radierer, 3 Strichstärken, 6 Farben, 4 Hintergründe (Schiefertafel, Mathe-Kariert, Liniert, Weiß), Undo/Redo, Vollbild-Umschaltung und Snapshot-Download.
+* **Schwebende Frosted-Glass Toolbar:** Stift, Textmarker, Pixel-Radierer, Objekt-Radierer, 3 Strichstärken, 6 Farben, 4 Hintergründe (Schiefertafel, Mathe-Kariert, Liniert, Weiß), Undo/Redo, Vollbild-Umschaltung und Snapshot-Download.
