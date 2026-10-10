@@ -1,7 +1,21 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+# 1. Automatisch .env laden (Root oder Fallback auf experiments/.env)
+_root_env = PROJECT_ROOT / ".env"
+if _root_env.exists():
+    load_dotenv(_root_env)
+else:
+    _study_env = PROJECT_ROOT / "experiments" / "openai_study" / ".env"
+    if _study_env.exists():
+        load_dotenv(_study_env)
+
+# OpenAI Integration
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # Umgebung: "staging" oder "production" (Default: "staging" für Sicherheit)
 APP_ENV = os.getenv("APP_ENV", "staging").lower()

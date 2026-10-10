@@ -49,3 +49,9 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+@pytest.fixture(autouse=True)
+def disable_openai_in_tests(monkeypatch):
+    """Verhindert echte OpenAI API-Aufrufe während der Standard-Test-Suite."""
+    monkeypatch.setattr("backend.app.services.document_analyzer.OPENAI_API_KEY", None)
+

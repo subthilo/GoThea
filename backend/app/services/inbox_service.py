@@ -24,6 +24,7 @@ from backend.app.services.material_ingestion import (
     chunk_text,
     SUBJECT_KEYWORDS,
 )
+from backend.app.services.document_analyzer import analyze_document_content, predict_subject_and_topic
 
 SUPPORTED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
 IGNORED_PATTERNS = {".ds_store", ".localized", "thumbs.db"}
@@ -113,43 +114,6 @@ def quarantine_file(file_path: Path, error_message: str, inbox_dir: Optional[Pat
     log_file.write_text(log_content, encoding="utf-8")
     return dest_file
 
-def predict_subject_and_topic(
-    db: Session,
-    filename: str,
-    text: str
-) -> Tuple[str, Optional[str]]:
-    """Heuristische Fach- und Themenprognose anhand von Dateinamen und extrahiertem Text."""
-    corpus = f"{filename} {text}".lower()
-    all_subjects = db.query(Subject).filter_by(is_active=True).all()
-    subject_map = {s.id: s for s in all_subjects}
-
-    best_subject_id = None
-    best_score = 0
-
-    for sub_id, keywords in SUBJECT_KEYWORDS.items():
-        score = sum(1 for kw in keywords if kw in corpus)
-        if sub_id in subject_map and subject_map[sub_id].name.lower() in corpus:
-            score += 3
-        if score > best_score:
-            best_score = score
-            best_subject_id = sub_id
-
-    if not best_subject_id and all_subjects:
-        best_subject_id = all_subjects[0].id
-
-    predicted_topic_id = None
-    if best_subject_id:
-        topics = db.query(Topic).filter_by(subject_id=best_subject_id).all()
-        best_t_score = 0
-        for top in topics:
-            t_words = top.name.lower().split()
-            t_score = sum(2 for w in t_words if len(w) > 3 and w in corpus)
-            if t_score > best_t_score:
-                best_t_score = t_score
-                predicted_topic_id = top.id
-
-    return best_subject_id or "sub_math", predicted_topic_id
-
 def find_or_create_dossier(
     db: Session,
     user_id: str,
@@ -219,36 +183,28 @@ def process_single_inbox_file(
     if is_pdf:
         page_count, extracted_text = extract_pdf_data(file_bytes)
         mime_type = "application/pdf"
-        # Erkennung großes Buch vs. Einzelarbeitsblatt
-        if page_count >= 50 or any(k in filename.lower() for k in ["lehrbuch", "schulbuch", "gesamtband"]):
-            kind = "Buch"
-        else:
-            kind = detect_kind_from_filename_and_text(filename, extracted_text)
     else:
         page_count = 1
         extracted_text = ""
         mime_type = "image/png" if ext == ".png" else "image/jpeg"
-        kind = "Hefterseite"
 
-    title = clean_title_from_filename(filename)
-    subject_id, topic_id = predict_subject_and_topic(db, filename, extracted_text)
+    # KI-Inhaltsanalyse & automatische Umbenennung
+    analysis = analyze_document_content(
+        db=db,
+        file_path=file_path,
+        extracted_text=extracted_text,
+        mime_type=mime_type
+    )
+
+    title = analysis.title
+    kind = analysis.kind
+    subject_id = analysis.subject_id
+    topic_id = analysis.topic_id
+    dossier_title = analysis.dossier_title
+    dossier_kind = analysis.dossier_kind
 
     subject = db.query(Subject).filter_by(id=subject_id).first()
     topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
-
-    # Dossier bestimmen oder anlegen
-    if kind in ("Buch", "Buchauszug"):
-        dossier_title = f"Lehrbuch: {title}"
-        dossier_kind = "lehrbuch"
-    elif kind == "Hefterseite":
-        dossier_title = f"Hefter: {topic.name if topic else subject.name}"
-        dossier_kind = "hefter"
-    elif kind in ("Klassenarbeit", "Test"):
-        dossier_title = f"Testsammlung: {subject.name}"
-        dossier_kind = "testsammlung"
-    else:
-        dossier_title = f"Arbeitsblätter: {topic.name if topic else subject.name}"
-        dossier_kind = "uebungsmappe"
 
     dossier = find_or_create_dossier(
         db=db,
@@ -263,7 +219,7 @@ def process_single_inbox_file(
     existing_count = db.query(Material).filter_by(dossier_id=dossier.id).count()
     dossier_order = existing_count + 1
 
-    # Physische Datei atomar verschieben
+    # Physische Datei atomar nach materials/ verschieben
     mat_id = f"mat_{uuid.uuid4().hex[:8]}"
     perm_filename = f"{mat_id}{ext}"
     perm_path = target_mat_dir / perm_filename
@@ -279,13 +235,13 @@ def process_single_inbox_file(
         dossier_order=dossier_order,
         title=title,
         kind=kind,
-        filename=perm_filename,
+        filename=analysis.normalized_filename,
         file_path=str(perm_path),
         file_size=file_size,
         mime_type=mime_type,
         page_count=page_count,
         extracted_text=extracted_text or None,
-        summary=f"Automatisch aus Inbox verarbeitet in Mappe '{dossier.title}'"
+        summary=analysis.summary or f"Automatisch aus Inbox verarbeitet in Mappe '{dossier.title}'"
     )
     db.add(material)
     db.flush()
