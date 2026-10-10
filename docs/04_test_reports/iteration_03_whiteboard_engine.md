@@ -78,11 +78,19 @@ TOTAL                                    736     54    93%
 ## 4. Frontend & iPad Hardware-Optimierung
 
 * **HiDPI Retina Canvas:** Canvas-Puffer wird automatisch mit `window.devicePixelRatio` skaliert, gestochen scharfe Schrift auf iPad Pro und Air.
-* **Apple Pencil & Palm Rejection:** Wahl zwischen *Pencil-Modus* (ignoriert Handflächen- und Fingerberührung) und *Touch-Modus*. Blockiert alle nativen Safari-Gesten (`touchstart`, `contextmenu`, `preventDefault()`), um das "Teilen..."-Menü und Eingabepausen 100% zu verhindern.
-* **Drucksensitivität & Glättung:** Dynamische Linienbreite basierend auf `e.pressure` gepaart mit kontinuierlichen, abgerundeten Liniensegmenten ohne Abrisse.
+* **Apple Pencil & Palm Rejection:** Wahl zwischen *Pencil-Modus* (ignoriert Handflächen- und Fingerberührung) und *Touch-Modus*.
+* **100% Beseitigung des iOS Safari 'Teilen...'-Bugs:**
+  * Unbedingtes `e.preventDefault()` auf allen nativen Touch-Events (`touchstart`, `touchmove`, `touchend`, `touchcancel`) mit `{ capture: true, passive: false }`.
+  * Globale Blockade von Textselektions- und Gestenevents (`selectstart`, `selectionchange.removeAllRanges()`, `gesturestart`, `contextmenu`).
+  * CSS-Level Absicherung durch `-webkit-touch-callout: none !important;` und `-webkit-user-select: none !important;` auf dem gesamten Dokument und dem Staging-Banner.
+* **Drucksensitivität & Glättung:** Dynamische Linienbreite basierend auf `e.pressure` gepaart mit kontinuierlichen, abgerundeten Liniensegmenten ohne Abrisse via `quadraticCurveTo` und Coalesced Events.
 * **Dualer Radierer-Modus (Pixel vs. Objekt):**
   * 🧹 **Pixel-Radierer:** Präzises Freiradieren einzelner Bildpunkte (`destination-out`) mit anpassbarer Pinselbreite.
   * 🎯 **Objekt-Radierer:** Berührt einen beliebigen Teil eines geschriebenen Buchstabens, einer Zahl oder einer Kurve und löscht den gesamten Strich sofort (vektorbasierter Schnittstellentest mit Bounding-Box-Vorfilterung und Punkt-zu-Segment-Abstandsberechnung).
+* **Unbegrenzte vertikale Tafel (Infinite Canvas) & Zwei-Finger-Scrollen:**
+  * 1:1 physikalisches Scrollen mit zwei Fingern ohne Latenz oder künstliche Multiplikatoren ($\Delta y = y_{center} - y_{startCenter}$).
+  * Synchroner Offset von Zeichenebene, KI-Overlay und Hintergrund-Muster.
+  * Automatisch einblendender „⤒ Zum Anfang“-Button mit kubischer Rückkehranimation sowie dezent ausblendende Scrollbar.
 * **Universelles Undo / Redo:** Unterstützt das Rückgängigmachen und Wiederherstellen von Zeichenstrichen, Objektradierungen und Tafel-Leeren.
 * **Dual-Layer Architektur:** Trennung zwischen Schüler-Mitschrift (Ink-Layer) und KI-Tutor Hinweisen (transparenter Overlay-Layer).
 * **Schwebende Frosted-Glass Toolbar:** Stift, Textmarker, Pixel-Radierer, Objekt-Radierer, 3 Strichstärken, 6 Farben, 4 Hintergründe (Schiefertafel, Mathe-Kariert, Liniert, Weiß), Undo/Redo, Vollbild-Umschaltung und Snapshot-Download.
