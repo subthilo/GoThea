@@ -4,9 +4,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from backend.app.database import engine, Base, SessionLocal
+from backend.app.database import engine, Base, SessionLocal, ensure_schema_migrations
 from backend.app.models.user import User
 from backend.app.models.taxonomy import Subject, Topic
+from backend.app.models.dossier import Dossier
+from backend.app.models.material import Material, MaterialChunk
 from backend.app.services.seeder import seed_database
 from backend.app.routers.profile import router as profile_router
 from backend.app.routers.taxonomy import router as taxonomy_router
@@ -22,6 +24,7 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 async def lifespan(app: FastAPI):
     # 1. Datenbanktabellen initialisieren
     Base.metadata.create_all(bind=engine)
+    ensure_schema_migrations(engine)
     # 2. Seed-Daten einspielen
     db = SessionLocal()
     try:

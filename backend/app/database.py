@@ -19,6 +19,34 @@ if "sqlite" in DATABASE_URL:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+def ensure_schema_migrations(target_engine):
+    """
+    Führt schlanke, abwärtskompatible SQLite-Spaltenmigrationen aus,
+    damit bestehende Datenbanken neue Spalten ohne Datenverlust erhalten.
+    """
+    if "sqlite" not in str(target_engine.url):
+        return
+
+    from sqlalchemy import text
+    with target_engine.connect() as conn:
+        res = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='materials';")).fetchone()
+        if res:
+            existing_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(materials);")).fetchall()]
+            new_cols = [
+                ("dossier_id", "TEXT REFERENCES dossiers(id) ON DELETE SET NULL"),
+                ("dossier_order", "INTEGER NOT NULL DEFAULT 1"),
+                ("parent_id", "TEXT REFERENCES materials(id) ON DELETE CASCADE"),
+                ("start_page", "INTEGER"),
+                ("end_page", "INTEGER"),
+            ]
+            for col_name, col_def in new_cols:
+                if col_name not in existing_cols:
+                    try:
+                        conn.execute(text(f"ALTER TABLE materials ADD COLUMN {col_name} {col_def};"))
+                    except Exception:
+                        pass
+        conn.commit()
+
 def get_db():
     db = SessionLocal()
     try:

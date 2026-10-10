@@ -19,6 +19,9 @@ class MaterialConfirmRequest(BaseModel):
     upload_token: str
     subject_id: str
     topic_id: Optional[str] = None
+    dossier_id: Optional[str] = None
+    dossier_order: Optional[int] = 1
+    parent_id: Optional[str] = None
     title: str
     kind: str = "Arbeitsblatt"
     summary: Optional[str] = None
@@ -39,12 +42,17 @@ class MaterialRead(BaseModel):
     user_id: str
     subject_id: str
     topic_id: Optional[str] = None
+    dossier_id: Optional[str] = None
+    dossier_order: Optional[int] = 1
+    parent_id: Optional[str] = None
     title: str
     kind: str
     filename: str
     file_size: int
     mime_type: str
     page_count: int
+    start_page: Optional[int] = None
+    end_page: Optional[int] = None
     summary: Optional[str] = None
     created_at: datetime
     chunks_count: Optional[int] = 0
