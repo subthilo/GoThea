@@ -1,5 +1,5 @@
 // GoThea Whiteboard Engine (Milestone 5 Frontend)
-// Ultra-Low-Latency Apple Pencil & Touch Canvas with Coalesced Events, Pressure Smoothing & AI Overlay
+// Ultra-Low-Latency Apple Pencil & Touch Canvas with Pixel-Eraser, Object-Eraser, Coalesced Events & AI Overlay
 
 (function() {
   // DOM Elements
@@ -30,16 +30,18 @@
   let currentSession = null;
   let tutorSocket = null;
   let isDrawing = false;
-  let currentTool = "pen"; // 'pen', 'highlighter', 'eraser'
+  let currentTool = "pen"; // 'pen', 'highlighter', 'pixel_eraser', 'object_eraser'
   let currentColor = "#f8fafc";
   let currentBaseWidth = 4;
   let currentSmoothWidth = 4;
   let penOnlyMode = true; // Palm rejection: ignore finger touch
   let activePointerId = null; // Track current active pencil/pen pointer
   let strokes = [];
+  let undoStack = []; // Stores action history { type: 'add'|'delete'|'clear', ... }
   let redoStack = [];
   let currentStroke = null;
   let lastPoint = null;
+  let dragDeletedItems = []; // For object_eraser drag session
   let dpr = window.devicePixelRatio || 1;
   let saveDebounceTimer = null;
 
@@ -93,12 +95,70 @@
     };
   }
 
-  // 3. Tool Styles Setup
+  function computeBoundingBox(points) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+    return { minX, maxX, minY, maxY };
+  }
+
+  // 3. Geometry Math for Object Eraser (Stroke Hit-Testing)
+  function distToSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) {
+      const sx = px - x1;
+      const sy = py - y1;
+      return Math.sqrt(sx * sx + sy * sy);
+    }
+    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const cx = x1 + t * dx;
+    const cy = y1 + t * dy;
+    const ex = px - cx;
+    const ey = py - cy;
+    return Math.sqrt(ex * ex + ey * ey);
+  }
+
+  function strokeHitsPoint(stroke, px, py, radius) {
+    if (!stroke.points || stroke.points.length === 0) return false;
+    const threshold = radius + (stroke.width || 3) / 2;
+
+    // Fast Bounding Box check
+    if (stroke.bbox) {
+      if (px < stroke.bbox.minX - threshold || px > stroke.bbox.maxX + threshold ||
+          py < stroke.bbox.minY - threshold || py > stroke.bbox.maxY + threshold) {
+        return false;
+      }
+    }
+
+    const pts = stroke.points;
+    if (pts.length === 1) {
+      const dx = px - pts[0].x;
+      const dy = py - pts[0].y;
+      return (dx * dx + dy * dy) <= (threshold * threshold);
+    }
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      if (distToSegment(px, py, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y) <= threshold) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // 4. Tool Styles Setup
   function applyToolStyle(ctx, tool, color, baseWidth) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    if (tool === "eraser") {
+    if (tool === "pixel_eraser" || tool === "eraser") {
       ctx.globalCompositeOperation = "destination-out";
       ctx.strokeStyle = "rgba(0,0,0,1)";
       ctx.lineWidth = baseWidth * 5;
@@ -136,7 +196,7 @@
     if (pts.length === 1) {
       inkCtx.beginPath();
       inkCtx.arc(pts[0].x, pts[0].y, Math.max(1, stroke.width / 2), 0, Math.PI * 2);
-      inkCtx.fillStyle = stroke.tool === "eraser" ? "#000" : stroke.color;
+      inkCtx.fillStyle = (stroke.tool === "pixel_eraser" || stroke.tool === "eraser") ? "#000" : stroke.color;
       inkCtx.fill();
     } else {
       inkCtx.beginPath();
@@ -150,16 +210,15 @@
     inkCtx.restore();
   }
 
-  // 4. Ultra-Fluid Live Drawing Loop
+  // 5. Ultra-Fluid Live Drawing Loop
   function drawLiveSegment(pt) {
     if (!lastPoint) {
       lastPoint = pt;
       return;
     }
 
-    // Dynamic pressure smoothing (avoids jerky/dotted line width changes)
     let targetWidth;
-    if (currentTool === "eraser") {
+    if (currentTool === "pixel_eraser" || currentTool === "eraser") {
       targetWidth = currentBaseWidth * 5;
     } else if (currentTool === "highlighter") {
       targetWidth = currentBaseWidth * 3.5;
@@ -175,6 +234,24 @@
     inkCtx.stroke();
 
     lastPoint = pt;
+  }
+
+  function checkAndEraseObjectsAtPoint(pt) {
+    const radius = Math.max(16, currentBaseWidth * 4);
+    let hitAny = false;
+
+    // Check backwards from newest to oldest
+    for (let i = strokes.length - 1; i >= 0; i--) {
+      if (strokeHitsPoint(strokes[i], pt.x, pt.y, radius)) {
+        const removed = strokes.splice(i, 1)[0];
+        dragDeletedItems.push({ stroke: removed, index: i });
+        hitAny = true;
+      }
+    }
+
+    if (hitAny) {
+      redrawAllStrokes();
+    }
   }
 
   function handlePointerDown(e) {
@@ -197,11 +274,15 @@
     } catch (_) {}
 
     isDrawing = true;
-    redoStack = [];
-
     const pt = getEventPoint(e);
     lastPoint = pt;
     currentSmoothWidth = currentBaseWidth;
+
+    if (currentTool === "object_eraser") {
+      dragDeletedItems = [];
+      checkAndEraseObjectsAtPoint(pt);
+      return;
+    }
 
     currentStroke = {
       tool: currentTool,
@@ -215,22 +296,32 @@
 
     // Initialen Punkt zeichnen
     inkCtx.beginPath();
-    const dotRadius = currentTool === "eraser" ? (currentBaseWidth * 2.5) : Math.max(1, currentBaseWidth / 2);
+    const isEraser = currentTool === "pixel_eraser" || currentTool === "eraser";
+    const dotRadius = isEraser ? (currentBaseWidth * 2.5) : Math.max(1, currentBaseWidth / 2);
     inkCtx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
-    inkCtx.fillStyle = currentTool === "eraser" ? "#000" : currentColor;
+    inkCtx.fillStyle = isEraser ? "#000" : currentColor;
     inkCtx.fill();
   }
 
   function handlePointerMove(e) {
     e.preventDefault();
-    if (!isDrawing || !currentStroke) return;
+    if (!isDrawing) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
     if (penOnlyMode && e.pointerType === "touch") return;
 
-    // Coalesced Events: Greift Hardware-Updates mit voller Rate (120Hz/240Hz) ab
     const events = (e.getCoalescedEvents && e.getCoalescedEvents().length > 0)
       ? e.getCoalescedEvents()
       : [e];
+
+    if (currentTool === "object_eraser") {
+      for (let i = 0; i < events.length; i++) {
+        const pt = getEventPoint(events[i]);
+        checkAndEraseObjectsAtPoint(pt);
+      }
+      return;
+    }
+
+    if (!currentStroke) return;
 
     for (let i = 0; i < events.length; i++) {
       const pt = getEventPoint(events[i]);
@@ -243,8 +334,18 @@
     e.preventDefault();
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
-    if (isDrawing && currentStroke && currentStroke.points.length > 0) {
+    if (currentTool === "object_eraser") {
+      if (dragDeletedItems.length > 0) {
+        undoStack.push({ type: "delete_strokes", items: dragDeletedItems });
+        redoStack = [];
+        scheduleAutoSave();
+      }
+      dragDeletedItems = [];
+    } else if (isDrawing && currentStroke && currentStroke.points.length > 0) {
+      currentStroke.bbox = computeBoundingBox(currentStroke.points);
       strokes.push(currentStroke);
+      undoStack.push({ type: "add_stroke", stroke: currentStroke });
+      redoStack = [];
       sendCanvasUpdate([currentStroke]);
       scheduleAutoSave();
     }
@@ -298,7 +399,7 @@
     e.preventDefault();
   }, { passive: false, capture: true });
 
-  // 5. KI-Overlay Visualisierung
+  // 6. KI-Overlay Visualisierung
   function drawOverlayActions(actions) {
     overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
 
@@ -339,7 +440,7 @@
     }, 12000);
   }
 
-  // 6. Backend-Persistenz (Auto-Save OHNE teures toDataURL)
+  // 7. Backend-Persistenz (Auto-Save OHNE teures toDataURL)
   function scheduleAutoSave() {
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(async () => {
@@ -380,6 +481,9 @@
           if (data.board_state_json) {
             try {
               strokes = JSON.parse(data.board_state_json) || [];
+              strokes.forEach(s => {
+                if (!s.bbox && s.points) s.bbox = computeBoundingBox(s.points);
+              });
               redrawAllStrokes();
             } catch (e) {
               strokes = [];
@@ -413,6 +517,7 @@
       if (res.ok) {
         currentSession = await res.json();
         strokes = [];
+        undoStack = [];
         redoStack = [];
         redrawAllStrokes();
         connectTutorWebSocket();
@@ -422,7 +527,7 @@
     }
   }
 
-  // 7. WebSocket Verbindung
+  // 8. WebSocket Verbindung
   function connectTutorWebSocket() {
     if (!currentSession) return;
     if (tutorSocket) {
@@ -470,8 +575,8 @@
     }
   }
 
-  // 8. Toolbar Event-Handler
-  // Werkzeugauswahl
+  // 9. Toolbar Event-Handler
+  // Werkzeugauswahl (Stift, Marker, Pixelradierer, Objektradierer)
   document.querySelectorAll(".wb-tool-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".wb-tool-btn").forEach(b => b.classList.remove("active"));
@@ -489,13 +594,13 @@
     });
   });
 
-  // Farben
+  // Farben (schaltet automatisch vom Radierer zum Stift um)
   document.querySelectorAll(".wb-color-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".wb-color-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       currentColor = btn.dataset.color;
-      if (currentTool === "eraser") {
+      if (currentTool === "pixel_eraser" || currentTool === "object_eraser" || currentTool === "eraser") {
         document.querySelectorAll(".wb-tool-btn").forEach(b => b.classList.remove("active"));
         const penBtn = document.querySelector('.wb-tool-btn[data-tool="pen"]');
         if (penBtn) penBtn.classList.add("active");
@@ -523,36 +628,69 @@
     });
   }
 
-  // Undo / Redo
+  // Leistungsstarkes Undo / Redo (unterstützt Striche, Objektradierer & Clear)
   if (btnUndo) {
     btnUndo.addEventListener("click", () => {
-      if (strokes.length > 0) {
-        const popped = strokes.pop();
-        redoStack.push(popped);
-        redrawAllStrokes();
-        scheduleAutoSave();
+      if (undoStack.length === 0) return;
+      const action = undoStack.pop();
+
+      if (action.type === "add_stroke") {
+        const idx = strokes.lastIndexOf(action.stroke);
+        if (idx !== -1) {
+          strokes.splice(idx, 1);
+        }
+        redoStack.push(action);
+      } else if (action.type === "delete_strokes") {
+        // Gelöschte Objekte wiederherstellen
+        for (let i = action.items.length - 1; i >= 0; i--) {
+          const item = action.items[i];
+          strokes.splice(item.index, 0, item.stroke);
+        }
+        redoStack.push(action);
+      } else if (action.type === "clear") {
+        strokes = [...action.previous];
+        redoStack.push(action);
       }
+
+      redrawAllStrokes();
+      scheduleAutoSave();
     });
   }
 
   if (btnRedo) {
     btnRedo.addEventListener("click", () => {
-      if (redoStack.length > 0) {
-        const restored = redoStack.pop();
-        strokes.push(restored);
-        redrawAllStrokes();
-        scheduleAutoSave();
+      if (redoStack.length === 0) return;
+      const action = redoStack.pop();
+
+      if (action.type === "add_stroke") {
+        strokes.push(action.stroke);
+        undoStack.push(action);
+      } else if (action.type === "delete_strokes") {
+        action.items.forEach(item => {
+          const idx = strokes.indexOf(item.stroke);
+          if (idx !== -1) {
+            strokes.splice(idx, 1);
+          }
+        });
+        undoStack.push(action);
+      } else if (action.type === "clear") {
+        strokes = [];
+        undoStack.push(action);
       }
+
+      redrawAllStrokes();
+      scheduleAutoSave();
     });
   }
 
-  // Tafel leeren
+  // Tafel leeren (mit Undo-Rettung)
   if (btnClear) {
     btnClear.addEventListener("click", () => {
       if (strokes.length === 0) return;
       if (confirm("Möchtest du die gesamte Tafel leeren?")) {
-        strokes = [];
+        undoStack.push({ type: "clear", previous: [...strokes] });
         redoStack = [];
+        strokes = [];
         redrawAllStrokes();
         overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
         scheduleAutoSave();
@@ -614,7 +752,7 @@
     });
   }
 
-  // Tastenkombinationen
+  // Tastenkombinationen (Undo: Cmd/Ctrl+Z, Redo: Cmd/Ctrl+Y, P: Stift, H: Marker, E: Radierer toggle)
   window.addEventListener("keydown", (e) => {
     const tabWb = document.getElementById("tab-whiteboard");
     if (!tabWb || !tabWb.classList.contains("active")) return;
@@ -625,6 +763,21 @@
     } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "y") {
       e.preventDefault();
       btnRedo.click();
+    } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "p") {
+      const penBtn = document.querySelector('.wb-tool-btn[data-tool="pen"]');
+      if (penBtn) penBtn.click();
+    } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "h") {
+      const hBtn = document.querySelector('.wb-tool-btn[data-tool="highlighter"]');
+      if (hBtn) hBtn.click();
+    } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "e") {
+      // Toggle between pixel_eraser and object_eraser
+      if (currentTool === "pixel_eraser") {
+        const objBtn = document.querySelector('.wb-tool-btn[data-tool="object_eraser"]');
+        if (objBtn) objBtn.click();
+      } else {
+        const pixBtn = document.querySelector('.wb-tool-btn[data-tool="pixel_eraser"]');
+        if (pixBtn) pixBtn.click();
+      }
     }
   });
 
