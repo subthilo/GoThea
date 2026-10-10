@@ -76,6 +76,12 @@ def test_pre_analyze_and_confirm_workflow(client):
     assert res_file.status_code == 200
     assert len(res_file.content) == len(pdf_bytes)
 
+    # 5b. Preview Bild abrufen
+    res_prev = client.get(f"/api/v1/materials/{mat_id}/preview?page=1")
+    assert res_prev.status_code == 200
+    assert len(res_prev.content) > 0
+    assert "image" in res_prev.headers["content-type"]
+
     # 6. Löschen
     res_del = client.delete(f"/api/v1/materials/{mat_id}")
     assert res_del.status_code == 204

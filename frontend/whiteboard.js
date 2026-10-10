@@ -22,6 +22,19 @@
   const scrollTrack = document.getElementById("wb-scroll-track");
   const scrollThumb = document.getElementById("wb-scroll-thumb");
 
+  // Dokument-Vorlage Underlay Elemente
+  const wbDocUnderlay = document.getElementById("wb-doc-underlay");
+  const wbDocTitleText = document.getElementById("wb-doc-title-text");
+  const wbDocPager = document.getElementById("wb-doc-pager");
+  const wbDocPageIndicator = document.getElementById("wb-doc-page-indicator");
+  const btnWbPrevPage = document.getElementById("btn-wb-prev-page");
+  const btnWbNextPage = document.getElementById("btn-wb-next-page");
+  const btnWbRemoveDoc = document.getElementById("btn-wb-remove-doc");
+  const wbDocSheet = document.getElementById("wb-doc-sheet");
+  const wbDocImg = document.getElementById("wb-doc-img");
+
+  let activeWorksheet = null;
+
   if (!inkCanvas || !overlayCanvas || !viewport) {
     return;
   }
@@ -123,8 +136,106 @@
     inkCtx.setTransform(dpr, 0, 0, dpr, panX * dpr, panY * dpr);
     overlayCtx.setTransform(dpr, 0, 0, dpr, panX * dpr, panY * dpr);
     viewport.style.backgroundPositionY = `${panY}px`;
+    if (wbDocSheet) {
+      wbDocSheet.style.transform = `translateX(-50%) translateY(${panY}px)`;
+    }
     redrawAllStrokes();
     updateScrollUI();
+  }
+
+  function scrollWorksheetToPage(pageNum) {
+    if (!activeWorksheet) return;
+    const targetPage = Math.max(1, Math.min(activeWorksheet.pageCount, pageNum));
+    activeWorksheet.currentPage = targetPage;
+    if (wbDocPageIndicator) {
+      wbDocPageIndicator.textContent = `Seite ${targetPage} / ${activeWorksheet.pageCount}`;
+    }
+    const pageCard = document.getElementById(`wb-doc-page-${targetPage}`);
+    if (pageCard) {
+      const targetPanY = -pageCard.offsetTop;
+      const startY = panY;
+      const startTime = performance.now();
+      const duration = 250;
+      function step(now) {
+        const progress = Math.min(1, (now - startTime) / duration);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        panY = startY + (targetPanY - startY) * ease;
+        updateViewportPan();
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+  }
+
+  window.loadWorksheetOnWhiteboard = function(material) {
+    activeWorksheet = {
+      id: material.id,
+      title: material.title,
+      pageCount: material.page_count || 1,
+      currentPage: 1
+    };
+
+    if (wbDocUnderlay && wbDocSheet) {
+      wbDocUnderlay.style.display = "block";
+      if (wbDocTitleText) wbDocTitleText.textContent = material.title;
+
+      // Vorlage Seiten aufbauen
+      wbDocSheet.innerHTML = "";
+      const pageCount = activeWorksheet.pageCount;
+      for (let p = 1; p <= pageCount; p++) {
+        const pageCard = document.createElement("div");
+        pageCard.className = "wb-doc-page-card";
+        pageCard.id = `wb-doc-page-${p}`;
+        pageCard.innerHTML = `
+          ${pageCount > 1 ? `<div class="wb-doc-page-num-tag">Seite ${p} von ${pageCount}</div>` : ""}
+          <img class="wb-doc-img" src="/api/v1/materials/${material.id}/preview?page=${p}" alt="Seite ${p}">
+        `;
+        wbDocSheet.appendChild(pageCard);
+      }
+
+      if (wbDocPager) {
+        wbDocPager.style.display = pageCount > 1 ? "flex" : "none";
+        if (wbDocPageIndicator) {
+          wbDocPageIndicator.textContent = `Seite 1 / ${pageCount}`;
+        }
+      }
+    }
+
+    // Blaue Tinte auswählen für weißen Papierhintergrund
+    const blueBtn = document.querySelector('.wb-color-btn[data-color="#3b82f6"]');
+    if (blueBtn) blueBtn.click();
+
+    // Scroll zurück zum Anfang
+    panY = 0;
+    updateViewportPan();
+  };
+
+  if (btnWbPrevPage) {
+    btnWbPrevPage.addEventListener("click", () => {
+      if (activeWorksheet && activeWorksheet.currentPage > 1) {
+        scrollWorksheetToPage(activeWorksheet.currentPage - 1);
+      }
+    });
+  }
+
+  if (btnWbNextPage) {
+    btnWbNextPage.addEventListener("click", () => {
+      if (activeWorksheet && activeWorksheet.currentPage < activeWorksheet.pageCount) {
+        scrollWorksheetToPage(activeWorksheet.currentPage + 1);
+      }
+    });
+  }
+
+  if (btnWbRemoveDoc) {
+    btnWbRemoveDoc.addEventListener("click", () => {
+      activeWorksheet = null;
+      if (wbDocUnderlay) wbDocUnderlay.style.display = "none";
+      if (wbDocSheet) wbDocSheet.innerHTML = "";
+      const whiteBtn = document.querySelector('.wb-color-btn[data-color="#f8fafc"]');
+      if (whiteBtn) whiteBtn.click();
+    });
   }
 
   function updateScrollUI() {
@@ -151,8 +262,12 @@
           maxStrokeY = strokes[i].bbox.maxY;
         }
       }
+      let docH = 0;
+      if (activeWorksheet && wbDocSheet) {
+        docH = wbDocSheet.offsetHeight || 0;
+      }
       const viewH = viewport.clientHeight || 600;
-      const totalH = Math.max(viewH, -panY + viewH, maxStrokeY + 400);
+      const totalH = Math.max(viewH, -panY + viewH, maxStrokeY + 400, docH + 200);
 
       const trackH = scrollTrack.clientHeight || (viewH - 24);
       const thumbH = Math.max(30, Math.min(trackH, (viewH / totalH) * trackH));

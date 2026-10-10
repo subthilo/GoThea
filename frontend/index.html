@@ -186,6 +186,25 @@
 
           <!-- Zeichenfläche / Viewport -->
           <div class="wb-viewport pattern-chalkboard" id="wb-viewport">
+            <!-- Dokument-Vorlage (Hinterlegtes Arbeitsblatt / Hefterfoto) -->
+            <div id="wb-doc-underlay" class="wb-doc-underlay" style="display: none;">
+              <div class="wb-doc-topbar">
+                <div class="wb-doc-info">
+                  <span class="wb-doc-badge">📄 Arbeitsblatt-Vorlage</span>
+                  <span id="wb-doc-title-text" class="wb-doc-title-text">Titel</span>
+                  <div id="wb-doc-pager" class="wb-doc-pager" style="display: none;">
+                    <button type="button" id="btn-wb-prev-page" class="btn-pager">◀</button>
+                    <span id="wb-doc-page-indicator">Seite 1 / 1</span>
+                    <button type="button" id="btn-wb-next-page" class="btn-pager">▶</button>
+                  </div>
+                </div>
+                <button type="button" id="btn-wb-remove-doc" class="btn-wb-remove-doc" title="Vorlage ausblenden">✖ Vorlage schließen</button>
+              </div>
+              <div class="wb-doc-sheet" id="wb-doc-sheet">
+                <img id="wb-doc-img" class="wb-doc-img" alt="Arbeitsblatt-Vorlage">
+              </div>
+            </div>
+
             <!-- Base Ink Canvas (Zeichenebene des Schülers) -->
             <canvas id="wb-canvas" class="wb-canvas-layer"></canvas>
             <!-- Overlay Canvas (Transparente Ebene für KI-Tipps & Overlays) -->
@@ -440,6 +459,39 @@
             <button type="button" id="btn-back-material-step" class="btn-secondary-sm" style="flex: 1;">Zurück</button>
             <button type="button" id="btn-submit-material" class="btn-primary" style="flex: 2;">Bestätigen & Speichern</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Dokumenten-Viewer Popup -->
+  <div id="modal-material-viewer" class="modal-backdrop" style="display: none;">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+          <span style="font-size: 1.4rem;">📄</span>
+          <div style="overflow: hidden;">
+            <h3 id="viewer-doc-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.15rem;">Dokumententitel</h3>
+            <span id="viewer-doc-badge" class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light);">Fach • Thema</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="btn-viewer-open-wb" class="btn-primary-sm" style="display: flex; align-items: center; gap: 6px;">
+            <span>🎨</span>
+            <span>Auf Tafel bearbeiten</span>
+          </button>
+          <a id="btn-viewer-download" href="#" target="_blank" download class="btn-secondary-sm" title="Originaldatei herunterladen">⬇️</a>
+          <button class="modal-close" id="btn-close-viewer-modal">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding: 10px 0 0 0;">
+        <div id="viewer-pager-bar" style="display: none; align-items: center; justify-content: center; gap: 16px; margin-bottom: 12px;">
+          <button id="btn-viewer-prev-page" class="btn-secondary-sm">◀ Vorherige Seite</button>
+          <span id="viewer-page-label" style="font-size: 0.9rem; font-weight: 600;">Seite 1 / 1</span>
+          <button id="btn-viewer-next-page" class="btn-secondary-sm">Nächste Seite ▶</button>
+        </div>
+        <div id="viewer-content-container" style="max-height: 72vh; overflow-y: auto; text-align: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 12px;">
+          <img id="viewer-img" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: inline-block;" alt="Vorschau">
         </div>
       </div>
     </div>

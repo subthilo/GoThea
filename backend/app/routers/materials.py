@@ -1,6 +1,6 @@
 from typing import List, Optional
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from backend.app.schemas.material import (
 from backend.app.services.material_ingestion import (
     pre_analyze_upload,
     confirm_and_save_material,
+    render_material_page_as_image,
 )
 
 router = APIRouter(prefix="/api/v1/materials", tags=["materials"])
@@ -190,6 +191,28 @@ def get_material_file(
         media_type=mat.mime_type,
         filename=mat.filename
     )
+
+@router.get("/{material_id}/preview")
+def get_material_preview_image(
+    material_id: str,
+    page: int = 1,
+    db: Session = Depends(get_db)
+):
+    """
+    Rendert eine Seite des Materials (PDF oder Bild) als hochauflösendes PNG-Bild,
+    perfekt für Whiteboard-Hintergründe und In-App Vorschau.
+    """
+    mat = db.query(Material).filter_by(id=material_id).first()
+    if not mat:
+        raise HTTPException(status_code=404, detail="Material nicht gefunden.")
+
+    try:
+        image_bytes, out_mime = render_material_page_as_image(mat.file_path, mat.mime_type, page)
+        return Response(content=image_bytes, media_type=out_mime)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Datei auf dem Speichermedium nicht gefunden.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Rendern der Dokumentseite: {str(e)}")
 
 @router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_material(

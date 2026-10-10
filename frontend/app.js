@@ -578,10 +578,10 @@ function renderMaterialsList(materials) {
         ${m.summary ? `<div class="mat-card-summary">“${m.summary}”</div>` : ""}
       </div>
       <div class="mat-card-actions">
-        <a href="/api/v1/materials/${m.id}/file" target="_blank" class="btn-mat-action" title="Datei in neuem Tab öffnen">
+        <button class="btn-mat-action btn-mat-view" title="Dokument im Popup ansehen">
           👁️ Öffnen
-        </a>
-        <button class="btn-mat-action btn-mat-wb" data-subject="${m.subject_id}" title="Fach auf der Tafel öffnen">
+        </button>
+        <button class="btn-mat-action btn-mat-wb" title="Auf Tafel öffnen und beschreiben">
           🎨 Tafel
         </button>
         <button class="btn-mat-action btn-mat-del" data-id="${m.id}" title="Material löschen">
@@ -590,14 +590,12 @@ function renderMaterialsList(materials) {
       </div>
     `;
 
+    card.querySelector(".btn-mat-view").addEventListener("click", () => {
+      openDocumentViewerModal(m);
+    });
+
     card.querySelector(".btn-mat-wb").addEventListener("click", () => {
-      const tabWbBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
-      if (tabWbBtn) tabWbBtn.click();
-      const wbSubSelect = document.getElementById("wb-subject-select");
-      if (wbSubSelect && m.subject_id) {
-        wbSubSelect.value = m.subject_id;
-        wbSubSelect.dispatchEvent(new Event("change"));
-      }
+      openMaterialOnWhiteboard(m);
     });
 
     card.querySelector(".btn-mat-del").addEventListener("click", async () => {
@@ -821,6 +819,123 @@ if (btnSubmitMaterial) {
     } finally {
       btnSubmitMaterial.disabled = false;
       btnSubmitMaterial.textContent = "Bestätigen & Speichern";
+    }
+  });
+}
+
+// ==========================================
+// 8. Dokumenten-Viewer (Popup) & Tafel-Verbindung
+// ==========================================
+let activeViewerMaterial = null;
+let currentViewerPage = 1;
+
+const modalMaterialViewer = document.getElementById("modal-material-viewer");
+const btnCloseViewerModal = document.getElementById("btn-close-viewer-modal");
+const btnViewerOpenWb = document.getElementById("btn-viewer-open-wb");
+const btnViewerPrevPage = document.getElementById("btn-viewer-prev-page");
+const btnViewerNextPage = document.getElementById("btn-viewer-next-page");
+
+function openDocumentViewerModal(material) {
+  activeViewerMaterial = material;
+  currentViewerPage = 1;
+
+  const titleEl = document.getElementById("viewer-doc-title");
+  const badgeEl = document.getElementById("viewer-doc-badge");
+  const dlBtn = document.getElementById("btn-viewer-download");
+  const pagerBar = document.getElementById("viewer-pager-bar");
+
+  if (titleEl) titleEl.textContent = material.title;
+  if (badgeEl) {
+    badgeEl.textContent = `${material.subject_name || "Fach"} • ${material.kind || "Material"}${material.topic_name ? " • " + material.topic_name : ""}`;
+  }
+  if (dlBtn) {
+    dlBtn.href = `/api/v1/materials/${material.id}/file`;
+  }
+
+  const pageCount = material.page_count || 1;
+  if (pagerBar) {
+    pagerBar.style.display = pageCount > 1 ? "flex" : "none";
+  }
+
+  renderViewerPage();
+  if (modalMaterialViewer) modalMaterialViewer.style.display = "flex";
+}
+
+function renderViewerPage() {
+  if (!activeViewerMaterial) return;
+  const pageLabel = document.getElementById("viewer-page-label");
+  const viewerImg = document.getElementById("viewer-img");
+  const pageCount = activeViewerMaterial.page_count || 1;
+
+  if (pageLabel) {
+    pageLabel.textContent = `Seite ${currentViewerPage} / ${pageCount}`;
+  }
+  if (viewerImg) {
+    viewerImg.src = `/api/v1/materials/${activeViewerMaterial.id}/preview?page=${currentViewerPage}`;
+  }
+}
+
+function closeDocumentViewerModal() {
+  if (modalMaterialViewer) modalMaterialViewer.style.display = "none";
+  const viewerImg = document.getElementById("viewer-img");
+  if (viewerImg) viewerImg.src = "";
+  activeViewerMaterial = null;
+}
+
+function openMaterialOnWhiteboard(material) {
+  // Tab zur Tafel wechseln
+  const tabWbBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
+  if (tabWbBtn) tabWbBtn.click();
+
+  // Fach der Vorlage einstellen
+  const wbSubSelect = document.getElementById("wb-subject-select");
+  if (wbSubSelect && material.subject_id) {
+    wbSubSelect.value = material.subject_id;
+    wbSubSelect.dispatchEvent(new Event("change"));
+  }
+
+  // Vorlage auf Tafel laden
+  if (typeof window.loadWorksheetOnWhiteboard === "function") {
+    window.loadWorksheetOnWhiteboard(material);
+  }
+}
+
+if (btnCloseViewerModal) {
+  btnCloseViewerModal.addEventListener("click", closeDocumentViewerModal);
+}
+
+if (modalMaterialViewer) {
+  modalMaterialViewer.addEventListener("click", (e) => {
+    if (e.target === modalMaterialViewer) {
+      closeDocumentViewerModal();
+    }
+  });
+}
+
+if (btnViewerPrevPage) {
+  btnViewerPrevPage.addEventListener("click", () => {
+    if (activeViewerMaterial && currentViewerPage > 1) {
+      currentViewerPage--;
+      renderViewerPage();
+    }
+  });
+}
+
+if (btnViewerNextPage) {
+  btnViewerNextPage.addEventListener("click", () => {
+    if (activeViewerMaterial && currentViewerPage < (activeViewerMaterial.page_count || 1)) {
+      currentViewerPage++;
+      renderViewerPage();
+    }
+  });
+}
+
+if (btnViewerOpenWb) {
+  btnViewerOpenWb.addEventListener("click", () => {
+    if (activeViewerMaterial) {
+      const mat = activeViewerMaterial;
+      closeDocumentViewerModal();
+      openMaterialOnWhiteboard(mat);
     }
   });
 }

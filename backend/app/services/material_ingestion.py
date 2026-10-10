@@ -217,3 +217,23 @@ def confirm_and_save_material(
     db.commit()
     db.refresh(material)
     return material
+
+def render_material_page_as_image(file_path: str, mime_type: str, page_num: int = 1) -> Tuple[bytes, str]:
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError("Materialdatei nicht gefunden.")
+
+    if "pdf" in mime_type.lower():
+        try:
+            import fitz
+            doc = fitz.open(str(path))
+            total_pages = len(doc)
+            target_page = max(0, min(page_num - 1, total_pages - 1))
+            page = doc.load_page(target_page)
+            # 150 DPI für scharfe Retina-Darstellung
+            pix = page.get_pixmap(dpi=150)
+            return pix.tobytes("png"), "image/png"
+        except Exception:
+            return path.read_bytes(), mime_type
+    else:
+        return path.read_bytes(), mime_type
