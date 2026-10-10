@@ -25,6 +25,7 @@ rsync -avz --delete \
   --exclude '.DS_Store' \
   --exclude 'data/' \
   --exclude 'experiments/' \
+  --exclude 'inbox/' \
   --exclude '.env' \
   ./ "$PI_USER@$PI_HOST:$REMOTE_DIR/"
 
