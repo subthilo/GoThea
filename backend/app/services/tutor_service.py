@@ -421,10 +421,49 @@ def generate_board_exercise(
     }
 
 
-def normalize_cloze_content(content: Dict[str, Any]) -> Dict[str, Any]:
+def extract_cloze_sentences(text: str, blanks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    import re
+    blanks_map = {b["id"]: b.get("expected_answer", "") for b in blanks if "id" in b}
+    raw_sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+    if not raw_sentences:
+        raw_sentences = [text.strip()]
+
+    sentences = []
+    for idx, s_text in enumerate(raw_sentences, 1):
+        b_ids = []
+        tokens = re.findall(r"\[\[(.*?)(?::(.*?))?\]\]", s_text)
+        for p1, p2 in tokens:
+            if p2:
+                cid = re.sub(r"[^\d]", "", p1)
+                if cid:
+                    b_ids.append(int(cid))
+            else:
+                for bid, ans in blanks_map.items():
+                    if ans == p1.strip() and bid not in b_ids:
+                        b_ids.append(bid)
+                        break
+
+        def _replace_token(m):
+            p1 = m.group(1)
+            p2 = m.group(2)
+            return p2.strip() if p2 else p1.strip()
+
+        solved = re.sub(r"\[\[(.*?)(?::(.*?))?\]\]", _replace_token, s_text)
+
+        sentences.append({
+            "index": idx,
+            "text": s_text,
+            "blank_ids": b_ids,
+            "full_text_solved": solved,
+            "audio_base64": None
+        })
+    return sentences
+
+
+def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bool = False) -> Dict[str, Any]:
     """
     Sorgt dafür, dass Lückentexte immer ein standardisiertes 'blanks'-Array
-    mit id, expected_answer, alternatives, hint und width_px enthalten.
+    und ein 'sentences'-Array (mit vorgefertigtem Vorlese-Audio) enthalten.
     """
     import re
     text = content.get("text", "")
@@ -454,7 +493,28 @@ def normalize_cloze_content(content: Dict[str, Any]) -> Dict[str, Any]:
     if "word_bank" not in content or not isinstance(content["word_bank"], list) or not content["word_bank"]:
         content["word_bank"] = [b["expected_answer"] for b in blanks if "expected_answer" in b]
 
+    # Sätze für die Vorlese- und Review-Schleife aufbereiten
+    sentences = extract_cloze_sentences(text, blanks)
+
+    if generate_sentence_audio and OPENAI_API_KEY:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=OPENAI_API_KEY)
+            for s in sentences:
+                if s["full_text_solved"]:
+                    tts_res = client.audio.speech.create(
+                        model="tts-1",
+                        voice="nova",
+                        input=s["full_text_solved"],
+                        response_format="mp3"
+                    )
+                    s["audio_base64"] = base64.b64encode(tts_res.content).decode("utf-8")
+        except Exception as e:
+            logger.warning(f"Fehler bei Satz-Audio-Generierung: {e}")
+
+    content["sentences"] = sentences
     return content
+
 
 
 def evaluate_cloze_blanks_targeted(

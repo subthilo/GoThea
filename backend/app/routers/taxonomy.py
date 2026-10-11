@@ -55,6 +55,7 @@ async def import_timetable_endpoint(
         raise HTTPException(status_code=400, detail="Keine Datei übergeben.")
 
     temp_path = TEMP_UPLOADS_DIR / f"temp_{uuid.uuid4().hex[:8]}_{file.filename}"
+    temp_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         content = await file.read()
         if len(content) == 0:

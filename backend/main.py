@@ -23,6 +23,7 @@ from backend.app.routers.annotations import router as annotations_router
 from backend.app.routers.inbox import router as inbox_router
 from backend.app.routers.timetable import router as timetable_router
 from backend.app.routers.books import router as books_router
+from backend.app.routers.exercises import router as exercises_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -66,6 +67,7 @@ app.include_router(annotations_router)
 app.include_router(inbox_router)
 app.include_router(timetable_router)
 app.include_router(books_router)
+app.include_router(exercises_router)
 
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():

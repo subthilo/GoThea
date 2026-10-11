@@ -220,6 +220,19 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
     };
   }
 
+  const btnExercise = document.getElementById("btn-subject-start-exercise");
+  if (btnExercise) {
+    btnExercise.onclick = () => {
+      if (typeof window.openClozeTrainer === "function") {
+        window.openClozeTrainer({
+          subjectId: s.id,
+          subjectName: s.name,
+          sourceMaterialTitle: null
+        });
+      }
+    };
+  }
+
   const btnUpload = document.getElementById("btn-subject-upload-doc");
   if (btnUpload) {
     btnUpload.onclick = () => {
@@ -1008,6 +1021,9 @@ function buildMaterialCard(m, onDeleted) {
       <button class="btn-mat-action btn-mat-wb" title="Dieses Dokument auf der digitalen Tafel mit KI-Tutorin Luna üben">
         🦉 Tafel
       </button>
+      <button class="btn-mat-action btn-mat-cloze" title="Lückentext-Übung direkt aus diesem Dokument erstellen">
+        🧩 Üben
+      </button>
       <button class="btn-mat-action btn-mat-edit" title="Dokument anpassen (Fach, Thema, Titel)">
         ✏️ Ändern
       </button>
@@ -1038,6 +1054,22 @@ function buildMaterialCard(m, onDeleted) {
         window.openMaterialOnWhiteboard(m.id, m.subject_id);
       } else {
         switchToTab("whiteboard");
+      }
+    });
+  }
+
+  const clozeBtn = card.querySelector(".btn-mat-cloze");
+  if (clozeBtn) {
+    clozeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (typeof window.openClozeTrainer === "function") {
+        const subName = (cachedSubjects.find(s => s.id === m.subject_id) || {}).name || "Schulfach";
+        window.openClozeTrainer({
+          subjectId: m.subject_id,
+          subjectName: subName,
+          materialId: m.id,
+          sourceMaterialTitle: m.title
+        });
       }
     });
   }
