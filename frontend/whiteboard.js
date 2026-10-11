@@ -1168,9 +1168,10 @@
   if (btnRequestHint) {
     btnRequestHint.addEventListener("click", async () => {
       if (!currentSession) return;
+      stopTutorSpeech();
 
       if (strokes.length === 0) {
-        alert("Schreibe oder skizziere zuerst eine Rechnung oder Notiz auf die Tafel!");
+        playTutorSpeech(null, "Deine Tafel ist noch ganz leer. Schreib mir gerne eine Aufgabe oder einen Rechenschritt auf!");
         return;
       }
 
