@@ -19,8 +19,15 @@ from backend.app.schemas.whiteboard import (
     TutorExerciseCreateRequest,
     TutorExercisePositionUpdate,
     TutorExerciseResponse,
+    CheckBlanksRequest,
+    CheckBlanksResponse,
 )
-from backend.app.services.tutor_service import analyze_whiteboard_and_speak, generate_board_exercise
+from backend.app.services.tutor_service import (
+    analyze_whiteboard_and_speak,
+    generate_board_exercise,
+    normalize_cloze_content,
+    evaluate_cloze_blanks_targeted,
+)
 
 router = APIRouter(prefix="/api/v1/whiteboard", tags=["Whiteboard"])
 
@@ -390,6 +397,67 @@ def delete_session_exercise(
     db.delete(exercise)
     db.commit()
     return None
+
+
+@router.post("/sessions/{session_id}/exercises/{exercise_id}/check-blanks", response_model=CheckBlanksResponse)
+def check_exercise_blanks(
+    session_id: str,
+    exercise_id: str,
+    payload: CheckBlanksRequest,
+    db: Session = Depends(get_db)
+):
+    session = db.query(TutorSession).filter(TutorSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Sitzung '{session_id}' nicht gefunden.")
+
+    exercise = db.query(TutorExercise).filter(
+        TutorExercise.id == exercise_id,
+        TutorExercise.session_id == session_id
+    ).first()
+    if not exercise:
+        raise HTTPException(status_code=404, detail=f"Aufgabe '{exercise_id}' nicht gefunden.")
+
+    content = {}
+    try:
+        content = json.loads(exercise.content_json) if isinstance(exercise.content_json, str) else (exercise.content_json or {})
+    except Exception:
+        content = {}
+
+    content = normalize_cloze_content(content)
+    blanks_def = content.get("blanks", [])
+
+    eval_res = evaluate_cloze_blanks_targeted(
+        exercise_title=exercise.title,
+        blanks_definition=blanks_def,
+        submitted_items=[item.model_dump() for item in payload.items],
+        audio_enabled=payload.audio_enabled
+    )
+
+    tutor_speech = eval_res.get("tutor_speech", "")
+    if tutor_speech:
+        db.add(TutorMessage(
+            session_id=session_id,
+            role="tutor",
+            content=f"[Lückentext '{exercise.title}' geprüft] {tutor_speech}"
+        ))
+        db.commit()
+
+    results = eval_res.get("results", [])
+    solved_count = sum(1 for r in results if r.get("is_correct"))
+    total_count = len(blanks_def)
+    all_correct = (solved_count == total_count and total_count > 0)
+
+    return CheckBlanksResponse(
+        status="success",
+        exercise_id=exercise_id,
+        results=results,
+        tutor_speech=tutor_speech,
+        audio_base64=eval_res.get("audio_base64"),
+        all_correct=all_correct,
+        solved_count=solved_count,
+        total_count=total_count
+    )
+
 
 
 

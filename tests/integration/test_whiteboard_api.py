@@ -1,4 +1,6 @@
 import pytest
+import json
+
 
 def test_create_and_get_whiteboard_session(client):
     payload = {
@@ -208,5 +210,61 @@ def test_exercise_generation_and_management(client):
     # 5. Prüfen, dass sie gelöscht ist
     list_res2 = client.get(f"/api/v1/whiteboard/sessions/{session_id}/exercises")
     assert len(list_res2.json()) == 0
+
+
+def test_cloze_blank_checking_lifecycle(client, db_session, monkeypatch):
+    # Session anlegen
+    create_res = client.post("/api/v1/whiteboard/sessions", json={
+        "subject_id": "sub_math",
+        "title": "Lückentext-Test"
+    })
+    session_id = create_res.json()["id"]
+
+    # 1. Lückentext generieren
+    gen_res = client.post(
+        f"/api/v1/whiteboard/sessions/{session_id}/exercises/generate",
+        json={
+            "exercise_type": "fill_in_the_blank",
+            "topic_name": "Bewegungslehre",
+            "audio_enabled": False
+        }
+    )
+    assert gen_res.status_code == 200
+    ex = gen_res.json()
+    assert ex["exercise_type"] == "fill_in_the_blank"
+    ex_id = ex["id"]
+    content = json.loads(ex["content_json"])
+    assert "blanks" in content
+    assert len(content["blanks"]) > 0
+
+    # 2. Gezielte Prüfung von Lücken mit Mini-Crops
+    from backend.app.services import tutor_service
+    monkeypatch.setattr(tutor_service, "OPENAI_API_KEY", None)
+
+    valid_jpeg_b64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="
+    check_res = client.post(
+        f"/api/v1/whiteboard/sessions/{session_id}/exercises/{ex_id}/check-blanks",
+        json={
+            "items": [
+                {"blank_id": 1, "crop_image_base64": valid_jpeg_b64},
+                {"blank_id": 2, "crop_image_base64": ""} # leer
+            ],
+            "audio_enabled": False
+        }
+    )
+    assert check_res.status_code == 200
+    data = check_res.json()
+    assert data["status"] == "success"
+    assert data["exercise_id"] == ex_id
+    assert len(data["results"]) == 2
+    # Lücke 1 (mit Crop)
+    r1 = next(r for r in data["results"] if r["blank_id"] == 1)
+    assert r1["is_correct"] is True
+    # Lücke 2 (ohne Crop)
+    r2 = next(r for r in data["results"] if r["blank_id"] == 2)
+    assert r2["is_correct"] is False
+    assert "noch nichts" in r2["feedback"]
+
+
 
 

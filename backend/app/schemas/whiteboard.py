@@ -110,3 +110,30 @@ class TutorExerciseResponse(BaseModel):
     tutor_speech: Optional[str] = None
 
 
+class CheckBlankItem(BaseModel):
+    blank_id: int
+    crop_image_base64: str
+
+class CheckBlanksRequest(BaseModel):
+    items: List[CheckBlankItem]
+    audio_enabled: bool = True
+
+class BlankCheckResult(BaseModel):
+    blank_id: int
+    recognized_text: Optional[str] = None
+    is_correct: bool
+    feedback: str
+    hint: Optional[str] = None
+
+class CheckBlanksResponse(BaseModel):
+    status: str = "success"
+    exercise_id: str
+    results: List[BlankCheckResult]
+    tutor_speech: str
+    audio_base64: Optional[str] = None
+    all_correct: bool = False
+    solved_count: int = 0
+    total_count: int = 0
+
+
+

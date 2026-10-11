@@ -1,7 +1,7 @@
 import base64
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
 
@@ -346,11 +346,16 @@ def generate_board_exercise(
                 "topic": topic_name or subject_name,
                 "instructions": "Setze die passenden Fachbegriffe aus der Wortauswahl in die Lücken ein.",
                 "content": {
-                    "text": "Bei einer gleichförmigen Bewegung ist die [[Lücke 1: Geschwindigkeit]] über die gesamte Zeit hinweg [[Lücke 2: konstant]]. Im Weg-Zeit-Diagramm ergibt das eine [[Lücke 3: Gerade]].",
+                    "text": "Bei einer gleichförmigen Bewegung ist die [[1:Geschwindigkeit]] über die gesamte Zeit hinweg [[2:konstant]]. Im Weg-Zeit-Diagramm ergibt das eine [[3:Gerade]].",
+                    "blanks": [
+                        {"id": 1, "expected_answer": "Geschwindigkeit", "alternatives": ["Tempo"], "hint": "Wie schnell sich der Körper bewegt.", "width_px": 170},
+                        {"id": 2, "expected_answer": "konstant", "alternatives": ["gleich", "unverändert"], "hint": "Bedeutet, dass sich das Tempo nicht ändert.", "width_px": 150},
+                        {"id": 3, "expected_answer": "Gerade", "alternatives": ["Linie"], "hint": "Eine gerade Linie ohne Biegung.", "width_px": 140}
+                    ],
                     "word_bank": ["Geschwindigkeit", "konstant", "Gerade", "beschleunigt", "Parabel"]
                 },
                 "solution_hint": "Denke daran: gleichförmig bedeutet, dass sich das Tempo nicht ändert.",
-                "tutor_speech": "Hier ist ein Lückentext für dich. Du kannst die Begriffe mit deinem Stift direkt neben die Lücken schreiben!"
+                "tutor_speech": "Hier ist ein Lückentext für dich. Schreibe die Fachbegriffe direkt mit dem Stift in die Lücken!"
             }
         elif ex_type == "formula_derivation":
             data = {
@@ -384,6 +389,10 @@ def generate_board_exercise(
             }
         tutor_speech = data.get("tutor_speech", tutor_speech)
 
+    # Standardisierung von Lückentext-Inhalten sicherstellen
+    if data.get("exercise_type") == "fill_in_the_blank":
+        data["content"] = normalize_cloze_content(data.get("content", {}))
+
     # Audio TTS generieren falls aktiviert
     if audio_enabled and OPENAI_API_KEY:
         try:
@@ -410,4 +419,229 @@ def generate_board_exercise(
         "tutor_speech": tutor_speech,
         "audio_base64": audio_b64
     }
+
+
+def normalize_cloze_content(content: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Sorgt dafür, dass Lückentexte immer ein standardisiertes 'blanks'-Array
+    mit id, expected_answer, alternatives, hint und width_px enthalten.
+    """
+    import re
+    text = content.get("text", "")
+    blanks = content.get("blanks")
+    if not isinstance(blanks, list):
+        blanks = []
+
+    if not blanks and text:
+        tokens = re.findall(r"\[\[(.*?)(?::(.*?))?\]\]", text)
+        for idx, (p1, p2) in enumerate(tokens, 1):
+            if p2:
+                clean_id_str = re.sub(r"[^\d]", "", p1)
+                bid = int(clean_id_str) if clean_id_str else idx
+                expected = p2.strip()
+            else:
+                bid = idx
+                expected = p1.strip()
+            blanks.append({
+                "id": bid,
+                "expected_answer": expected,
+                "alternatives": [],
+                "hint": f"Überlege, welcher Begriff in Lücke {bid} passt.",
+                "width_px": max(140, min(240, len(expected) * 14 + 40))
+            })
+
+    content["blanks"] = blanks
+    if "word_bank" not in content or not isinstance(content["word_bank"], list) or not content["word_bank"]:
+        content["word_bank"] = [b["expected_answer"] for b in blanks if "expected_answer" in b]
+
+    return content
+
+
+def evaluate_cloze_blanks_targeted(
+    exercise_title: str,
+    blanks_definition: List[Dict[str, Any]],
+    submitted_items: List[Dict[str, Any]],
+    audio_enabled: bool = True
+) -> Dict[str, Any]:
+    """
+    Prüft gezielt zugeschnittene Handschrift-Ausschnitte für einzelne Lücken.
+    Extrem schnell (< 1s), da kein riesiges Tafelbild analysiert wird,
+    sondern nur Mini-Crops gegen bekannte Erwartungswerte.
+    """
+    blanks_map = {b.get("id"): b for b in blanks_definition if "id" in b}
+    results = []
+
+    # 1. Vorab-Filterung von leeren Einreichungen
+    items_to_evaluate = []
+    for item in submitted_items:
+        bid = item.get("blank_id")
+        crop_b64 = (item.get("crop_image_base64") or "").strip()
+        b_def = blanks_map.get(bid, {})
+        expected = b_def.get("expected_answer", "")
+        hint = b_def.get("hint")
+
+        if not crop_b64 or len(crop_b64) < 100:
+            results.append({
+                "blank_id": bid,
+                "recognized_text": None,
+                "is_correct": False,
+                "feedback": "Hier wurde noch nichts eingetragen.",
+                "hint": hint
+            })
+        else:
+            items_to_evaluate.append({
+                "blank_id": bid,
+                "crop_b64": crop_b64,
+                "expected": expected,
+                "alternatives": b_def.get("alternatives", []),
+                "hint": hint
+            })
+
+    tutor_speech = ""
+    audio_b64 = None
+
+    # 2. Falls Bilder zur Auswertung vorliegen und OpenAI konfiguriert ist
+    if items_to_evaluate and OPENAI_API_KEY:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=OPENAI_API_KEY)
+
+            system_instruction = (
+                "Du bist eine empathische, didaktisch exakte Gymnasial-Tutorin für Thea (Klasse 7 Gymnasium).\n"
+                "Deine Aufgabe: Bewerte handgeschriebene Lücken-Ausschnitte gegen den jeweiligen Erwartungswert.\n"
+                "Schriftliche Toleranz: Berücksichtige kindliche Handschrift und typische Schreibvarianten (z. B. Groß-/Kleinschreibung, ß/ss).\n"
+                "Antworte STRIKT als JSON mit folgendem Format:\n"
+                "{\n"
+                '  "evaluations": [\n'
+                '    {\n'
+                '      "blank_id": 1,\n'
+                '      "recognized_text": "erkanntes Wort",\n'
+                '      "is_correct": true,\n'
+                '      "feedback": "Kurzes motivierendes Feedback",\n'
+                '      "hint": null\n'
+                '    }\n'
+                '  ],\n'
+                '  "tutor_speech": "Kurzer gesprochener Zuspruch (1-2 kurze Sätze, warmherzig, kein LaTeX)."\n'
+                "}"
+            )
+
+            user_content = [
+                {
+                    "type": "text",
+                    "text": f"Aufgabe: {exercise_title}\nBitte bewerte folgende Lückenausschnitte:"
+                }
+            ]
+
+            for itm in items_to_evaluate:
+                bid = itm["blank_id"]
+                exp = itm["expected"]
+                alts = ", ".join(itm["alternatives"]) if itm["alternatives"] else "keine weiteren"
+                clean_img = itm["crop_b64"]
+                if "," in clean_img:
+                    clean_img = clean_img.split(",", 1)[1]
+
+                user_content.append({
+                    "type": "text",
+                    "text": f"[Lücke {bid} | Erwarteter Begriff: '{exp}' | Akzeptierte Alternativen: {alts}]"
+                })
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{clean_img.strip()}",
+                        "detail": "low"
+                    }
+                })
+
+            response = client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": user_content}
+                ],
+                response_format={"type": "json_object"},
+                max_completion_tokens=600
+            )
+
+            raw_resp = response.choices[0].message.content or "{}"
+            parsed = json.loads(raw_resp)
+            evals = parsed.get("evaluations", [])
+            tutor_speech = parsed.get("tutor_speech", "").strip()
+
+            evals_by_id = {e.get("blank_id"): e for e in evals if "blank_id" in e}
+            for itm in items_to_evaluate:
+                bid = itm["blank_id"]
+                ev = evals_by_id.get(bid)
+                if ev:
+                    results.append({
+                        "blank_id": bid,
+                        "recognized_text": ev.get("recognized_text"),
+                        "is_correct": bool(ev.get("is_correct")),
+                        "feedback": ev.get("feedback") or ("Richtig!" if ev.get("is_correct") else "Noch nicht ganz richtig."),
+                        "hint": ev.get("hint") or itm["hint"]
+                    })
+                else:
+                    results.append({
+                        "blank_id": bid,
+                        "recognized_text": None,
+                        "is_correct": False,
+                        "feedback": "Konnte nicht eindeutig erkannt werden.",
+                        "hint": itm["hint"]
+                    })
+
+        except Exception as e:
+            logger.error(f"Fehler bei gezielter Lücken-Auswertung: {e}", exc_info=True)
+            for itm in items_to_evaluate:
+                results.append({
+                    "blank_id": itm["blank_id"],
+                    "recognized_text": None,
+                    "is_correct": False,
+                    "feedback": "Prüfung fehlgeschlagen, bitte wiederholen.",
+                    "hint": itm["hint"]
+                })
+    elif items_to_evaluate:
+        # Offline- / Testmodus
+        for itm in items_to_evaluate:
+            results.append({
+                "blank_id": itm["blank_id"],
+                "recognized_text": itm["expected"],
+                "is_correct": True,
+                "feedback": f"Super! '{itm['expected']}' ist richtig.",
+                "hint": None
+            })
+        tutor_speech = "Sehr gut gemacht! Alle Lücken sind richtig ausgefüllt."
+
+    # TTS für gesprochene Antwort erzeugen falls gewünscht
+    if not tutor_speech:
+        correct_count = sum(1 for r in results if r.get("is_correct"))
+        if correct_count == len(blanks_definition) and correct_count > 0:
+            tutor_speech = "Perfekt, Thea! Du hast alle Lücken fehlerfrei gelöst."
+        elif correct_count > 0:
+            tutor_speech = f"Guter Fortschritt! Du hast bereits {correct_count} Lücken richtig."
+        else:
+            tutor_speech = "Schau dir die Begriffe noch einmal an. Du bist auf dem richtigen Weg!"
+
+    if audio_enabled and OPENAI_API_KEY and tutor_speech:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=OPENAI_API_KEY)
+            tts_res = client.audio.speech.create(
+                model="tts-1",
+                voice="nova",
+                input=tutor_speech,
+                response_format="mp3"
+            )
+            audio_b64 = base64.b64encode(tts_res.content).decode("utf-8")
+        except Exception as e:
+            logger.warning(f"Fehler bei TTS für Lückenauswertung: {e}")
+            audio_b64 = None
+
+    results.sort(key=lambda x: x.get("blank_id", 0))
+
+    return {
+        "status": "success",
+        "results": results,
+        "tutor_speech": tutor_speech,
+        "audio_base64": audio_b64
+    }
+
 

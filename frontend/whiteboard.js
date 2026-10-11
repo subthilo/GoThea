@@ -525,6 +525,12 @@
         return;
       }
 
+      const checkBtn = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-check-btn"));
+      if (checkBtn) {
+        checkBtn.click();
+        return;
+      }
+
       const taskHeader = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-header"));
       if (taskHeader && !elementsUnder.some(el => el.classList && el.classList.contains("wb-task-close-btn"))) {
         const card = taskHeader.closest(".wb-task-card");
@@ -1770,15 +1776,27 @@
     if (ex.exercise_type === "fill_in_the_blank") {
       let rawText = content.text || "";
       let blankCount = 0;
+      const blanks = content.blanks || [];
+      const blanksMap = {};
+      blanks.forEach(b => { blanksMap[b.id] = b; });
+
       let renderedText = rawText.replace(/\[\[(.*?)(?::(.*?))?\]\]/g, (m, p1, p2) => {
         blankCount++;
-        const label = p2 ? (p1.trim().replace(/^Lücke\s*/i, "") || blankCount) : blankCount;
-        return `<span class="wb-blank-token"><span class="wb-blank-num">(${label})</span></span>`;
+        let bid = blankCount;
+        if (p2) {
+          const matchNum = p1.match(/\d+/);
+          if (matchNum) bid = parseInt(matchNum[0], 10);
+        }
+        const bDef = blanksMap[bid] || {};
+        const widthPx = bDef.width_px || 150;
+        return `<span class="wb-blank-token wb-blank-zone" id="wb-blank-${ex.id}-${bid}" data-exercise-id="${ex.id}" data-blank-id="${bid}" style="min-width: ${widthPx}px;"><span class="wb-blank-num">(${bid})</span><span class="wb-blank-badge" id="wb-blank-badge-${ex.id}-${bid}"></span></span>`;
       });
       if (!rawText.includes("[[")) {
         renderedText = rawText.replace(/_{3,}/g, () => {
           blankCount++;
-          return `<span class="wb-blank-token"><span class="wb-blank-num">(${blankCount})</span></span>`;
+          const bDef = blanksMap[blankCount] || {};
+          const widthPx = bDef.width_px || 150;
+          return `<span class="wb-blank-token wb-blank-zone" id="wb-blank-${ex.id}-${blankCount}" data-exercise-id="${ex.id}" data-blank-id="${blankCount}" style="min-width: ${widthPx}px;"><span class="wb-blank-num">(${blankCount})</span><span class="wb-blank-badge" id="wb-blank-badge-${ex.id}-${blankCount}"></span></span>`;
         });
       }
       innerHtml += `<div class="wb-task-content-box">${renderedText}</div>`;
@@ -1790,6 +1808,13 @@
           </div>
         `;
       }
+      const totalBlanks = blanks.length || blankCount;
+      innerHtml += `
+        <div class="wb-task-footer">
+          <button type="button" class="wb-task-check-btn" id="btn-check-${ex.id}">🔍 Lücken prüfen</button>
+          <span class="wb-cloze-progress" id="cloze-progress-${ex.id}">0 / ${totalBlanks} gelöst</span>
+        </div>
+      `;
     } else if (ex.exercise_type === "physics_diagram") {
       if (content.diagram_svg) {
         innerHtml += `<div class="wb-physics-diagram-wrap">${content.diagram_svg}</div>`;
@@ -1926,6 +1951,15 @@
       });
     }
 
+    // Lücken prüfen Listener
+    const checkBtn = card.querySelector(`#btn-check-${ex.id}`);
+    if (checkBtn) {
+      checkBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        checkClozeBlanks(card, ex);
+      });
+    }
+
     // Drag-and-Drop auf der Tafel
     const header = card.querySelector(`#wb-task-header-${ex.id}`);
     if (header) {
@@ -1934,6 +1968,128 @@
 
     return card;
   }
+
+  async function checkClozeBlanks(card, ex) {
+    if (!currentSession) return;
+    const checkBtn = card.querySelector(`#btn-check-${ex.id}`);
+    const progressEl = card.querySelector(`#cloze-progress-${ex.id}`);
+    if (!checkBtn) return;
+
+    const blankEls = Array.from(card.querySelectorAll(".wb-blank-zone"));
+    if (blankEls.length === 0) return;
+
+    checkBtn.disabled = true;
+    checkBtn.textContent = "⏳ Prüfe...";
+
+    blankEls.forEach(el => {
+      el.classList.remove("status-correct", "status-incorrect");
+      el.classList.add("status-pending");
+      const badge = el.querySelector(".wb-blank-badge");
+      if (badge) badge.textContent = "⏳";
+    });
+
+    try {
+      const cropCanvas = document.createElement("canvas");
+      const cropCtx = cropCanvas.getContext("2d");
+      const inkRect = inkCanvas.getBoundingClientRect();
+      const items = [];
+
+      for (const el of blankEls) {
+        const bid = parseInt(el.dataset.blankId, 10);
+        const rect = el.getBoundingClientRect();
+
+        const screenLeft = rect.left - inkRect.left;
+        const screenTop = rect.top - inkRect.top;
+        const vx = (screenLeft - panX) / scale;
+        const vy = (screenTop - panY) / scale;
+        const vw = rect.width / scale;
+        const vh = rect.height / scale;
+
+        const padding = 12;
+        const cropX = vx - padding;
+        const cropY = vy - padding;
+        const cropW = vw + padding * 2;
+        const cropH = vh + padding * 2;
+
+        const overlappingStrokes = strokes.filter(s => {
+          if (!s.points || s.points.length === 0) return false;
+          return s.points.some(p => p.x >= cropX && p.x <= cropX + cropW && p.y >= cropY && p.y <= cropY + cropH);
+        });
+
+        if (overlappingStrokes.length === 0) {
+          items.push({ blank_id: bid, crop_image_base64: "" });
+          continue;
+        }
+
+        const cScale = 1.5;
+        cropCanvas.width = Math.round(cropW * cScale);
+        cropCanvas.height = Math.round(cropH * cScale);
+
+        cropCtx.fillStyle = isChalk ? "#121826" : "#ffffff";
+        cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+
+        cropCtx.save();
+        cropCtx.scale(cScale, cScale);
+        cropCtx.translate(-cropX, -cropY);
+
+        for (const s of overlappingStrokes) {
+          renderStrokeToContext(cropCtx, s);
+        }
+        cropCtx.restore();
+
+        const cropB64 = cropCanvas.toDataURL("image/jpeg", 0.85);
+        items.push({ blank_id: bid, crop_image_base64: cropB64 });
+      }
+
+      const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}/check-blanks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items,
+          audio_enabled: tutorAudioEnabled
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        let correctCount = 0;
+
+        (data.results || []).forEach(r => {
+          const el = card.querySelector(`#wb-blank-${ex.id}-${r.blank_id}`);
+          const badge = card.querySelector(`#wb-blank-badge-${ex.id}-${r.blank_id}`);
+          if (el) {
+            el.classList.remove("status-pending");
+            if (r.is_correct) {
+              correctCount++;
+              el.classList.remove("status-incorrect");
+              el.classList.add("status-correct");
+              if (badge) badge.textContent = "✓";
+            } else {
+              el.classList.remove("status-correct");
+              el.classList.add("status-incorrect");
+              if (badge) badge.textContent = r.recognized_text ? `?` : "? leer";
+              if (r.hint) el.title = r.hint;
+            }
+          }
+        });
+
+        if (progressEl) {
+          progressEl.textContent = `${correctCount} / ${blankEls.length} gelöst`;
+        }
+
+        if (data.audio_base64 && tutorAudioEnabled) {
+          playTutorSpeech(data.audio_base64, data.tutor_speech);
+        }
+      }
+    } catch (err) {
+      console.warn("Fehler bei gezielter Lückenprüfung:", err);
+    } finally {
+      checkBtn.disabled = false;
+      checkBtn.textContent = "🔍 Lücken prüfen";
+      blankEls.forEach(el => el.classList.remove("status-pending"));
+    }
+  }
+
 
   function attachCardDragHandler(card, header, ex) {
     let isDragging = false;

@@ -2113,6 +2113,32 @@ body.wb-fullscreen-mode .wb-container {
   vertical-align: middle;
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25);
   pointer-events: none;
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.wb-blank-token.status-pending {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  animation: wb-blank-pulse 1.2s infinite ease-in-out;
+}
+
+.wb-blank-token.status-correct {
+  border-color: #10b981;
+  border-style: solid;
+  background: rgba(16, 185, 129, 0.18);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+}
+
+.wb-blank-token.status-incorrect {
+  border-color: #f43f5e;
+  background: rgba(244, 63, 94, 0.15);
+}
+
+@keyframes wb-blank-pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.02); opacity: 1; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+  100% { transform: scale(1); opacity: 0.9; }
 }
 
 .wb-blank-num {
@@ -2123,10 +2149,97 @@ body.wb-fullscreen-mode .wb-container {
   pointer-events: none;
 }
 
+.wb-blank-token.status-correct .wb-blank-num {
+  color: #34d399;
+}
+
+.wb-blank-token.status-incorrect .wb-blank-num {
+  color: #fb7185;
+}
+
+.wb-blank-badge {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.wb-blank-token.status-correct .wb-blank-badge {
+  color: #10b981;
+}
+
+.wb-blank-token.status-incorrect .wb-blank-badge {
+  color: #f43f5e;
+}
+
 .pattern-white .wb-blank-token {
   background: #fef3c7;
   color: #b45309;
 }
+
+.pattern-white .wb-blank-token.status-correct {
+  background: #d1fae5;
+  border-color: #10b981;
+}
+
+.pattern-white .wb-blank-token.status-incorrect {
+  background: #ffe4e6;
+  border-color: #f43f5e;
+}
+
+.wb-task-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pattern-white .wb-task-footer {
+  border-top-color: #e2e8f0;
+}
+
+.wb-task-check-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
+}
+
+.wb-task-check-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.wb-task-check-btn:active {
+  transform: translateY(0);
+}
+
+.wb-task-check-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.wb-cloze-progress {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.pattern-white .wb-cloze-progress {
+  color: #64748b;
+}
+
 
 .wb-word-bank {
   display: flex;
