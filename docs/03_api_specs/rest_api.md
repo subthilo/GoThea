@@ -122,6 +122,37 @@
 }
 ```
 
+### `POST /api/v1/taxonomy/import-timetable`
+* **Beschreibung:** Lädt ein Stundenplan-Dokument (PDF oder Bild) hoch, extrahiert Fächerkürzel mittels multimodaler OpenAI-Vision-Analyse (oder heuristischem Offline-Fallback), gleicht sie mit dem 23-Fächer-Kanon des Brandenburger Rahmenlehrplans ab, legt fehlende Fächer & Basisthemen automatisch in der Datenbank an und ordnet das Dokument im Dossier *„Stundenplan & Organisation“* ein.
+* **Content-Type:** `multipart/form-data`
+* **Form-Parameter:**
+  - `file`: `UploadFile` (PDF, PNG, JPG, WebP)
+* **Response Body (200 OK):**
+```json
+{
+  "message": "Stundenplan erfolgreich analysiert. 3 neue Fächer angelegt.",
+  "detected_subjects": [
+    { "id": "sub_chemie", "name": "Chemie", "icon": "🧪", "color_code": "#06b6d4" },
+    { "id": "sub_math", "name": "Mathematik", "icon": "📐", "color_code": "#3b82f6" }
+  ],
+  "created_subjects": [
+    { "id": "sub_chemie", "name": "Chemie", "icon": "🧪", "color_code": "#06b6d4" }
+  ],
+  "material": {
+    "id": "mat_1234abcd",
+    "title": "Stundenplan - Klasse 7 (2026-10-11)",
+    "kind": "Stundenplan",
+    "subject_id": "sub_math",
+    "topic_id": null,
+    "file_path": "materials/Stundenplan_Organisation/Stundenplan_-_Klasse_7_2026-10-11.pdf",
+    "page_count": 1,
+    "file_size": 245000,
+    "mime_type": "application/pdf",
+    "dossier_title": "Stundenplan & Organisation"
+  }
+}
+```
+
 ---
 
 ## 3. Lernplan- & Countdown-Engine
@@ -360,6 +391,147 @@
     }
   ],
   "quarantined_items": []
+}
+```
+
+---
+
+## 7. Stundenplan & Schulalltag-Organisation
+
+### `GET /api/v1/timetable`
+* **Beschreibung:** Liefert den vollständigen, strukturierten Wochenplan (Montag bis Freitag, 1. bis 8. Stunde) mit A-/B-Wochen-Support, Raum-, Lehrer- und Fachzuordnung.
+* **Query-Parameter:**
+  * `week_type` (optional, string: `"A"` oder `"B"`): Erzwingt die Stundenansicht für die entsprechende Woche. Ohne Parameter wird die aktuelle Kalenderwoche berechnet (ungerade = A, gerade = B).
+* **Response (200 OK):**
+```json
+{
+  "school_name": "Humboldt-Gymnasium Eichwalde",
+  "class_name": "Klasse 7D",
+  "school_year": "2026/2027",
+  "current_week_type": "A",
+  "scan_material_id": "mat_12345",
+  "scan_material_title": "Stundenplan Thea - Klasse 7D",
+  "periods": [
+    { "period": 1, "label": "1. Std", "start_time": "07:45", "end_time": "08:30", "is_break": false },
+    { "period": 2, "label": "2. Std", "start_time": "08:30", "end_time": "09:15", "is_break": false },
+    { "period": 6, "label": "6.1 Std", "start_time": "12:15", "end_time": "13:00", "is_break": false },
+    { "period": 7, "label": "6.2 Std", "start_time": "13:05", "end_time": "13:50", "is_break": false }
+  ],
+  "slots": [
+    {
+      "id": "slot_mo_1",
+      "day_of_week": "Montag",
+      "period": 1,
+      "period_label": "1. Std",
+      "start_time": "07:45",
+      "end_time": "08:30",
+      "subject_id": "sub_german",
+      "subject_code": "D",
+      "subject_name": "Deutsch",
+      "subject_icon": "📖",
+      "subject_color": "#ef4444",
+      "teacher": "DÜCK",
+      "room": "201",
+      "week_type": "both",
+      "is_double_period": true,
+      "is_break": false,
+      "note": null
+    }
+  ],
+  "week_differences": [
+    "Montag 5./6.1 Std: In A-Woche Sport (Halle gewo, Fr. DÜCK), in B-Woche Englisch (Raum 104, Fr. SCHD)."
+  ]
+}
+```
+
+### `GET /api/v1/timetable/today`
+* **Beschreibung:** Liefert den Tagesplan für den heutigen Tag. Am Wochenende wird automatisch der kommende Montag ausgegeben.
+* **Query-Parameter:**
+  * `week_type` (optional, string: `"A"` oder `"B"`): Optionaler Override des Wochentyps.
+* **Response (200 OK):**
+```json
+{
+  "day": "Montag",
+  "is_weekend": false,
+  "active_week": "A",
+  "slots_count": 6,
+  "lessons": [
+    {
+      "id": "slot_mo_1",
+      "period": 1,
+      "period_label": "1. Std",
+      "start_time": "07:45",
+      "end_time": "08:30",
+      "subject_id": "sub_german",
+      "subject_name": "Deutsch",
+      "subject_code": "D",
+      "subject_icon": "📖",
+      "subject_color": "#ef4444",
+      "teacher": "DÜCK",
+      "room": "201",
+      "is_break": false,
+      "note": null
+    }
+  ]
+}
+```
+
+### `POST /api/v1/timetable/slot`
+* **Beschreibung:** Fügt eine neue Unterrichtsstunde zum Plan hinzu.
+* **Status:** `201 Created`
+* **Request Body:**
+```json
+{
+  "day_of_week": "Freitag",
+  "period": 8,
+  "period_label": "8. Std",
+  "start_time": "14:40",
+  "end_time": "15:25",
+  "subject_id": "sub_math",
+  "subject_code": "Ma-AG",
+  "subject_name": "Mathematik",
+  "teacher": "HORN",
+  "room": "303",
+  "week_type": "both",
+  "is_double_period": false,
+  "is_break": false,
+  "note": "Mathe Olympiade AG"
+}
+```
+
+### `PUT /api/v1/timetable/slot/{slot_id}`
+* **Beschreibung:** Aktualisiert Raum, Lehrer, Zeiten, Notiz oder Fach eines Stundenplan-Eintrags.
+* **Status:** `200 OK` (oder `404 Not Found`).
+
+### `DELETE /api/v1/timetable/slot/{slot_id}`
+* **Beschreibung:** Entfernt eine Unterrichtsstunde aus dem Stundenplan.
+* **Status:** `204 No Content` (oder `404 Not Found`).
+
+### `POST /api/v1/timetable/reset`
+* **Beschreibung:** Löscht alle modifizierten Einträge und stellt Theas offiziellen Untis-Klassenplan (Klasse 7D) wieder her.
+* **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Stundenplan erfolgreich auf Werkseinstellungen (Klasse 7D) zurückgesetzt."
+}
+```
+
+### `POST /api/v1/taxonomy/import-timetable`
+* **Beschreibung:** Lädt ein Stundenplan-Dokument (PDF oder Bild) hoch, extrahiert per Vision/Heuristik alle Schulfächer und synchronisiert neue Fächer mit RLP-Themen in die SQLite-Datenbank.
+* **Content-Type:** `multipart/form-data`
+* **Body:** `file`: PDF oder Foto des Stundenplans.
+* **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "material_id": "mat_abc123",
+  "material_title": "Stundenplan Thea - Klasse 7D",
+  "dossier_id": "dos_orga456",
+  "created_subjects": [
+    { "id": "sub_chemie", "name": "Chemie", "icon": "🧪", "color_code": "#059669" }
+  ],
+  "existing_subjects": []
 }
 ```
 

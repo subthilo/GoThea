@@ -59,13 +59,21 @@ def confirm_material(
     Bestätigt die Metadaten durch den Nutzer und persistiert das Material dauerhaft
     inklusive semantischer Chunk-Segmentierung.
     """
+    if request.subject_id == "sub_orga" or request.kind == "Stundenplan":
+        from backend.app.services.timetable_analyzer import get_or_create_organisation_subject
+        get_or_create_organisation_subject(db)
+
     # Validierung Fach
     subject = db.query(Subject).filter_by(id=request.subject_id).first()
     if not subject:
-        raise HTTPException(status_code=404, detail=f"Schulfach '{request.subject_id}' nicht gefunden.")
+        if request.subject_id == "sub_orga" or request.kind == "Stundenplan":
+            from backend.app.services.timetable_analyzer import get_or_create_organisation_subject
+            subject = get_or_create_organisation_subject(db)
+        else:
+            raise HTTPException(status_code=404, detail=f"Schulfach '{request.subject_id}' nicht gefunden.")
 
     # Validierung Thema
-    if request.topic_id:
+    if request.topic_id and request.kind != "Stundenplan":
         topic = db.query(Topic).filter_by(id=request.topic_id).first()
         if not topic:
             raise HTTPException(status_code=404, detail=f"Thema '{request.topic_id}' nicht gefunden.")
@@ -77,6 +85,7 @@ def confirm_material(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler beim Speichern: {str(e)}")
 
+    actual_sub = db.query(Subject).filter_by(id=material.subject_id).first() or subject
     return MaterialRead(
         id=material.id,
         user_id=material.user_id,
@@ -91,9 +100,9 @@ def confirm_material(
         summary=material.summary,
         created_at=material.created_at,
         chunks_count=len(material.chunks) if material.chunks else 0,
-        subject_name=subject.name,
-        subject_icon=subject.icon,
-        subject_color=subject.color_code,
+        subject_name=actual_sub.name,
+        subject_icon=actual_sub.icon,
+        subject_color=actual_sub.color_code,
         topic_name=material.topic.name if material.topic else None,
         dossier_id=material.dossier_id,
         dossier_order=material.dossier_order,
@@ -225,8 +234,19 @@ def get_material_preview_image(
         raise HTTPException(status_code=404, detail="Material nicht gefunden.")
 
     try:
-        image_bytes, out_mime = render_material_page_as_image(mat.file_path, mat.mime_type, page)
-        return Response(content=image_bytes, media_type=out_mime)
+        image_bytes, out_mime = render_material_page_as_image(
+            file_path=mat.file_path,
+            mime_type=mat.mime_type,
+            page_num=page,
+            material_id=mat.id
+        )
+        return Response(
+            content=image_bytes,
+            media_type=out_mime,
+            headers={
+                "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600"
+            }
+        )
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Datei auf dem Speichermedium nicht gefunden.")
     except Exception as e:

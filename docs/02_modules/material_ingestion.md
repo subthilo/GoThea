@@ -131,3 +131,26 @@ Neben dem interaktiven Einzel-Upload im Frontend bietet GoThea eine automatisier
 * **`gpt-6-luna` & `gpt-6.1-sol` (Lernbegleiter & Didaktik):**
   * Aufgaben: Sokratischer Live-Tutor auf dem iPad Whiteboard, latenzarme Audio-Unterstützung (< 500 ms Streaming), pixelgenaue Fehleranalyse von Rechenschritten und Schülerskizzen.
 
+---
+
+### Stundenplan-Erkennung, Auto-Routing & Fächer-Übernahme (`timetable_analyzer.py`)
+
+* **Ziel:** Das Hochladen eines Schulstundenplans (Foto oder PDF) soll die Schulfächer der Schülerin automatisch erfassen, fehlende Fächer anlegen und das Dokument zuverlässig im Fach **Organisation** (`sub_orga`) ablegen – selbst wenn der Nutzer oder ein Vision-Prompt versehentlich ein Einzelfach wie *Französisch* (wegen des Tageskürzels „Fr“) vorgeschlagen hat.
+* **Erkennungs-Pipeline & Guardrails:**
+  1. **Upload-Wege:**
+     - Direkt via Web-UI über den Button *„📅 Stundenplan importieren“* (`POST /api/v1/taxonomy/import-timetable`).
+     - Über den regulären Upload-Dialog (`POST /api/v1/materials/pre-analyze` & `confirm`).
+     - Durch Ablegen im Samba/Finder-Netzwerkordner (`inbox/staging/` bzw. `inbox/prod/`).
+  2. **Intelligente Erkennung (`is_timetable_document`):**
+     - Prüft Dateinamen (`stundenplan`, `wochenplan`, `timetable`), extrahierten Text (Wochentage Mo–Fr, Stundenraster 1–8, A-/B-Woche) sowie Klassifikations-Tags.
+     - **Auto-Routing Guardrail:** Erkennt die Heuristik oder das Vision-Modell einen Stundenplan, wird die Zuweisung hart auf `subject_id = "sub_orga"` und `kind = "Stundenplan"` forciert. Dies verhindert, dass ein Stundenplan in Unterheftern von Französisch, Mathe oder Sport verschwindet.
+  3. **Kanonischer Fächer-Abgleich:**
+     - OpenAI Vision scannt das Dokument auf Stundenplan-Kürzel (`D`, `Ma`, `*Sp`, `En(B)`, `Bio`, `Ch`, `WAT`, `LER`, `Rel`, etc.).
+     - Offline-Heuristik als Fallback prüft Dateinamen und Text gegen den 23-Fächer-Kanon des Brandenburger Rahmenlehrplans (RLP).
+     - Neu gefundene Fächer werden mit Icon, Farbschema und Basis-Lehrplanthemen der Jahrgangsstufe 7 in SQLite angelegt (`Subject` & `Topic`).
+  4. **Dossier & Widget-Verbindung:**
+     - Der Stundenplan wird im Dossier *„Stundenplan & Organisation“* einsortiert.
+     - Auf der Material-Karte erscheint ein Schnellzugriff-Button **„🗓️ Stundenplan“**, der direkt zum interaktiven Stundenplan-Widget navigiert.
+     - Automatische Seeder-Migration korrigiert beim Start ältere Fehlablagen automatisch nach `sub_orga`.
+
+

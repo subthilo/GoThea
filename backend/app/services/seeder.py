@@ -92,6 +92,18 @@ INITIAL_SUBJECTS = [
             ("Klimazonen & Vegetationszonen", 7, "E", "Tropen bis Polarzone, Klimadiagramme"),
             ("Kräfte der Erde: Plattentektonik", 7, "E", "Erdbeben, Vulkanismus, Kontinentalverschiebung"),
         ]
+    },
+    {
+        "id": "sub_orga",
+        "name": "Organisation",
+        "color_code": "#6366f1",
+        "icon": "📅",
+        "min_grade": 1,
+        "max_grade": 13,
+        "topics": [
+            ("Stundenplan", 7, "E", "Wochenstruktur, Raum- und Lehrereinteilung, A/B-Wochen"),
+            ("Termine & Organisation", 7, "E", "Klassenarbeiten, Ferientermine, Wandertage"),
+        ]
     }
 ]
 
@@ -139,5 +151,52 @@ def seed_database(db: Session):
                     standard_competencies=comp
                 )
                 db.add(topic)
+
+    # 3. Automatische Migration: Stundenpläne müssen zwingend 'sub_orga' zugeordnet sein
+    import uuid
+    from backend.app.models.material import Material
+    from backend.app.models.dossier import Dossier
+
+    orga_subject = db.query(Subject).filter(Subject.id == "sub_orga").first()
+    if orga_subject:
+        # Finde oder erstelle das Stundenplan-Dossier
+        orga_dossier = db.query(Dossier).filter(
+            (Dossier.subject_id == "sub_orga") & (Dossier.kind == "organisation")
+        ).first()
+        if not orga_dossier:
+            orga_dossier = db.query(Dossier).filter(
+                Dossier.title == "Stundenplan & Organisation"
+            ).first()
+            if orga_dossier:
+                orga_dossier.subject_id = "sub_orga"
+                orga_dossier.kind = "organisation"
+                orga_dossier.color_code = orga_subject.color_code
+            else:
+                orga_dossier = Dossier(
+                    id=f"dos_{uuid.uuid4().hex[:8]}",
+                    user_id="usr_thea",
+                    subject_id="sub_orga",
+                    title="Stundenplan & Organisation",
+                    kind="organisation",
+                    color_code=orga_subject.color_code,
+                    icon="📁",
+                    description="Organisatorische Dokumente und Stundenpläne"
+                )
+                db.add(orga_dossier)
+                db.flush()
+
+        # Suche alle Materialien, die Stundenpläne sind, aber noch einem Schulfach zugeordnet sind
+        timetable_materials = db.query(Material).filter(
+            (Material.kind == "Stundenplan") |
+            (Material.title.ilike("%stundenplan%"))
+        ).all()
+
+        for mat in timetable_materials:
+            if mat.subject_id != "sub_orga":
+                mat.subject_id = "sub_orga"
+                mat.kind = "Stundenplan"
+                mat.topic_id = None
+                if orga_dossier:
+                    mat.dossier_id = orga_dossier.id
 
     db.commit()

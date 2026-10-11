@@ -16,13 +16,15 @@
    ├── 1:N ──> [ tests ] (Prüfungstermine)
    │             ├── 1:N ──> [ completed_tasks ] (Erledigte Plan-Einheiten)
    │             └── 1:N ──> [ tutor_sessions ] (Live-Lernsitzungen)
-   └── 1:N ──> [ competency_records ] (Mastery-Score & Fehlermuster)
+   ├── 1:N ──> [ competency_records ] (Mastery-Score & Fehlermuster)
+   └── 1:N ──> [ timetable_slots ] (Wochenstundenplan mit Turnus A/B)
 
 [ subjects ] (Schulfächer)
    ├── 1:N ──> [ topics ] (Themen nach Klassenstufe & RLP Niveaustufe)
    ├── 1:N ──> [ dossiers ] (Fachhefter, Lehrbücher, Sammlungen)
    ├── 1:N ──> [ tests ]
    ├── 1:N ──> [ study_blocks ] (Sperrtage je Fach oder global)
+   ├── 1:N ──> [ timetable_slots ] (Fach-Verknüpfung in Unterrichtsstunden)
    └── 1:N ──> [ materials ] (Bücher, Hefter, Arbeitsblätter)
                  ├── 1:N ──> [ materials ] (Hierarchie: Buch -> Kapitel)
                  └── 1:N ──> [ material_chunks ] (Semantische Text- & Formelabschnitte)
@@ -161,5 +163,31 @@
 | `chunk_type` | TEXT | DEFAULT 'general' | 'rule', 'exercise', 'vocabulary', 'general' |
 | `page_number` | INTEGER | DEFAULT 1 | Seitenzahl im Quelldokument |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Erstellungszeitpunkt |
+
+### 11. `timetable_slots` (Stundenplan-Raster & Unterrichtsstunden)
+| Feld | Typ | Constraints | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `id` | TEXT | PRIMARY KEY | Slot-ID (`slot_...`) |
+| `user_id` | TEXT | FK -> users(id), NOT NULL | Schüler-Zuordnung (`usr_thea`) |
+| `day_of_week` | TEXT | NOT NULL | Wochentag (`Montag`, `Dienstag`, etc.) |
+| `period` | INTEGER | NOT NULL | Stunde (1..9, Untis-Raster) |
+| `period_label`| TEXT | NULLABLE | Anzeigename (`1. Std`, `6.1 Std`, `6.2 Std`) |
+| `start_time` | TEXT | NULLABLE | Beginn (`HH:MM`, z. B. `07:45`) |
+| `end_time` | TEXT | NULLABLE | Ende (`HH:MM`, z. B. `08:30`) |
+| `subject_id` | TEXT | FK -> subjects(id), NULLABLE | Schulfach-ID (NULL bei Mittag/Pausen) |
+| `subject_code`| TEXT | NULLABLE | Untis-Kürzel (`D`, `Ma`, `*Sp`, `En`, etc.) |
+| `subject_name`| TEXT | NOT NULL | Voller Name (`Deutsch`, `Mathematik`) |
+| `custom_title`| TEXT | NULLABLE | Eigener Titel (z. B. `*GT-Mittag`, `*Mittag`) |
+| `teacher` | TEXT | NULLABLE | Lehrerkürzel (`DÜCK`, `HORN`, `SCHD`, `PAYS`) |
+| `room` | TEXT | NULLABLE | Raumnummer (`201`, `303`, `gewo`, `Mensa`) |
+| `week_type` | TEXT | DEFAULT 'both' | Turnus (`both`, `A`, `B`) für wechselnde Wochen |
+| `is_double_period`| BOOLEAN | DEFAULT FALSE | Kennzeichnung für Block-/Doppelstunden |
+| `is_break` | BOOLEAN | DEFAULT FALSE | TRUE bei Hof-/Mittagspausen oder Freistunden |
+| `note` | TEXT | NULLABLE | Zusatzinformationen (z. B. Turnushinweise) |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Erstellungszeitpunkt |
+
+*Indizes & Beziehungen:*
+* `subject_id` referenziert `subjects(id)` (optional `ON DELETE SET NULL`)
+* Filterungen primär nach `(user_id, day_of_week, week_type)`
 
 

@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="GoThea">
   <meta name="theme-color" content="#0f1115">
 
-  <link rel="stylesheet" href="/static/style.css?v=2.2">
+  <link rel="stylesheet" href="/static/style.css?v=2.5">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -35,6 +35,7 @@
       <!-- Navigation Tabs -->
       <nav class="nav-tabs">
         <button class="nav-tab active" data-tab="dashboard">📊 Übersicht</button>
+        <button class="nav-tab" data-tab="timetable">🗓️ Stundenplan</button>
         <button class="nav-tab" data-tab="subjects">📚 Fächer & Themen<span id="nav-inbox-badge" class="nav-counter-badge" style="display: none;">0</span></button>
         <button class="nav-tab" data-tab="planner">📅 Lernplan</button>
         <button class="nav-tab" data-tab="whiteboard">🎨 Tafel</button>
@@ -59,6 +60,26 @@
           <div class="status-pill">
             <span class="pulse-dot"></span>
             <span>M1 Aktiv: Datenkern & Taxonomie</span>
+          </div>
+        </div>
+
+        <!-- Dashboard Stundenplan-Widget -->
+        <div class="dash-timetable-card" id="dash-tt-card">
+          <div class="dash-tt-header">
+            <div class="dash-tt-title-group">
+              <span class="dash-tt-icon">🗓️</span>
+              <div>
+                <div class="dash-tt-title" id="dash-tt-day-title">Dein Schultag heute</div>
+                <div class="dash-tt-subtitle" id="dash-tt-subtitle">Humboldt-Gymnasium Eichwalde • Klasse 7D</div>
+              </div>
+            </div>
+            <div class="dash-tt-actions">
+              <span class="dash-tt-week-pill" id="dash-tt-week-pill">🅰️ A-Woche</span>
+              <button class="btn-secondary-sm" id="btn-dash-goto-timetable">Vollständigen Stundenplan ansehen ➔</button>
+            </div>
+          </div>
+          <div class="dash-tt-slots-row" id="dash-tt-slots-row">
+            <div class="dash-tt-empty">Lade Stundenplan...</div>
           </div>
         </div>
 
@@ -92,6 +113,65 @@
         </div>
       </section>
 
+      <!-- Tab: Stundenplan (Interaktives Wochen-Widget) -->
+      <section id="tab-timetable" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+              <h2>🗓️ Stundenplan – Klasse 7D</h2>
+              <span class="badge-grade">Humboldt-Gymnasium Eichwalde</span>
+            </div>
+            <p class="subtitle" id="tt-view-subtitle">Schuljahr 2026/2027 • Stundenraster 1. bis 8. Stunde (07:45 – 15:25)</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button id="btn-tt-view-scan" class="btn-secondary-sm" title="Den hochgeladenen Original-Scan als Dokument ansehen">
+              👁️ Original-Scan ansehen
+            </button>
+            <button id="btn-tt-upload-new" class="btn-primary-sm" title="Neuen Stundenplan scannen oder hochladen">
+              📤 Plan aktualisieren
+            </button>
+          </div>
+        </div>
+
+        <!-- Stundenplan Widget Container -->
+        <div class="timetable-widget-container">
+          <!-- Toolbar mit A-/B-Wochen Switcher -->
+          <div class="tt-toolbar">
+            <div class="tt-week-switcher">
+              <span class="tt-toolbar-label">Turnus-Woche:</span>
+              <button class="tt-week-btn active" data-week="A" id="btn-tt-week-a">🅰️ A-Woche</button>
+              <button class="tt-week-btn" data-week="B" id="btn-tt-week-b">🅱️ B-Woche</button>
+              <span class="tt-auto-week-tag" id="tt-auto-week-tag">Aktuell laut Kalender</span>
+            </div>
+            <div class="tt-toolbar-info">
+              <span class="tt-info-icon">💡</span>
+              <span id="tt-differences-text">Montag 5./6.1 Std: In A-Woche Sport (Fr. DÜCK, Halle gewo) • In B-Woche Englisch (Fr. SCHD, R 104)</span>
+            </div>
+          </div>
+
+          <!-- Interaktives Wochen-Raster -->
+          <div class="timetable-grid-wrapper">
+            <div class="timetable-grid" id="timetable-full-grid">
+              <!-- Dynamisch via app.js gerendert -->
+            </div>
+          </div>
+
+          <!-- Legende & Hilfestellung -->
+          <div class="tt-footer-bar">
+            <div class="tt-legend">
+              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #2563eb;"></span> Hauptfächer (Ma, De, En, Fr)</div>
+              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #10b981;"></span> Naturwissenschaften (Bio, Ph, Ch)</div>
+              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #f59e0b;"></span> Gesellschaft (Ge, Geo, PB)</div>
+              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #14b8a6;"></span> Praxis (Sport, WAT)</div>
+              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #475569;"></span> Pausen & Mensa</div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+              Tipp: Klicke auf ein Fach, um direkt zu den Heftern, Arbeitsblättern oder zur Tafel zu springen.
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Tab 2: Fächer & Themen Detail -->
       <section id="tab-subjects" class="tab-pane">
         <div class="pane-header">
@@ -99,7 +179,11 @@
             <h2>Fächer- und Themenkatalog</h2>
             <p class="subtitle">Dynamische Taxonomie mit Brandenburger Rahmenlehrplan (RLP Niveaustufe E)</p>
           </div>
-          <button id="btn-open-material-modal" class="btn-primary-sm">➕ Dokument hochladen</button>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button id="btn-open-timetable-modal" class="btn-secondary-sm" title="Stundenplan hochladen und Fächer automatisch anlegen">📅 Stundenplan importieren</button>
+            <input type="file" id="timetable-file-input" accept="application/pdf,image/png,image/jpeg,image/webp" style="display: none;">
+            <button id="btn-open-material-modal" class="btn-primary-sm">➕ Dokument hochladen</button>
+          </div>
         </div>
         <div class="subjects-detailed-list" id="subjects-detailed-list">
           <!-- Dynamisch befüllt via API -->
@@ -158,6 +242,7 @@
           <!-- Filter-Pills für Dokumentarten -->
           <div class="materials-filter-bar" id="materials-filter-bar">
             <button class="filter-pill active" data-kind="all">Alle Dokumente</button>
+            <button class="filter-pill" data-kind="Stundenplan">📅 Stundenpläne</button>
             <button class="filter-pill" data-kind="Arbeitsblatt">📄 Arbeitsblätter</button>
             <button class="filter-pill" data-kind="Hefter">📁 Hefter & Notizen</button>
             <button class="filter-pill" data-kind="Buch">📚 Schulbücher</button>
@@ -510,6 +595,7 @@
               <option value="Buchauszug">Buchauszug / Schulbuch</option>
               <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
               <option value="Test">Test / Übungszettel</option>
+              <option value="Stundenplan">Stundenplan</option>
             </select>
           </div>
           <div class="form-group">
@@ -538,6 +624,16 @@
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- Zoom Steuerung (Maximal 100% Volle Breite, stufenlos rauszoomen) -->
+          <div class="viewer-zoom-controls">
+            <button type="button" id="btn-viewer-zoom-out" class="btn-viewer-tool" title="Rauszoomen (–10%)">➖</button>
+            <span id="viewer-zoom-label" class="viewer-zoom-label" title="Zoom auf 100% zurücksetzen">100%</span>
+            <button type="button" id="btn-viewer-zoom-in" class="btn-viewer-tool" title="Reinzoomen (+10%, max. 100%)">➕</button>
+            <div class="viewer-tool-divider"></div>
+            <button type="button" id="btn-viewer-fit-page" class="btn-viewer-tool" title="Ganze Seite einpassen (ohne Scrollen)">📄 Seite</button>
+            <button type="button" id="btn-viewer-fit-width" class="btn-viewer-tool" title="Volle Breite (100%)">↔️ Breite</button>
+          </div>
+
           <button id="btn-viewer-open-wb" class="btn-primary-sm" style="display: flex; align-items: center; gap: 6px;">
             <span>🎨</span>
             <span>Auf Tafel bearbeiten</span>
@@ -546,20 +642,138 @@
           <button class="modal-close" id="btn-close-viewer-modal">&times;</button>
         </div>
       </div>
-      <div class="modal-body" style="padding: 10px 0 0 0;">
-        <div id="viewer-pager-bar" style="display: none; align-items: center; justify-content: center; gap: 16px; margin-bottom: 12px;">
+      <div class="modal-body viewer-modal-body">
+        <div id="viewer-pager-bar" style="display: none; align-items: center; justify-content: center; gap: 16px; margin-bottom: 10px; flex-shrink: 0;">
           <button id="btn-viewer-prev-page" class="btn-secondary-sm">◀ Vorherige Seite</button>
           <span id="viewer-page-label" style="font-size: 0.9rem; font-weight: 600;">Seite 1 / 1</span>
           <button id="btn-viewer-next-page" class="btn-secondary-sm">Nächste Seite ▶</button>
         </div>
-        <div id="viewer-content-container" style="max-height: 72vh; overflow-y: auto; text-align: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 12px;">
-          <img id="viewer-img" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: inline-block;" alt="Vorschau">
+        <div id="viewer-content-container" class="viewer-content-container">
+          <div id="viewer-loading-spinner" class="viewer-spinner-overlay" style="display: none;">
+            <div class="inbox-spinner" style="width: 38px; height: 38px; margin: 0 auto 10px auto; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--accent-light);"></div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Seite wird gerendert...</div>
+          </div>
+          <img id="viewer-img" class="viewer-img-fullwidth" alt="Vorschau" title="Klicken für Ganzseiten-Ansicht">
         </div>
       </div>
     </div>
   </div>
 
-  <script src="/static/app.js?v=2.2"></script>
-  <script src="/static/whiteboard.js?v=2.2"></script>
+  <!-- Modal: Stundenplan Import Ergebnis -->
+  <div id="modal-timetable-result" class="modal-backdrop" style="display: none;">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.5rem;">📅</span>
+          <div>
+            <h3 id="tt-modal-title" style="margin: 0; font-size: 1.2rem;">Stundenplan importieren</h3>
+            <span class="subtitle" style="font-size: 0.8rem; margin: 0;">Automatische Fächererkennung via KI</span>
+          </div>
+        </div>
+        <button class="modal-close" id="btn-close-timetable-modal">&times;</button>
+      </div>
+      <div class="modal-body" id="tt-modal-body">
+        <!-- Progress State -->
+        <div id="tt-loading-state" style="text-align: center; padding: 24px 12px; display: none;">
+          <div class="inbox-spinner" style="margin: 0 auto 16px auto; width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--accent-light);"></div>
+          <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem; margin-bottom: 6px;">Stundenplan wird analysiert...</div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">OpenAI Vision & Heuristik scannen Fächerkürzel und gleichen sie mit dem Brandenburger Lehrplan ab.</p>
+        </div>
+
+        <!-- Result State -->
+        <div id="tt-result-state" style="display: none;">
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #10b981; font-size: 0.95rem;">
+              <span>✅</span>
+              <span id="tt-result-status-title">Stundenplan erfolgreich eingelesen!</span>
+            </div>
+            <div id="tt-result-doc-name" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+              Dokument als „Stundenplan & Organisation“ abgelegt.
+            </div>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">
+              Neu angelegte oder aktivierte Schulfächer:
+            </label>
+            <div id="tt-added-subjects-list" style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <!-- Dynamic pills -->
+            </div>
+          </div>
+
+          <div style="margin-bottom: 18px;">
+            <label style="display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">
+              Alle erkannten Fächer im Stundenplan:
+            </label>
+            <div id="tt-all-subjects-list" style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <!-- Dynamic pills -->
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="button" id="btn-tt-confirm-close" class="btn-primary" style="width: 100%;">Super, weiter!</button>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="tt-error-state" style="display: none; text-align: center; padding: 16px;">
+          <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">⚠️</span>
+          <div style="font-weight: 600; color: #ef4444; margin-bottom: 6px;" id="tt-error-title">Fehler beim Import</div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;" id="tt-error-detail">Das Dokument konnte nicht verarbeitet werden.</p>
+          <button type="button" id="btn-tt-error-close" class="btn-secondary-sm" style="width: 100%;">Schließen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Stundenplan Fach-Detail & Schnellzugriff -->
+  <div id="modal-tt-slot-detail" class="modal-backdrop" style="display: none;">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span id="tt-slot-modal-icon" style="font-size: 1.6rem;">📚</span>
+          <div>
+            <h3 id="tt-slot-modal-title" style="margin: 0; font-size: 1.2rem;">Mathematik</h3>
+            <span id="tt-slot-modal-time" class="subtitle" style="font-size: 0.8rem; margin: 0;">1. & 2. Stunde • 07:45 – 09:15</span>
+          </div>
+        </div>
+        <button class="modal-close" id="btn-close-tt-slot-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 10px;">
+        <div class="tt-slot-info-card">
+          <div class="tt-slot-info-row">
+            <span class="tt-slot-info-label">🏫 Raum:</span>
+            <span class="tt-slot-info-val" id="tt-slot-modal-room">Raum 303</span>
+          </div>
+          <div class="tt-slot-info-row">
+            <span class="tt-slot-info-label">👩‍🏫 Lehrkraft:</span>
+            <span class="tt-slot-info-val" id="tt-slot-modal-teacher">Hr. HORN</span>
+          </div>
+          <div class="tt-slot-info-row">
+            <span class="tt-slot-info-label">🗓️ Turnus:</span>
+            <span class="tt-slot-info-val" id="tt-slot-modal-week">Beide Wochen</span>
+          </div>
+          <div class="tt-slot-info-row" id="tt-slot-modal-note-row" style="display: none;">
+            <span class="tt-slot-info-label">📝 Notiz:</span>
+            <span class="tt-slot-info-val" id="tt-slot-modal-note"></span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 18px;">
+          <button id="btn-tt-goto-materials" class="btn-primary" style="justify-content: center; gap: 8px;">
+            <span>📚</span>
+            <span>Zu Heftern & Arbeitsblättern springen</span>
+          </button>
+          <button id="btn-tt-goto-whiteboard" class="btn-secondary-sm" style="justify-content: center; gap: 8px; padding: 10px 14px;">
+            <span>🎨</span>
+            <span>Tafel für dieses Fach öffnen</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=2.6"></script>
+  <script src="/static/whiteboard.js?v=2.6"></script>
 </body>
 </html>

@@ -262,6 +262,13 @@ def process_single_inbox_file(
     db.commit()
     db.refresh(material)
 
+    # Erste Seiten vorab rendern für Sofort-Anzeige im Web-Viewer
+    try:
+        from backend.app.services.material_ingestion import pre_cache_material_pages
+        pre_cache_material_pages(material.id, material.file_path, material.mime_type, max_pages=3)
+    except Exception:
+        pass
+
     return ProcessedItemDetail(
         material_id=material.id,
         title=material.title,

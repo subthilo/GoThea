@@ -36,3 +36,20 @@ class SubjectRead(SubjectBase):
     id: str
     created_at: datetime
     topics: List[TopicRead] = []
+
+class TimetableImportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    status: str
+    message: str
+    detected_subjects: List[str]
+    created_subjects: List[SubjectRead]
+    existing_subjects: List[SubjectRead]
+    material_id: str
+    material_title: str
+    filename: str
+    dossier_id: str
+    dossier_title: str
+    timetable_grid: dict = {}
+    summary: str
+

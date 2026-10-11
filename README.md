@@ -1,13 +1,13 @@
 # 🎓 GoThea – Multimodale Lernzentrale & Sokratischer KI-Tutor
 
-[![Test Suite](https://img.shields.io/badge/Tests-58%2F58%20Passed-success?style=flat-square&logo=pytest)](docs/04_test_reports/iteration_04_material_ingestion.md)
-[![Code Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen?style=flat-square)](docs/04_test_reports/iteration_04_material_ingestion.md)
+[![Test Suite](https://img.shields.io/badge/Tests-76%2F76%20Passed-success?style=flat-square&logo=pytest)](docs/04_test_reports/iteration_05_timetable_and_organization.md)
+[![Code Coverage](https://img.shields.io/badge/Coverage-86%25-brightgreen?style=flat-square)](docs/04_test_reports/iteration_05_timetable_and_organization.md)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)](backend/)
 [![Platform](https://img.shields.io/badge/Hardware-Raspberry%20Pi%204%2F5%20%26%20iPadOS-orange?style=flat-square&logo=raspberrypi)](docs/01_architecture/overview.md)
 [![License](https://img.shields.io/badge/License-Proprietary-lightgrey?style=flat-square)](#)
 
 > **GoThea** ist eine adaptive, multimodale Lernumgebung für Schülerinnen und Schüler (Initialkonfiguration: 7. Klasse Gymnasium, Land Brandenburg; erweiterbar auf Klassen 1 bis 13).  
-> Sie verbindet ein intelligentes, countdownbasiertes Lernplansystem mit einem interaktiven, sokratischen KI-Lernbegleiter auf einem hardwarebeschleunigten iPad-Whiteboard.
+> Sie verbindet ein intelligentes, countdownbasiertes Lernplansystem mit einem interaktiven, sokratischen KI-Lernbegleiter auf einem hardwarebeschleunigten iPad-Whiteboard sowie einem vollintegrierten Untis-Stundenplan-Widget mit A-/B-Wochen Turnus.
 
 ---
 
@@ -19,8 +19,9 @@
    * [1. Multimodales iPad Whiteboard](#1-multimodales-ipad-whiteboard-apple-pencil--retina)
    * [2. Smarte Material-Ingestion & Vorlagen](#2-smarte-material-ingestion--vorlagen-in-app-viewer)
    * [3. Countdown- & Lernplan-Engine](#3-altersadaptiver-countdown--lernplan-algorithmus)
-   * [4. Schülerprofil & Brandenburger Lehrplan](#4-schülerprofil--brandenburger-lehrplan-rlp-a-h)
-   * [5. Staging- vs. Produktions-Umgebung](#5-staging--vs-produktions-umgebung-auf-dem-pi)
+   * [4. Stundenplan-Widget & Organisation (Untis 7D & A/B-Wochen)](#4-stundenplan-widget--organisation-untis-7d--ab-wochen)
+   * [5. Schülerprofil & Brandenburger Lehrplan](#5-schülerprofil--brandenburger-lehrplan-rlp-a-h)
+   * [6. Staging- vs. Produktions-Umgebung](#6-staging--vs-produktions-umgebung-auf-dem-pi)
 4. [Technologie-Stack](#-technologie-stack)
 5. [Repository- & Verzeichnisstruktur](#-repository--verzeichnisstruktur)
 6. [Installation & Lokale Entwicklung](#-installation--lokale-entwicklung)
@@ -146,12 +147,29 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
   * *Prüfungstag:* Ruhemodus (*„Heute musst du nicht mehr lernen. Du schaffst das!“*).
 * **Sperrtage-Manager:** Flexible Tage-Auszeit („Ganzer Tag frei“ oder „Fach frei“). Der Countdown kompensiert Ausfalltage automatisch.
 
-### 4. Schülerprofil & Brandenburger Lehrplan (RLP A–H)
+### 4. Stundenplan-Widget & Organisation (Untis 7D & A/B-Wochen)
+* **Interaktives Wochenraster (`#tab-timetable`):**
+  * Zeigt Theas kompletten Stundenplan (Klasse 7D, Humboldt-Gymnasium Eichwalde) in einer maßgeschneiderten Wochenansicht (Montag bis Freitag, 1. bis 8. Stunde inkl. geteilter 6. Stunde).
+  * Jede Unterrichtsstunde zeigt Fach-Icon, Kürzel & Fachname, Raumnummer, Lehrerkürzel, Doppelstunden-Markierung und Beginn/Ende.
+* **A-/B-Wochen Turnus (Alternating Weeks):**
+  * Berechnet automatisch die Kalenderwoche (ungerade = A-Woche, gerade = B-Woche) mit manuellem Umschalter im Header.
+  * Berücksichtigt spezifische Stundenplan-Wechsel (z. B. Montag 5./6.1 Std: Sport in Turnhalle `gewo` bei Frau DÜCK in A-Woche vs. Englisch in Raum 104 bei Frau SCHD in B-Woche).
+* **Tages-Widget auf dem Dashboard:**
+  * Kompakte Übersicht „Dein Schultag heute“ direkt beim Öffnen der App (am Wochenende mit Vorschau auf Montag).
+* **Deep-Links & Vernetzung:**
+  * Klick auf einen Unterrichts-Slot öffnet die Detailkarte mit One-Tap-Aktionen:
+    * 🎨 *„Auf Tafel öffnen“* (startet Whiteboard mit Fach-Vorauswahl)
+    * 📚 *„Materialien zum Fach“* (springt in die gefilterte Mediathek)
+    * 📄 *„Original-Scan ansehen“* (öffnet den eingescannten Stundenplan im Vollbild-Viewer)
+* **Auto-Routing ins Fach „Organisation“ (`sub_orga`):**
+  * Stundenpläne werden beim Hochladen über beliebige Kanäle (Upload, Samba-Dropzone) automatisch als Dokumentart `Stundenplan` erkannt und unverrückbar im Fach *Organisation* und Dossier *Stundenplan & Organisation* abgelegt (Verhinderung versehentlicher Fehlablagen in Einzelfächern).
+
+### 5. Schülerprofil & Brandenburger Lehrplan (RLP A–H)
 * **Klassenstufen 1 bis 13:** Dynamische Kalibrierung von Fächern, Themen und Niveaustufen.
 * **Brandenburger Rahmenlehrplan (RLP):** Niveaustufe E für Klasse 7 Gymnasium.
 * **Dynamische Taxonomie:** Vollständige CRUD-Schnittstelle für Fächer (Farben, Icons) und Themen.
 
-### 5. Staging- vs. Produktions-Umgebung auf dem Pi
+### 6. Staging- vs. Produktions-Umgebung auf dem Pi
 * **Port 8000 (Produktion):** Persistente Echtdaten der Schülerin (`data/prod/app_data.db`, `inbox/prod`).
 * **Port 8001 (Staging):** Isolierte Testumgebung (`data/staging/app_data.db`, `inbox/staging`) mit Ein-Klick-Reset-Funktion und Dummy-Daten-Generierung.
 
@@ -165,11 +183,11 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 | **KI / Multimodal Ingestion** | **OpenAI `gpt-4o-mini` (Vision)** | Schnelle Bild- & Textanalyse von Scans, Titelerkennung, JSON-Mode |
 | **KI / Didaktischer Tutor** | **`gpt-6-luna` & `gpt-6.1-sol`** | Sokratischer Live-Tutor (iPad Whiteboard / Audio) & Tafel-Diagnose |
 | **Datenbank** | **SQLite (WAL-Modus)** | Lokale Edge-Datenbank, latenzarm, ausfallsicher, zero-maintenance |
-| **ORM** | **SQLAlchemy 2.0** | Typisierte Datenbankmodelle (`dossiers`, `materials`, `taxonomy`) |
+| **ORM** | **SQLAlchemy 2.0** | Typisierte Datenbankmodelle (`timetable_slots`, `dossiers`, `materials`, `taxonomy`) |
 | **PDF Rendering** | **Poppler `pdftoppm`** | Natives C-Tool auf Linux/Pi für ultraschnelles Seiten-Rendering |
 | **Frontend Core** | **HTML5 / Vanilla JavaScript (ES6+)** | Leichtgewichtig, frameworklos für maximale iPadOS-Safari-Performance |
 | **Styling** | **Modern Vanilla CSS** | HSL-Farbsystem, dynamisches Theme, iOS Human Interface Design |
-| **Testsuite** | **pytest / pytest-cov** | 58 Unit- & Integrationstests mit 90% Code Coverage |
+| **Testsuite** | **pytest / pytest-cov** | 76 Unit- & Integrationstests mit 86% Code Coverage |
 | **Deployment** | **systemd & Bash (`deploy.sh`)** | Dual-Service-Management auf Raspberry Pi OS (Staging & Prod) |
 
 ---
@@ -277,10 +295,11 @@ Das Projekt verfügt über ein automatisiertes Deployment-Script (`deploy.sh`), 
 | **M0: Setup & Pi-Host** | Raspberry Pi Deployment, Dual-Port Setup (8000/8001), systemd | ✅ Abgeschlossen | Manuell verifiziert |
 | **M1: Core DB & Taxonomie** | SQLite WAL, User, Fächer & Themen (7. Klasse BB), Staging/Prod | ✅ Abgeschlossen | 15 Tests (92% Coverage) |
 | **M2: Lernplan-Engine** | Altersadaptiver Countdown, Phasenallokation, Sperrtage | ✅ Abgeschlossen | 23 Tests (92% Coverage) |
-| **M5: Whiteboard Engine** | iPad Retina Canvas, Apple Pencil, Zoom (100–350%), Underlay | ✅ Abgeschlossen | 32 Tests (93% Coverage) |
+| **M3: Whiteboard Engine** | iPad Retina Canvas, Apple Pencil, Zoom (100–350%), Underlay | ✅ Abgeschlossen | 32 Tests (93% Coverage) |
 | **M4: Material-Upload** | 2-Stufen Human-in-the-Loop Ingestion, Poppler-Rendering, Viewer | ✅ Abgeschlossen | 43 Tests (90% Coverage) |
-| **M3: IServ-Connector** | CalDAV Terminabgleich, WebDAV Materialien, AES-256 Vault | ⏳ Geplant | - |
-| **M6: Sokratischer KI-Tutor** | Vision-Diagnose, Scaffolding Overlays, Knowledge Tracing | ⏳ Geplant | - |
+| **M5: Stundenplan & Orga** | Untis 7D Raster, A/B-Wochen, Dashboard-Widget, Auto-Routing | ✅ Abgeschlossen | 76 Tests (86% Coverage) |
+| **M6: IServ-Connector** | CalDAV Terminabgleich, WebDAV Materialien, AES-256 Vault | ⏳ Geplant | - |
+| **M7: Sokratischer KI-Tutor** | Vision-Diagnose, Scaffolding Overlays, Knowledge Tracing | ⏳ Geplant | - |
 
 ---
 
@@ -290,10 +309,11 @@ Die vollständige technische Dokumentation ist modular im Ordner [`docs/`](docs/
 
 * **[Dokumentations-Index](docs/index.md):** Komplette Modulübersicht und Lesereihenfolge.
 * **[01.1 Systemübersicht & Topologie](docs/01_architecture/overview.md):** Edge-Architektur auf dem Raspberry Pi.
-* **[01.2 Datenbankschema & DDL](docs/01_architecture/database_schema.md):** Relationale Tabellen, Constraints und Indizes.
+* **[01.2 Datenbankschema & DDL](docs/01_architecture/database_schema.md):** Relationale Tabellen, Constraints und Indizes (`timetable_slots`).
 * **[02.2 Lernplan- und Countdown-Engine](docs/02_modules/planner_and_countdown.md):** Mathematische Formeln $N(k,g)$ und $B(k,g)$.
-* **[02.4 Smarte Material-Ingestion](docs/02_modules/material_ingestion.md):** Human-in-the-Loop Workflow und PDF-Rendering.
+* **[02.4 Smarte Material-Ingestion](docs/02_modules/material_ingestion.md):** Human-in-the-Loop Workflow, Auto-Routing nach `sub_orga`.
 * **[02.5 Multimodale Whiteboard Engine](docs/02_modules/whiteboard_engine.md):** Low-Latency iPad Canvas, Gestenschutz, Zoom & Ebenen.
 * **[02.6 Sokratischer KI-Tutor](docs/02_modules/socratic_tutor.md):** Leitfragen, Handschrift-Diagnose und Knowledge Tracing.
-* **[03.1 REST API Spezifikation](docs/03_api_specs/rest_api.md):** Interaktive HTTP-Endpunkte und DTOs.
-* **[04.4 Testbericht Iteration 04](docs/04_test_reports/iteration_04_material_ingestion.md):** Detaillierter Testlauf & Coverage-Matrix.
+* **[02.7 Stundenplan & Organisation](docs/02_modules/timetable_widget.md):** Natives Wochenraster, Untis 7D, A/B-Wochen Switcher & Deep-Links.
+* **[03.1 REST API Spezifikation](docs/03_api_specs/rest_api.md):** Interaktive HTTP-Endpunkte und DTOs (inkl. Section 7 Stundenplan).
+* **[04.5 Testbericht Iteration 05](docs/04_test_reports/iteration_05_timetable_and_organization.md):** Detaillierter Testlauf & Coverage-Matrix (76 Tests, 100% Passed).

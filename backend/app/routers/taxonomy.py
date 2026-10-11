@@ -1,9 +1,18 @@
+import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
+from backend.app.config import TEMP_UPLOADS_DIR, MATERIALS_DIR
 from backend.app.database import get_db
 from backend.app.models.taxonomy import Subject, Topic
-from backend.app.schemas.taxonomy import SubjectCreate, SubjectRead, TopicCreate, TopicRead
+from backend.app.schemas.taxonomy import (
+    SubjectCreate,
+    SubjectRead,
+    TopicCreate,
+    TopicRead,
+    TimetableImportResponse
+)
+from backend.app.services.timetable_analyzer import process_and_import_timetable
 
 router = APIRouter(prefix="/api/v1/taxonomy", tags=["Taxonomy"])
 
@@ -32,6 +41,59 @@ def create_subject(subject_in: SubjectCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(subject)
     return subject
+
+@router.post("/import-timetable", response_model=TimetableImportResponse, status_code=200)
+async def import_timetable_endpoint(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Importiert einen Stundenplan (PDF oder Bild), erkennt alle Fächer und fügt
+    fehlende Fächer automatisch mit passenden Icons, Farben und Themen zur Fächerliste hinzu.
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Keine Datei übergeben.")
+
+    temp_path = TEMP_UPLOADS_DIR / f"temp_{uuid.uuid4().hex[:8]}_{file.filename}"
+    try:
+        content = await file.read()
+        if len(content) == 0:
+            raise HTTPException(status_code=400, detail="Datei ist leer (0 Bytes).")
+        temp_path.write_bytes(content)
+
+        res = process_and_import_timetable(
+            db=db,
+            file_path=temp_path,
+            materials_dir=MATERIALS_DIR
+        )
+
+        created_count = len(res.created_subjects)
+        msg = (
+            f"Stundenplan erfolgreich erfasst. {created_count} neue Fächer wurden angelegt und aktiviert."
+            if created_count > 0
+            else "Stundenplan erfolgreich erfasst. Alle Fächer waren bereits vorhanden."
+        )
+
+        return TimetableImportResponse(
+            status="success",
+            message=msg,
+            detected_subjects=res.detected_subjects,
+            created_subjects=res.created_subjects,
+            existing_subjects=res.existing_subjects,
+            material_id=res.material_id,
+            material_title=res.material_title,
+            filename=res.filename,
+            dossier_id=res.dossier_id,
+            dossier_title=res.dossier_title,
+            timetable_grid=res.timetable_grid,
+            summary=res.summary
+        )
+    finally:
+        if temp_path.exists():
+            try:
+                temp_path.unlink()
+            except Exception:
+                pass
 
 # --- Topics ---
 

@@ -19,9 +19,10 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 * **[02.4 Material-Ingestion & RAG](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/material_ingestion.md):** 2-Stufen Human-in-the-Loop Upload, Vorab-Analyse, semantisches Chunking, Vektorsuche.
 * **[02.5 Whiteboard Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/whiteboard_engine.md):** Latenzarme Apple-Pencil-Erfassung, Vektoren, Diff-Snapshots, Overlays.
 * **[02.6 Sokratischer KI-Tutor & Audio](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/socratic_tutor.md):** Pädagogischer Prompt-Governor, Leitfragen-System, Streaming TTS & Barge-In.
+* **[02.7 Stundenplan & Organisation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/timetable_widget.md):** Natives Wochenraster, Untis-Klassenplan 7D, A/B-Wochen Switcher, Dashboard-Widget, Deep-Links zu Tafel & Mediathek.
 
 ### [03. Schnittstellen-Spezifikationen](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/rest_api.md)
-* **[03.1 REST API Spezifikation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/rest_api.md):** Alle HTTP-Endpunkte (Profile, Taxonomie, Environment, Staging-Reset).
+* **[03.1 REST API Spezifikation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/rest_api.md):** Alle HTTP-Endpunkte (Profile, Taxonomie, Environment, Material-Ingestion, Inbox, Stundenplan & CRUD).
 * **[03.2 WebSocket Protokoll](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/websocket_protocol.md):** Event-Typen für Whiteboard-Synchronisation und Audio-Streaming.
 
 ### [04. Testberichte](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/)
@@ -29,18 +30,20 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 * **[04.2 Iteration 02 – Lernplan & Countdown-Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_02_planner_engine.md):** 23 Tests, 100% Passed, 92% Coverage.
 * **[04.3 Iteration 03 – Whiteboard & Canvas Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_03_whiteboard_engine.md):** 32 Tests, 100% Passed, 93% Coverage.
 * **[04.4 Iteration 04 – Smarte Material-Ingestion](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_04_material_ingestion.md):** 43 Tests, 100% Passed, 92% Coverage.
+* **[04.5 Iteration 05 – Stundenplan & Organisation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_05_timetable_and_organization.md):** 76 Tests, 100% Passed, 86% Coverage.
 
 ---
 
 ## 🗺️ Umsetzungs-Status (Roadmap)
 
 | Meilenstein | Beschreibung | Status | Tests |
-| :--- | :--- | :---: | :---: |
+| :--- | :--- | :--- | :--- |
 | **M0: Setup** | Raspberry Pi Deployment, SSH, PWA-Grundgerüst | ✅ Abgeschlossen | Manuell (OK) |
 | **M1: Core DB & Taxonomie** | SQLite WAL, User, Fächer & Themen (7. Klasse BB), Staging/Prod | ✅ Abgeschlossen | 15/15 Passed (92% Cov) |
 | **M2: Lernplan-Engine** | Countdown-Algorithmus, Prüfungen, Phasen, Sperrtage | ✅ Abgeschlossen | 23/23 Passed (92% Cov) |
-| **M5: Whiteboard Engine** | iPad Canvas, PointerEvents, Overlays, WebSocket | ✅ Abgeschlossen | 32/32 Passed (93% Cov) |
+| **M3: Whiteboard Engine** | iPad Canvas, PointerEvents, Overlays, WebSocket | ✅ Abgeschlossen | 32/32 Passed (93% Cov) |
 | **M4: Material-Upload** | 2-Stufen Human-in-the-Loop Ingestion, PDF/Fotos, Chunks | ✅ Abgeschlossen | 43/43 Passed (92% Cov) |
-| **M3: IServ-Connector** | CalDAV, WebDAV, AES-256 Vault | ⏳ Geplant | - |
-| **M6: KI-Tutor & Audio** | Sokratischer Governor, Vision, Streaming TTS | ⏳ Geplant | - |
+| **M5: Stundenplan & Orga** | Untis 7D Raster, A/B-Wochen, Dashboard-Widget, Auto-Routing | ✅ Abgeschlossen | 76/76 Passed (86% Cov) |
+| **M6: IServ-Connector** | CalDAV, WebDAV, AES-256 Vault | ⏳ Geplant | - |
+| **M7: KI-Tutor & Audio** | Sokratischer Governor, Vision, Streaming TTS | ⏳ Geplant | - |
 

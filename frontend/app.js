@@ -14,6 +14,11 @@ const statTopicsCount = document.getElementById("stat-topics-count");
 const dashboardSubjectsGrid = document.getElementById("dashboard-subjects-grid");
 const subjectsDetailedList = document.getElementById("subjects-detailed-list");
 
+function switchToTab(tabName) {
+  const btn = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+  if (btn) btn.click();
+}
+
 // Tab Navigation
 document.querySelectorAll(".nav-tab").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -26,6 +31,9 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
 
     if (btn.dataset.tab === "subjects") {
       checkInboxStatus();
+    }
+    if (btn.dataset.tab === "timetable") {
+      loadTimetable();
     }
   });
 });
@@ -684,6 +692,7 @@ async function processInbox() {
         }
       }
 
+      await loadTaxonomy();
       await loadMaterials();
       await checkInboxStatus();
 
@@ -768,6 +777,7 @@ function renderMaterialsList(materials) {
 
   const filtered = materials.filter((m) => {
     if (activeKindFilter === "all") return true;
+    if (activeKindFilter === "Stundenplan") return (m.kind || "").includes("Stundenplan");
     if (activeKindFilter === "Arbeitsblatt") return m.kind === "Arbeitsblatt";
     if (activeKindFilter === "Hefter") return (m.kind || "").includes("Heft");
     if (activeKindFilter === "Buch") return (m.kind || "").includes("Buch");
@@ -799,7 +809,8 @@ function renderMaterialsList(materials) {
 
     const isPdf = m.mime_type.includes("pdf");
     let docIcon = "📄";
-    if (m.kind && m.kind.includes("Buch")) docIcon = "📚";
+    if (m.kind && m.kind.includes("Stundenplan")) docIcon = "📅";
+    else if (m.kind && m.kind.includes("Buch")) docIcon = "📚";
     else if (m.kind && m.kind.includes("Heft")) docIcon = "📁";
     else if (m.kind && (m.kind.includes("Klassenarbeit") || m.kind.includes("Test"))) docIcon = "📝";
     else if (!isPdf) docIcon = "🖼️";
@@ -828,8 +839,13 @@ function renderMaterialsList(materials) {
         ${m.summary ? `<div class="mat-card-summary">“${m.summary}”</div>` : ""}
       </div>
       <div class="mat-card-actions">
-        <button class="btn-mat-action btn-mat-view" title="Dokument im Popup ansehen">
-          👁️ Öffnen
+        ${m.kind && m.kind.includes("Stundenplan") ? `
+          <button class="btn-mat-action btn-mat-tt" style="background: rgba(99, 102, 241, 0.2); border-color: var(--accent); color: var(--accent-light); font-weight: 700;" title="Als interaktives Stundenplan-Widget öffnen">
+            🗓️ Stundenplan
+          </button>
+        ` : ""}
+        <button class="btn-mat-action btn-mat-view" title="${m.kind && m.kind.includes('Stundenplan') ? 'Original-Scan als Dokument ansehen' : 'Dokument im Popup ansehen'}">
+          👁️ ${m.kind && m.kind.includes('Stundenplan') ? 'Scan' : 'Öffnen'}
         </button>
         <button class="btn-mat-action btn-mat-wb" title="Auf Tafel öffnen und beschreiben">
           🎨 Tafel
@@ -839,6 +855,13 @@ function renderMaterialsList(materials) {
         </button>
       </div>
     `;
+
+    const ttBtn = card.querySelector(".btn-mat-tt");
+    if (ttBtn) {
+      ttBtn.addEventListener("click", () => {
+        switchToTab("timetable");
+      });
+    }
 
     card.querySelector(".btn-mat-view").addEventListener("click", () => {
       openDocumentViewerModal(m);
@@ -1084,16 +1107,71 @@ const btnCloseViewerModal = document.getElementById("btn-close-viewer-modal");
 const btnViewerOpenWb = document.getElementById("btn-viewer-open-wb");
 const btnViewerPrevPage = document.getElementById("btn-viewer-prev-page");
 const btnViewerNextPage = document.getElementById("btn-viewer-next-page");
+const btnViewerZoomOut = document.getElementById("btn-viewer-zoom-out");
+const btnViewerZoomIn = document.getElementById("btn-viewer-zoom-in");
+const btnViewerZoomLabel = document.getElementById("viewer-zoom-label");
+const btnViewerFitPage = document.getElementById("btn-viewer-fit-page");
+const btnViewerFitWidth = document.getElementById("btn-viewer-fit-width");
+
+let currentViewerZoomPercent = 100;
+
+function setViewerZoomPercent(percent) {
+  // Maximal 100% (volle Breite), minimal 30% (weit herausgezoomt)
+  currentViewerZoomPercent = Math.min(100, Math.max(30, Math.round(percent)));
+  const viewerImg = document.getElementById("viewer-img");
+  const label = document.getElementById("viewer-zoom-label");
+  const btnIn = document.getElementById("btn-viewer-zoom-in");
+  const btnOut = document.getElementById("btn-viewer-zoom-out");
+
+  if (viewerImg) {
+    viewerImg.classList.remove("viewer-img-fitpage");
+    viewerImg.classList.add("viewer-img-fullwidth");
+    viewerImg.style.width = `${currentViewerZoomPercent}%`;
+    viewerImg.style.maxWidth = "100%";
+    viewerImg.style.height = "auto";
+  }
+  if (label) {
+    label.textContent = `${currentViewerZoomPercent}%`;
+  }
+  if (btnIn) {
+    btnIn.disabled = currentViewerZoomPercent >= 100;
+  }
+  if (btnOut) {
+    btnOut.disabled = currentViewerZoomPercent <= 30;
+  }
+}
+
+function fitViewerToPage() {
+  const viewerImg = document.getElementById("viewer-img");
+  const container = document.getElementById("viewer-content-container");
+  if (!viewerImg || !container) return;
+
+  const availHeight = container.clientHeight - 32;
+  const availWidth = container.clientWidth - 32;
+  if (availHeight <= 0 || availWidth <= 0) return;
+
+  const natWidth = viewerImg.naturalWidth || 1000;
+  const natHeight = viewerImg.naturalHeight || 1414;
+
+  const targetImgWidth = availHeight * (natWidth / natHeight);
+  const targetPercent = Math.round((targetImgWidth / availWidth) * 100);
+
+  setViewerZoomPercent(targetPercent);
+  container.scrollTop = 0;
+}
 
 function openDocumentViewerModal(material) {
   activeViewerMaterial = material;
   currentViewerPage = 1;
+  setViewerZoomPercent(100); // Standardmäßig maximal in voller Breite!
 
   const titleEl = document.getElementById("viewer-doc-title");
   const badgeEl = document.getElementById("viewer-doc-badge");
   const dlBtn = document.getElementById("btn-viewer-download");
   const pagerBar = document.getElementById("viewer-pager-bar");
+  const container = document.getElementById("viewer-content-container");
 
+  if (container) container.scrollTop = 0;
   if (titleEl) titleEl.textContent = material.title;
   if (badgeEl) {
     badgeEl.textContent = `${material.subject_name || "Fach"} • ${material.kind || "Material"}${material.topic_name ? " • " + material.topic_name : ""}`;
@@ -1115,20 +1193,47 @@ function renderViewerPage() {
   if (!activeViewerMaterial) return;
   const pageLabel = document.getElementById("viewer-page-label");
   const viewerImg = document.getElementById("viewer-img");
+  const spinner = document.getElementById("viewer-loading-spinner");
+  const container = document.getElementById("viewer-content-container");
   const pageCount = activeViewerMaterial.page_count || 1;
 
+  if (container) container.scrollTop = 0;
   if (pageLabel) {
     pageLabel.textContent = `Seite ${currentViewerPage} / ${pageCount}`;
   }
   if (viewerImg) {
+    if (spinner) spinner.style.display = "block";
+    viewerImg.style.opacity = "0.2";
+
+    viewerImg.onload = () => {
+      if (spinner) spinner.style.display = "none";
+      viewerImg.style.opacity = "1";
+    };
+    viewerImg.onerror = () => {
+      if (spinner) spinner.style.display = "none";
+      viewerImg.style.opacity = "1";
+    };
+
     viewerImg.src = `/api/v1/materials/${activeViewerMaterial.id}/preview?page=${currentViewerPage}`;
+
+    // Nächste Seite im Hintergrund vorladen
+    if (currentViewerPage < pageCount) {
+      const nextPreload = new Image();
+      nextPreload.src = `/api/v1/materials/${activeViewerMaterial.id}/preview?page=${currentViewerPage + 1}`;
+    }
   }
 }
 
 function closeDocumentViewerModal() {
   if (modalMaterialViewer) modalMaterialViewer.style.display = "none";
   const viewerImg = document.getElementById("viewer-img");
-  if (viewerImg) viewerImg.src = "";
+  if (viewerImg) {
+    viewerImg.src = "";
+    viewerImg.onload = null;
+    viewerImg.onerror = null;
+  }
+  const spinner = document.getElementById("viewer-loading-spinner");
+  if (spinner) spinner.style.display = "none";
   activeViewerMaterial = null;
 }
 
@@ -1190,6 +1295,611 @@ if (btnViewerOpenWb) {
   });
 }
 
+if (btnViewerZoomOut) {
+  btnViewerZoomOut.addEventListener("click", () => {
+    setViewerZoomPercent(currentViewerZoomPercent - 15);
+  });
+}
+
+if (btnViewerZoomIn) {
+  btnViewerZoomIn.addEventListener("click", () => {
+    setViewerZoomPercent(currentViewerZoomPercent + 15);
+  });
+}
+
+if (btnViewerZoomLabel) {
+  btnViewerZoomLabel.addEventListener("click", () => {
+    setViewerZoomPercent(100);
+  });
+}
+
+if (btnViewerFitWidth) {
+  btnViewerFitWidth.addEventListener("click", () => {
+    setViewerZoomPercent(100);
+    const container = document.getElementById("viewer-content-container");
+    if (container) container.scrollTop = 0;
+  });
+}
+
+if (btnViewerFitPage) {
+  btnViewerFitPage.addEventListener("click", () => {
+    fitViewerToPage();
+  });
+}
+
+// Doppelklick auf Bild wechselt zwischen Ganze Seite und 100% Volle Breite
+const viewerImgEl = document.getElementById("viewer-img");
+if (viewerImgEl) {
+  viewerImgEl.addEventListener("dblclick", () => {
+    if (activeViewerMaterial) {
+      if (currentViewerZoomPercent >= 90) {
+        fitViewerToPage();
+      } else {
+        setViewerZoomPercent(100);
+      }
+    }
+  });
+}
+
+// Mausrad mit Strg/Cmd oder Trackpad-Pinch zum stufenlosen Zoomen
+const viewerContainerEl = document.getElementById("viewer-content-container");
+if (viewerContainerEl) {
+  viewerContainerEl.addEventListener("wheel", (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 5 : -5;
+      setViewerZoomPercent(currentViewerZoomPercent + delta);
+    }
+  }, { passive: false });
+}
+
+// ==========================================================================
+// Timetable Import Subsystem
+// ==========================================================================
+
+const btnOpenTimetableModal = document.getElementById("btn-open-timetable-modal");
+const timetableFileInput = document.getElementById("timetable-file-input");
+const modalTimetableResult = document.getElementById("modal-timetable-result");
+const btnCloseTimetableModal = document.getElementById("btn-close-timetable-modal");
+const btnTtConfirmClose = document.getElementById("btn-tt-confirm-close");
+const btnTtErrorClose = document.getElementById("btn-tt-error-close");
+
+const ttLoadingState = document.getElementById("tt-loading-state");
+const ttResultState = document.getElementById("tt-result-state");
+const ttErrorState = document.getElementById("tt-error-state");
+const ttResultStatusTitle = document.getElementById("tt-result-status-title");
+const ttResultDocName = document.getElementById("tt-result-doc-name");
+const ttAddedSubjectsList = document.getElementById("tt-added-subjects-list");
+const ttAllSubjectsList = document.getElementById("tt-all-subjects-list");
+const ttErrorTitle = document.getElementById("tt-error-title");
+const ttErrorDetail = document.getElementById("tt-error-detail");
+
+function openTimetableModal() {
+  if (timetableFileInput) timetableFileInput.click();
+}
+
+function closeTimetableModal() {
+  if (modalTimetableResult) modalTimetableResult.style.display = "none";
+}
+
+if (btnOpenTimetableModal) {
+  btnOpenTimetableModal.addEventListener("click", openTimetableModal);
+}
+if (btnCloseTimetableModal) {
+  btnCloseTimetableModal.addEventListener("click", closeTimetableModal);
+}
+if (btnTtConfirmClose) {
+  btnTtConfirmClose.addEventListener("click", closeTimetableModal);
+}
+if (btnTtErrorClose) {
+  btnTtErrorClose.addEventListener("click", closeTimetableModal);
+}
+if (modalTimetableResult) {
+  modalTimetableResult.addEventListener("click", (e) => {
+    if (e.target === modalTimetableResult && (!ttLoadingState || ttLoadingState.style.display !== "block")) {
+      closeTimetableModal();
+    }
+  });
+}
+
+if (timetableFileInput) {
+  timetableFileInput.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (modalTimetableResult) {
+      modalTimetableResult.style.display = "flex";
+      if (ttLoadingState) ttLoadingState.style.display = "block";
+      if (ttResultState) ttResultState.style.display = "none";
+      if (ttErrorState) ttErrorState.style.display = "none";
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/v1/taxonomy/import-timetable", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Serverfehler HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (ttLoadingState) ttLoadingState.style.display = "none";
+      if (ttErrorState) ttErrorState.style.display = "none";
+      if (ttResultState) ttResultState.style.display = "block";
+
+      const newlyAddedCount = (data.created_subjects || []).length;
+      if (ttResultStatusTitle) {
+        if (newlyAddedCount > 0) {
+          ttResultStatusTitle.textContent = `🎉 ${newlyAddedCount} neue(s) Schulfach/Fächer angelegt!`;
+        } else {
+          ttResultStatusTitle.textContent = "✅ Stundenplan erfolgreich erfasst!";
+        }
+      }
+
+      const matTitle = (data.material && data.material.title) || data.material_title || data.filename || "";
+      if (ttResultDocName && matTitle) {
+        let docText = `Dokument „${matTitle}“ als Stundenplan einsortiert.`;
+        const grid = data.timetable_grid || {};
+        if (grid.wochentyp || grid.hat_wechselwochen) {
+          const wochenLabel = grid.wochentyp || "A/B-Wechselwochen";
+          docText += ` (${wochenLabel} – Fächer beider Wochen übernommen)`;
+        }
+        if (grid.wechsel_details) {
+          docText += `<div style="margin-top: 6px; font-size: 0.8rem; color: var(--accent-light);">🔄 ${grid.wechsel_details}</div>`;
+        }
+        ttResultDocName.innerHTML = docText;
+      }
+
+      // Render added subjects
+      if (ttAddedSubjectsList) {
+        ttAddedSubjectsList.innerHTML = "";
+        if (data.created_subjects && data.created_subjects.length > 0) {
+          data.created_subjects.forEach((s) => {
+            const pill = document.createElement("span");
+            pill.className = "mat-card-badge";
+            pill.style.background = "rgba(16, 185, 129, 0.2)";
+            pill.style.color = "#10b981";
+            pill.style.border = "1px solid rgba(16, 185, 129, 0.4)";
+            pill.style.padding = "4px 10px";
+            pill.style.fontSize = "0.85rem";
+            pill.textContent = `✨ ${s.icon || "📚"} ${s.name || ""}`.trim();
+            ttAddedSubjectsList.appendChild(pill);
+          });
+        } else {
+          ttAddedSubjectsList.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">Alle erkannten Schulfächer existierten bereits in deiner Fächerliste.</span>`;
+        }
+      }
+
+      // Render all detected subjects
+      if (ttAllSubjectsList) {
+        ttAllSubjectsList.innerHTML = "";
+        // Kombiniere neu angelegte und bereits existierende Fächer (enthalten vollständige Subject-Objekte mit icon & name)
+        const allRecognized = [...(data.created_subjects || []), ...(data.existing_subjects || [])];
+        const listToDisplay = allRecognized.length > 0 ? allRecognized : (data.detected_subjects || []);
+
+        if (listToDisplay.length > 0) {
+          listToDisplay.forEach((s) => {
+            const pill = document.createElement("span");
+            pill.className = "mat-card-badge";
+            pill.style.background = "rgba(99, 102, 241, 0.15)";
+            pill.style.color = "var(--accent-light)";
+            pill.style.padding = "4px 10px";
+            pill.style.fontSize = "0.85rem";
+            if (typeof s === "object" && s !== null) {
+              pill.textContent = `${s.icon || "📖"} ${s.name || ""}`.trim();
+            } else {
+              const matched = allRecognized.find((sub) => sub.name.toLowerCase() === String(s).toLowerCase());
+              pill.textContent = matched ? `${matched.icon || "📖"} ${matched.name}` : `📖 ${s}`;
+            }
+            ttAllSubjectsList.appendChild(pill);
+          });
+        } else {
+          ttAllSubjectsList.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">Keine Fächerkürzel erkannt.</span>`;
+        }
+      }
+
+      // Refresh taxonomy and materials across the whole app
+      await loadTaxonomy();
+      await loadMaterials();
+
+    } catch (err) {
+      console.error("Fehler beim Import des Stundenplans:", err);
+      if (ttLoadingState) ttLoadingState.style.display = "none";
+      if (ttResultState) ttResultState.style.display = "none";
+      if (ttErrorState) ttErrorState.style.display = "block";
+      if (ttErrorTitle) ttErrorTitle.textContent = "Import fehlgeschlagen";
+      if (ttErrorDetail) ttErrorDetail.textContent = err.message || "Unbekannter Fehler bei der Übertragung.";
+    } finally {
+      timetableFileInput.value = "";
+    }
+  });
+}
+
+// ==============================================================================
+// STUNDENPLAN-WIDGET & VOLLBILD-VERWALTUNG
+// ==============================================================================
+
+let currentTimetableWeek = "A";
+let currentTimetableData = null;
+
+async function loadTimetable(forcedWeek = null) {
+  try {
+    const weekParam = forcedWeek || currentTimetableWeek;
+    const res = await fetch(`/api/v1/timetable?week_type=${weekParam}`);
+    if (!res.ok) throw new Error("Fehler beim Laden des Stundenplans.");
+    currentTimetableData = await res.json();
+    currentTimetableWeek = currentTimetableData.current_week_type || "A";
+
+    // Header aktualisieren
+    const subtitleEl = document.getElementById("tt-view-subtitle");
+    if (subtitleEl) {
+      subtitleEl.textContent = `${currentTimetableData.class_name} • ${currentTimetableData.school_name} • Schuljahr ${currentTimetableData.school_year}`;
+    }
+
+    // A/B Buttons Status setzen
+    const btnA = document.getElementById("btn-tt-week-a");
+    const btnB = document.getElementById("btn-tt-week-b");
+    const autoWeekTag = document.getElementById("tt-auto-week-tag");
+    if (btnA && btnB) {
+      if (currentTimetableWeek === "A") {
+        btnA.classList.add("active");
+        btnB.classList.remove("active");
+      } else {
+        btnB.classList.add("active");
+        btnA.classList.remove("active");
+      }
+    }
+    if (autoWeekTag) {
+      autoWeekTag.textContent = `Aktiv: ${currentTimetableWeek}-Woche`;
+    }
+
+    // Differenzen Text
+    const diffEl = document.getElementById("tt-differences-text");
+    if (diffEl && currentTimetableData.week_differences && currentTimetableData.week_differences.length > 0) {
+      diffEl.textContent = currentTimetableData.week_differences.join(" • ");
+    }
+
+    renderTimetableGrid();
+  } catch (err) {
+    console.error("Fehler beim Laden des Stundenplans:", err);
+  }
+}
+
+function renderTimetableGrid() {
+  const gridEl = document.getElementById("timetable-full-grid");
+  if (!gridEl || !currentTimetableData) return;
+
+  gridEl.innerHTML = "";
+
+  const weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
+  const jsDay = new Date().getDay(); // 0 Sonntag, 1 Montag ... 5 Freitag
+  const todayName = (jsDay >= 1 && jsDay <= 5) ? weekdays[jsDay - 1] : "Montag";
+
+  // 1. Header-Zeile: Zeit + 5 Wochentage
+  const timeHeader = document.createElement("div");
+  timeHeader.className = "tt-grid-header";
+  timeHeader.innerHTML = `<span>Zeit / Std</span>`;
+  gridEl.appendChild(timeHeader);
+
+  weekdays.forEach((day) => {
+    const dayHeader = document.createElement("div");
+    const isToday = (day === todayName);
+    dayHeader.className = `tt-grid-header ${isToday ? "today" : ""}`;
+    dayHeader.innerHTML = `
+      <span>${day}</span>
+      ${isToday ? `<span class="tt-today-badge">Heute</span>` : ""}
+    `;
+    gridEl.appendChild(dayHeader);
+  });
+
+  // 2. Zeilen für jede Unterrichtsstunde (1 bis 8)
+  const periods = currentTimetableData.periods || [];
+  const slots = currentTimetableData.slots || [];
+
+  periods.forEach((period) => {
+    // A) Zeit-Zelle links
+    const timeCell = document.createElement("div");
+    timeCell.className = "tt-time-cell";
+    timeCell.innerHTML = `
+      <span class="tt-period-num">${period.label}</span>
+      <span class="tt-period-time">${period.start_time}–${period.end_time}</span>
+    `;
+    gridEl.appendChild(timeCell);
+
+    // B) 5 Tageszellen
+    weekdays.forEach((day) => {
+      const isToday = (day === todayName);
+      const slotCell = document.createElement("div");
+      slotCell.className = `tt-slot-cell ${isToday ? "today-col" : ""}`;
+
+      // Passenden Slot für diesen Tag & Stunde finden
+      const matchingSlot = slots.find((s) => {
+        return (
+          s.day_of_week === day &&
+          s.period === period.period &&
+          (s.week_type === currentTimetableWeek || s.week_type === "both")
+        );
+      });
+
+      if (matchingSlot) {
+        if (matchingSlot.is_break) {
+          slotCell.innerHTML = `
+            <div class="tt-lesson-card tt-lesson-break">
+              <span>🥗 ${matchingSlot.subject_name || "Mittagspause"}</span>
+            </div>
+          `;
+        } else {
+          const card = document.createElement("div");
+          card.className = "tt-lesson-card";
+          card.style.borderLeftColor = matchingSlot.subject_color || "var(--accent)";
+
+          let roomStr = matchingSlot.room || "";
+          if (roomStr && !roomStr.toLowerCase().includes("halle") && !roomStr.startsWith("R")) {
+            roomStr = `R ${roomStr}`;
+          }
+
+          card.innerHTML = `
+            <div class="tt-lesson-top">
+              <span class="tt-lesson-name" title="${matchingSlot.subject_name}">
+                ${matchingSlot.subject_icon || "📚"} ${matchingSlot.subject_name}
+              </span>
+              ${matchingSlot.subject_code ? `<span class="tt-lesson-code">${matchingSlot.subject_code}</span>` : ""}
+            </div>
+            <div class="tt-lesson-meta">
+              <span class="tt-lesson-room">${roomStr}</span>
+              <span class="tt-lesson-teacher">${matchingSlot.teacher || ""}</span>
+              ${matchingSlot.week_type !== "both" ? `<span class="tt-tag-turnus">${matchingSlot.week_type}-Woche</span>` : ""}
+            </div>
+          `;
+
+          card.addEventListener("click", () => {
+            openTimetableSlotDetailModal(matchingSlot, period);
+          });
+          slotCell.appendChild(card);
+        }
+      } else {
+        slotCell.innerHTML = `<div class="tt-cell-empty">—</div>`;
+      }
+
+      gridEl.appendChild(slotCell);
+    });
+  });
+}
+
+// Modal für Fach-Detail aus Stundenplan
+let activeDetailSlot = null;
+
+function openTimetableSlotDetailModal(slot, period) {
+  activeDetailSlot = slot;
+  const modal = document.getElementById("modal-tt-slot-detail");
+  if (!modal) return;
+
+  const iconEl = document.getElementById("tt-slot-modal-icon");
+  const titleEl = document.getElementById("tt-slot-modal-title");
+  const timeEl = document.getElementById("tt-slot-modal-time");
+  const roomEl = document.getElementById("tt-slot-modal-room");
+  const teacherEl = document.getElementById("tt-slot-modal-teacher");
+  const weekEl = document.getElementById("tt-slot-modal-week");
+  const noteRow = document.getElementById("tt-slot-modal-note-row");
+  const noteEl = document.getElementById("tt-slot-modal-note");
+
+  if (iconEl) iconEl.textContent = slot.subject_icon || "📚";
+  if (titleEl) titleEl.textContent = slot.subject_name;
+  if (timeEl) {
+    const pLabel = slot.period_label || (period ? period.label : `${slot.period}. Std`);
+    const sTime = slot.start_time || (period ? period.start_time : "");
+    const eTime = slot.end_time || (period ? period.end_time : "");
+    timeEl.textContent = `${slot.day_of_week} • ${pLabel} • ${sTime} – ${eTime}`;
+  }
+  if (roomEl) {
+    let r = slot.room || "–";
+    if (r !== "–" && !r.toLowerCase().includes("halle") && !r.startsWith("R")) r = `Raum ${r}`;
+    roomEl.textContent = r;
+  }
+  if (teacherEl) teacherEl.textContent = slot.teacher || "–";
+  if (weekEl) {
+    weekEl.textContent = slot.week_type === "both" ? "Wöchentlich (A- & B-Woche)" : `${slot.week_type}-Woche`;
+  }
+  if (noteRow && noteEl) {
+    if (slot.note) {
+      noteRow.style.display = "flex";
+      noteEl.textContent = slot.note;
+    } else {
+      noteRow.style.display = "none";
+    }
+  }
+
+  modal.style.display = "flex";
+}
+
+function closeTimetableSlotDetailModal() {
+  const modal = document.getElementById("modal-tt-slot-detail");
+  if (modal) modal.style.display = "none";
+  activeDetailSlot = null;
+}
+
+// Dashboard Heutiger Stundenplan Widget
+async function loadTodayDashboardWidget() {
+  const container = document.getElementById("dash-tt-slots-row");
+  if (!container) return;
+
+  try {
+    const res = await fetch("/api/v1/timetable/today");
+    if (!res.ok) throw new Error("Fehler beim Laden des Tagesplans.");
+    const data = await res.json();
+
+    const titleEl = document.getElementById("dash-tt-day-title");
+    const weekPill = document.getElementById("dash-tt-week-pill");
+
+    if (titleEl) {
+      titleEl.textContent = data.is_weekend
+        ? `Dein Schultag am Montag (Wochenende frei! 🌴)`
+        : `Dein Schultag heute (${data.day})`;
+    }
+    if (weekPill) {
+      weekPill.textContent = `${data.active_week === "A" ? "🅰️" : "🅱️"} ${data.active_week}-Woche`;
+    }
+
+    container.innerHTML = "";
+    const lessons = (data.lessons || []).filter((l) => !l.is_break);
+
+    if (lessons.length === 0) {
+      container.innerHTML = `<div class="dash-tt-empty">Heute kein regulärer Unterricht eingetragen. 🎉</div>`;
+      return;
+    }
+
+    lessons.forEach((l) => {
+      const card = document.createElement("div");
+      card.className = "dash-tt-slot-card";
+      card.style.borderLeftColor = l.subject_color || "var(--accent)";
+
+      let roomStr = l.room || "";
+      if (roomStr && !roomStr.toLowerCase().includes("halle") && !roomStr.startsWith("R")) {
+        roomStr = `R ${roomStr}`;
+      }
+
+      card.innerHTML = `
+        <div class="dash-tt-slot-time">${l.period_label || l.period + '. Std'} • ${l.start_time || ""}</div>
+        <div class="dash-tt-slot-subject">
+          <span>${l.subject_icon || "📚"}</span>
+          <span>${l.subject_name}</span>
+        </div>
+        <div class="dash-tt-slot-meta">
+          <span>${roomStr}</span>
+          <span>${l.teacher || ""}</span>
+        </div>
+      `;
+
+      card.addEventListener("click", () => {
+        switchToTab("timetable");
+      });
+
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Fehler beim Laden des Dashboard-Stundenplans:", err);
+  }
+}
+
+async function viewMaterialById(matId) {
+  try {
+    const res = await fetch(`/api/v1/materials/${matId}`);
+    if (res.ok) {
+      const mat = await res.json();
+      openDocumentViewerModal(mat);
+    }
+  } catch (err) {
+    console.error("Fehler beim Laden des Dokuments:", err);
+  }
+}
+
+// Event Listeners für Stundenplan
+const btnTtWeekA = document.getElementById("btn-tt-week-a");
+const btnTtWeekB = document.getElementById("btn-tt-week-b");
+const btnTtViewScan = document.getElementById("btn-tt-view-scan");
+const btnTtUploadNew = document.getElementById("btn-tt-upload-new");
+const btnDashGotoTt = document.getElementById("btn-dash-goto-timetable");
+const btnCloseTtSlotModal = document.getElementById("btn-close-tt-slot-modal");
+const btnTtGotoMaterials = document.getElementById("btn-tt-goto-materials");
+const btnTtGotoWb = document.getElementById("btn-tt-goto-whiteboard");
+
+if (btnTtWeekA) {
+  btnTtWeekA.addEventListener("click", () => {
+    currentTimetableWeek = "A";
+    btnTtWeekA.classList.add("active");
+    if (btnTtWeekB) btnTtWeekB.classList.remove("active");
+    renderTimetableGrid();
+  });
+}
+
+if (btnTtWeekB) {
+  btnTtWeekB.addEventListener("click", () => {
+    currentTimetableWeek = "B";
+    btnTtWeekB.classList.add("active");
+    if (btnTtWeekA) btnTtWeekA.classList.remove("active");
+    renderTimetableGrid();
+  });
+}
+
+if (btnTtViewScan) {
+  btnTtViewScan.addEventListener("click", () => {
+    if (currentTimetableData && currentTimetableData.scan_material_id) {
+      viewMaterialById(currentTimetableData.scan_material_id);
+    } else {
+      alert("Es wurde noch kein Original-Scan hochgeladen. Du kannst oben auf 'Plan aktualisieren' klicken.");
+    }
+  });
+}
+
+if (btnTtUploadNew) {
+  btnTtUploadNew.addEventListener("click", () => {
+    const fileIn = document.getElementById("timetable-file-input");
+    if (fileIn) fileIn.click();
+  });
+}
+
+if (btnDashGotoTt) {
+  btnDashGotoTt.addEventListener("click", () => {
+    switchToTab("timetable");
+  });
+}
+
+if (btnCloseTtSlotModal) {
+  btnCloseTtSlotModal.addEventListener("click", closeTimetableSlotDetailModal);
+}
+
+const modalTtSlotDetail = document.getElementById("modal-tt-slot-detail");
+if (modalTtSlotDetail) {
+  modalTtSlotDetail.addEventListener("click", (e) => {
+    if (e.target === modalTtSlotDetail) closeTimetableSlotDetailModal();
+  });
+}
+
+if (btnTtGotoMaterials) {
+  btnTtGotoMaterials.addEventListener("click", () => {
+    if (!activeDetailSlot) return;
+    const sId = activeDetailSlot.subject_id;
+    closeTimetableSlotDetailModal();
+    switchToTab("subjects");
+    if (sId) {
+      const filterPills = document.querySelectorAll(".filter-pill");
+      filterPills.forEach((p) => p.classList.remove("active"));
+      const allPill = document.querySelector('.filter-pill[data-kind="all"]');
+      if (allPill) allPill.classList.add("active");
+      activeKindFilter = "all";
+      const subCards = document.querySelectorAll(".subject-detail-card");
+      subCards.forEach((c) => {
+        if (c.dataset.subjectId === sId) {
+          c.scrollIntoView({ behavior: "smooth", block: "start" });
+          c.style.boxShadow = "0 0 15px rgba(99, 102, 241, 0.6)";
+          setTimeout(() => { c.style.boxShadow = ""; }, 2000);
+        }
+      });
+    }
+  });
+}
+
+if (btnTtGotoWb) {
+  btnTtGotoWb.addEventListener("click", () => {
+    if (!activeDetailSlot) return;
+    const sId = activeDetailSlot.subject_id;
+    closeTimetableSlotDetailModal();
+    switchToTab("whiteboard");
+    const wbSelect = document.getElementById("wb-subject-select");
+    if (wbSelect && sId) {
+      wbSelect.value = sId;
+      wbSelect.dispatchEvent(new Event("change"));
+    }
+  });
+}
+
 // Init
 async function initApp() {
   await checkEnvironment();
@@ -1198,6 +1908,8 @@ async function initApp() {
   await loadPlan();
   await loadMaterials();
   await checkInboxStatus();
+  await loadTodayDashboardWidget();
+  await loadTimetable();
   connectWebSocket();
 }
 

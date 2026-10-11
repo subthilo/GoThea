@@ -18,6 +18,12 @@ from backend.app.services.material_ingestion import (
     detect_kind_from_filename_and_text,
     SUBJECT_KEYWORDS,
 )
+from backend.app.services.timetable_analyzer import (
+    sync_subjects_to_database,
+    heuristic_timetable_analyzer,
+    get_or_create_organisation_subject,
+    is_timetable_document
+)
 
 def predict_subject_and_topic(
     db: Session,
@@ -88,6 +94,9 @@ SUBJECT_NAME_TO_ID: Dict[str, str] = {
     "latein": "sub_latein",
     "russisch": "sub_russisch",
     "astronomie": "sub_astronomie",
+    "organisation": "sub_orga",
+    "stundenplan": "sub_orga",
+    "stundenplan & organisation": "sub_orga",
 }
 
 @dataclass
@@ -145,15 +154,24 @@ def query_openai_analyzer(
         client = OpenAI(api_key=api_key)
 
         prompt_instruction = """Analysiere diesen Schul-Scan oder dieses Unterrichtsdokument einer 7.-Klässlerin (Gymnasium Brandenburg).
-Lies den Inhalt, handschriftliche Notizen, Arbeitsblatt-Aufgaben oder Buchseiten und antworte AUSSCHLIESSLICH im JSON-Format mit folgenden Schlüsseln:
+Lies den Inhalt, handschriftliche Notizen, Arbeitsblatt-Aufgaben, Buchseiten oder Stundenpläne und antworte AUSSCHLIESSLICH im JSON-Format mit folgenden Schlüsseln:
 {
-  "fach": "Mathematik | Physik | Chemie | Biologie | Informatik | Astronomie | Deutsch | Englisch | Französisch | Spanisch | Latein | Russisch | Geschichte | Geografie | Politische Bildung | WAT | LER | Kunst | Musik | Sport",
+  "fach": "Mathematik | Physik | Chemie | Biologie | Informatik | Astronomie | Deutsch | Englisch | Französisch | Spanisch | Latein | Russisch | Geschichte | Geografie | Politische Bildung | WAT | LER | Kunst | Musik | Sport | Organisation",
   "oberthema": "Konkretes Schulthema (z. B. Rationale Zahlen, Christianisierung, Akustik, Grammatik, Zellenlehre...)",
-  "dokumentart": "Arbeitsblatt | Hefterseite | Test | Klassenarbeit | Buchauszug | Buch",
-  "inhaltlicher_titel": "Präziser inhaltlicher deutscher Titel (z. B. Dreisatz: Muffinrezept von 12 auf 30 umrechnen, Aufbau der Pflanzenzelle)",
+  "dokumentart": "Arbeitsblatt | Hefterseite | Test | Klassenarbeit | Buchauszug | Buch | Stundenplan",
+  "inhaltlicher_titel": "Präziser inhaltlicher deutscher Titel (z. B. Dreisatz: Muffinrezept, Stundenplan Klasse 7a)",
   "normierter_dateiname": "Dateiname nach Schema: [Fach]_[Oberthema]_[Dokumentart]_[Titel].pdf (ASCII-kompatibel, keine Umlaute)",
-  "zusammenfassung": "1-2 prägnante Sätze über den Inhalt und die Aufgaben"
+  "zusammenfassung": "1-2 prägnante Sätze über den Inhalt und die Aufgaben",
+  "erkannte_faecher": ["Mathematik", "Deutsch", "Chemie", "Physik", ...]
 }
+HINWEIS FÜR STUNDENPLÄNE:
+Falls das Dokument ein Stundenplan ist (Tabelle mit Wochentagen Montag-Freitag und Unterrichtsstunden):
+- Setze 'dokumentart' auf 'Stundenplan'.
+- Setze 'fach' auf 'Organisation'.
+- Beachte Wechselwochen (A-Woche / B-Woche) und handschriftliche Vermerke: nimm Fächer beider Wochen auf.
+- Nenne 'Bildende Kunst' oder 'Ku' IMMER schlicht 'Kunst'.
+- Gib in 'erkannte_faecher' alle im Stundenplan vorkommenden Fächer als vollständige deutsche Namen an (z. B. D/Ma/En -> Deutsch, Mathematik, Englisch; Ch -> Chemie; WAT -> WAT / Wirtschaft; Ku -> Kunst; *Sp -> Sport; PB -> Politische Bildung; LER -> LER / Ethik; Rel -> Religion; Fr -> Französisch; Bio -> Biologie; Ph -> Physik; Ge -> Geschichte; Geo -> Geografie; Mu -> Musik; etc.).
+- Pausen (*Mittag, *GT-Mittag) sind KEINE Schulfächer!
 """
 
         # Wenn ausreichend digitaler Text vorhanden ist: Text-Prompt (extrem schnell & kostengünstig)
@@ -176,7 +194,7 @@ Lies den Inhalt, handschriftliche Notizen, Arbeitsblatt-Aufgaben oder Buchseiten
                     "role": "user",
                     "content": [
                         {"type": "text", "text": f"Ursprünglicher Dateiname: {file_path.name}\nBitte analysiere diese gescannte Seite."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}", "detail": "low"}}
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}", "detail": "high"}}
                     ]
                 }
             ]
@@ -219,6 +237,39 @@ def analyze_document_content(
         )
 
     if raw_ai_data and isinstance(raw_ai_data, dict):
+        # 0. Zuerst prüfen, ob es sich um einen Stundenplan handelt
+        if is_timetable_document(file_path.name, extracted_text, raw_ai_data):
+            orga_sub = get_or_create_organisation_subject(db)
+            kind = "Stundenplan"
+            title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(file_path.name)
+            if "stundenplan" not in title.lower():
+                title = f"Stundenplan: {title}"
+
+            erkannte = raw_ai_data.get("erkannte_faecher") or []
+            if not erkannte:
+                tt_info = heuristic_timetable_analyzer(file_path, extracted_text)
+                erkannte = tt_info.get("erkannte_faecher", [])
+            if erkannte:
+                sync_subjects_to_database(db, erkannte)
+
+            safe_title = sanitize_filename_part(title)
+            ext = file_path.suffix.lower() or ".pdf"
+            norm_name = raw_ai_data.get("normierter_dateiname") or f"Organisation_Stundenplan_{safe_title}{ext}"
+            summary = raw_ai_data.get("zusammenfassung") or f"Stundenplan mit {len(erkannte)} erkannten Schulfächern."
+
+            return DocumentAnalysisResult(
+                subject_id=orga_sub.id,
+                subject_name=orga_sub.name,
+                topic_id=None,
+                topic_name="Stundenplan",
+                kind=kind,
+                title=title,
+                normalized_filename=norm_name,
+                dossier_title="Stundenplan & Organisation",
+                dossier_kind="organisation",
+                summary=summary
+            )
+
         # 1. Fach zuordnen
         fach_str = (raw_ai_data.get("fach") or "").strip().lower()
         subject = None
@@ -273,8 +324,17 @@ def analyze_document_content(
 
         # 3. Dokumentart
         kind = raw_ai_data.get("dokumentart") or "Arbeitsblatt"
-        if kind not in ("Arbeitsblatt", "Hefterseite", "Buchauszug", "Buch", "Klassenarbeit", "Test"):
-            kind = "Arbeitsblatt"
+        if kind not in ("Arbeitsblatt", "Hefterseite", "Buchauszug", "Buch", "Klassenarbeit", "Test", "Stundenplan"):
+            if "stundenplan" in file_path.name.lower():
+                kind = "Stundenplan"
+            else:
+                kind = "Arbeitsblatt"
+
+        # Falls Stundenplan: Fächer in DB synchronisieren
+        if kind == "Stundenplan":
+            erkannte = raw_ai_data.get("erkannte_faecher") or []
+            if erkannte:
+                sync_subjects_to_database(db, erkannte)
 
         # 4. Titel & normierter Dateiname
         title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(file_path.name)
@@ -288,7 +348,10 @@ def analyze_document_content(
             norm_name = f"{safe_fach}_{safe_thema}_{safe_kind}_{safe_title}{ext}"
 
         # 5. Mappe bestimmen
-        if kind in ("Buch", "Buchauszug"):
+        if kind == "Stundenplan":
+            dossier_title = "Stundenplan & Organisation"
+            dossier_kind = "organisation"
+        elif kind in ("Buch", "Buchauszug"):
             dossier_title = f"Lehrbuch: {title}"
             dossier_kind = "lehrbuch"
         elif kind == "Hefterseite":
@@ -317,29 +380,54 @@ def analyze_document_content(
         )
 
     # Heuristik-Fallback wenn keine KI verfügbar ist
-    subject_id, topic_id = predict_subject_and_topic(db, file_path.name, extracted_text)
-    subject = db.query(Subject).filter_by(id=subject_id).first()
-    topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
-
-    kind = detect_kind_from_filename_and_text(file_path.name, extracted_text)
-    title = clean_title_from_filename(file_path.name)
-
-    safe_fach = sanitize_filename_part(subject.name if subject else "Fach")
-    safe_title = sanitize_filename_part(title)
-    norm_name = f"{safe_fach}_{safe_title}{file_path.suffix.lower()}"
-
-    if kind in ("Buch", "Buchauszug"):
-        dossier_title = f"Lehrbuch: {title}"
-        dossier_kind = "lehrbuch"
-    elif kind == "Hefterseite":
-        dossier_title = f"Hefter: {topic.name if topic else (subject.name if subject else 'Schule')}"
-        dossier_kind = "hefter"
-    elif kind in ("Klassenarbeit", "Test"):
-        dossier_title = f"Testsammlung: {subject.name if subject else 'Schule'}"
-        dossier_kind = "testsammlung"
+    if is_timetable_document(file_path.name, extracted_text):
+        kind = "Stundenplan"
+        tt_info = heuristic_timetable_analyzer(file_path, extracted_text)
+        if tt_info.get("erkannte_faecher"):
+            sync_subjects_to_database(db, tt_info["erkannte_faecher"])
+        title = tt_info.get("titel") or clean_title_from_filename(file_path.name)
+        if "stundenplan" not in title.lower():
+            title = f"Stundenplan: {title}"
+        orga_sub = get_or_create_organisation_subject(db)
+        safe_title = sanitize_filename_part(title)
+        ext = file_path.suffix.lower() or ".pdf"
+        norm_name = f"Organisation_Stundenplan_{safe_title}{ext}"
+        return DocumentAnalysisResult(
+            subject_id=orga_sub.id,
+            subject_name=orga_sub.name,
+            topic_id=None,
+            topic_name="Stundenplan",
+            kind=kind,
+            title=title,
+            normalized_filename=norm_name,
+            dossier_title="Stundenplan & Organisation",
+            dossier_kind="organisation",
+            summary=f"Stundenplan mit {len(tt_info.get('erkannte_faecher', []))} erkannten Schulfächern."
+        )
     else:
-        dossier_title = f"Arbeitsblätter: {topic.name if topic else (subject.name if subject else 'Schule')}"
-        dossier_kind = "uebungsmappe"
+        subject_id, topic_id = predict_subject_and_topic(db, file_path.name, extracted_text)
+        subject = db.query(Subject).filter_by(id=subject_id).first()
+        topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
+
+        kind = detect_kind_from_filename_and_text(file_path.name, extracted_text)
+        title = clean_title_from_filename(file_path.name)
+
+        safe_fach = sanitize_filename_part(subject.name if subject else "Fach")
+        safe_title = sanitize_filename_part(title)
+        norm_name = f"{safe_fach}_{safe_title}{file_path.suffix.lower()}"
+
+        if kind in ("Buch", "Buchauszug"):
+            dossier_title = f"Lehrbuch: {title}"
+            dossier_kind = "lehrbuch"
+        elif kind == "Hefterseite":
+            dossier_title = f"Hefter: {topic.name if topic else (subject.name if subject else 'Schule')}"
+            dossier_kind = "hefter"
+        elif kind in ("Klassenarbeit", "Test"):
+            dossier_title = f"Testsammlung: {subject.name if subject else 'Schule'}"
+            dossier_kind = "testsammlung"
+        else:
+            dossier_title = f"Arbeitsblätter: {topic.name if topic else (subject.name if subject else 'Schule')}"
+            dossier_kind = "uebungsmappe"
 
     return DocumentAnalysisResult(
         subject_id=subject_id,

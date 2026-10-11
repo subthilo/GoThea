@@ -1505,11 +1505,169 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .modal-box-large {
-  max-width: 900px;
-  width: 94%;
+  max-width: 960px;
+  width: 95%;
+  height: 90vh;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.modal-box-large .modal-header {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
+.viewer-modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.viewer-content-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.viewer-content-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.viewer-content-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+}
+
+.viewer-content-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+}
+
+.viewer-content-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.viewer-spinner-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 10;
+  background: rgba(18, 22, 32, 0.85);
+  padding: 16px 24px;
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.viewer-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+
+.btn-viewer-tool {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  padding: 4px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.btn-viewer-tool:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.btn-viewer-tool:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-viewer-tool:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.viewer-zoom-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 44px;
+  text-align: center;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 4px;
+  user-select: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.viewer-zoom-label:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.viewer-tool-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 3px;
+}
+
+/* Full Width by Default (Scrollable) */
+.viewer-img-fullwidth {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  cursor: zoom-in;
+  transition: width 0.15s ease, opacity 0.2s ease;
+}
+
+/* Optional Fit Page Mode */
+.viewer-img-fitpage {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+  display: block;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  cursor: zoom-out;
+  transition: width 0.15s ease, opacity 0.2s ease;
 }
 
 /* Whiteboard Document Underlay */
@@ -1906,4 +2064,465 @@ body.wb-fullscreen-mode .wb-container {
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
+
+/* ==============================================================================
+   STUNDENPLAN WIDGET & GRID STYLING
+   ============================================================================== */
+
+/* Dashboard Stundenplan-Card */
+.dash-timetable-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+}
+
+.dash-tt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.dash-tt-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-tt-icon {
+  font-size: 2rem;
+  background: rgba(99, 102, 241, 0.15);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.dash-tt-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dash-tt-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.dash-tt-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-tt-week-pill {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--accent-light);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.dash-tt-slots-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.dash-tt-slot-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: transform 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.dash-tt-slot-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dash-tt-slot-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dash-tt-slot-subject {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.dash-tt-slot-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.dash-tt-empty {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: 12px 0;
+  grid-column: 1 / -1;
+}
+
+/* Vollständiges Stundenplan Widget im Tab */
+.timetable-widget-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-top: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.tt-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tt-week-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tt-toolbar-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+.tt-week-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tt-week-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+
+.tt-week-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+}
+
+.tt-auto-week-tag {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-left: 6px;
+}
+
+.tt-toolbar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 6px 14px;
+  border-radius: 8px;
+  max-width: 600px;
+}
+
+.tt-info-icon {
+  font-size: 1rem;
+}
+
+/* Das interaktive Stundenplan Raster */
+.timetable-grid-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.timetable-grid {
+  display: grid;
+  grid-template-columns: 110px repeat(5, minmax(180px, 1fr));
+  width: 100%;
+  min-width: 980px;
+}
+
+/* Header-Zellen (Tage & Zeit) */
+.tt-grid-header {
+  padding: 14px 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  background: rgba(30, 41, 59, 0.9);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.tt-grid-header.today {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.25) 0%, rgba(30, 41, 59, 0.9) 100%);
+  color: var(--accent-light);
+  border-bottom-color: var(--accent);
+}
+
+.tt-today-badge {
+  font-size: 0.68rem;
+  background: var(--accent);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Zeit-Spalte (links) */
+.tt-time-cell {
+  background: rgba(20, 27, 45, 0.85);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.tt-period-num {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tt-period-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Unterrichts-Zellen */
+.tt-slot-cell {
+  background: rgba(15, 23, 42, 0.3);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  padding: 6px;
+  min-height: 78px;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.tt-slot-cell:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tt-slot-cell.today-col {
+  background: rgba(99, 102, 241, 0.03);
+}
+
+/* Slot Card (Einzelne Unterrichtsstunde) */
+.tt-lesson-card {
+  height: 100%;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--accent);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+}
+
+.tt-lesson-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.tt-lesson-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tt-lesson-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-lesson-code {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.tt-lesson-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.tt-lesson-room {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tt-lesson-teacher {
+  color: var(--text-muted);
+}
+
+/* Kennzeichnung Doppelstunde & Turnus */
+.tt-tag-turnus {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--accent-light);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.tt-lesson-break {
+  background: rgba(30, 41, 59, 0.4);
+  border-left-color: #64748b;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.tt-cell-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.12);
+  font-size: 0.85rem;
+}
+
+/* Footer & Legende */
+.tt-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tt-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tt-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.tt-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Slot Detail Modal */
+.tt-slot-info-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tt-slot-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88rem;
+}
+
+.tt-slot-info-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.tt-slot-info-val {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
 

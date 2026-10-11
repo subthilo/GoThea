@@ -9,6 +9,7 @@ from backend.app.models.user import User
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.dossier import Dossier
 from backend.app.models.material import Material, MaterialChunk
+from backend.app.models.timetable import TimetableSlot
 from backend.app.services.seeder import seed_database
 from backend.app.routers.profile import router as profile_router
 from backend.app.routers.taxonomy import router as taxonomy_router
@@ -17,6 +18,7 @@ from backend.app.routers.planner import router as planner_router
 from backend.app.routers.whiteboard import router as whiteboard_router, ws_router as whiteboard_ws_router
 from backend.app.routers.materials import router as materials_router
 from backend.app.routers.inbox import router as inbox_router
+from backend.app.routers.timetable import router as timetable_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -30,6 +32,8 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_database(db)
+        from backend.app.routers.timetable import seed_timetable_slots_if_empty
+        seed_timetable_slots_if_empty(db, "usr_thea")
     finally:
         db.close()
     yield
@@ -45,6 +49,7 @@ app.include_router(whiteboard_router)
 app.include_router(whiteboard_ws_router)
 app.include_router(materials_router)
 app.include_router(inbox_router)
+app.include_router(timetable_router)
 
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():
