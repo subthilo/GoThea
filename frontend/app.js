@@ -2422,6 +2422,7 @@ let currentBookAnnotationMaterialId = null;
 let currentBookAnnotationPage = null;
 let lastBookScreenPoint = null;
 let bookCanvasRect = null;
+let currentBookSmoothWidth = 3.5;
 
 function initBookInking() {
   bookAnnotationCanvas = document.getElementById("book-annotation-canvas");
@@ -2554,7 +2555,6 @@ function initBookInking() {
   bookAnnotationCanvas.addEventListener("pointermove", onBookPointerMove, { passive: false });
   bookAnnotationCanvas.addEventListener("pointerup", onBookPointerUp, { passive: false });
   bookAnnotationCanvas.addEventListener("pointercancel", onBookPointerUp, { passive: false });
-  bookAnnotationCanvas.addEventListener("pointerleave", onBookPointerLeave, { passive: false });
 
   window.addEventListener("resize", () => {
     syncBookAnnotationCanvasSize();
@@ -2601,56 +2601,55 @@ function onBookPointerDown(e) {
   activeBookPointerId = e.pointerId;
   try {
     bookAnnotationCanvas.setPointerCapture(e.pointerId);
-  } catch (err) {}
+  } catch (_) {}
 
   if (currentBookTool === "eraser") {
     eraseBookStrokesAt(normX, normY, 24 / rect.width);
     return;
   }
 
-  const strokeWidth = currentBookTool === "highlighter" ? 22 : 3;
+  const baseWidth = currentBookTool === "highlighter" ? 18 : 3.5;
   let strokeColor = currentBookColor;
   if (currentBookTool === "highlighter" && (strokeColor === "#2563eb" || strokeColor === "#0f172a")) {
     strokeColor = "#facc15";
   }
 
+  currentBookSmoothWidth = baseWidth;
+
   currentBookStroke = {
     id: "str_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
     tool: currentBookTool,
     color: strokeColor,
-    width: strokeWidth,
+    width: baseWidth,
     points: [{ x: normX, y: normY, p: pressure }]
   };
 
   bookAnnotationStrokes.push(currentBookStroke);
   bookUndoStack.push({ type: "add", stroke: currentBookStroke });
 
-  // Styles EINMALIG für den gesamten Strich setzen (Zero Overhead beim Bewegen)
+  // Styles 1:1 wie Whiteboard (source-over für maximale Performance ohne GPU-Readback)
   const ctx = bookAnnotationCtx;
   if (ctx) {
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.globalCompositeOperation = "source-over";
+
     if (currentBookTool === "highlighter") {
-      ctx.globalAlpha = 0.38;
-      ctx.globalCompositeOperation = "multiply";
+      ctx.globalAlpha = 0.35;
       ctx.strokeStyle = strokeColor;
       ctx.fillStyle = strokeColor;
-      ctx.lineWidth = strokeWidth;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+      ctx.lineWidth = baseWidth;
     } else {
       ctx.globalAlpha = 1.0;
-      ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = strokeColor;
       ctx.fillStyle = strokeColor;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      const initR = (strokeWidth * (0.4 + pressure * 1.2)) / 2;
-      ctx.lineWidth = Math.max(1, initR * 2);
+      ctx.lineWidth = baseWidth;
     }
 
     // Sofortiger Startpunkt direkt im Displaybuffer
     ctx.beginPath();
-    const initR = (strokeWidth * (0.4 + pressure * 1.2)) / 2;
-    ctx.arc(screenX, screenY, Math.max(0.5, initR), 0, Math.PI * 2);
+    const dotR = currentBookTool === "highlighter" ? (baseWidth / 2) : Math.max(0.5, baseWidth / 2);
+    ctx.arc(screenX, screenY, dotR, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -2673,10 +2672,8 @@ function onBookPointerMove(e) {
   if (currentBookTool === "eraser") {
     for (let i = 0; i < events.length; i++) {
       const ev = events[i];
-      const screenX = ev.clientX - rect.left;
-      const screenY = ev.clientY - rect.top;
-      const normX = Math.max(0, Math.min(1, screenX / rect.width));
-      const normY = Math.max(0, Math.min(1, screenY / rect.height));
+      const normX = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+      const normY = Math.max(0, Math.min(1, (ev.clientY - rect.top) / rect.height));
       eraseBookStrokesAt(normX, normY, 24 / rect.width);
     }
     return;
@@ -2694,23 +2691,24 @@ function onBookPointerMove(e) {
     const normY = Math.max(0, Math.min(1, screenY / rect.height));
     const pressure = (typeof ev.pressure === "number" && ev.pressure > 0) ? ev.pressure : 0.5;
 
-    const dx = screenX - lastBookScreenPoint.x;
-    const dy = screenY - lastBookScreenPoint.y;
-    if (dx * dx + dy * dy >= 0.5) {
-      currentBookStroke.points.push({ x: normX, y: normY, p: pressure });
+    currentBookStroke.points.push({ x: normX, y: normY, p: pressure });
 
-      if (currentBookStroke.tool !== "highlighter") {
-        const avgP = (lastBookScreenPoint.p + pressure) / 2;
-        ctx.lineWidth = Math.max(1, (currentBookStroke.width || 3) * (0.4 + avgP * 1.2));
-      }
-
-      ctx.beginPath();
-      ctx.moveTo(lastBookScreenPoint.x, lastBookScreenPoint.y);
-      ctx.lineTo(screenX, screenY);
-      ctx.stroke();
-
-      lastBookScreenPoint = { x: screenX, y: screenY, p: pressure };
+    // 1:1 wie Whiteboard: Keine Schwellenwert-Verzögerung, sofortiges Zeichnen
+    if (currentBookTool === "highlighter") {
+      ctx.lineWidth = currentBookStroke.width || 18;
+    } else {
+      const baseWidth = currentBookStroke.width || 3.5;
+      const targetWidth = Math.max(1.0, baseWidth * (0.35 + pressure * 1.3));
+      currentBookSmoothWidth = currentBookSmoothWidth * 0.6 + targetWidth * 0.4;
+      ctx.lineWidth = currentBookSmoothWidth;
     }
+
+    ctx.beginPath();
+    ctx.moveTo(lastBookScreenPoint.x, lastBookScreenPoint.y);
+    ctx.lineTo(screenX, screenY);
+    ctx.stroke();
+
+    lastBookScreenPoint = { x: screenX, y: screenY, p: pressure };
   }
 }
 
@@ -2729,20 +2727,10 @@ function onBookPointerUp(e) {
       if (bookAnnotationCanvas.hasPointerCapture(e.pointerId)) {
         bookAnnotationCanvas.releasePointerCapture(e.pointerId);
       }
-    } catch (err) {}
+    } catch (_) {}
 
-    // Wenn Highlighter: einmal redrawen für sauberes Multiplizieren des fertigen Pfads
-    if (currentBookStroke && currentBookStroke.tool === "highlighter") {
-      redrawBookAnnotations();
-    }
     currentBookStroke = null;
     scheduleBookAnnotationSave();
-  }
-}
-
-function onBookPointerLeave(e) {
-  if (e.pointerType === "touch") {
-    bookActiveTouches.delete(e.pointerId);
   }
 }
 
