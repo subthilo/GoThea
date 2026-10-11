@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from backend.app.database import get_db
-from backend.app.models.whiteboard import TutorSession, TutorMessage
+from backend.app.models.whiteboard import TutorSession, TutorMessage, TutorExercise
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.schemas.whiteboard import (
     TutorSessionCreate,
@@ -16,8 +16,11 @@ from backend.app.schemas.whiteboard import (
     TutorAskRequest,
     TutorAskResponse,
     TutorMessageResponse,
+    TutorExerciseCreateRequest,
+    TutorExercisePositionUpdate,
+    TutorExerciseResponse,
 )
-from backend.app.services.tutor_service import analyze_whiteboard_and_speak
+from backend.app.services.tutor_service import analyze_whiteboard_and_speak, generate_board_exercise
 
 router = APIRouter(prefix="/api/v1/whiteboard", tags=["Whiteboard"])
 
@@ -247,6 +250,147 @@ def get_session_messages(session_id: str, db: Session = Depends(get_db)):
         TutorMessage.session_id == session_id
     ).order_by(TutorMessage.created_at.asc()).all()
     return messages
+
+
+# ==========================================
+# Interaktive Aufgaben auf dem Whiteboard
+# ==========================================
+
+@router.post("/sessions/{session_id}/exercises/generate", response_model=TutorExerciseResponse)
+def generate_exercise_for_session(
+    session_id: str,
+    payload: TutorExerciseCreateRequest,
+    db: Session = Depends(get_db)
+):
+    session = db.query(TutorSession).filter(TutorSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Sitzung '{session_id}' nicht gefunden.")
+
+    subject_name = session.subject.name if session.subject else "Mathematik"
+
+    # Thema ermitteln
+    topic_name = payload.topic_name
+    if not topic_name and payload.topic_id:
+        t = db.query(Topic).filter(Topic.id == payload.topic_id).first()
+        if t:
+            topic_name = t.name
+    elif not topic_name and session.topic_id:
+        t = db.query(Topic).filter(Topic.id == session.topic_id).first()
+        if t:
+            topic_name = t.name
+
+    # Material-Kontext falls vorhanden
+    material_context = None
+    mat_id = payload.material_id or getattr(session, "material_id", None)
+    if mat_id:
+        mat = db.query(Material).filter(Material.id == mat_id).first()
+        if mat:
+            material_context = {
+                "id": mat.id,
+                "title": mat.title,
+                "kind": mat.kind,
+                "text_snippet": (mat.extracted_text or "")[:2000]
+            }
+
+    generated = generate_board_exercise(
+        subject_name=subject_name,
+        grade_level=session.grade_level or 7,
+        topic_name=topic_name,
+        exercise_type=payload.exercise_type,
+        custom_prompt=payload.custom_prompt,
+        difficulty=payload.difficulty or "mittel",
+        material_context=material_context,
+        audio_enabled=payload.audio_enabled
+    )
+
+    exercise = TutorExercise(
+        session_id=session_id,
+        exercise_type=generated["exercise_type"],
+        title=generated["title"],
+        topic=generated["topic"],
+        content_json=generated["content_json"],
+        solution_hint=generated["solution_hint"],
+        pos_x=payload.pos_x or 60,
+        pos_y=payload.pos_y or 80
+    )
+    db.add(exercise)
+
+    # In Session-Gedächtnis eintragen
+    db.add(TutorMessage(
+        session_id=session_id,
+        role="tutor",
+        content=f"[Aufgabe auf die Tafel gelegt: {generated['title']}] {generated['tutor_speech']}"
+    ))
+
+    db.commit()
+    db.refresh(exercise)
+
+    res_dict = {
+        "id": exercise.id,
+        "session_id": exercise.session_id,
+        "exercise_type": exercise.exercise_type,
+        "title": exercise.title,
+        "topic": exercise.topic,
+        "content_json": exercise.content_json,
+        "solution_hint": exercise.solution_hint,
+        "pos_x": exercise.pos_x,
+        "pos_y": exercise.pos_y,
+        "created_at": exercise.created_at,
+        "audio_base64": generated.get("audio_base64"),
+        "tutor_speech": generated.get("tutor_speech")
+    }
+    return TutorExerciseResponse(**res_dict)
+
+
+@router.get("/sessions/{session_id}/exercises", response_model=List[TutorExerciseResponse])
+def get_session_exercises(session_id: str, db: Session = Depends(get_db)):
+    session = db.query(TutorSession).filter(TutorSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Sitzung '{session_id}' nicht gefunden.")
+    exercises = db.query(TutorExercise).filter(
+        TutorExercise.session_id == session_id
+    ).order_by(TutorExercise.created_at.asc()).all()
+    return exercises
+
+
+@router.put("/sessions/{session_id}/exercises/{exercise_id}/position", response_model=TutorExerciseResponse)
+def update_exercise_position(
+    session_id: str,
+    exercise_id: str,
+    payload: TutorExercisePositionUpdate,
+    db: Session = Depends(get_db)
+):
+    exercise = db.query(TutorExercise).filter(
+        TutorExercise.id == exercise_id,
+        TutorExercise.session_id == session_id
+    ).first()
+    if not exercise:
+        raise HTTPException(status_code=404, detail=f"Aufgabe '{exercise_id}' nicht gefunden.")
+
+    exercise.pos_x = payload.pos_x
+    exercise.pos_y = payload.pos_y
+    db.commit()
+    db.refresh(exercise)
+    return exercise
+
+
+@router.delete("/sessions/{session_id}/exercises/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session_exercise(
+    session_id: str,
+    exercise_id: str,
+    db: Session = Depends(get_db)
+):
+    exercise = db.query(TutorExercise).filter(
+        TutorExercise.id == exercise_id,
+        TutorExercise.session_id == session_id
+    ).first()
+    if not exercise:
+        raise HTTPException(status_code=404, detail=f"Aufgabe '{exercise_id}' nicht gefunden.")
+
+    db.delete(exercise)
+    db.commit()
+    return None
+
 
 
 # ==========================================

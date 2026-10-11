@@ -193,3 +193,221 @@ def analyze_whiteboard_and_speak(
         "audio_base64": audio_b64,
         "actions": actions
     }
+
+
+EXERCISE_SYSTEM_PROMPT = """Du bist Luna, die warmherzige, didaktisch brillante Gymnasial-Tutorin für Thea (Klasse 7 Gymnasium, Brandenburg).
+Deine Aufgabe ist es, eine motivierende, exakt auf Theas Lehrplan abgestimmte Übungsaufgabe für das digitale Whiteboard zu erstellen.
+
+Unterstützte Aufgabentypen (exercise_type):
+1. "fill_in_the_blank": Lückentext mit Fachbegriffen (z. B. Biologie Zellbestandteile, Physik Energieformen, Deutsch Grammatik/Rechtschreibung). Die Lücken im Text als [[Lücke 1: Begriff]] kennzeichnen. Eine Wortauswahl (word_bank) angeben.
+2. "math_problem": Eine typische Rechenaufgabe für Klasse 7 (z. B. Gleichungen, Prozentrechnung, Rationale Zahlen, Bruchterme). Gegeben/Gesucht klar gegliedert, mit Zeilen zum Rechnen.
+3. "math_example": Ein anschaulich vorgerechnetes Musterbeispiel ("So geht's Schritt für Schritt"), gefolgt von einer eigenen Übungsaufgabe ("Jetzt du!").
+4. "physics_diagram": Physikalischer Zusammenhang (z. B. s-t-Diagramm, v-t-Diagramm, Federkraft F-s, Hebelgesetz mit Hebelarmen). Ein sauberes, valides, inline darstellbares SVG-Diagramm (viewBox='0 0 360 220', mit Koordinatenachsen, Beschriftungen t in s, s in m etc., feinem Gitter und eingetragenem Kurvenverlauf oder Kraftpfeilen) MUSS im Feld diagram_svg enthalten sein! Dazu 1-2 gezielte Ablese- oder Berechnungsfragen.
+5. "formula_derivation": Herleitung oder Umstellung einer Formel (z. B. v = s/t nach s oder t umstellen, Dichte ρ = m/V, Hebelgesetz F1*l1 = F2*l2). Gegliedert in logische Einzelschritte mit Lücken/Fragezeichen für Theas nächsten Schritt.
+6. "text_question": Ein kurzer, spannender Textauszug (z. B. aus Naturwissenschaften, Geschichte oder Deutsch) gefolgt von 2 gezielten Textverständnisfragen.
+
+Format der JSON-Antwort:
+{
+  "exercise_type": "physics_diagram",
+  "title": "Kurzer Titel der Aufgabe",
+  "topic": "Themengebiet",
+  "instructions": "Arbeitsauftrag für Thea (1-2 klare Sätze)",
+  "content": {
+    // Bei fill_in_the_blank: "text": "Text mit [[Lücke 1: Begriff]]", "word_bank": ["A", "B", "C"]
+    // Bei math_problem: "problem_statement": "...", "given": "...", "prompt": "..."
+    // Bei math_example: "example_title": "...", "example_solution": "...", "your_turn": "..."
+    // Bei physics_diagram: "diagram_svg": "<svg viewBox='0 0 360 220' xmlns='http://www.w3.org/2000/svg'>...</svg>", "questions": ["..."]
+    // Bei formula_derivation: "steps": [{"num": 1, "text": "...", "formula": "..."}]
+    // Bei text_question: "text_snippet": "...", "questions": ["..."]
+  },
+  "solution_hint": "Didaktischer Lösungs-Tipp für Thea (wird erst bei Klick auf 'Tipp' aufgedeckt)",
+  "tutor_speech": "Gesprochene Begrüßung/Einführung der Aufgabe für Thea (1-2 Sätze, natürliches Deutsch, ABSOLUT KEIN LaTeX!)"
+}
+"""
+
+def generate_board_exercise(
+    subject_name: str = "Mathematik",
+    grade_level: int = 7,
+    topic_name: Optional[str] = None,
+    exercise_type: Optional[str] = "auto",
+    custom_prompt: Optional[str] = None,
+    difficulty: str = "mittel",
+    material_context: Optional[Dict[str, Any]] = None,
+    audio_enabled: bool = True
+) -> Dict[str, Any]:
+    """
+    Generiert eine interaktive Übungsaufgabe (Lückentext, Rechenaufgabe, Musterbeispiel,
+    Physik-Diagramm, Formel-Herleitung oder Textfrage) für das Whiteboard.
+    """
+    tutor_speech = f"Hier ist eine spannende Übungsaufgabe für dich. Schau sie dir in Ruhe an!"
+    audio_b64 = None
+    data = None
+
+    if OPENAI_API_KEY:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=OPENAI_API_KEY)
+
+            user_prompt = (
+                f"SCHULFACH: {subject_name} (Klasse {grade_level} Gymnasium, Brandenburg)\n"
+                f"THEMA: {topic_name or 'Aktuelles Thema der Klassenstufe'}\n"
+                f"SCHWIERIGKEITSGRAD: {difficulty}\n"
+            )
+            if exercise_type and exercise_type != "auto":
+                user_prompt += f"GEWÜNSCHTER AUFGABENTYP: {exercise_type}\n"
+            else:
+                # Automatischer Typ je nach Fach
+                if "Physik" in subject_name:
+                    user_prompt += "GEWÜNSCHTER AUFGABENTYP: physics_diagram oder formula_derivation\n"
+                elif "Mathematik" in subject_name:
+                    user_prompt += "GEWÜNSCHTER AUFGABENTYP: math_problem oder math_example\n"
+                elif "Biologie" in subject_name or "Deutsch" in subject_name or "Englisch" in subject_name:
+                    user_prompt += "GEWÜNSCHTER AUFGABENTYP: fill_in_the_blank oder text_question\n"
+
+            if custom_prompt:
+                user_prompt += f"BESONDERER WUNSCH VON THEA: {custom_prompt}\n"
+
+            if material_context:
+                user_prompt += (
+                    f"\nAKTUELL AUF DER TAFEL BEARBEITETES MATERIAL:\n"
+                    f"- Titel: {material_context.get('title')}\n"
+                    f"- Textauszug: {material_context.get('text_snippet', '')[:1500]}\n"
+                )
+
+            user_prompt += "\nErstelle jetzt die passende Aufgabe im JSON-Format gemäß System-Prompt."
+
+            response = client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": EXERCISE_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                max_completion_tokens=1800
+            )
+
+            raw_text = response.choices[0].message.content or "{}"
+            data = json.loads(raw_text)
+            if "tutor_speech" in data and data["tutor_speech"]:
+                tutor_speech = data["tutor_speech"].strip()
+
+        except Exception as e:
+            logger.error(f"Fehler bei OpenAI Aufgaben-Generierung: {e}", exc_info=True)
+            data = None
+
+    # Fallback-Generierung (wenn kein API-Key oder bei API-Fehler)
+    if not data or "content" not in data:
+        ex_type = exercise_type if exercise_type and exercise_type != "auto" else (
+            "physics_diagram" if "Physik" in subject_name else "math_problem"
+        )
+        if ex_type == "physics_diagram":
+            data = {
+                "exercise_type": "physics_diagram",
+                "title": "Physik: Gleichförmige Bewegung im s-t-Diagramm",
+                "topic": topic_name or "Mechanik & Bewegung",
+                "instructions": "Lies aus dem s-t-Diagramm die Geschwindigkeit des Fahrrads ab.",
+                "content": {
+                    "diagram_svg": (
+                        '<svg viewBox="0 0 360 220" xmlns="http://www.w3.org/2000/svg" style="background:#0f172a; border-radius:8px; width:100%; max-width:360px;">'
+                        '<line x1="45" y1="180" x2="340" y2="180" stroke="#94a3b8" stroke-width="2"/>'
+                        '<line x1="45" y1="180" x2="45" y2="20" stroke="#94a3b8" stroke-width="2"/>'
+                        '<polygon points="340,176 348,180 340,184" fill="#94a3b8"/>'
+                        '<polygon points="41,20 45,12 49,20" fill="#94a3b8"/>'
+                        '<text x="315" y="200" fill="#cbd5e1" font-size="12" font-family="sans-serif">t in s</text>'
+                        '<text x="10" y="26" fill="#cbd5e1" font-size="12" font-family="sans-serif">s in m</text>'
+                        '<line x1="45" y1="140" x2="330" y2="140" stroke="#334155" stroke-dasharray="3,3"/>'
+                        '<line x1="45" y1="100" x2="330" y2="100" stroke="#334155" stroke-dasharray="3,3"/>'
+                        '<line x1="45" y1="60" x2="330" y2="60" stroke="#334155" stroke-dasharray="3,3"/>'
+                        '<line x1="115" y1="20" x2="115" y2="180" stroke="#334155" stroke-dasharray="3,3"/>'
+                        '<line x1="185" y1="20" x2="185" y2="180" stroke="#334155" stroke-dasharray="3,3"/>'
+                        '<line x1="255" y1="20" x2="255" y2="180" stroke="#334155" stroke-dasharray="3,3"/>'
+                        '<text x="110" y="196" fill="#94a3b8" font-size="11" font-family="sans-serif">2</text>'
+                        '<text x="180" y="196" fill="#94a3b8" font-size="11" font-family="sans-serif">4</text>'
+                        '<text x="250" y="196" fill="#94a3b8" font-size="11" font-family="sans-serif">6</text>'
+                        '<text x="25" y="144" fill="#94a3b8" font-size="11" font-family="sans-serif">10</text>'
+                        '<text x="25" y="104" fill="#94a3b8" font-size="11" font-family="sans-serif">20</text>'
+                        '<text x="25" y="64" fill="#94a3b8" font-size="11" font-family="sans-serif">30</text>'
+                        '<line x1="45" y1="180" x2="255" y2="60" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round"/>'
+                        '<circle cx="185" cy="100" r="4.5" fill="#f59e0b"/>'
+                        '</svg>'
+                    ),
+                    "questions": [
+                        "Welche Strecke hat das Fahrrad nach t = 4 s zurückgelegt?",
+                        "Berechne die Geschwindigkeit v = s / t in Metern pro Sekunde."
+                    ]
+                },
+                "solution_hint": "Lies bei t = 4 s den Wert s = 20 m ab. Die Geschwindigkeit beträgt v = 20 m / 4 s = 5 m/s.",
+                "tutor_speech": "Ich habe dir ein s-t-Diagramm für eine gleichförmige Bewegung auf die Tafel gelegt. Schau dir die Werte bei 4 Sekunden an!"
+            }
+        elif ex_type == "fill_in_the_blank":
+            data = {
+                "exercise_type": "fill_in_the_blank",
+                "title": f"Lückentext: {topic_name or subject_name}",
+                "topic": topic_name or subject_name,
+                "instructions": "Setze die passenden Fachbegriffe aus der Wortauswahl in die Lücken ein.",
+                "content": {
+                    "text": "Bei einer gleichförmigen Bewegung ist die [[Lücke 1: Geschwindigkeit]] über die gesamte Zeit hinweg [[Lücke 2: konstant]]. Im Weg-Zeit-Diagramm ergibt das eine [[Lücke 3: Gerade]].",
+                    "word_bank": ["Geschwindigkeit", "konstant", "Gerade", "beschleunigt", "Parabel"]
+                },
+                "solution_hint": "Denke daran: gleichförmig bedeutet, dass sich das Tempo nicht ändert.",
+                "tutor_speech": "Hier ist ein Lückentext für dich. Du kannst die Begriffe mit deinem Stift direkt neben die Lücken schreiben!"
+            }
+        elif ex_type == "formula_derivation":
+            data = {
+                "exercise_type": "formula_derivation",
+                "title": "Formel-Herleitung: Geschwindigkeit v = s / t",
+                "topic": topic_name or "Formeln umstellen",
+                "instructions": "Vervollständige die Schritte zum Umstellen der Geschwindigkeitsformel.",
+                "content": {
+                    "steps": [
+                        {"num": 1, "text": "Ausgangsformel:", "formula": "v = s / t"},
+                        {"num": 2, "text": "Beide Seiten mit t multiplizieren (* t):", "formula": "[ ? ]"},
+                        {"num": 3, "text": "Formel nach der Zeit t auflösen:", "formula": "t = [ ? ]"}
+                    ]
+                },
+                "solution_hint": "Multipliziere erst mit t: v * t = s. Teile dann durch v: t = s / v.",
+                "tutor_speech": "Lass uns die Geschwindigkeitsformel herleiten und nach der Strecke und der Zeit umstellen!"
+            }
+        else: # math_problem
+            data = {
+                "exercise_type": "math_problem",
+                "title": "Lineare Gleichung lösen",
+                "topic": topic_name or "Terme und Gleichungen",
+                "instructions": "Löse die Gleichung schrittweise nach der Variablen x auf.",
+                "content": {
+                    "problem_statement": "Bestimme den Wert von x:",
+                    "given": "4x + 15 = 2x + 27",
+                    "prompt": "1. x-Terme auf eine Seite bringen\n2. Zahlen auf die andere Seite bringen\n3. x berechnen"
+                },
+                "solution_hint": "Ziehe zuerst auf beiden Seiten 2x ab: 2x + 15 = 27. Ziehe dann 15 ab: 2x = 12.",
+                "tutor_speech": "Ich habe dir eine Gleichung auf die Tafel gestellt. Bring zuerst die x-Terme auf eine Seite!"
+            }
+        tutor_speech = data.get("tutor_speech", tutor_speech)
+
+    # Audio TTS generieren falls aktiviert
+    if audio_enabled and OPENAI_API_KEY:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=OPENAI_API_KEY)
+            tts_res = client.audio.speech.create(
+                model="tts-1",
+                voice="nova",
+                input=tutor_speech,
+                response_format="mp3"
+            )
+            audio_b64 = base64.b64encode(tts_res.content).decode("utf-8")
+        except Exception as e:
+            logger.warning(f"Fehler bei TTS für Aufgabenstellung: {e}")
+            audio_b64 = None
+
+    return {
+        "exercise_type": data.get("exercise_type", "math_problem"),
+        "title": data.get("title", "Übungsaufgabe"),
+        "topic": data.get("topic", topic_name),
+        "instructions": data.get("instructions", ""),
+        "content_json": json.dumps(data.get("content", {})),
+        "solution_hint": data.get("solution_hint"),
+        "tutor_speech": tutor_speech,
+        "audio_base64": audio_b64
+    }
+

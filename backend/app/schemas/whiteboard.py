@@ -78,3 +78,35 @@ class TutorMessageResponse(BaseModel):
     board_action_json: Optional[str] = None
     created_at: datetime
 
+class TutorExerciseCreateRequest(BaseModel):
+    exercise_type: Optional[str] = Field(default="auto", description="'auto', 'fill_in_the_blank', 'math_problem', 'math_example', 'text_question', 'physics_diagram', 'formula_derivation'")
+    topic_id: Optional[str] = None
+    topic_name: Optional[str] = None
+    custom_prompt: Optional[str] = Field(default=None, description="Zusätzliche Wünsche der Schülerin, z.B. 'Hebelgesetz'")
+    difficulty: Optional[str] = Field(default="mittel", description="'leicht', 'mittel', 'knifflig'")
+    material_id: Optional[str] = None
+    audio_enabled: bool = True
+    pos_x: Optional[int] = 60
+    pos_y: Optional[int] = 80
+
+class TutorExercisePositionUpdate(BaseModel):
+    pos_x: int
+    pos_y: int
+
+class TutorExerciseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    session_id: str
+    exercise_type: str
+    title: str
+    topic: Optional[str] = None
+    content_json: str
+    solution_hint: Optional[str] = None
+    pos_x: int
+    pos_y: int
+    created_at: datetime
+    audio_base64: Optional[str] = None
+    tutor_speech: Optional[str] = None
+
+

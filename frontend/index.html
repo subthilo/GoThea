@@ -580,6 +580,7 @@
             </div>
             <div class="wb-header-actions">
               <button id="btn-wb-new-session" class="wb-btn-subtle" title="Neue Tafel beginnen">✨ Neu</button>
+              <button id="btn-wb-place-exercise" class="wb-btn-subtle" style="font-weight: 600;" title="Aufgabe von Luna auf die Tafel legen">📝 Aufgabe stellen</button>
               <button id="btn-wb-audio-toggle" class="wb-btn-subtle wb-btn-speaker active" title="Sprachausgabe (TTS) an/aus">🔊</button>
               <button id="btn-wb-request-hint" class="wb-btn-primary" title="Tafel mit KI analysieren & sokratischen Tipp vorlesen">
                 <span id="wb-hint-icon">🦉</span>
@@ -595,6 +596,9 @@
             <div id="wb-doc-underlay" class="wb-doc-underlay" style="display: none;">
               <img id="wb-doc-underlay-img" class="wb-doc-page-img" alt="Unterlage" />
             </div>
+
+            <!-- 0.5 Interaktive Aufgabenkarten von Luna auf der Tafel -->
+            <div id="wb-tasks-layer" class="wb-tasks-layer"></div>
 
             <!-- Dokument-Leiste oben auf der Tafel -->
             <div id="wb-doc-topbar" class="wb-doc-topbar" style="display: none;">
@@ -715,6 +719,63 @@
                 <button id="btn-wb-save" class="wb-action-btn" title="Bild herunterladen">📷</button>
               </div>
             </div>
+
+            <!-- Modal: Aufgabe von Luna anfordern -->
+            <div id="wb-exercise-modal" class="wb-modal-backdrop" style="display: none;">
+              <div class="wb-modal-card">
+                <div class="wb-modal-header">
+                  <div class="wb-modal-title">
+                    <span class="wb-modal-icon">📝</span>
+                    <div>
+                      <h3>Aufgabe von Luna</h3>
+                      <p class="wb-modal-subtitle">Luna erstellt eine Übung und legt sie direkt auf deine Tafel.</p>
+                    </div>
+                  </div>
+                  <button type="button" class="wb-modal-close" id="btn-wb-exercise-modal-close">✕</button>
+                </div>
+                <div class="wb-modal-body">
+                  <div class="wb-form-group">
+                    <label for="wb-exercise-type-select">Aufgabentyp</label>
+                    <select id="wb-exercise-type-select" class="wb-input-select">
+                      <option value="auto" selected>🎲 Luna wählt passend zum Fach & Thema</option>
+                      <option value="math_problem">🔢 Rechenaufgabe (mit Schrittanleitung)</option>
+                      <option value="math_example">📖 Rechenbeispiel (Musteraufgabe zum Nachmachen)</option>
+                      <option value="physics_diagram">📈 Physik-Diagramm (z. B. s-t, v-t, Kräfte am Hebel)</option>
+                      <option value="formula_derivation">📐 Formel-Herleitung (Schritt für Schritt)</option>
+                      <option value="fill_in_the_blank">✏️ Lückentext mit Fachbegriffen</option>
+                      <option value="text_question">📄 Textverständnis (Fragen zum Material/Text)</option>
+                    </select>
+                  </div>
+
+                  <div class="wb-form-group">
+                    <label for="wb-exercise-topic-input">Thema / Schwerpunkt (optional)</label>
+                    <input type="text" id="wb-exercise-topic-input" class="wb-input-text" placeholder="z. B. Gleichungen, Hebelgesetz, Photosynthese..." />
+                  </div>
+
+                  <div class="wb-form-group">
+                    <label for="wb-exercise-difficulty-select">Schwierigkeit</label>
+                    <select id="wb-exercise-difficulty-select" class="wb-input-select">
+                      <option value="leicht">🌱 Leicht (Grundlagen)</option>
+                      <option value="mittel" selected>⚡ Mittel (Klasse 7 Standard)</option>
+                      <option value="knifflig">🔥 Knifflig (Herausforderung)</option>
+                    </select>
+                  </div>
+
+                  <div class="wb-form-group">
+                    <label for="wb-exercise-custom-prompt">Besonderer Wunsch an Luna (optional)</label>
+                    <input type="text" id="wb-exercise-custom-prompt" class="wb-input-text" placeholder="z. B. Mit zwei einfachen Zahlen oder einem anschaulichen Beispiel" />
+                  </div>
+                </div>
+                <div class="wb-modal-footer">
+                  <button type="button" class="wb-btn-subtle" id="btn-wb-exercise-cancel">Abbrechen</button>
+                  <button type="button" class="wb-btn-primary" id="btn-wb-exercise-submit">
+                    <span>✨</span>
+                    <span id="btn-wb-exercise-submit-label">Aufgabe auf Tafel legen</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

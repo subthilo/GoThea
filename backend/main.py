@@ -11,7 +11,7 @@ from backend.app.models.dossier import Dossier
 from backend.app.models.material import Material, MaterialChunk
 from backend.app.models.annotation import PageAnnotation
 from backend.app.models.timetable import TimetableSlot
-from backend.app.models.whiteboard import TutorSession, TutorMessage
+from backend.app.models.whiteboard import TutorSession, TutorMessage, TutorExercise
 from backend.app.services.seeder import seed_database
 from backend.app.routers.profile import router as profile_router
 from backend.app.routers.taxonomy import router as taxonomy_router

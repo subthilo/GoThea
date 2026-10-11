@@ -1944,6 +1944,430 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 /* ==========================================================================
+   Interaktive Aufgaben-Karten von Luna auf der Tafel (wb-tasks-layer)
+   ========================================================================== */
+.wb-tasks-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.wb-task-card {
+  position: absolute;
+  pointer-events: auto;
+  width: 440px;
+  max-width: 92vw;
+  background: rgba(18, 24, 38, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(99, 102, 241, 0.5);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+
+.wb-task-card:hover {
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.75);
+}
+
+.pattern-white .wb-task-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15);
+}
+
+.wb-task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: grab;
+}
+
+.pattern-white .wb-task-header {
+  background: #f1f5f9;
+  border-bottom-color: #e2e8f0;
+}
+
+.wb-task-header:active {
+  cursor: grabbing;
+}
+
+.wb-task-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.wb-task-type-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+}
+
+.pattern-white .wb-task-type-badge {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.wb-task-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #f8fafc;
+}
+
+.pattern-white .wb-task-title {
+  color: #1e293b;
+}
+
+.wb-task-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wb-task-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.wb-task-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.wb-task-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wb-task-instructions {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.pattern-white .wb-task-instructions {
+  color: #334155;
+}
+
+.wb-task-content-box {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.pattern-white .wb-task-content-box {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+/* Lückentext Tokens */
+.wb-blank-token {
+  display: inline-block;
+  padding: 2px 12px;
+  margin: 2px 4px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1.5px dashed #f59e0b;
+  border-radius: 6px;
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.pattern-white .wb-blank-token {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.wb-word-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.wb-word-chip {
+  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 2px 8px;
+  border-radius: 12px;
+  color: #cbd5e1;
+}
+
+.pattern-white .wb-word-chip {
+  background: #e2e8f0;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+/* Formel-Herleitung Schritte */
+.wb-derivation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-derivation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.wb-derivation-step-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-light);
+  width: 22px;
+}
+
+.wb-derivation-text {
+  flex: 1;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.wb-derivation-formula {
+  font-family: "Courier New", monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Physik SVG Container */
+.wb-physics-diagram-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.wb-physics-questions {
+  list-style-type: decimal;
+  padding-left: 18px;
+  margin: 6px 0 0 0;
+  font-size: 0.86rem;
+  color: #e2e8f0;
+}
+
+.pattern-white .wb-physics-questions {
+  color: #1e293b;
+}
+
+.wb-physics-questions li {
+  margin-bottom: 4px;
+}
+
+/* Lösungs-Tipp Button & Box */
+.wb-task-hint-btn {
+  background: transparent;
+  border: 1px dashed rgba(245, 158, 11, 0.5);
+  color: #f59e0b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.15s;
+}
+
+.wb-task-hint-btn:hover {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.wb-task-hint-box {
+  background: rgba(245, 158, 11, 0.12);
+  border-left: 3px solid #f59e0b;
+  padding: 8px 12px;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.82rem;
+  color: #fef3c7;
+  line-height: 1.4;
+}
+
+.pattern-white .wb-task-hint-box {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Modal: Aufgabe von Luna */
+.wb-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 15, 26, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.wb-modal-card {
+  width: 520px;
+  max-width: 95vw;
+  background: rgba(20, 26, 42, 0.96);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: wbModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes wbModalPop {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.wb-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wb-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wb-modal-icon {
+  font-size: 1.6rem;
+}
+
+.wb-modal-title h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.wb-modal-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.wb-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.wb-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.wb-modal-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wb-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wb-form-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wb-input-select, .wb-input-text {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: #f8fafc;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.wb-input-select:focus, .wb-input-text:focus {
+  border-color: var(--accent);
+}
+
+.wb-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 14px 22px;
+  background: rgba(15, 23, 42, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+
+/* ==========================================================================
    Inbox & Samba Dropzone Subsystem
    ========================================================================== */
 .inbox-card {

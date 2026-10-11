@@ -163,3 +163,50 @@ def test_ask_tutor_vision_and_speech_endpoint(client):
     assert msgs[1]["role"] == "tutor"
     assert msgs[1]["content"] == data["tutor_speech"]
 
+
+def test_exercise_generation_and_management(client):
+    res = client.post("/api/v1/whiteboard/sessions", json={"subject_id": "sub_math"})
+    session_id = res.json()["id"]
+
+    # 1. Physik-Diagramm / Mathe-Aufgabe generieren
+    gen_res = client.post(
+        f"/api/v1/whiteboard/sessions/{session_id}/exercises/generate",
+        json={
+            "exercise_type": "physics_diagram",
+            "topic_name": "Gleichförmige Bewegung",
+            "difficulty": "mittel",
+            "audio_enabled": False
+        }
+    )
+    assert gen_res.status_code == 200
+    ex = gen_res.json()
+    assert ex["exercise_type"] == "physics_diagram"
+    assert "content_json" in ex
+    assert "tutor_speech" in ex
+    ex_id = ex["id"]
+
+    # 2. Aufgaben abrufen
+    list_res = client.get(f"/api/v1/whiteboard/sessions/{session_id}/exercises")
+    assert list_res.status_code == 200
+    exercises = list_res.json()
+    assert len(exercises) == 1
+    assert exercises[0]["id"] == ex_id
+
+    # 3. Position auf der Tafel verschieben
+    pos_res = client.put(
+        f"/api/v1/whiteboard/sessions/{session_id}/exercises/{ex_id}/position",
+        json={"pos_x": 180, "pos_y": 240}
+    )
+    assert pos_res.status_code == 200
+    assert pos_res.json()["pos_x"] == 180
+    assert pos_res.json()["pos_y"] == 240
+
+    # 4. Aufgabe löschen
+    del_res = client.delete(f"/api/v1/whiteboard/sessions/{session_id}/exercises/{ex_id}")
+    assert del_res.status_code == 204
+
+    # 5. Prüfen, dass sie gelöscht ist
+    list_res2 = client.get(f"/api/v1/whiteboard/sessions/{session_id}/exercises")
+    assert len(list_res2.json()) == 0
+
+

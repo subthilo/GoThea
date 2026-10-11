@@ -52,10 +52,24 @@
   let currentTutorAudio = null;
   let tutorAudioEnabled = true;
 
-  let currentSubjectMaterialsList = [];
   let activeMaterial = null;
   let activeMaterialPage = 1;
   let isUnderlayVisible = false;
+
+  // Interaktive Aufgaben-Ebene & Modal
+  const tasksLayer = document.getElementById("wb-tasks-layer");
+  const btnPlaceExercise = document.getElementById("btn-wb-place-exercise");
+  const exerciseModal = document.getElementById("wb-exercise-modal");
+  const btnExerciseModalClose = document.getElementById("btn-wb-exercise-modal-close");
+  const btnExerciseCancel = document.getElementById("btn-wb-exercise-cancel");
+  const btnExerciseSubmit = document.getElementById("btn-wb-exercise-submit");
+  const btnExerciseSubmitLabel = document.getElementById("btn-wb-exercise-submit-label");
+  const exerciseTypeSelect = document.getElementById("wb-exercise-type-select");
+  const exerciseTopicInput = document.getElementById("wb-exercise-topic-input");
+  const exerciseDiffSelect = document.getElementById("wb-exercise-difficulty-select");
+  const exercisePromptInput = document.getElementById("wb-exercise-custom-prompt");
+
+  let exercises = [];
 
   if (!inkCanvas || !overlayCanvas || !viewport) {
     return;
@@ -167,6 +181,11 @@
     if (docUnderlay && isUnderlayVisible) {
       docUnderlay.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
       docUnderlay.style.transformOrigin = "0 0";
+    }
+
+    if (tasksLayer) {
+      tasksLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      tasksLayer.style.transformOrigin = "0 0";
     }
 
     redrawAllStrokes();
@@ -905,6 +924,19 @@
       if (uBottom > maxWorldY) maxWorldY = uBottom;
     }
 
+    // Aufgaben-Karten von Luna einbeziehen
+    if (exercises && exercises.length > 0) {
+      for (const ex of exercises) {
+        const exEl = document.getElementById(`wb-exercise-${ex.id}`);
+        const cW = exEl ? exEl.offsetWidth : 440;
+        const cH = exEl ? exEl.offsetHeight : 280;
+        const eRight = (ex.pos_x || 60) + cW;
+        const eBottom = (ex.pos_y || 80) + cH;
+        if (eRight > maxWorldX) maxWorldX = eRight;
+        if (eBottom > maxWorldY) maxWorldY = eBottom;
+      }
+    }
+
     minWorldX = Math.min(0, minWorldX - 20);
     maxWorldX += 40;
     maxWorldY += 60;
@@ -964,6 +996,68 @@
     // 3. Alle Striche der Schülerin in voller Höhe einzeichnen
     for (let i = 0; i < strokes.length; i++) {
       renderStrokeToContext(octx, strokes[i]);
+    }
+
+    // 3.5 Aufgaben-Karten von Luna in den Snapshot einzeichnen
+    if (exercises && exercises.length > 0) {
+      for (let i = 0; i < exercises.length; i++) {
+        const ex = exercises[i];
+        const exEl = document.getElementById(`wb-exercise-${ex.id}`);
+        const cW = exEl ? exEl.offsetWidth : 440;
+        const cH = exEl ? exEl.offsetHeight : 280;
+        const cx = ex.pos_x || 60;
+        const cy = ex.pos_y || 80;
+
+        octx.save();
+        octx.fillStyle = isChalk ? "rgba(18, 24, 38, 0.96)" : "#ffffff";
+        octx.strokeStyle = "#6366f1";
+        octx.lineWidth = 2;
+        octx.beginPath();
+        octx.roundRect(cx, cy, cW, cH, 12);
+        octx.fill();
+        octx.stroke();
+
+        // Header
+        octx.fillStyle = isChalk ? "rgba(30, 41, 59, 0.9)" : "#f1f5f9";
+        octx.beginPath();
+        octx.roundRect(cx, cy, cW, 34, [12, 12, 0, 0]);
+        octx.fill();
+
+        octx.fillStyle = isChalk ? "#f8fafc" : "#1e293b";
+        octx.font = "bold 13px sans-serif";
+        octx.fillText(`📝 ${ex.title || 'Aufgabe'}`, cx + 12, cy + 22);
+
+        // Instructions
+        octx.fillStyle = isChalk ? "#cbd5e1" : "#334155";
+        octx.font = "12px sans-serif";
+        const lines = wrapCanvasText(octx, ex.instructions || "", cW - 24);
+        let curY = cy + 54;
+        for (const l of lines.slice(0, 3)) {
+          octx.fillText(l, cx + 12, curY);
+          curY += 16;
+        }
+
+        try {
+          const c = typeof ex.content_json === "string" ? JSON.parse(ex.content_json) : (ex.content_json || {});
+          if (c.given || c.problem_statement) {
+            octx.fillStyle = isChalk ? "#38bdf8" : "#0284c7";
+            octx.font = "bold 14px monospace";
+            octx.fillText(c.given || c.problem_statement || "", cx + 12, curY + 16);
+          } else if (c.text) {
+            octx.fillStyle = isChalk ? "#fbbf24" : "#b45309";
+            octx.font = "12px sans-serif";
+            const cleanText = c.text.replace(/\[\[.*?\]\]/g, "[ ___ ]");
+            const tLines = wrapCanvasText(octx, cleanText, cW - 24);
+            let ty = curY + 14;
+            for (const tl of tLines.slice(0, 4)) {
+              octx.fillText(tl, cx + 12, ty);
+              ty += 16;
+            }
+          }
+        } catch (err) {}
+
+        octx.restore();
+      }
     }
 
     // 4. Feiner Indikator für Theas aktuellen Bildschirmausschnitt
@@ -1147,6 +1241,7 @@
               strokes = [];
             }
           }
+          await loadSessionExercises(data.id);
         } else {
           await createNewSession();
         }
@@ -1177,6 +1272,8 @@
         strokes = [];
         undoStack = [];
         redoStack = [];
+        exercises = [];
+        if (tasksLayer) tasksLayer.innerHTML = "";
         panY = 0;
         updateViewportPan();
         connectTutorWebSocket();
@@ -1541,8 +1638,366 @@
     }
   });
 
-  // Globale Funktion: Material direkt auf der Tafel öffnen
-  window.openMaterialOnWhiteboard = async function(materialId, subjectId = null) {
+  // Helper: Text auf Canvas umbrechen
+  function wrapCanvasText(ctx, text, maxWidth) {
+    if (!text) return [];
+    const words = text.split(" ");
+    const lines = [];
+    let currentLine = words[0] || "";
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + " " + word).width;
+      if (width < maxWidth) {
+        currentLine += " " + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  }
+
+  // 12. Interaktives Aufgaben-Subsystem (Task Cards auf der Tafel)
+  const EXERCISE_TYPE_LABELS = {
+    fill_in_the_blank: "✏️ Lückentext",
+    math_problem: "🔢 Rechenaufgabe",
+    math_example: "📖 Musterbeispiel",
+    physics_diagram: "📈 Physik-Diagramm",
+    formula_derivation: "📐 Formel-Herleitung",
+    text_question: "📄 Textfrage"
+  };
+
+  function renderExerciseContent(ex) {
+    let content = {};
+    try {
+      content = typeof ex.content_json === "string" ? JSON.parse(ex.content_json) : (ex.content_json || {});
+    } catch (e) {
+      content = {};
+    }
+
+    let innerHtml = "";
+
+    if (ex.exercise_type === "fill_in_the_blank") {
+      let rawText = content.text || "";
+      let renderedText = rawText.replace(/\[\[(.*?)(?::(.*?))?\]\]/g, (m, p1) => {
+        return `<span class="wb-blank-token">[ ${p1.trim()} ]</span>`;
+      });
+      innerHtml += `<div class="wb-task-content-box">${renderedText}</div>`;
+      if (content.word_bank && content.word_bank.length > 0) {
+        innerHtml += `
+          <div class="wb-word-bank">
+            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">Wortauswahl:</span>
+            ${content.word_bank.map(w => `<span class="wb-word-chip">${w}</span>`).join("")}
+          </div>
+        `;
+      }
+    } else if (ex.exercise_type === "physics_diagram") {
+      if (content.diagram_svg) {
+        innerHtml += `<div class="wb-physics-diagram-wrap">${content.diagram_svg}</div>`;
+      }
+      if (content.questions && content.questions.length > 0) {
+        innerHtml += `
+          <div class="wb-task-content-box">
+            <strong style="font-size: 0.85rem; color: #38bdf8;">Fragen zum Diagramm:</strong>
+            <ol class="wb-physics-questions">
+              ${content.questions.map(q => `<li>${q}</li>`).join("")}
+            </ol>
+          </div>
+        `;
+      }
+    } else if (ex.exercise_type === "formula_derivation") {
+      if (content.steps && Array.isArray(content.steps)) {
+        innerHtml += `
+          <div class="wb-derivation-list">
+            ${content.steps.map(s => `
+              <div class="wb-derivation-row">
+                <span class="wb-derivation-step-num">${s.num || '•'}</span>
+                <span class="wb-derivation-text">${s.text || ''}</span>
+                <span class="wb-derivation-formula">${s.formula || ''}</span>
+              </div>
+            `).join("")}
+          </div>
+        `;
+      }
+    } else if (ex.exercise_type === "math_example") {
+      innerHtml += `
+        <div class="wb-task-content-box" style="border-left: 3px solid #6366f1;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: #818cf8; text-transform: uppercase;">Musterbeispiel</div>
+          <div style="font-size: 0.95rem; margin: 4px 0; font-family: monospace;">${content.example_title || ''}</div>
+          <div style="font-size: 0.85rem; color: #cbd5e1; white-space: pre-wrap;">${content.example_solution || ''}</div>
+        </div>
+        ${content.your_turn ? `
+          <div class="wb-task-content-box" style="border-left: 3px solid #10b981; margin-top: 6px;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #34d399; text-transform: uppercase;">Jetzt du:</div>
+            <div style="font-size: 0.95rem; margin-top: 4px; font-weight: 600;">${content.your_turn}</div>
+          </div>
+        ` : ''}
+      `;
+    } else if (ex.exercise_type === "text_question") {
+      if (content.text_snippet) {
+        innerHtml += `
+          <div class="wb-task-content-box" style="font-style: italic; font-size: 0.86rem; border-left: 3px solid #a855f7;">
+            "${content.text_snippet}"
+          </div>
+        `;
+      }
+      if (content.questions && content.questions.length > 0) {
+        innerHtml += `
+          <ol class="wb-physics-questions">
+            ${content.questions.map(q => `<li>${q}</li>`).join("")}
+          </ol>
+        `;
+      }
+    } else {
+      // math_problem
+      innerHtml += `
+        <div class="wb-task-content-box">
+          ${content.problem_statement ? `<div style="font-size: 0.88rem; font-weight: 600; margin-bottom: 6px;">${content.problem_statement}</div>` : ''}
+          ${content.given ? `<div style="font-size: 1.15rem; font-family: 'Courier New', monospace; font-weight: 700; color: #38bdf8; margin: 8px 0; text-align: center;">${content.given}</div>` : ''}
+          ${content.prompt ? `<div style="font-size: 0.82rem; color: #94a3b8; white-space: pre-line;">${content.prompt}</div>` : ''}
+        </div>
+      `;
+    }
+
+    if (ex.solution_hint) {
+      innerHtml += `
+        <button type="button" class="wb-task-hint-btn" id="btn-hint-${ex.id}">💡 Tipp aufdecken</button>
+        <div class="wb-task-hint-box" id="hint-box-${ex.id}" style="display: none;">
+          ${ex.solution_hint}
+        </div>
+      `;
+    }
+
+    return innerHtml;
+  }
+
+  function createExerciseCardElement(ex) {
+    const card = document.createElement("div");
+    card.className = "wb-task-card";
+    card.id = `wb-exercise-${ex.id}`;
+    card.style.left = `${ex.pos_x || 60}px`;
+    card.style.top = `${ex.pos_y || 80}px`;
+
+    const badgeLabel = EXERCISE_TYPE_LABELS[ex.exercise_type] || "Aufgabe";
+
+    card.innerHTML = `
+      <div class="wb-task-header" id="wb-task-header-${ex.id}">
+        <div class="wb-task-header-left">
+          <span class="wb-task-type-badge">${badgeLabel}</span>
+          <span class="wb-task-title" title="${ex.title || ''}">${ex.title || 'Aufgabe'}</span>
+        </div>
+        <div class="wb-task-header-actions">
+          <button type="button" class="wb-task-close-btn" id="btn-close-${ex.id}" title="Aufgabe von der Tafel entfernen">✕</button>
+        </div>
+      </div>
+      <div class="wb-task-body">
+        ${ex.instructions ? `<div class="wb-task-instructions">${ex.instructions}</div>` : ''}
+        ${renderExerciseContent(ex)}
+      </div>
+    `;
+
+    // Tipp aufdecken Listener
+    const hintBtn = card.querySelector(`#btn-hint-${ex.id}`);
+    const hintBox = card.querySelector(`#hint-box-${ex.id}`);
+    if (hintBtn && hintBox) {
+      hintBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isOpen = hintBox.style.display !== "none";
+        hintBox.style.display = isOpen ? "none" : "block";
+        hintBtn.textContent = isOpen ? "💡 Tipp aufdecken" : "🙈 Tipp verbergen";
+      });
+    }
+
+    // Löschen Listener
+    const closeBtn = card.querySelector(`#btn-close-${ex.id}`);
+    if (closeBtn) {
+      closeBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (confirm("Möchtest du diese Aufgabe von der Tafel entfernen?")) {
+          card.remove();
+          exercises = exercises.filter(item => item.id !== ex.id);
+          if (currentSession) {
+            try {
+              await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}`, {
+                method: "DELETE"
+              });
+            } catch (err) {}
+          }
+        }
+      });
+    }
+
+    // Drag-and-Drop auf der Tafel
+    const header = card.querySelector(`#wb-task-header-${ex.id}`);
+    if (header) {
+      attachCardDragHandler(card, header, ex);
+    }
+
+    return card;
+  }
+
+  function attachCardDragHandler(card, header, ex) {
+    let isDragging = false;
+    let startScreenX = 0;
+    let startScreenY = 0;
+    let startPosX = ex.pos_x || 60;
+    let startPosY = ex.pos_y || 80;
+
+    header.addEventListener("pointerdown", (e) => {
+      if (e.target.closest(".wb-task-close-btn")) return;
+      isDragging = true;
+      header.setPointerCapture(e.pointerId);
+      startScreenX = e.clientX;
+      startScreenY = e.clientY;
+      startPosX = ex.pos_x || 60;
+      startPosY = ex.pos_y || 80;
+      card.style.zIndex = "10";
+      e.stopPropagation();
+    });
+
+    header.addEventListener("pointermove", (e) => {
+      if (!isDragging) return;
+      const dx = (e.clientX - startScreenX) / scale;
+      const dy = (e.clientY - startScreenY) / scale;
+      const newX = Math.round(startPosX + dx);
+      const newY = Math.round(Math.max(20, startPosY + dy));
+      card.style.left = `${newX}px`;
+      card.style.top = `${newY}px`;
+      e.stopPropagation();
+    });
+
+    header.addEventListener("pointerup", async (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      try { header.releasePointerCapture(e.pointerId); } catch (err) {}
+      card.style.zIndex = "4";
+      const dx = (e.clientX - startScreenX) / scale;
+      const dy = (e.clientY - startScreenY) / scale;
+      ex.pos_x = Math.round(startPosX + dx);
+      ex.pos_y = Math.round(Math.max(20, startPosY + dy));
+      e.stopPropagation();
+
+      if (currentSession) {
+        try {
+          await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}/position`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pos_x: ex.pos_x, pos_y: ex.pos_y })
+          });
+        } catch (err) {
+          console.warn("Fehler beim Speichern der Aufgabenposition:", err);
+        }
+      }
+    });
+  }
+
+  function renderAllExercises() {
+    if (!tasksLayer) return;
+    tasksLayer.innerHTML = "";
+    exercises.forEach(ex => {
+      const el = createExerciseCardElement(ex);
+      tasksLayer.appendChild(el);
+    });
+  }
+
+  async function loadSessionExercises(sessionId) {
+    if (!sessionId) return;
+    try {
+      const res = await fetch(`/api/v1/whiteboard/sessions/${sessionId}/exercises`);
+      if (res.ok) {
+        exercises = await res.json();
+        renderAllExercises();
+      }
+    } catch (err) {
+      console.warn("Fehler beim Laden der Aufgaben:", err);
+    }
+  }
+
+  // Modal Handlers
+  function openExerciseModal() {
+    if (!exerciseModal) return;
+    if (activeMaterial && exerciseTopicInput) {
+      exerciseTopicInput.placeholder = `z. B. ${activeMaterial.title}`;
+    }
+    exerciseModal.style.display = "flex";
+  }
+
+  function closeExerciseModal() {
+    if (exerciseModal) exerciseModal.style.display = "none";
+  }
+
+  if (btnPlaceExercise) {
+    btnPlaceExercise.addEventListener("click", () => {
+      openExerciseModal();
+    });
+  }
+  if (btnExerciseModalClose) {
+    btnExerciseModalClose.addEventListener("click", closeExerciseModal);
+  }
+  if (btnExerciseCancel) {
+    btnExerciseCancel.addEventListener("click", closeExerciseModal);
+  }
+
+  if (btnExerciseSubmit) {
+    btnExerciseSubmit.addEventListener("click", async () => {
+      if (!currentSession) {
+        await createNewSession();
+      }
+      if (!currentSession) return;
+
+      const exType = exerciseTypeSelect ? exerciseTypeSelect.value : "auto";
+      const topicText = exerciseTopicInput ? exerciseTopicInput.value.trim() : "";
+      const diff = exerciseDiffSelect ? exerciseDiffSelect.value : "mittel";
+      const promptText = exercisePromptInput ? exercisePromptInput.value.trim() : "";
+
+      btnExerciseSubmit.disabled = true;
+      if (btnExerciseSubmitLabel) btnExerciseSubmitLabel.textContent = "Luna erstellt Aufgabe...";
+
+      try {
+        // Gute Platzierung ermitteln: rechts neben dem aktuellen Bildschirmausschnitt oder oben
+        const viewW = viewport.clientWidth || 1024;
+        const initialX = Math.round(Math.max(60, (-panX / scale) + (viewW / scale) * 0.45));
+        const initialY = Math.round(Math.max(80, (-panY / scale) + 60));
+
+        const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            exercise_type: exType,
+            topic_name: topicText || null,
+            difficulty: diff,
+            custom_prompt: promptText || null,
+            material_id: activeMaterial ? activeMaterial.id : null,
+            audio_enabled: tutorAudioEnabled,
+            pos_x: initialX,
+            pos_y: initialY
+          })
+        });
+
+        if (res.ok) {
+          const newEx = await res.json();
+          exercises.push(newEx);
+          const cardEl = createExerciseCardElement(newEx);
+          if (tasksLayer) tasksLayer.appendChild(cardEl);
+
+          closeExerciseModal();
+
+          // Lunas Sprachausgabe abspielen
+          if (newEx.tutor_speech) {
+            playTutorSpeech(newEx.audio_base64, newEx.tutor_speech);
+          }
+        } else {
+          alert("Konnte die Aufgabe leider nicht erstellen. Bitte versuche es noch einmal.");
+        }
+      } catch (err) {
+        console.error("Fehler beim Erstellen der Aufgabe:", err);
+      } finally {
+        btnExerciseSubmit.disabled = false;
+        if (btnExerciseSubmitLabel) btnExerciseSubmitLabel.textContent = "Aufgabe auf Tafel legen";
+      }
+    });
+  }
     if (typeof switchToTab === "function") {
       switchToTab("whiteboard");
     } else {
