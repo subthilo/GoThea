@@ -2608,52 +2608,49 @@ function onBookPointerDown(e) {
     return;
   }
 
-  const baseWidth = currentBookTool === "highlighter" ? 18 : 3.5;
+  const baseWidth = currentBookTool === "highlighter" ? 18 : 2.6;
   let strokeColor = currentBookColor;
   if (currentBookTool === "highlighter" && (strokeColor === "#2563eb" || strokeColor === "#0f172a")) {
     strokeColor = "#facc15";
   }
-
-  currentBookSmoothWidth = baseWidth;
 
   currentBookStroke = {
     id: "str_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
     tool: currentBookTool,
     color: strokeColor,
     width: baseWidth,
-    points: [{ x: normX, y: normY, p: pressure }]
+    points: [{ x: normX, y: normY }]
   };
 
   bookAnnotationStrokes.push(currentBookStroke);
   bookUndoStack.push({ type: "add", stroke: currentBookStroke });
 
-  // Styles 1:1 wie Whiteboard (source-over für maximale Performance ohne GPU-Readback)
+  // Styles vorbereiten (source-over für maximale Performance ohne GPU-Readback)
   const ctx = bookAnnotationCtx;
   if (ctx) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.globalCompositeOperation = "source-over";
+    ctx.lineWidth = baseWidth;
 
     if (currentBookTool === "highlighter") {
       ctx.globalAlpha = 0.35;
       ctx.strokeStyle = strokeColor;
       ctx.fillStyle = strokeColor;
-      ctx.lineWidth = baseWidth;
     } else {
       ctx.globalAlpha = 1.0;
       ctx.strokeStyle = strokeColor;
       ctx.fillStyle = strokeColor;
-      ctx.lineWidth = baseWidth;
     }
 
     // Sofortiger Startpunkt direkt im Displaybuffer
     ctx.beginPath();
-    const dotR = currentBookTool === "highlighter" ? (baseWidth / 2) : Math.max(0.5, baseWidth / 2);
+    const dotR = Math.max(0.5, baseWidth / 2);
     ctx.arc(screenX, screenY, dotR, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  lastBookScreenPoint = { x: screenX, y: screenY, p: pressure };
+  lastBookScreenPoint = { x: screenX, y: screenY };
 }
 
 function onBookPointerMove(e) {
@@ -2683,33 +2680,25 @@ function onBookPointerMove(e) {
   const ctx = bookAnnotationCtx;
   if (!ctx) return;
 
+  // Konstante Strichstärke (Fineliner-Modus):
+  // Keine dynamischen lineWidth-Mutationen pro Teilstück.
+  // Alle 240Hz Coalesced Sub-Events werden in einem einzigen hardware-beschleunigten GPU-Pfad gezeichnet.
+  ctx.beginPath();
+  ctx.moveTo(lastBookScreenPoint.x, lastBookScreenPoint.y);
+
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
     const screenX = ev.clientX - rect.left;
     const screenY = ev.clientY - rect.top;
     const normX = Math.max(0, Math.min(1, screenX / rect.width));
     const normY = Math.max(0, Math.min(1, screenY / rect.height));
-    const pressure = (typeof ev.pressure === "number" && ev.pressure > 0) ? ev.pressure : 0.5;
 
-    currentBookStroke.points.push({ x: normX, y: normY, p: pressure });
-
-    // 1:1 wie Whiteboard: Keine Schwellenwert-Verzögerung, sofortiges Zeichnen
-    if (currentBookTool === "highlighter") {
-      ctx.lineWidth = currentBookStroke.width || 18;
-    } else {
-      const baseWidth = currentBookStroke.width || 3.5;
-      const targetWidth = Math.max(1.0, baseWidth * (0.35 + pressure * 1.3));
-      currentBookSmoothWidth = currentBookSmoothWidth * 0.6 + targetWidth * 0.4;
-      ctx.lineWidth = currentBookSmoothWidth;
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(lastBookScreenPoint.x, lastBookScreenPoint.y);
+    currentBookStroke.points.push({ x: normX, y: normY });
     ctx.lineTo(screenX, screenY);
-    ctx.stroke();
-
-    lastBookScreenPoint = { x: screenX, y: screenY, p: pressure };
+    lastBookScreenPoint = { x: screenX, y: screenY };
   }
+
+  ctx.stroke();
 }
 
 function onBookPointerUp(e) {
@@ -2867,14 +2856,13 @@ function redrawBookAnnotations() {
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
 
-      const baseWidth = stroke.width || 3;
+      const baseWidth = stroke.width || 2.6;
       if (stroke.points.length === 1) {
         const pt = stroke.points[0];
-        const p = pt.p || 0.5;
-        const r = (baseWidth * (0.4 + p * 1.2)) / 2;
+        const r = Math.max(0.5, baseWidth / 2);
         ctx.fillStyle = stroke.color || "#2563eb";
         ctx.beginPath();
-        ctx.arc(pt.x * cssW, pt.y * cssH, Math.max(0.5, r), 0, Math.PI * 2);
+        ctx.arc(pt.x * cssW, pt.y * cssH, r, 0, Math.PI * 2);
         ctx.fill();
       } else {
         ctx.beginPath();

@@ -497,13 +497,17 @@
       return;
     }
 
-    if (!currentStroke) return;
+    if (!currentStroke || !lastPoint) return;
 
+    inkCtx.beginPath();
+    inkCtx.moveTo(lastPoint.x, lastPoint.y);
     for (let i = 0; i < events.length; i++) {
       const pt = getEventPoint(events[i]);
       currentStroke.points.push(pt);
-      drawLiveSegment(pt);
+      inkCtx.lineTo(pt.x, pt.y);
+      lastPoint = pt;
     }
+    inkCtx.stroke();
   }
 
   function handlePointerUp(e) {
