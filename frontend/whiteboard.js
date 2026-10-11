@@ -484,6 +484,8 @@
   }
 
   // 7. Pointer Events Handling
+  let activeDraggingCard = null;
+
   function handlePointerDown(e) {
     e.preventDefault();
 
@@ -493,6 +495,9 @@
       // Sobald 2 Finger aufliegen -> kein Zeichnen, Zwei-Finger-Scroll übernimmt
       if (activeTouches.size >= 2) {
         isTwoFingerPanning = true;
+        if (activeDraggingCard) {
+          activeDraggingCard = null;
+        }
         if (isDrawing) {
           isDrawing = false;
           currentStroke = null;
@@ -501,14 +506,54 @@
         }
         return;
       }
-
-      // Im Pencil-Modus wird 1 einzelner Touch ignoriert
-      if (penOnlyMode) {
-        return;
-      }
     }
 
     if (isTwoFingerPanning) return;
+
+    // Prüfen, ob der Klick/Touch auf interaktive Elemente einer Aufgabenkarte trifft
+    if (typeof document.elementsFromPoint === "function") {
+      const elementsUnder = document.elementsFromPoint(e.clientX, e.clientY) || [];
+      const closeBtn = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-close-btn"));
+      if (closeBtn) {
+        closeBtn.click();
+        return;
+      }
+
+      const hintBtn = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-hint-btn"));
+      if (hintBtn) {
+        hintBtn.click();
+        return;
+      }
+
+      const taskHeader = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-header"));
+      if (taskHeader && !elementsUnder.some(el => el.classList && el.classList.contains("wb-task-close-btn"))) {
+        const card = taskHeader.closest(".wb-task-card");
+        const exId = card ? card.id.replace("wb-exercise-", "") : null;
+        const ex = exercises.find(item => item.id === exId);
+        if (card && ex) {
+          activeDraggingCard = {
+            card,
+            ex,
+            pointerId: e.pointerId,
+            startScreenX: e.clientX,
+            startScreenY: e.clientY,
+            startPosX: ex.pos_x || 60,
+            startPosY: ex.pos_y || 80
+          };
+          card.style.zIndex = "10";
+          try {
+            inkCanvas.setPointerCapture(e.pointerId);
+          } catch (_) {}
+          return;
+        }
+      }
+    }
+
+    // Im Pencil-Modus wird 1 einzelner Touch ignoriert
+    if (e.pointerType === "touch" && penOnlyMode) {
+      return;
+    }
+
     if (activePointerId !== null && activePointerId !== e.pointerId) return;
 
     activePointerId = e.pointerId;
@@ -552,6 +597,17 @@
   function handlePointerMove(e) {
     e.preventDefault();
 
+    if (activeDraggingCard) {
+      if (e.pointerId !== activeDraggingCard.pointerId) return;
+      const dx = (e.clientX - activeDraggingCard.startScreenX) / scale;
+      const dy = (e.clientY - activeDraggingCard.startScreenY) / scale;
+      const newX = Math.round(activeDraggingCard.startPosX + dx);
+      const newY = Math.round(Math.max(20, activeDraggingCard.startPosY + dy));
+      activeDraggingCard.card.style.left = `${newX}px`;
+      activeDraggingCard.card.style.top = `${newY}px`;
+      return;
+    }
+
     // Wenn zwei Finger auf dem Glas liegen, zeichnen wir nicht
     if (isTwoFingerPanning) return;
     if (!isDrawing) return;
@@ -590,6 +646,33 @@
 
   function handlePointerUp(e) {
     e.preventDefault();
+
+    if (activeDraggingCard) {
+      if (e.pointerId === activeDraggingCard.pointerId) {
+        const dragging = activeDraggingCard;
+        activeDraggingCard = null;
+        try {
+          inkCanvas.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+        dragging.card.style.zIndex = "2";
+        const dx = (e.clientX - dragging.startScreenX) / scale;
+        const dy = (e.clientY - dragging.startScreenY) / scale;
+        dragging.ex.pos_x = Math.round(dragging.startPosX + dx);
+        dragging.ex.pos_y = Math.round(Math.max(20, dragging.startPosY + dy));
+        if (currentSession) {
+          try {
+            fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${dragging.ex.id}/position`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ pos_x: dragging.ex.pos_x, pos_y: dragging.ex.pos_y })
+            }).catch(console.warn);
+          } catch (err) {
+            console.warn("Fehler beim Speichern der Aufgabenposition:", err);
+          }
+        }
+      }
+      return;
+    }
 
     if (e.pointerType === "touch") {
       activeTouches.delete(e.pointerId);
@@ -994,12 +1077,7 @@
       }
     }
 
-    // 3. Alle Striche der Schülerin in voller Höhe einzeichnen
-    for (let i = 0; i < strokes.length; i++) {
-      renderStrokeToContext(octx, strokes[i]);
-    }
-
-    // 3.5 Aufgaben-Karten von Luna in den Snapshot einzeichnen
+    // 2.5 Aufgaben-Karten von Luna in den Snapshot einzeichnen (VOR den Schriftzügen, damit die Striche über der Aufgabe sichtbar sind)
     if (exercises && exercises.length > 0) {
       for (let i = 0; i < exercises.length; i++) {
         const ex = exercises[i];
@@ -1047,7 +1125,12 @@
           } else if (c.text) {
             octx.fillStyle = isChalk ? "#fbbf24" : "#b45309";
             octx.font = "12px sans-serif";
-            const cleanText = c.text.replace(/\[\[.*?\]\]/g, "[ ___ ]");
+            let bIdx = 0;
+            const cleanText = c.text.replace(/\[\[(.*?)(?::(.*?))?\]\]/g, (m, p1, p2) => {
+              bIdx++;
+              const num = p2 ? (p1.trim().replace(/^Lücke\s*/i, "") || bIdx) : bIdx;
+              return `( ${num}: _______ )`;
+            });
             const tLines = wrapCanvasText(octx, cleanText, cW - 24);
             let ty = curY + 14;
             for (const tl of tLines.slice(0, 4)) {
@@ -1059,6 +1142,11 @@
 
         octx.restore();
       }
+    }
+
+    // 3. Alle Striche der Schülerin in voller Höhe einzeichnen (liegt über den Aufgabenkarten)
+    for (let i = 0; i < strokes.length; i++) {
+      renderStrokeToContext(octx, strokes[i]);
     }
 
     // 4. Feiner Indikator für Theas aktuellen Bildschirmausschnitt
@@ -1681,9 +1769,18 @@
 
     if (ex.exercise_type === "fill_in_the_blank") {
       let rawText = content.text || "";
-      let renderedText = rawText.replace(/\[\[(.*?)(?::(.*?))?\]\]/g, (m, p1) => {
-        return `<span class="wb-blank-token">[ ${p1.trim()} ]</span>`;
+      let blankCount = 0;
+      let renderedText = rawText.replace(/\[\[(.*?)(?::(.*?))?\]\]/g, (m, p1, p2) => {
+        blankCount++;
+        const label = p2 ? (p1.trim().replace(/^Lücke\s*/i, "") || blankCount) : blankCount;
+        return `<span class="wb-blank-token"><span class="wb-blank-num">(${label})</span></span>`;
       });
+      if (!rawText.includes("[[")) {
+        renderedText = rawText.replace(/_{3,}/g, () => {
+          blankCount++;
+          return `<span class="wb-blank-token"><span class="wb-blank-num">(${blankCount})</span></span>`;
+        });
+      }
       innerHtml += `<div class="wb-task-content-box">${renderedText}</div>`;
       if (content.word_bank && content.word_bank.length > 0) {
         innerHtml += `
