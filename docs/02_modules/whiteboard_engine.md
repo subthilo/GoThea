@@ -77,6 +77,7 @@ Alle Aktionen werden auf einem reversiblen Stack protokolliert:
 * `add_stroke`: Zeichnen eines Strichs (Rückgängig: Entfernen des Strichs).
 * `delete_strokes`: Objektradierung (Rückgängig: Wiederherstellen gelöschter Striche an ihren exakten Indexpositionen).
 * `clear_canvas`: Tafel-Leeren (Rückgängig: Wiederherstellen des gesamten Board-Zustands).
+* **Kompakte Dropdown-Toolbar:** Stift-Typ (`#wb-tool-select`), Strichstärke (`#wb-size-select`) und Farbe (`#wb-color-select` mit Live-Farbpunkt `#wb-color-indicator`) sind platzsparend als native Dropdown-Menüs organisiert. Dadurch ist die schwebende Leiste deutlich schmaler und passt perfekt auf jede iPad-Bildschirmbreite sowie Split-View.
 * **Tastatur-Shortcuts:** `Cmd/Ctrl + Z` (Undo), `Cmd/Ctrl + Y` (Redo), `P` (Stift), `H` (Marker), `E` (Radierer-Toggle).
 
 ---

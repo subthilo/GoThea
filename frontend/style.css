@@ -1216,13 +1216,41 @@ body {
 .wb-select-sm {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
   outline: none;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wb-select-sm:hover,
+.wb-select-sm:focus {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.wb-select-sm option {
+  background: #181c26;
+  color: #f1f5f9;
+}
+
+.wb-color-dropdown-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wb-color-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
 .wb-mode-btn {

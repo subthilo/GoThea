@@ -894,36 +894,52 @@
     }
   }
 
-  // 11. Toolbar Event-Handler
-  document.querySelectorAll(".wb-tool-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".wb-tool-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      currentTool = btn.dataset.tool;
-    });
-  });
+  // 11. Toolbar Event-Handler (Dropdowns für Stift-Typ, Stärke & Farbe)
+  const wbToolSelect = document.getElementById("wb-tool-select");
+  const wbSizeSelect = document.getElementById("wb-size-select");
+  const wbColorSelect = document.getElementById("wb-color-select");
+  const wbColorIndicator = document.getElementById("wb-color-indicator");
 
-  document.querySelectorAll(".wb-size-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".wb-size-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      currentBaseWidth = parseFloat(btn.dataset.size);
-    });
-  });
+  function setTool(tool) {
+    currentTool = tool;
+    if (wbToolSelect) wbToolSelect.value = tool;
+  }
 
-  document.querySelectorAll(".wb-color-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".wb-color-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      currentColor = btn.dataset.color;
-      if (currentTool === "pixel_eraser" || currentTool === "object_eraser" || currentTool === "eraser") {
-        document.querySelectorAll(".wb-tool-btn").forEach(b => b.classList.remove("active"));
-        const penBtn = document.querySelector('.wb-tool-btn[data-tool="pen"]');
-        if (penBtn) penBtn.classList.add("active");
-        currentTool = "pen";
-      }
+  function setSize(size) {
+    currentBaseWidth = parseFloat(size);
+    if (wbSizeSelect) wbSizeSelect.value = String(size);
+  }
+
+  function setColor(color) {
+    currentColor = color;
+    if (wbColorSelect) wbColorSelect.value = color;
+    if (wbColorIndicator) wbColorIndicator.style.backgroundColor = color;
+    if (currentTool === "pixel_eraser" || currentTool === "object_eraser" || currentTool === "eraser") {
+      setTool("pen");
+    }
+  }
+
+  if (wbToolSelect) {
+    wbToolSelect.addEventListener("change", (e) => {
+      setTool(e.target.value);
     });
-  });
+  }
+
+  if (wbSizeSelect) {
+    wbSizeSelect.addEventListener("change", (e) => {
+      setSize(e.target.value);
+    });
+  }
+
+  if (wbColorSelect) {
+    wbColorSelect.addEventListener("change", (e) => {
+      setColor(e.target.value);
+    });
+  }
+
+  if (wbColorIndicator && currentColor) {
+    wbColorIndicator.style.backgroundColor = currentColor;
+  }
 
   if (patternSelect) {
     patternSelect.addEventListener("change", (e) => {
@@ -1069,18 +1085,14 @@
       e.preventDefault();
       btnRedo.click();
     } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "p") {
-      const penBtn = document.querySelector('.wb-tool-btn[data-tool="pen"]');
-      if (penBtn) penBtn.click();
+      setTool("pen");
     } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "h") {
-      const hBtn = document.querySelector('.wb-tool-btn[data-tool="highlighter"]');
-      if (hBtn) hBtn.click();
+      setTool("highlighter");
     } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "e") {
       if (currentTool === "pixel_eraser") {
-        const objBtn = document.querySelector('.wb-tool-btn[data-tool="object_eraser"]');
-        if (objBtn) objBtn.click();
+        setTool("object_eraser");
       } else {
-        const pixBtn = document.querySelector('.wb-tool-btn[data-tool="pixel_eraser"]');
-        if (pixBtn) pixBtn.click();
+        setTool("pixel_eraser");
       }
     }
   });

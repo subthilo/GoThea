@@ -593,45 +593,43 @@
 
             <!-- Schwebende iPad-Toolbar (Frosted Glass) -->
             <div class="wb-floating-toolbar" id="wb-toolbar">
-              <!-- Werkzeuge -->
+              <!-- Werkzeuge (Dropdown) -->
               <div class="wb-tool-group">
-                <button class="wb-tool-btn active" data-tool="pen" title="Füller / Stift">
-                  <span class="tool-icon">✏️</span>
-                  <span class="tool-name">Stift</span>
-                </button>
-                <button class="wb-tool-btn" data-tool="highlighter" title="Textmarker">
-                  <span class="tool-icon">🖊️</span>
-                  <span class="tool-name">Marker</span>
-                </button>
-                <button class="wb-tool-btn" data-tool="pixel_eraser" title="Pixel-Radierer (Radiert Bildpunkte frei)">
-                  <span class="tool-icon">🧹</span>
-                  <span class="tool-name">Pixel</span>
-                </button>
-                <button class="wb-tool-btn" data-tool="object_eraser" title="Objekt-Radierer (Löscht ganze Striche sofort)">
-                  <span class="tool-icon">🎯</span>
-                  <span class="tool-name">Objekt</span>
-                </button>
+                <select id="wb-tool-select" class="wb-select-sm" title="Stift-Typ / Werkzeug">
+                  <option value="pen" selected>✏️ Stift</option>
+                  <option value="highlighter">🖊️ Marker</option>
+                  <option value="pixel_eraser">🧹 Pixel-Radierer</option>
+                  <option value="object_eraser">🎯 Objekt-Radierer</option>
+                </select>
               </div>
 
               <div class="wb-divider"></div>
 
-              <!-- Strichbreiten -->
+              <!-- Strichbreiten (Dropdown) -->
               <div class="wb-tool-group">
-                <button class="wb-size-btn" data-size="2" title="Fein (2px)"><span class="dot-sm"></span></button>
-                <button class="wb-size-btn active" data-size="4" title="Normal (4px)"><span class="dot-md"></span></button>
-                <button class="wb-size-btn" data-size="8" title="Dick (8px)"><span class="dot-lg"></span></button>
+                <select id="wb-size-select" class="wb-select-sm" title="Strichstärke">
+                  <option value="2">2px Fein</option>
+                  <option value="4" selected>4px Normal</option>
+                  <option value="6">6px Mittel</option>
+                  <option value="8">8px Dick</option>
+                  <option value="12">12px Fett</option>
+                </select>
               </div>
 
               <div class="wb-divider"></div>
 
-              <!-- Farbpalette -->
-              <div class="wb-color-group">
-                <button class="wb-color-btn active" data-color="#f8fafc" style="background: #f8fafc;" title="Kreideweiß"></button>
-                <button class="wb-color-btn" data-color="#3b82f6" style="background: #3b82f6;" title="Blau"></button>
-                <button class="wb-color-btn" data-color="#10b981" style="background: #10b981;" title="Mintgrün"></button>
-                <button class="wb-color-btn" data-color="#fbbf24" style="background: #fbbf24;" title="Gelb"></button>
-                <button class="wb-color-btn" data-color="#f43f5e" style="background: #f43f5e;" title="Koralle"></button>
-                <button class="wb-color-btn" data-color="#a855f7" style="background: #a855f7;" title="Lila"></button>
+              <!-- Stiftfarbe (Dropdown mit Live-Farbpunkt) -->
+              <div class="wb-tool-group wb-color-dropdown-group">
+                <span id="wb-color-indicator" class="wb-color-indicator" style="background: #f8fafc;" title="Aktive Farbe"></span>
+                <select id="wb-color-select" class="wb-select-sm" title="Farbe">
+                  <option value="#f8fafc" selected>⚪ Weiß</option>
+                  <option value="#3b82f6">🔵 Blau</option>
+                  <option value="#10b981">🟢 Mintgrün</option>
+                  <option value="#fbbf24">🟡 Gelb</option>
+                  <option value="#f43f5e">🔴 Koralle</option>
+                  <option value="#a855f7">🟣 Lila</option>
+                  <option value="#000000">⚫ Schwarz</option>
+                </select>
               </div>
 
               <div class="wb-divider"></div>
@@ -1173,7 +1171,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=4.0"></script>
-  <script src="/static/whiteboard.js?v=4.0"></script>
+  <script src="/static/app.js?v=4.1"></script>
+  <script src="/static/whiteboard.js?v=4.1"></script>
 </body>
 </html>
