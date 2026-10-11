@@ -52,6 +52,7 @@
   let currentTutorAudio = null;
   let tutorAudioEnabled = true;
 
+  let currentSubjectMaterialsList = [];
   let activeMaterial = null;
   let activeMaterialPage = 1;
   let isUnderlayVisible = false;
@@ -1998,6 +1999,9 @@
       }
     });
   }
+
+  // Globale Funktion: Material direkt auf der Tafel öffnen
+  window.openMaterialOnWhiteboard = async function(materialId, subjectId = null) {
     if (typeof switchToTab === "function") {
       switchToTab("whiteboard");
     } else {
