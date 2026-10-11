@@ -153,4 +153,25 @@ Neben dem interaktiven Einzel-Upload im Frontend bietet GoThea eine automatisier
      - Auf der Material-Karte erscheint ein Schnellzugriff-Button **„🗓️ Stundenplan“**, der direkt zum interaktiven Stundenplan-Widget navigiert.
      - Automatische Seeder-Migration korrigiert beim Start ältere Fehlablagen automatisch nach `sub_orga`.
 
+---
+
+## 7. Frontend-Architektur: Upload-Zentrale & Interaktive Fach-Mediathek
+
+Die GoThea Benutzeroberfläche trennt Ingestion und Facharbeit klar voneinander:
+
+### A. Dedizierter Upload-Hub (`#tab-uploads` / `📥 Upload & Eingang`)
+* **Manuelle Upload-Dropzone:** Prominente Drag-&-Drop Fläche mit direktem Klick-Dialog (`<input type="file">`). Startet sofort die 2-Stufen Analyse mit Vorschau.
+* **Netzwerk-Posteingang (Samba Finder Dropzone):** Integrierte Inbox-Karte mit Statusanzeige wartender Dateien, manueller Prüfung und 1-Klick-Verarbeitung (`POST /api/v1/inbox/process`).
+* **Upload-Historie & Zuletzt importiert:** Zeigt chronologisch alle hochgeladenen Dokumente mit Metadaten (Fach, Thema, Seitenzahl, Dateigröße) und Schnellaktionen (Öffnen, Reader, Löschen).
+
+### B. Interaktive Fach-Mediathek (`#tab-subject-detail`)
+* **Dashboard-Navigation:** In der Hauptübersicht (`#tab-dashboard`) führt ein Klick auf eine Fach-Kachel (`.subject-card`) direkt in die jeweilige Fach-Detailseite.
+* **Hero-Header:** Dynamisch gefärbt im Corporate Design des jeweiligen Schulfachs (Icon, Fachname, Klassenstufe, Lehrplan-Referenz).
+* **Direktaktionen:**
+  - *„🎨 Tafel für dieses Fach öffnen“*: Wechselt direkt zur Tafel und wählt das Fach vor.
+  - *„➕ Dokument für dieses Fach hochladen“*: Öffnet das Upload-Modal mit automatischer Fach-Vorbelegung.
+* **Einklappbare Lehrplanthemen:** Liste aller im Rahmenlehrplan hinterlegten Themen für diese Klassenstufe mit RLP-Niveaustufen (`E`, `F`, etc.).
+* **Fach-Materialien-Grid:** Alle Arbeitsblätter, Hefterseiten, Schulbücher und Tests gefiltert nach Fach mit Filter-Pills (Alle, Arbeitsblatt, Hefter, Buch, Klassenarbeit).
+
+
 
