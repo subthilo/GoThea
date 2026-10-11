@@ -32,6 +32,7 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 * **[04.3 Iteration 03 – Whiteboard & Canvas Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_03_whiteboard_engine.md):** 32 Tests, 100% Passed, 93% Coverage.
 * **[04.4 Iteration 04 – Smarte Material-Ingestion](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_04_material_ingestion.md):** 43 Tests, 100% Passed, 92% Coverage.
 * **[04.5 Iteration 05 – Stundenplan & Organisation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_05_timetable_and_organization.md):** 76 Tests, 100% Passed, 86% Coverage.
+* **[04.6 Iteration 06 – Handschriftliche Buchnotizen & Inking-Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_06_book_inking_engine.md):** 89 Tests, 100% Passed, 86% Coverage.
 
 ---
 
@@ -45,6 +46,7 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 | **M3: Whiteboard Engine** | iPad Canvas, PointerEvents, Overlays, WebSocket | ✅ Abgeschlossen | 32/32 Passed (93% Cov) |
 | **M4: Material-Upload** | 2-Stufen Human-in-the-Loop Ingestion, PDF/Fotos, Chunks | ✅ Abgeschlossen | 43/43 Passed (92% Cov) |
 | **M5: Stundenplan & Orga** | Untis 7D Raster, A/B-Wochen, Dashboard-Widget, Auto-Routing | ✅ Abgeschlossen | 76/76 Passed (86% Cov) |
+| **M5.1: Schulbuch-Notizen** | Ultra-Low-Latency Inking, Palm Rejection, Bézier-Glättung | ✅ Abgeschlossen | 89/89 Passed (86% Cov) |
 | **M6: IServ-Connector** | CalDAV, WebDAV, AES-256 Vault | ⏳ Geplant | - |
 | **M7: KI-Tutor & Audio** | Sokratischer Governor, Vision, Streaming TTS | ⏳ Geplant | - |
 

@@ -71,3 +71,45 @@ def test_annotation_lifecycle(client):
     get_res3 = client.get(f"/api/v1/materials/{mat_id}/pages/1/annotations")
     assert get_res3.status_code == 200
     assert get_res3.json()["strokes"] == []
+
+
+def test_annotation_multipage_isolation_and_edge_cases(client):
+    # 1. 2-seitiges PDF erzeugen
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+
+    files = {"file": ("multipage_note.pdf", buf.getvalue(), "application/pdf")}
+    res_pre = client.post("/api/v1/materials/pre-analyze", files=files)
+    token = res_pre.json()["upload_token"]
+
+    confirm_res = client.post("/api/v1/materials/confirm", json={
+        "upload_token": token,
+        "subject_id": "sub_math",
+        "title": "Zweiseitiges Arbeitsblatt",
+        "kind": "Arbeitsblatt"
+    })
+    mat_id = confirm_res.json()["id"]
+
+    # 2. Seite 1 annotieren
+    stroke_p1 = [{"tool": "pen", "color": "#2563eb", "points": [{"x": 0.1, "y": 0.2}]}]
+    client.put(f"/api/v1/materials/{mat_id}/pages/1/annotations", json={"strokes": stroke_p1})
+
+    # 3. Seite 2 annotieren
+    stroke_p2 = [{"tool": "highlighter", "color": "#facc15", "points": [{"x": 0.5, "y": 0.5}]}]
+    client.put(f"/api/v1/materials/{mat_id}/pages/2/annotations", json={"strokes": stroke_p2})
+
+    # 4. Isolation verifizieren: Seite 1 hat nur stroke_p1, Seite 2 nur stroke_p2
+    res_p1 = client.get(f"/api/v1/materials/{mat_id}/pages/1/annotations").json()
+    res_p2 = client.get(f"/api/v1/materials/{mat_id}/pages/2/annotations").json()
+    assert len(res_p1["strokes"]) == 1
+    assert res_p1["strokes"][0]["tool"] == "pen"
+    assert len(res_p2["strokes"]) == 1
+    assert res_p2["strokes"][0]["tool"] == "highlighter"
+
+    # 5. Nicht existentes Material -> 404
+    res_404 = client.get("/api/v1/materials/mat_non_existent_999/pages/1/annotations")
+    assert res_404.status_code == 404
+
