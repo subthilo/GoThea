@@ -12,14 +12,48 @@ from backend.app.schemas.material import (
     MaterialConfirmRequest,
     MaterialRead,
     MaterialDetailRead,
+    MaterialUpdateRequest,
+    MaterialMergeRequest,
+    MaterialReorderPagesRequest,
 )
 from backend.app.services.material_ingestion import (
     pre_analyze_upload,
     confirm_and_save_material,
     render_material_page_as_image,
+    update_material,
+    merge_materials,
+    reorder_material_pages,
 )
 
 router = APIRouter(prefix="/api/v1/materials", tags=["materials"])
+
+def _to_material_read(mat: Material, db: Session) -> MaterialRead:
+    sub = mat.subject or db.query(Subject).filter_by(id=mat.subject_id).first()
+    return MaterialRead(
+        id=mat.id,
+        user_id=mat.user_id,
+        subject_id=mat.subject_id,
+        topic_id=mat.topic_id,
+        title=mat.title,
+        kind=mat.kind,
+        filename=mat.filename,
+        file_size=mat.file_size,
+        mime_type=mat.mime_type,
+        page_count=mat.page_count,
+        summary=mat.summary,
+        created_at=mat.created_at,
+        chunks_count=len(mat.chunks) if mat.chunks else 0,
+        subject_name=sub.name if sub else None,
+        subject_icon=sub.icon if sub else None,
+        subject_color=sub.color_code if sub else None,
+        topic_name=mat.topic.name if mat.topic else None,
+        dossier_id=mat.dossier_id,
+        dossier_order=mat.dossier_order,
+        parent_id=mat.parent_id,
+        start_page=mat.start_page,
+        end_page=mat.end_page,
+        dossier_title=mat.dossier.title if mat.dossier else None
+    )
 
 @router.post("/pre-analyze", response_model=PreAnalysisResponse, status_code=status.HTTP_200_OK)
 async def pre_analyze_material(
@@ -292,3 +326,60 @@ def delete_material(
     db.delete(mat)
     db.commit()
     return None
+
+@router.patch("/{material_id}", response_model=MaterialRead)
+def update_material_endpoint(
+    material_id: str,
+    request: MaterialUpdateRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Aktualisiert Metadaten eines Materials (z. B. Fach neu zuordnen, Thema, Titel, Art).
+    """
+    try:
+        mat = update_material(db, material_id, request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Aktualisieren: {str(e)}")
+
+    return _to_material_read(mat, db)
+
+@router.post("/merge", response_model=MaterialRead, status_code=status.HTTP_201_CREATED)
+def merge_materials_endpoint(
+    request: MaterialMergeRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Führt mehrere Dokumente in der gewünschten Reihenfolge zu einem einzigen PDF zusammen.
+    """
+    try:
+        mat = merge_materials(db, request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Zusammenführen: {str(e)}")
+
+    return _to_material_read(mat, db)
+
+@router.post("/{material_id}/reorder-pages", response_model=MaterialRead)
+def reorder_material_pages_endpoint(
+    material_id: str,
+    request: MaterialReorderPagesRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Ändert die Reihenfolge der Seiten eines PDF-Dokuments (und erlaubt das Löschen einzelner Seiten).
+    """
+    try:
+        mat = reorder_material_pages(db, material_id, request.page_order)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Ändern der Seitenreihenfolge: {str(e)}")
+
+    return _to_material_read(mat, db)

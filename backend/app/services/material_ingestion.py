@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional, Tuple, List, Dict, Any
 import base64
 from PIL import Image
-from pypdf import PdfReader
+from pypdf import PdfReader, PdfWriter
 from sqlalchemy.orm import Session
 
 import logging
@@ -17,7 +17,13 @@ import logging
 from backend.app.config import MATERIALS_DIR, TEMP_UPLOADS_DIR, PAGE_CACHE_DIR
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.material import Material, MaterialChunk
-from backend.app.schemas.material import PreAnalysisResponse, MaterialConfirmRequest
+from backend.app.schemas.material import (
+    PreAnalysisResponse,
+    MaterialConfirmRequest,
+    MaterialUpdateRequest,
+    MaterialMergeRequest,
+    MaterialReorderPagesRequest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -383,5 +389,253 @@ def pre_cache_material_pages(
     """
     from backend.app.services.page_renderer import page_renderer
     page_renderer.queue_material(material_id, file_path, mime_type, max_pages)
+
+def update_material(db: Session, material_id: str, request: MaterialUpdateRequest) -> Material:
+    """
+    Aktualisiert Metadaten eines Materials (z. B. Fach neu zuordnen, Thema, Titel, Art).
+    """
+    material = db.query(Material).filter_by(id=material_id).first()
+    if not material:
+        raise ValueError(f"Material '{material_id}' nicht gefunden.")
+
+    if request.subject_id is not None:
+        subject = db.query(Subject).filter_by(id=request.subject_id).first()
+        if not subject:
+            raise ValueError(f"Schulfach '{request.subject_id}' nicht gefunden.")
+        material.subject_id = request.subject_id
+
+        # Falls Thema nicht explizit übergeben wurde und nicht zum neuen Fach gehört, zurücksetzen
+        if request.topic_id is None and material.topic_id:
+            topic = db.query(Topic).filter_by(id=material.topic_id).first()
+            if topic and topic.subject_id != request.subject_id:
+                material.topic_id = None
+
+    if request.topic_id is not None:
+        if request.topic_id == "" or request.topic_id == "null":
+            material.topic_id = None
+        else:
+            topic = db.query(Topic).filter_by(id=request.topic_id).first()
+            if not topic:
+                raise ValueError(f"Thema '{request.topic_id}' nicht gefunden.")
+            if topic.subject_id != material.subject_id:
+                raise ValueError(f"Thema '{topic.name}' gehört nicht zum Schulfach '{material.subject_id}'.")
+            material.topic_id = request.topic_id
+
+    if request.title is not None and request.title.strip():
+        material.title = request.title.strip()
+
+    if request.kind is not None and request.kind.strip():
+        material.kind = request.kind.strip()
+
+    if request.summary is not None:
+        material.summary = request.summary.strip() or None
+
+    db.commit()
+    db.refresh(material)
+    return material
+
+def merge_materials(db: Session, request: MaterialMergeRequest) -> Material:
+    """
+    Führt mehrere Dokumente (PDFs oder Bilder) in der gewünschten Reihenfolge
+    zu einem einzigen zusammenhängenden PDF-Dokument zusammen.
+    """
+    if len(request.material_ids) < 2:
+        raise ValueError("Es müssen mindestens 2 Dokumente zum Zusammenführen ausgewählt werden.")
+
+    materials = []
+    for mid in request.material_ids:
+        m = db.query(Material).filter_by(id=mid).first()
+        if not m:
+            raise ValueError(f"Material '{mid}' nicht gefunden.")
+        p = Path(m.file_path)
+        if not p.exists():
+            raise FileNotFoundError(f"Datei für Material '{mid}' existiert nicht: {m.file_path}")
+        materials.append(m)
+
+    first_mat = materials[0]
+    target_subject_id = request.target_subject_id or first_mat.subject_id
+    subject = db.query(Subject).filter_by(id=target_subject_id).first()
+    if not subject:
+        raise ValueError(f"Schulfach '{target_subject_id}' nicht gefunden.")
+
+    target_topic_id = request.target_topic_id or first_mat.topic_id
+    if target_topic_id:
+        topic = db.query(Topic).filter_by(id=target_topic_id).first()
+        if not topic or topic.subject_id != target_subject_id:
+            target_topic_id = None
+
+    target_title = request.target_title or f"{first_mat.title} (Zusammengeführt)"
+    target_kind = request.target_kind or first_mat.kind
+
+    writer = PdfWriter()
+    all_texts: List[str] = []
+
+    for mat in materials:
+        mat_path = Path(mat.file_path)
+        if mat.mime_type == "application/pdf" or mat_path.suffix.lower() == ".pdf":
+            reader = PdfReader(str(mat_path))
+            for page in reader.pages:
+                writer.add_page(page)
+        elif "image" in mat.mime_type or mat_path.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"):
+            with Image.open(str(mat_path)) as img:
+                img_rgb = img.convert("RGB")
+                buf = io.BytesIO()
+                img_rgb.save(buf, format="PDF")
+                buf.seek(0)
+                img_reader = PdfReader(buf)
+                for page in img_reader.pages:
+                    writer.add_page(page)
+
+        if mat.extracted_text:
+            all_texts.append(mat.extracted_text)
+
+    new_mat_id = f"mat_{uuid.uuid4().hex[:8]}"
+    new_filename = f"{new_mat_id}.pdf"
+    new_file_path = MATERIALS_DIR / new_filename
+
+    with open(new_file_path, "wb") as f:
+        writer.write(f)
+
+    page_count = len(writer.pages)
+    file_size = os.path.getsize(new_file_path)
+    combined_text = "\n\n--- Zusammengeführt ---\n\n".join(all_texts) if all_texts else None
+
+    new_material = Material(
+        id=new_mat_id,
+        user_id=first_mat.user_id,
+        subject_id=target_subject_id,
+        topic_id=target_topic_id,
+        dossier_id=first_mat.dossier_id,
+        title=target_title,
+        kind=target_kind,
+        filename=new_filename,
+        file_path=str(new_file_path),
+        file_size=file_size,
+        mime_type="application/pdf",
+        page_count=page_count,
+        extracted_text=combined_text,
+        summary=f"Zusammengeführt aus {len(materials)} Dokumenten"
+    )
+    db.add(new_material)
+    db.flush()
+
+    if combined_text:
+        chunks_data = chunk_text(combined_text)
+        for cd in chunks_data:
+            chunk = MaterialChunk(
+                material_id=new_material.id,
+                chunk_index=cd["chunk_index"],
+                content=cd["content"],
+                chunk_type=cd["chunk_type"],
+                page_number=cd["page_number"]
+            )
+            db.add(chunk)
+
+    # Optional: Quelldokumente löschen
+    if request.delete_sources:
+        for m in materials:
+            try:
+                p = Path(m.file_path)
+                if p.exists() and p != new_file_path:
+                    p.unlink()
+            except Exception:
+                pass
+            for cached in PAGE_CACHE_DIR.glob(f"{m.id}_p*"):
+                try:
+                    cached.unlink()
+                except Exception:
+                    pass
+            db.delete(m)
+
+    db.commit()
+    db.refresh(new_material)
+
+    try:
+        from backend.app.services.page_renderer import page_renderer
+        page_renderer.queue_material(new_material.id, new_material.file_path, new_material.mime_type, new_material.page_count)
+    except Exception:
+        pass
+
+    return new_material
+
+def reorder_material_pages(db: Session, material_id: str, page_order: List[int]) -> Material:
+    """
+    Ändert die Reihenfolge der Seiten in einem PDF-Dokument (und ermöglicht das Löschen einzelner Seiten).
+    """
+    material = db.query(Material).filter_by(id=material_id).first()
+    if not material:
+        raise ValueError(f"Material '{material_id}' nicht gefunden.")
+
+    if not page_order:
+        raise ValueError("Die Seitenreihenfolge darf nicht leer sein.")
+
+    mat_path = Path(material.file_path)
+    if not mat_path.exists():
+        raise FileNotFoundError(f"Datei nicht gefunden: {material.file_path}")
+
+    # Bei 1-seitigen Bildern
+    if material.page_count == 1 and "image" in material.mime_type:
+        if page_order == [1]:
+            return material
+        raise ValueError("Die Seitenreihenfolge eines Einzelbildes kann nicht verändert werden.")
+
+    # Validierung: Alle Seitenzahlen müssen gültig sein
+    for p in page_order:
+        if not isinstance(p, int) or p < 1 or p > material.page_count:
+            raise ValueError(f"Ungültige Seitennummer {p}. Gültiger Bereich: 1 bis {material.page_count}.")
+
+    reader = PdfReader(str(mat_path))
+    writer = PdfWriter()
+
+    for p in page_order:
+        writer.add_page(reader.pages[p - 1])
+
+    temp_path = mat_path.with_suffix(".reorder_tmp.pdf")
+    with open(temp_path, "wb") as f:
+        writer.write(f)
+
+    temp_path.replace(mat_path)
+
+    material.page_count = len(page_order)
+    material.file_size = os.path.getsize(mat_path)
+
+    # Invalidation des Rendercaches für dieses Material
+    for cached in PAGE_CACHE_DIR.glob(f"{material.id}_p*"):
+        try:
+            cached.unlink()
+        except Exception:
+            pass
+
+    # Synchronisiere PageAnnotations: Altes p -> Neues new_idx
+    from backend.app.models.annotation import PageAnnotation
+    existing_annotations = db.query(PageAnnotation).filter_by(material_id=material.id).all()
+    if existing_annotations:
+        ann_by_old_page = {ann.page_number: ann for ann in existing_annotations}
+        # Lösche zuerst temporär oder verschiebe Seiten, um Unique Index Kollisionen zu vermeiden
+        for ann in existing_annotations:
+            ann.page_number = -ann.page_number
+        db.flush()
+
+        for new_idx, old_page in enumerate(page_order, start=1):
+            if old_page in ann_by_old_page:
+                ann_by_old_page[old_page].page_number = new_idx
+
+        # Annotations von nicht übernommenen Seiten löschen
+        kept_old_pages = set(page_order)
+        for old_page, ann in ann_by_old_page.items():
+            if old_page not in kept_old_pages:
+                db.delete(ann)
+
+    db.commit()
+    db.refresh(material)
+
+    try:
+        from backend.app.services.page_renderer import page_renderer
+        page_renderer.queue_material(material.id, material.file_path, material.mime_type, material.page_count)
+    except Exception:
+        pass
+
+    return material
+
 
 

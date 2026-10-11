@@ -170,8 +170,42 @@ Die GoThea Benutzeroberfläche trennt Ingestion und Facharbeit klar voneinander:
 * **Direktaktionen:**
   - *„🎨 Tafel für dieses Fach öffnen“*: Wechselt direkt zur Tafel und wählt das Fach vor.
   - *„➕ Dokument für dieses Fach hochladen“*: Öffnet das Upload-Modal mit automatischer Fach-Vorbelegung.
+  - *„🔗 Dokumente zusammenführen“*: Ermöglicht das gezielte Verbinden mehrerer Materialien dieses Fachs.
 * **Einklappbare Lehrplanthemen:** Liste aller im Rahmenlehrplan hinterlegten Themen für diese Klassenstufe mit RLP-Niveaustufen (`E`, `F`, etc.).
 * **Fach-Materialien-Grid:** Alle Arbeitsblätter, Hefterseiten, Schulbücher und Tests gefiltert nach Fach mit Filter-Pills (Alle, Arbeitsblatt, Hefter, Buch, Klassenarbeit).
 
+---
 
+## 8. Dokumenten-Reorganisation: Fächerzuordnung, Seitenverwaltung & PDF-Merge
 
+Schüler und Eltern haben bei der Pflege der Schulunterlagen volle Flexibilität, um gescannte Arbeitsblätter nachträglich zu strukturieren:
+
+### A. Dokument einem anderen Fach / Thema zuordnen (`PATCH /api/v1/materials/{id}`)
+* **Modal:** `#modal-edit-material` (erreichbar über den Button `✏️ Ändern` auf jeder Material-Karte).
+* **Felder:**
+  * **Schulfach:** Beliebiges Schulfach wählbar. Bei Fachwechsel wird die Themenliste automatisch aktualisiert und ungültige alte Themenverknüpfungen werden bereinigt.
+  * **Thema:** Zuordnung zu Lehrplanthemen des Fachs oder Freilassen.
+  * **Titel & Dokumentart:** Anpassbar (Arbeitsblatt, Hefterseite, Buchauszug, Klassenarbeit, Test, Stundenplan).
+  * **Zusammenfassung / Notiz:** Freitext für Lernhinweise oder Prüfungstermine.
+
+### B. Seitenreihenfolge ändern & Einzelseiten löschen (`POST /api/v1/materials/{id}/reorder-pages`)
+* **Modal:** `#modal-reorder-pages` (erreichbar über `📑 Seiten` auf Mehrseiten-Dokumenten und im In-App Dokumenten-Viewer `#modal-material-viewer`).
+* **Funktionsweise:**
+  * Visuelle Kachelansicht aller Seiten mit 150 DPI Retina-Thumbnails.
+  * **Verschieben:** Buttons `◀` und `▶` verschieben Seiten interaktiv nach links/rechts.
+  * **Löschen / Aussortieren:** `🗑️` entfernt unerwünschte Seiten (z. B. leere Scan-Rückseiten). Mindestens 1 Seite verbleibt stets.
+  * **Zurücksetzen:** `↺ Zurücksetzen` stellt die Original-Reihenfolge mit einem Klick wieder her.
+* **Backend-Implementierung:**
+  * Verwendet `pypdf.PdfWriter` / `PdfReader` für atomare Neuanordnung der PDF-Seiten.
+  * Annotations-Erhalt: Vorhandene Freihand-Notizen (`PageAnnotation`) werden unter Beachtung des Unique-Constraints auf die neuen Seitenzahlen umnummeriert (unter Verwendung temporärer Negativ-Indizes).
+  * Cache-Invalidierung: Gerenderte Seiten im Cache (`data/<env>/cache/pages/{id}_p*`) werden gelöscht, sodass Folgeseiten sofort scharf und aktuell neu gerendert werden.
+
+### C. Dokumente zusammenführen (`POST /api/v1/materials/merge`)
+* **Modal:** `#modal-merge-materials` (erreichbar über die Buttons `🔗 Dokumente zusammenführen` im Upload-Hub und auf Fachseiten).
+* **Workflow:**
+  1. **Dokumentauswahl:** Multiselekt-Liste mit Fach-Filter; Auswahl beliebig vieler PDFs und Einzelbilder (JPEG/PNG).
+  2. **Reihenfolge bestimmen:** Geordnete Liste der ausgewählten Dokumente mit `▲` und `▼` Verschiebe-Buttons sowie `✕` zum Entfernen.
+  3. **Ziel-Metadaten:** Neuer Titel, Ziel-Fach, Ziel-Thema, Dokumentart und Checkbox *„Originaldokumente nach dem Verbinden löschen“* (standardmäßig aktiv).
+* **Backend-Implementierung:**
+  * Zusammenführung via `pypdf.PdfWriter`. Bilddateien (Fotos von Heftern) werden via `PIL.Image` verlustfrei in PDF-Seiten konvertiert und nahtlos angehängt.
+  * Extrahierter Text und Chunks werden verkettet, die Quell-Materialien samt Page-Caches werden sauber aufgeräumt.

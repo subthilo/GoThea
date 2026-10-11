@@ -65,3 +65,21 @@ class MaterialRead(BaseModel):
 class MaterialDetailRead(MaterialRead):
     extracted_text: Optional[str] = None
     chunks: List[MaterialChunkRead] = []
+
+class MaterialUpdateRequest(BaseModel):
+    subject_id: Optional[str] = None
+    topic_id: Optional[str] = None
+    title: Optional[str] = None
+    kind: Optional[str] = None
+    summary: Optional[str] = None
+
+class MaterialMergeRequest(BaseModel):
+    material_ids: List[str]
+    target_title: Optional[str] = None
+    target_subject_id: Optional[str] = None
+    target_topic_id: Optional[str] = None
+    target_kind: Optional[str] = None
+    delete_sources: bool = True
+
+class MaterialReorderPagesRequest(BaseModel):
+    page_order: List[int]
