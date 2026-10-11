@@ -15,11 +15,28 @@ Die Leitphilosophie von GoThea ist: **Keine fertigen Lösungen vorgeben, sondern
 
 ---
 
-## 2. Audio-Pipeline (Streaming TTS & Barge-In)
+## 2. Audio-Pipeline (OpenAI TTS-1, Nova Voice & Barge-In)
 
-* **Streaming Text-to-Speech:** Antworten werden in kurzen Audio-Chunks (Opus / WebM) via WebSocket zum iPad gestreamt.
-* **Web Audio API:** Unterbrechungsfreie, latenzarme Wiedergabe direkt im Browser.
-* **Barge-In (Unterbrechungserkennung):** Setzt der Schüler den Apple Pencil an oder fängt an zu sprechen, stoppt die Audioausgabe der KI sofort (`user_interrupt`), damit der Schüler ungestört denken und schreiben kann.
+* **OpenAI Text-to-Speech (`tts-1`):**
+  * Stimmcharakter: `voice="nova"` – warmer, klar artikulierender und empathischer Tonfall für Schülerinnen und Schüler (Gymnasium Klassenstufe 7).
+  * Audioformat: Direkte MP3-Codierung, clientseitig über HTML5 `Audio()` und `data:audio/mp3;base64,...` latenzarm abgespielt.
+  * System-Prompt-Vorgabe: **Kein rohes LaTeX im gesprochenen Text** (z. B. „drei Viertel“ statt `\frac{3}{4}`, „mal“ statt `\cdot`), damit die Aussprache natürlich und flüssig klingt.
+* **Barge-In (Sofortige Unterbrechung):**
+  * Setzt der Schüler den Apple Pencil oder die Maus auf dem Board an (`handlePointerDown`), wird `stopTutorSpeech()` sofort ausgelöst und die Wiedergabe bricht augenblicklich ab.
+  * Zusätzliche manuelle Kontrolle: Stopp-Button (`✕`) direkt in der schwebenden Sprechblase (`#wb-tutor-bubble`) und globaler Stummschalt-Schalter (`#btn-wb-audio-toggle`: 🔊 / 🔇).
+
+---
+
+## 2.1 API Endpoint: Whiteboard Vision & Voice Feedback
+* **Route:** `POST /api/v1/whiteboard/sessions/{session_id}/ask-tutor`
+* **Request (`TutorAskRequest`):**
+  * `image_base64`: Vollständiger Snapshot des Whiteboards (Inklusive Schiefertafel-/Papier-Hintergrund und Schülertinte).
+  * `client_context`: Optionaler Schüler-Kontext (z. B. Klassenstufe 7 Gymnasium Brandenburg, Fach Mathematik).
+* **Response (`TutorAskResponse`):**
+  * `speech_text`: Der gesprochene sokratische Impuls (ohne Formelsyntax).
+  * `audio_base64`: Base64-codierter MP3-Audiostream für die direkte Wiedergabe.
+  * `board_actions`: Liste visueller Markierungsaktionen (`highlight_box` mit relativen Prozentkoordinaten `x_pct`, `y_pct`, `w_pct`, `h_pct`).
+  * `suggested_chips`: Ergänzende Klick-Impulse für den Schüler.
 
 ---
 

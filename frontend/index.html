@@ -573,7 +573,11 @@
             </div>
             <div class="wb-header-actions">
               <button id="btn-wb-new-session" class="wb-btn-subtle" title="Neue Tafel beginnen">✨ Neu</button>
-              <button id="btn-wb-request-hint" class="wb-btn-primary" title="Sokratischen Tipp auf Tafel anzeigen">🦉 KI-Tipp anzeigen</button>
+              <button id="btn-wb-audio-toggle" class="wb-btn-subtle wb-btn-speaker active" title="Sprachausgabe (TTS) an/aus">🔊</button>
+              <button id="btn-wb-request-hint" class="wb-btn-primary" title="Tafel mit KI analysieren & sokratischen Tipp vorlesen">
+                <span id="wb-hint-icon">🦉</span>
+                <span id="wb-hint-label">Tutor fragen</span>
+              </button>
               <button id="btn-wb-fullscreen" class="wb-btn-icon" title="Vollbildmodus umschalten">⛶</button>
             </div>
           </div>
@@ -584,6 +588,16 @@
             <canvas id="wb-canvas" class="wb-canvas-layer"></canvas>
             <!-- 2. Overlay Canvas (Transparente Ebene für KI-Tipps & Overlays) -->
             <canvas id="wb-overlay" class="wb-canvas-layer wb-overlay-layer"></canvas>
+
+            <!-- Floating Tutor Speech Bubble (erscheint wenn Luna spricht) -->
+            <div id="wb-tutor-bubble" class="wb-tutor-bubble" style="display: none;">
+              <span class="wb-tutor-avatar">🦉</span>
+              <div class="wb-tutor-bubble-content">
+                <div class="wb-tutor-name">Luna (Tutorin)</div>
+                <div id="wb-tutor-speech-text" class="wb-tutor-speech-text"></div>
+              </div>
+              <button id="btn-wb-stop-speech" class="wb-tutor-stop-btn" title="Audio stoppen">⏹️</button>
+            </div>
 
             <!-- Scroll-Indikator & Nach-Oben-Button -->
             <button id="btn-wb-scroll-top" class="wb-scroll-top-btn" title="Zum Anfang der Tafel">⤒ Zum Anfang</button>
@@ -1171,7 +1185,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=4.1"></script>
-  <script src="/static/whiteboard.js?v=4.1"></script>
+  <script src="/static/app.js?v=4.2"></script>
+  <script src="/static/whiteboard.js?v=4.2"></script>
 </body>
 </html>

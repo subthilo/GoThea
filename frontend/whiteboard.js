@@ -28,6 +28,17 @@
   const btnWbZoomReset = document.getElementById("btn-wb-zoom-reset");
   const wbZoomLevelText = document.getElementById("wb-zoom-level-text");
 
+  // Audio- & Tutor-Elemente
+  const btnAudioToggle = document.getElementById("btn-wb-audio-toggle");
+  const tutorBubble = document.getElementById("wb-tutor-bubble");
+  const tutorSpeechText = document.getElementById("wb-tutor-speech-text");
+  const btnStopSpeech = document.getElementById("btn-wb-stop-speech");
+  const hintIcon = document.getElementById("wb-hint-icon");
+  const hintLabel = document.getElementById("wb-hint-label");
+
+  let currentTutorAudio = null;
+  let tutorAudioEnabled = true;
+
   if (!inkCanvas || !overlayCanvas || !viewport) {
     return;
   }
@@ -457,6 +468,9 @@
       inkCanvas.setPointerCapture(e.pointerId);
     } catch (_) {}
 
+    // Barge-In: Sprachausgabe sofort stoppen, sobald die Schülerin den Stift ansetzt
+    stopTutorSpeech();
+
     isDrawing = true;
     const pt = getEventPoint(e);
     lastPoint = pt;
@@ -720,14 +734,29 @@
   function drawOverlayActions(actions) {
     overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
 
+    const boardW = overlayCanvas.width / dpr;
+    const boardH = overlayCanvas.height / dpr;
+
     actions.forEach(item => {
       if (item.action === "highlight_box" && item.coords) {
+        let x = item.coords.x || 0;
+        let y = item.coords.y || 0;
+        let w = item.coords.w || 200;
+        let h = item.coords.h || 60;
+
+        if (item.coords.x_pct !== undefined) {
+          x = (item.coords.x_pct / 100) * boardW;
+          y = (item.coords.y_pct / 100) * boardH;
+          w = (item.coords.w_pct / 100) * boardW;
+          h = (item.coords.h_pct / 100) * boardH;
+        }
+
         overlayCtx.save();
         overlayCtx.strokeStyle = item.color || "#f59e0b";
         overlayCtx.lineWidth = 3;
         overlayCtx.fillStyle = "rgba(245, 158, 11, 0.12)";
         overlayCtx.beginPath();
-        overlayCtx.roundRect(item.coords.x, item.coords.y, item.coords.w, item.coords.h, 12);
+        overlayCtx.roundRect(x, y, w, h, 12);
         overlayCtx.fill();
         overlayCtx.stroke();
         overlayCtx.restore();
@@ -754,7 +783,73 @@
 
     setTimeout(() => {
       overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
-    }, 12000);
+    }, 14000);
+  }
+
+  // Audio- & Sprachsteuerung des KI-Tutors (OpenAI TTS 'nova' & Barge-In)
+  function stopTutorSpeech() {
+    if (currentTutorAudio) {
+      try {
+        currentTutorAudio.pause();
+        currentTutorAudio.currentTime = 0;
+      } catch (_) {}
+      currentTutorAudio = null;
+    }
+    if (tutorBubble) {
+      tutorBubble.style.display = "none";
+    }
+  }
+
+  function playTutorSpeech(audioBase64, speechText) {
+    stopTutorSpeech();
+
+    // Sprechblase auf der Tafel einblenden
+    if (tutorBubble && speechText) {
+      if (tutorSpeechText) tutorSpeechText.textContent = speechText;
+      tutorBubble.style.display = "flex";
+    }
+
+    if (!tutorAudioEnabled || !audioBase64) return;
+
+    try {
+      const audioUrl = `data:audio/mp3;base64,${audioBase64}`;
+      currentTutorAudio = new Audio(audioUrl);
+
+      currentTutorAudio.onended = () => {
+        setTimeout(() => {
+          if (tutorBubble) tutorBubble.style.display = "none";
+        }, 5000);
+      };
+
+      currentTutorAudio.onerror = (err) => {
+        console.warn("Audio-Wiedergabefehler:", err);
+      };
+
+      currentTutorAudio.play().catch((err) => {
+        console.warn("Autoplay im Browser blockiert:", err);
+      });
+    } catch (err) {
+      console.warn("Fehler bei Audio-Initialisierung:", err);
+    }
+  }
+
+  function captureBoardSnapshot() {
+    const offscreen = document.createElement("canvas");
+    offscreen.width = inkCanvas.width;
+    offscreen.height = inkCanvas.height;
+    const octx = offscreen.getContext("2d");
+
+    // Passenden Kontrasthintergrund rendern
+    const isChalk = viewport.classList.contains("pattern-chalkboard") ||
+      (!viewport.classList.contains("pattern-white") && !viewport.classList.contains("pattern-lines") && !viewport.classList.contains("pattern-grid"));
+
+    octx.fillStyle = isChalk ? "#1e293b" : "#ffffff";
+    octx.fillRect(0, 0, offscreen.width, offscreen.height);
+
+    // Striche der Schülerin darauf übertragen
+    octx.drawImage(inkCanvas, 0, 0);
+
+    return offscreen.toDataURL("image/jpeg", 0.85);
   }
 
   // 9. Backend-Persistenz (Auto-Save OHNE teures toDataURL)
@@ -1048,21 +1143,75 @@
     });
   }
 
+  // Audio Toggle Button (Lautsprecher)
+  if (btnAudioToggle) {
+    btnAudioToggle.addEventListener("click", () => {
+      tutorAudioEnabled = !tutorAudioEnabled;
+      btnAudioToggle.classList.toggle("active", tutorAudioEnabled);
+      btnAudioToggle.classList.toggle("muted", !tutorAudioEnabled);
+      btnAudioToggle.textContent = tutorAudioEnabled ? "🔊" : "🔇";
+      btnAudioToggle.title = tutorAudioEnabled ? "Sprachausgabe (TTS) aktiv" : "Sprachausgabe stummgeschaltet";
+      if (!tutorAudioEnabled) {
+        stopTutorSpeech();
+      }
+    });
+  }
+
+  // Stop Button in der Sprechblase
+  if (btnStopSpeech) {
+    btnStopSpeech.addEventListener("click", () => {
+      stopTutorSpeech();
+    });
+  }
+
+  // KI-Tutor fragen (Snapshot an Vision + OpenAI TTS Sprachausgabe)
   if (btnRequestHint) {
     btnRequestHint.addEventListener("click", async () => {
       if (!currentSession) return;
+
+      if (strokes.length === 0) {
+        alert("Schreibe oder skizziere zuerst eine Rechnung oder Notiz auf die Tafel!");
+        return;
+      }
+
+      const origIcon = hintIcon ? hintIcon.textContent : "🦉";
+      const origText = hintLabel ? hintLabel.textContent : "Tutor fragen";
+
+      if (hintIcon) hintIcon.textContent = "⏳";
+      if (hintLabel) hintLabel.textContent = "Luna schaut...";
+      btnRequestHint.disabled = true;
+
       try {
-        const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/mock-tutor-hint`, {
-          method: "POST"
+        const snapshot = captureBoardSnapshot();
+        const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/ask-tutor`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image_base64: snapshot,
+            audio_enabled: tutorAudioEnabled
+          })
         });
+
         if (res.ok) {
           const data = await res.json();
-          if (data.actions) {
+          if (data.actions && data.actions.length > 0) {
             drawOverlayActions(data.actions);
           }
+          if (data.tutor_speech) {
+            playTutorSpeech(data.audio_base64, data.tutor_speech);
+          }
+        } else {
+          const err = await res.json().catch(() => ({}));
+          console.error("Fehler beim Tutor-Aufruf:", err);
+          alert(`Hinweis: ${err.detail || "Tutor konnte nicht antworten."}`);
         }
       } catch (e) {
         console.error("Fehler beim Abrufen des KI-Hinweises:", e);
+        alert("Netzwerkfehler beim Abrufen des Hinweises.");
+      } finally {
+        if (hintIcon) hintIcon.textContent = origIcon;
+        if (hintLabel) hintLabel.textContent = origText;
+        btnRequestHint.disabled = false;
       }
     });
   }

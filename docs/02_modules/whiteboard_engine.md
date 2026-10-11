@@ -114,13 +114,18 @@ GoThea trennt die Anzeigeschichten streng nach Z-Index, um komfortables Schreibe
 
 ---
 
-## 6. Persistenz & WebSocket-Schnittstelle
-
-* **Non-Blocking Auto-Save:**
-  * Bei Beendigung eines Strichs wird ein entprellter Speichervorgang (`scheduleAutoSave`, 1200ms Debounce) angestoßen.
-  * Sendet das kompakte JSON der Vektorstriche an `PUT /api/v1/whiteboard/sessions/{id}/state`.
-  * Kein teures synchrones `toDataURL()` während des Schreibens.
-* **WebSocket (`/ws/tutor/{session_id}`):**
-  * Bidirektionaler Kanal für Heartbeats (`ping`/`pong`).
-  * Barge-In Erkennung: Unterbricht KI-Sprachausgaben sofort, wenn der Schüler den Stift ansetzt (`pencil_touch`).
-  * Live-Empfang didaktischer Hinweise (`board_actions`).
+## 6. Persistenz & Sokratische Tutor-Schnittstelle
+ 
+ * **Non-Blocking Auto-Save:**
+   * Bei Beendigung eines Strichs wird ein entprellter Speichervorgang (`scheduleAutoSave`, 1200ms Debounce) angestoßen.
+   * Sendet das kompakte JSON der Vektorstriche an `PUT /api/v1/whiteboard/sessions/{id}/state`.
+   * Kein teures synchrones `toDataURL()` während des Schreibens.
+ * **KI-Tutor Vision- & Sprach-Feedback (`POST /ask-tutor`):**
+   * Button `🦉 Tutor fragen` in der Toolbar rendert einen kontrastreichen Snapshot (mit Schiefertafel- oder Papier-Hintergrund).
+   * Backend analysiert das Tafelbild via OpenAI Vision (`gpt-4o-mini`) und synthetisiert sogleich gesprochene Audio via OpenAI TTS (`tts-1`, Stimme `nova`).
+   * Visuelle Rückmeldung über pulsierende Sprechblase (`#wb-tutor-bubble`) mit Avatar und Stopp-Option.
+ * **Zero-Latency Barge-In:**
+   * Berührt die Stiftspitze das Glas (`handlePointerDown`), verstummt die Sprachausgabe augenblicklich (`stopTutorSpeech()`), um den Schüler im Denk- und Schreibfluss nicht zu stören.
+ * **WebSocket (`/ws/tutor/{session_id}`):**
+   * Bidirektionaler Kanal für Heartbeats (`ping`/`pong`).
+   * Live-Empfang didaktischer Hinweise und Streaming-Aktionen.

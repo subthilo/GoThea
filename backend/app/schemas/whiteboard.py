@@ -54,3 +54,14 @@ class OverlayAction(BaseModel):
     color: Optional[str] = "#f59e0b"
     latex: Optional[str] = None
     text: Optional[str] = None
+
+class TutorAskRequest(BaseModel):
+    image_base64: str = Field(description="Base64-kodiertes Bild des aktuellen Whiteboards")
+    student_question: Optional[str] = Field(default=None, description="Optionale Frage der Schülerin")
+    audio_enabled: bool = Field(default=True, description="Ob MP3-Sprachausgabe erzeugt werden soll")
+
+class TutorAskResponse(BaseModel):
+    status: str = "success"
+    tutor_speech: str
+    audio_base64: Optional[str] = None
+    actions: List[Dict[str, Any]] = []

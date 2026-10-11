@@ -13,7 +13,10 @@ from backend.app.schemas.whiteboard import (
     TutorSessionUpdateState,
     TutorSessionClose,
     TutorSessionResponse,
+    TutorAskRequest,
+    TutorAskResponse,
 )
+from backend.app.services.tutor_service import analyze_whiteboard_and_speak
 
 router = APIRouter(prefix="/api/v1/whiteboard", tags=["Whiteboard"])
 
@@ -143,6 +146,28 @@ def generate_mock_tutor_hint(session_id: str, db: Session = Depends(get_db)):
             }
         ]
     }
+
+@router.post("/sessions/{session_id}/ask-tutor", response_model=TutorAskResponse)
+def ask_tutor_endpoint(
+    session_id: str,
+    payload: TutorAskRequest,
+    db: Session = Depends(get_db)
+):
+    session = db.query(TutorSession).filter(TutorSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Sitzung '{session_id}' nicht gefunden.")
+
+    subject_name = session.subject.name if session.subject else "Mathematik"
+
+    res = analyze_whiteboard_and_speak(
+        image_base64=payload.image_base64,
+        subject_name=subject_name,
+        grade_level=session.grade_level or 7,
+        student_question=payload.student_question,
+        audio_enabled=payload.audio_enabled
+    )
+
+    return TutorAskResponse(**res)
 
 
 # ==========================================

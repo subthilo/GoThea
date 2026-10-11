@@ -132,3 +132,23 @@ def test_whiteboard_websocket_communication(client):
         hint = ws.receive_json()
         assert hint["type"] == "board_actions"
         assert len(hint["actions"]) > 0
+
+def test_ask_tutor_vision_and_speech_endpoint(client):
+    res = client.post("/api/v1/whiteboard/sessions", json={"subject_id": "sub_math"})
+    session_id = res.json()["id"]
+
+    dummy_b64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="
+
+    res = client.post(
+        f"/api/v1/whiteboard/sessions/{session_id}/ask-tutor",
+        json={
+            "image_base64": dummy_b64,
+            "student_question": "Stimmt meine Rechnung?",
+            "audio_enabled": True
+        }
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert "tutor_speech" in data
+    assert len(data["tutor_speech"]) > 0
