@@ -67,3 +67,14 @@ class TutorAskResponse(BaseModel):
     tutor_speech: str
     audio_base64: Optional[str] = None
     actions: List[Dict[str, Any]] = []
+
+class TutorMessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    session_id: str
+    role: str
+    content: str
+    board_action_json: Optional[str] = None
+    created_at: datetime
+

@@ -152,3 +152,14 @@ def test_ask_tutor_vision_and_speech_endpoint(client):
     assert data["status"] == "success"
     assert "tutor_speech" in data
     assert len(data["tutor_speech"]) > 0
+
+    # Session-Gedächtnis prüfen
+    msg_res = client.get(f"/api/v1/whiteboard/sessions/{session_id}/messages")
+    assert msg_res.status_code == 200
+    msgs = msg_res.json()
+    assert len(msgs) == 2
+    assert msgs[0]["role"] == "student"
+    assert msgs[0]["content"] == "Stimmt meine Rechnung?"
+    assert msgs[1]["role"] == "tutor"
+    assert msgs[1]["content"] == data["tutor_speech"]
+

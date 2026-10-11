@@ -91,6 +91,7 @@
   let activeTouches = new Map(); // pointerId -> { x, y }
   let isTwoFingerPanning = false;
   let scrollbarFadeTimer = null;
+  let lastCaptureBounds = null;
 
   // 1. Canvas Resize & HiDPI Alignment
   function resizeCanvases() {
@@ -382,37 +383,41 @@
     }
   }
 
-  function drawStoredStroke(stroke) {
+  function renderStrokeToContext(ctx, stroke) {
     if (!stroke.points || stroke.points.length === 0) return;
 
-    inkCtx.save();
-    applyToolStyle(inkCtx, stroke.tool, stroke.color, stroke.width);
+    ctx.save();
+    applyToolStyle(ctx, stroke.tool, stroke.color, stroke.width);
 
     const pts = stroke.points;
     if (pts.length === 1) {
-      inkCtx.beginPath();
-      inkCtx.arc(pts[0].x, pts[0].y, Math.max(1, stroke.width / 2), 0, Math.PI * 2);
-      inkCtx.fillStyle = (stroke.tool === "pixel_eraser" || stroke.tool === "eraser") ? "#000" : stroke.color;
-      inkCtx.fill();
+      ctx.beginPath();
+      ctx.arc(pts[0].x, pts[0].y, Math.max(1, stroke.width / 2), 0, Math.PI * 2);
+      ctx.fillStyle = (stroke.tool === "pixel_eraser" || stroke.tool === "eraser") ? "#000" : stroke.color;
+      ctx.fill();
     } else if (pts.length === 2) {
-      inkCtx.beginPath();
-      inkCtx.moveTo(pts[0].x, pts[0].y);
-      inkCtx.lineTo(pts[1].x, pts[1].y);
-      inkCtx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      ctx.lineTo(pts[1].x, pts[1].y);
+      ctx.stroke();
     } else {
-      inkCtx.beginPath();
-      inkCtx.moveTo(pts[0].x, pts[0].y);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
       for (let j = 1; j < pts.length - 1; j++) {
         const midX = (pts[j].x + pts[j + 1].x) * 0.5;
         const midY = (pts[j].y + pts[j + 1].y) * 0.5;
-        inkCtx.quadraticCurveTo(pts[j].x, pts[j].y, midX, midY);
+        ctx.quadraticCurveTo(pts[j].x, pts[j].y, midX, midY);
       }
       const last = pts[pts.length - 1];
-      inkCtx.lineTo(last.x, last.y);
-      inkCtx.stroke();
+      ctx.lineTo(last.x, last.y);
+      ctx.stroke();
     }
 
-    inkCtx.restore();
+    ctx.restore();
+  }
+
+  function drawStoredStroke(stroke) {
+    renderStrokeToContext(inkCtx, stroke);
   }
 
   // 6. Ultra-Fluid Live Drawing Loop
@@ -768,10 +773,17 @@
         let h = item.coords.h || 60;
 
         if (item.coords.x_pct !== undefined) {
-          x = (item.coords.x_pct / 100) * boardW;
-          y = (item.coords.y_pct / 100) * boardH;
-          w = (item.coords.w_pct / 100) * boardW;
-          h = (item.coords.h_pct / 100) * boardH;
+          if (lastCaptureBounds) {
+            x = lastCaptureBounds.minX + (item.coords.x_pct / 100) * lastCaptureBounds.width;
+            y = lastCaptureBounds.minY + (item.coords.y_pct / 100) * lastCaptureBounds.height;
+            w = (item.coords.w_pct / 100) * lastCaptureBounds.width;
+            h = (item.coords.h_pct / 100) * lastCaptureBounds.height;
+          } else {
+            x = (item.coords.x_pct / 100) * boardW;
+            y = (item.coords.y_pct / 100) * boardH;
+            w = (item.coords.w_pct / 100) * boardW;
+            h = (item.coords.h_pct / 100) * boardH;
+          }
         }
 
         overlayCtx.save();
@@ -857,35 +869,116 @@
   }
 
   function captureBoardSnapshot() {
-    const offscreen = document.createElement("canvas");
-    offscreen.width = inkCanvas.width;
-    offscreen.height = inkCanvas.height;
-    const octx = offscreen.getContext("2d");
-
-    // Passenden Kontrasthintergrund rendern
     const isChalk = viewport.classList.contains("pattern-chalkboard") ||
       (!viewport.classList.contains("pattern-white") && !viewport.classList.contains("pattern-lines") && !viewport.classList.contains("pattern-grid"));
 
-    octx.fillStyle = isChalk ? "#1e293b" : "#ffffff";
-    octx.fillRect(0, 0, offscreen.width, offscreen.height);
+    const viewW = viewport.clientWidth || 1024;
+    const viewH = viewport.clientHeight || 768;
 
-    // Falls Vorlage sichtbar ist, Dokumentenseite zuerst einzeichnen
+    // Aktueller Bildschirmausschnitt in Weltkoordinaten
+    const viewLeft = -panX / scale;
+    const viewTop = -panY / scale;
+    const viewRight = (-panX + viewW) / scale;
+    const viewBottom = (-panY + viewH) / scale;
+
+    // Gesamten Tafelbereich berechnen (von y=0 ganz oben bis ganz unten)
+    let minWorldX = 0;
+    let minWorldY = 0; // Immer ganz oben anfangen!
+    let maxWorldX = Math.max(viewW, viewRight);
+    let maxWorldY = Math.max(viewH, viewBottom);
+
+    // Alle Striche der Tafel einbeziehen
+    for (let i = 0; i < strokes.length; i++) {
+      const s = strokes[i];
+      if (s.bbox) {
+        if (s.bbox.minX < minWorldX) minWorldX = s.bbox.minX;
+        if (s.bbox.maxX > maxWorldX) maxWorldX = s.bbox.maxX;
+        if (s.bbox.maxY > maxWorldY) maxWorldY = s.bbox.maxY;
+      }
+    }
+
+    // Unterlage (Arbeitsblatt/Dokument) einbeziehen
+    if (isUnderlayVisible && docUnderlayImg && docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
+      const uRight = (docUnderlayImg.offsetLeft || 0) + (docUnderlayImg.offsetWidth || 0);
+      const uBottom = (docUnderlayImg.offsetTop || 0) + (docUnderlayImg.offsetHeight || 0);
+      if (uRight > maxWorldX) maxWorldX = uRight;
+      if (uBottom > maxWorldY) maxWorldY = uBottom;
+    }
+
+    minWorldX = Math.min(0, minWorldX - 20);
+    maxWorldX += 40;
+    maxWorldY += 60;
+
+    const captureWidth = Math.max(800, maxWorldX - minWorldX);
+    const captureHeight = Math.max(600, maxWorldY - minWorldY);
+
+    lastCaptureBounds = {
+      minX: minWorldX,
+      minY: minWorldY,
+      width: captureWidth,
+      height: captureHeight
+    };
+
+    // Offscreen Canvas mit optimaler Vision-Auflösung erstellen
+    const offscreen = document.createElement("canvas");
+    let targetW = captureWidth;
+    let targetH = captureHeight;
+    const maxDim = 1920;
+    if (Math.max(targetW, targetH) > maxDim) {
+      const s = maxDim / Math.max(targetW, targetH);
+      targetW = Math.round(targetW * s);
+      targetH = Math.round(targetH * s);
+    } else if (targetW < 1200) {
+      const s = Math.min(1.5, 1200 / targetW);
+      targetW = Math.round(targetW * s);
+      targetH = Math.round(targetH * s);
+    }
+    offscreen.width = targetW;
+    offscreen.height = targetH;
+
+    const octx = offscreen.getContext("2d");
+
+    // Skalierung und Nullpunktverschiebung
+    const sX = targetW / captureWidth;
+    const sY = targetH / captureHeight;
+    octx.scale(sX, sY);
+    octx.translate(-minWorldX, -minWorldY);
+
+    // 1. Hintergrund
+    octx.fillStyle = isChalk ? "#1e293b" : "#ffffff";
+    octx.fillRect(minWorldX, minWorldY, captureWidth, captureHeight);
+
+    // 2. Dokumenten-Vorlage einzeichnen falls aktiv
     if (isUnderlayVisible && docUnderlayImg && docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
       try {
-        const uRect = docUnderlayImg.getBoundingClientRect();
-        const vRect = viewport.getBoundingClientRect();
-        const dx = (uRect.left - vRect.left) * dpr;
-        const dy = (uRect.top - vRect.top) * dpr;
-        const dw = uRect.width * dpr;
-        const dh = uRect.height * dpr;
+        const dx = docUnderlayImg.offsetLeft || 0;
+        const dy = docUnderlayImg.offsetTop || 0;
+        const dw = docUnderlayImg.offsetWidth || docUnderlayImg.naturalWidth;
+        const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
         octx.drawImage(docUnderlayImg, dx, dy, dw, dh);
       } catch (err) {
         console.warn("Fehler beim Zeichnen der Vorlage in Snapshot:", err);
       }
     }
 
-    // Striche der Schülerin darauf übertragen
-    octx.drawImage(inkCanvas, 0, 0);
+    // 3. Alle Striche der Schülerin in voller Höhe einzeichnen
+    for (let i = 0; i < strokes.length; i++) {
+      renderStrokeToContext(octx, strokes[i]);
+    }
+
+    // 4. Feiner Indikator für Theas aktuellen Bildschirmausschnitt
+    const isScrolledOrZoomed = Math.abs(panY) > 20 || Math.abs(panX) > 20 || scale > 1.05 || captureHeight > viewH * 1.25;
+    if (isScrolledOrZoomed) {
+      octx.save();
+      octx.strokeStyle = isChalk ? "rgba(251, 191, 36, 0.65)" : "rgba(37, 99, 235, 0.65)";
+      octx.lineWidth = 2.5;
+      octx.setLineDash([8, 6]);
+      octx.strokeRect(viewLeft, viewTop, viewRight - viewLeft, viewBottom - viewTop);
+      octx.fillStyle = isChalk ? "rgba(251, 191, 36, 0.85)" : "rgba(37, 99, 235, 0.85)";
+      octx.font = "14px -apple-system, sans-serif";
+      octx.fillText("👀 Theas aktueller Bildschirmausschnitt", viewLeft + 10, Math.max(viewTop + 18, 22));
+      octx.restore();
+    }
 
     return offscreen.toDataURL("image/jpeg", 0.85);
   }

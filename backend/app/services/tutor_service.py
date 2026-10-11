@@ -31,6 +31,15 @@ DEINE PÄDAGOGISCHEN GRUNDREGELN:
    - Du hast VOLLEN Zugriff auf Theas Schulunterlagen, Arbeitsblätter und Lehrbücher in diesem Fach!
    - Wenn Thea an einer konkreten Unterlage arbeitet (oder eine Aufgabe daraus auf der Tafel rechnet), beziehe dich gezielt auf den Aufgabentext oder die Fragestellung aus ihren Unterlagen (z. B. "Aufgabe 2 auf deinem Arbeitsblatt...", "Schau dir die Tabelle für proportionale Zuordnungen an").
    - Nutze dieselben Rechenverfahren und Begriffe wie in ihren Schulbüchern.
+6. GEDÄCHTNIS & DIALOG-KONTINUITÄT (SEHR WICHTIG!):
+   - Du hast ein aktives Gedächtnis für das, was ihr in dieser Sitzung besprochen habt.
+   - Wenn Thea einen zuvor besprochenen Fehler korrigiert hat, erkenne das sofort an und lobe sie dafür ausdrücklich (z. B. "Klasse Thea, du hast das Vorzeichen korrigiert! Jetzt stimmt der Term!").
+   - Wenn Thea die Tafel nach einem besprochenen Fehler gelöscht hat, beziehe dich nicht mehr auf den alten Fehler, sondern ermutige sie für einen Neustart.
+   - Wiederhole dich NIEMALS mit denselben Sätzen oder Floskeln aus vorherigen Runden! Baue stets auf dem bisher Gesagten auf.
+7. VOLLSTÄNDIGER TAFEL-ÜBERBLICK:
+   - Das übermittelte Bild zeigt die GESAMTE Tafel von ganz oben bis nach unten (auch Teile, wo man erst hinscrollen muss).
+   - Oben können frühere Rechenschritte oder die Aufgabenstellung stehen, weiter unten Theas aktuelle Rechnung.
+   - Ein zart gestrichelter Rahmen ("Aktueller Bildschirmausschnitt") zeigt dir, worauf Thea gerade am iPad blickt.
 
 Antworte IMMER im gültigen JSON-Format:
 {
@@ -53,11 +62,13 @@ def analyze_whiteboard_and_speak(
     audio_enabled: bool = True,
     material_context: Optional[Dict[str, Any]] = None,
     available_materials: Optional[list] = None,
-    curriculum_topics: Optional[list] = None
+    curriculum_topics: Optional[list] = None,
+    dialogue_history: Optional[list] = None
 ) -> Dict[str, Any]:
     """
     Analysiert das Tafelbild mit OpenAI Vision (sokratischer Tutor) und
     generiert eine Sprachausgabe (MP3 via OpenAI TTS 'nova'), unter Einbezug
+    von Theas echten Unterrichtsmaterialien und dem bisherigen Gesprächsgedächtnis.
     von Theas echten Unterrichtsmaterialien.
     """
     # 1. Base64 bereinigen
@@ -93,6 +104,15 @@ def analyze_whiteboard_and_speak(
             elif available_materials:
                 mat_titles = [f"{m['title']} ({m['kind']})" for m in available_materials[:8]]
                 user_prompt += f"\nVorhandene Unterlagen der Schülerin in diesem Fach: {'; '.join(mat_titles)}\n"
+
+            if dialogue_history:
+                user_prompt += "\nBISHERIGER GESPRÄCHSVERLAUF IN DIESER SITZUNG (DEIN GEDÄCHTNIS):\n"
+                for turn in dialogue_history[-8:]:
+                    speaker = "Thea" if turn.get("role") in ("student", "user") else "Luna (Du)"
+                    content = (turn.get("content") or "").strip()
+                    if content:
+                        user_prompt += f"- {speaker}: \"{content}\"\n"
+                user_prompt += "(Beziehe dich auf diese Vorgeschichte. Wenn Thea einen zuvor erwähnten Fehler korrigiert hat, lobe sie dafür! Wenn sie alles gelöscht hat, beginne neu und wiederhole nicht alte Hinweise.)\n"
 
             if student_question:
                 user_prompt += f"\nFrage der Schülerin: {student_question}\n"

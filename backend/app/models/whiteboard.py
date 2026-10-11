@@ -23,8 +23,26 @@ class TutorSession(Base):
     subject = relationship("Subject")
     topic = relationship("Topic")
     test = relationship("Test")
+    messages = relationship("TutorMessage", back_populates="session", cascade="all, delete-orphan", order_by="TutorMessage.created_at")
 
     __table_args__ = (
         Index("idx_tutor_sessions_subject", "subject_id"),
         Index("idx_tutor_sessions_start", "start_time"),
+    )
+
+class TutorMessage(Base):
+    __tablename__ = "tutor_messages"
+
+    id = Column(String, primary_key=True, default=lambda: f"msg_{uuid.uuid4().hex[:8]}")
+    session_id = Column(String, ForeignKey("tutor_sessions.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String, nullable=False)  # 'student' oder 'tutor'
+    content = Column(Text, nullable=False)
+    board_action_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("TutorSession", back_populates="messages")
+
+    __table_args__ = (
+        Index("idx_tutor_messages_session", "session_id"),
+        Index("idx_tutor_messages_created", "created_at"),
     )

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from backend.app.database import get_db
-from backend.app.models.whiteboard import TutorSession
+from backend.app.models.whiteboard import TutorSession, TutorMessage
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.schemas.whiteboard import (
     TutorSessionCreate,
@@ -15,6 +15,7 @@ from backend.app.schemas.whiteboard import (
     TutorSessionResponse,
     TutorAskRequest,
     TutorAskResponse,
+    TutorMessageResponse,
 )
 from backend.app.services.tutor_service import analyze_whiteboard_and_speak
 
@@ -194,6 +195,16 @@ def ask_tutor_endpoint(
         topics = db.query(Topic).filter(Topic.subject_id == session.subject_id).all()
         curriculum_topics = [t.name for t in topics]
 
+    # 4. Bisheriges Gesprächsgedächtnis (Session Memory) laden
+    history_records = db.query(TutorMessage).filter(
+        TutorMessage.session_id == session_id
+    ).order_by(TutorMessage.created_at.asc()).all()
+
+    dialogue_history = [
+        {"role": m.role, "content": m.content}
+        for m in history_records[-8:]
+    ]
+
     res = analyze_whiteboard_and_speak(
         image_base64=payload.image_base64,
         subject_name=subject_name,
@@ -202,10 +213,40 @@ def ask_tutor_endpoint(
         audio_enabled=payload.audio_enabled,
         material_context=material_context,
         available_materials=available_materials,
-        curriculum_topics=curriculum_topics
+        curriculum_topics=curriculum_topics,
+        dialogue_history=dialogue_history
     )
 
+    # 5. Gesprächsverlauf persistieren
+    student_text = payload.student_question.strip() if payload.student_question else "Thea zeigt ihr Tafelbild und bittet um Feedback."
+    db.add(TutorMessage(
+        session_id=session_id,
+        role="student",
+        content=student_text
+    ))
+
+    tutor_text = res.get("tutor_speech", "")
+    actions_json = json.dumps(res.get("actions", [])) if res.get("actions") else None
+    db.add(TutorMessage(
+        session_id=session_id,
+        role="tutor",
+        content=tutor_text,
+        board_action_json=actions_json
+    ))
+    db.commit()
+
     return TutorAskResponse(**res)
+
+
+@router.get("/sessions/{session_id}/messages", response_model=List[TutorMessageResponse])
+def get_session_messages(session_id: str, db: Session = Depends(get_db)):
+    session = db.query(TutorSession).filter(TutorSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Sitzung '{session_id}' nicht gefunden.")
+    messages = db.query(TutorMessage).filter(
+        TutorMessage.session_id == session_id
+    ).order_by(TutorMessage.created_at.asc()).all()
+    return messages
 
 
 # ==========================================
