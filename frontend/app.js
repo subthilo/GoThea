@@ -2101,6 +2101,9 @@ function openChapter(ch) {
 }
 
 function closeReaderToCatalog() {
+  if (bookSaveTimer) {
+    saveCurrentBookAnnotations();
+  }
   const catalogView = document.getElementById("book-catalog-view");
   const readerView = document.getElementById("book-reader-view");
   if (readerView) readerView.style.display = "none";
@@ -2412,12 +2415,11 @@ let currentBookColor = "#2563eb";
 let bookPenOnlyMode = true; // STANDARD: TRUE! Nur Apple Pencil (oder Maus) zeichnet, Handballenschutz aktiv
 let bookSaveTimer = null;
 let isBookDrawing = false;
-let isBookTouchScrolling = false;
-let bookTouchScrollStartY = 0;
-let bookTouchScrollStartTop = 0;
 let activeBookPointerId = null;
 let bookActiveTouches = new Map();
 let bookAnnotationLoadedKey = null;
+let currentBookAnnotationMaterialId = null;
+let currentBookAnnotationPage = null;
 
 function initBookInking() {
   bookAnnotationCanvas = document.getElementById("book-annotation-canvas");
@@ -2490,10 +2492,56 @@ function initBookInking() {
   bookAnnotationCanvas.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false, capture: true });
   bookAnnotationCanvas.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false, capture: true });
 
-  // Auf Canvas touchstart IMMER e.preventDefault(), um iOS Safari Edit-Menu / 'Teilen...' Callout zu blockieren!
-  bookAnnotationCanvas.addEventListener("touchstart", (e) => {
+  // 1:1 Handballenschutz wie Whiteboard: Nur genau 2 Finger scrollen, 1 Finger/Handballen tut NICHTS!
+  let twoFingerTouchStartY = null;
+  let twoFingerScrollStartTop = 0;
+
+  const handleTwoFingerTouchStart = (e) => {
     e.preventDefault();
-  }, { passive: false });
+    if (e.touches.length === 2) {
+      if (isBookDrawing) {
+        cancelCurrentBookStroke();
+      }
+      const wrap = document.getElementById("book-page-canvas-wrapper");
+      if (wrap) {
+        twoFingerTouchStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        twoFingerScrollStartTop = wrap.scrollTop;
+      }
+    } else {
+      twoFingerTouchStartY = null;
+    }
+  };
+
+  const handleTwoFingerTouchMove = (e) => {
+    e.preventDefault();
+    if (e.touches.length === 2 && twoFingerTouchStartY !== null) {
+      const wrap = document.getElementById("book-page-canvas-wrapper");
+      if (wrap) {
+        const currentMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const dy = currentMidY - twoFingerTouchStartY;
+        wrap.scrollTop = twoFingerScrollStartTop - dy;
+      }
+    }
+  };
+
+  const handleTwoFingerTouchEnd = (e) => {
+    e.preventDefault();
+    if (e.touches.length < 2) {
+      twoFingerTouchStartY = null;
+    }
+  };
+
+  bookAnnotationCanvas.addEventListener("touchstart", handleTwoFingerTouchStart, { passive: false, capture: true });
+  bookAnnotationCanvas.addEventListener("touchmove", handleTwoFingerTouchMove, { passive: false, capture: true });
+  bookAnnotationCanvas.addEventListener("touchend", handleTwoFingerTouchEnd, { passive: false, capture: true });
+  bookAnnotationCanvas.addEventListener("touchcancel", handleTwoFingerTouchEnd, { passive: false, capture: true });
+
+  if (wrapper) {
+    wrapper.addEventListener("touchstart", handleTwoFingerTouchStart, { passive: false, capture: true });
+    wrapper.addEventListener("touchmove", handleTwoFingerTouchMove, { passive: false, capture: true });
+    wrapper.addEventListener("touchend", handleTwoFingerTouchEnd, { passive: false, capture: true });
+    wrapper.addEventListener("touchcancel", handleTwoFingerTouchEnd, { passive: false, capture: true });
+  }
 
   // Pointer Events auf Canvas für Apple Pencil & Touch
   bookAnnotationCanvas.addEventListener("pointerdown", onBookPointerDown, { passive: false });
@@ -2511,20 +2559,9 @@ function onBookPointerDown(e) {
   if (!bookAnnotationCanvas) return;
   e.preventDefault();
 
-  // 1. PALM REJECTION: Wenn 'Nur Stift' aktiv ist und ein Finger/Handballen (touch) berührt:
+  // 1. PALM REJECTION: Wenn 'Nur Stift' aktiv ist und ein Touch (Finger / Handballen) berührt:
   if (bookPenOnlyMode && e.pointerType === "touch") {
-    // Finger darf NICHT zeichnen!
-    // Stattdessen vertikales Scrollen durch Fingerberührung ermöglichen
-    const wrapper = document.getElementById("book-page-canvas-wrapper");
-    if (wrapper) {
-      isBookTouchScrolling = true;
-      activeBookPointerId = e.pointerId;
-      bookTouchScrollStartY = e.clientY;
-      bookTouchScrollStartTop = wrapper.scrollTop;
-      try {
-        bookAnnotationCanvas.setPointerCapture(e.pointerId);
-      } catch (err) {}
-    }
+    // Handballenschutz: Berührung mit Finger oder Handballen wird ignoriert, KEIN Scrollen & KEIN Malen!
     return;
   }
 
@@ -2584,32 +2621,7 @@ function onBookPointerDown(e) {
 }
 
 function onBookPointerMove(e) {
-  // Finger-Scroll wenn Nur-Stift-Modus aktiv ist:
-  if (isBookTouchScrolling && e.pointerId === activeBookPointerId) {
-    e.preventDefault();
-    const wrapper = document.getElementById("book-page-canvas-wrapper");
-    if (wrapper) {
-      const dy = e.clientY - bookTouchScrollStartY;
-      wrapper.scrollTop = bookTouchScrollStartTop - dy;
-    }
-    return;
-  }
-
-  if (e.pointerType === "touch" && bookActiveTouches.has(e.pointerId)) {
-    const prev = bookActiveTouches.get(e.pointerId);
-    bookActiveTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    if (bookActiveTouches.size >= 2) {
-      // 2 Finger = Vertikales Scrollen durch die Seite
-      const wrapper = document.getElementById("book-page-canvas-wrapper");
-      if (wrapper && prev) {
-        const dy = e.clientY - prev.y;
-        wrapper.scrollTop -= dy;
-      }
-      return;
-    }
-  }
-
+  if (bookPenOnlyMode && e.pointerType === "touch") return;
   if (!isBookDrawing || e.pointerId !== activeBookPointerId) return;
   e.preventDefault();
 
@@ -2640,20 +2652,10 @@ function onBookPointerMove(e) {
 }
 
 function onBookPointerUp(e) {
-  if (isBookTouchScrolling && e.pointerId === activeBookPointerId) {
-    isBookTouchScrolling = false;
-    activeBookPointerId = null;
-    try {
-      if (bookAnnotationCanvas.hasPointerCapture(e.pointerId)) {
-        bookAnnotationCanvas.releasePointerCapture(e.pointerId);
-      }
-    } catch (err) {}
-    return;
-  }
-
   if (e.pointerType === "touch") {
     bookActiveTouches.delete(e.pointerId);
   }
+  if (bookPenOnlyMode && e.pointerType === "touch") return;
 
   if (isBookDrawing && e.pointerId === activeBookPointerId) {
     isBookDrawing = false;
@@ -2669,10 +2671,6 @@ function onBookPointerUp(e) {
 }
 
 function onBookPointerLeave(e) {
-  if (isBookTouchScrolling && e.pointerId === activeBookPointerId) {
-    isBookTouchScrolling = false;
-    activeBookPointerId = null;
-  }
   if (e.pointerType === "touch") {
     bookActiveTouches.delete(e.pointerId);
   }
@@ -2859,17 +2857,18 @@ function scheduleBookAnnotationSave() {
 }
 
 async function saveCurrentBookAnnotations() {
-  if (!activeChapter) return;
+  const matId = currentBookAnnotationMaterialId || (activeChapter ? activeChapter.id : null);
+  const pageNum = currentBookAnnotationPage !== null ? currentBookAnnotationPage : currentChapterPage;
+  if (!matId || !pageNum) return;
+
   clearTimeout(bookSaveTimer);
   bookSaveTimer = null;
-
-  const matId = activeChapter.id;
-  const pageNum = currentChapterPage;
 
   try {
     const payload = {
       material_id: matId,
       page_number: pageNum,
+      strokes: bookAnnotationStrokes,
       strokes_json: JSON.stringify(bookAnnotationStrokes)
     };
     const res = await fetch(`/api/v1/materials/${matId}/pages/${pageNum}/annotations`, {
@@ -2881,6 +2880,8 @@ async function saveCurrentBookAnnotations() {
       setBookSaveStatus("saved");
     } else {
       setBookSaveStatus("error");
+      const errText = await res.text();
+      console.error("Fehler beim Speichern der Notizen:", res.status, errText);
     }
   } catch (err) {
     console.error("Fehler beim Speichern der Notizen:", err);
@@ -2891,6 +2892,10 @@ async function saveCurrentBookAnnotations() {
 async function loadBookAnnotations(materialId, pageNum) {
   clearTimeout(bookSaveTimer);
   bookSaveTimer = null;
+
+  currentBookAnnotationMaterialId = materialId;
+  currentBookAnnotationPage = pageNum;
+
   bookAnnotationStrokes = [];
   bookUndoStack = [];
   redrawBookAnnotations();
@@ -2903,16 +2908,22 @@ async function loadBookAnnotations(materialId, pageNum) {
     if (res.ok) {
       const data = await res.json();
       if (bookAnnotationLoadedKey === key) {
-        if (data.strokes_json) {
+        let loaded = [];
+        if (Array.isArray(data.strokes) && data.strokes.length > 0) {
+          loaded = data.strokes;
+        } else if (data.strokes_json) {
           try {
-            bookAnnotationStrokes = JSON.parse(data.strokes_json) || [];
+            loaded = JSON.parse(data.strokes_json) || [];
           } catch (e) {
-            bookAnnotationStrokes = [];
+            loaded = [];
           }
         }
+        bookAnnotationStrokes = loaded;
         redrawBookAnnotations();
         setBookSaveStatus("saved");
       }
+    } else {
+      console.warn("Laden der Annotationen HTTP Status:", res.status);
     }
   } catch (err) {
     console.error("Fehler beim Laden der Notizen:", err);

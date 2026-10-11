@@ -39,7 +39,8 @@ def get_page_annotations(
     return PageAnnotationResponse(
         material_id=material_id,
         page_number=page,
-        strokes=strokes
+        strokes=strokes,
+        strokes_json=ann.strokes_json
     )
 
 @router.put("/{material_id}/pages/{page}/annotations", response_model=PageAnnotationResponse)
@@ -56,7 +57,19 @@ def save_page_annotations(
     if not mat:
         raise HTTPException(status_code=404, detail="Material nicht gefunden.")
 
-    strokes_str = json.dumps(req.strokes)
+    if req.strokes is not None:
+        strokes_list = req.strokes
+        strokes_str = json.dumps(req.strokes)
+    elif req.strokes_json is not None:
+        strokes_str = req.strokes_json
+        try:
+            strokes_list = json.loads(req.strokes_json)
+        except Exception:
+            strokes_list = []
+    else:
+        strokes_list = []
+        strokes_str = "[]"
+
     ann_id = f"ann_{material_id}_p{page}"
 
     ann = db.query(PageAnnotation).filter_by(material_id=material_id, page_number=page).first()
@@ -78,7 +91,8 @@ def save_page_annotations(
     return PageAnnotationResponse(
         material_id=material_id,
         page_number=page,
-        strokes=req.strokes
+        strokes=strokes_list,
+        strokes_json=strokes_str
     )
 
 @router.delete("/{material_id}/pages/{page}/annotations")

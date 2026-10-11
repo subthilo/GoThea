@@ -3179,6 +3179,10 @@ body.wb-fullscreen-mode .wb-container {
   position: relative;
   width: 100%;
   box-sizing: border-box;
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
 }
 
 .book-page-loading {

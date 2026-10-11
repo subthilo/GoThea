@@ -54,6 +54,15 @@ def test_annotation_lifecycle(client):
     assert strokes_loaded[0]["tool"] == "pen"
     assert strokes_loaded[1]["tool"] == "highlighter"
 
+    # 4b. Speichern mit strokes_json
+    import json
+    put_res_json = client.put(
+        f"/api/v1/materials/{mat_id}/pages/1/annotations",
+        json={"strokes_json": json.dumps(sample_strokes)}
+    )
+    assert put_res_json.status_code == 200
+    assert len(put_res_json.json()["strokes"]) == 2
+
     # 5. Löschen
     del_res = client.delete(f"/api/v1/materials/{mat_id}/pages/1/annotations")
     assert del_res.status_code == 200
