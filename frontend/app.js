@@ -2561,70 +2561,6 @@ function initBookInking() {
   });
 }
 
-function drawBookLivePoint(screenX, screenY, pressure, tool, color, baseWidth) {
-  if (!bookAnnotationCanvas || !bookAnnotationCtx) return;
-  const dpr = window.devicePixelRatio || 1;
-  const ctx = bookAnnotationCtx;
-
-  ctx.save();
-  ctx.scale(dpr, dpr);
-
-  if (tool === "highlighter") {
-    ctx.globalAlpha = 0.38;
-    ctx.globalCompositeOperation = "multiply";
-    ctx.fillStyle = color || "#facc15";
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, (baseWidth || 22) / 2, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    ctx.globalAlpha = 1.0;
-    ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = color || "#2563eb";
-    const r = ((baseWidth || 3) * (0.4 + pressure * 1.2)) / 2;
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, Math.max(1, r), 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-function drawBookLiveSegment(p0, p1, tool, color, baseWidth) {
-  if (!bookAnnotationCanvas || !bookAnnotationCtx) return;
-  const dpr = window.devicePixelRatio || 1;
-  const ctx = bookAnnotationCtx;
-
-  ctx.save();
-  ctx.scale(dpr, dpr);
-
-  if (tool === "highlighter") {
-    ctx.globalAlpha = 0.38;
-    ctx.globalCompositeOperation = "multiply";
-    ctx.strokeStyle = color || "#facc15";
-    ctx.lineWidth = baseWidth || 22;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.stroke();
-  } else {
-    ctx.globalAlpha = 1.0;
-    ctx.globalCompositeOperation = "source-over";
-    ctx.strokeStyle = color || "#2563eb";
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    const avgP = (p0.p + p1.p) / 2;
-    ctx.lineWidth = Math.max(1, (baseWidth || 3) * (0.4 + avgP * 1.2));
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
 function onBookPointerDown(e) {
   if (!bookAnnotationCanvas) return;
   e.preventDefault();
@@ -2689,9 +2625,36 @@ function onBookPointerDown(e) {
   bookAnnotationStrokes.push(currentBookStroke);
   bookUndoStack.push({ type: "add", stroke: currentBookStroke });
 
-  // Sofortiger Startpunkt in ultra-flüssiger O(1) Zeichenoperation
+  // Styles EINMALIG für den gesamten Strich setzen (Zero Overhead beim Bewegen)
+  const ctx = bookAnnotationCtx;
+  if (ctx) {
+    if (currentBookTool === "highlighter") {
+      ctx.globalAlpha = 0.38;
+      ctx.globalCompositeOperation = "multiply";
+      ctx.strokeStyle = strokeColor;
+      ctx.fillStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+    } else {
+      ctx.globalAlpha = 1.0;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = strokeColor;
+      ctx.fillStyle = strokeColor;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      const initR = (strokeWidth * (0.4 + pressure * 1.2)) / 2;
+      ctx.lineWidth = Math.max(1, initR * 2);
+    }
+
+    // Sofortiger Startpunkt direkt im Displaybuffer
+    ctx.beginPath();
+    const initR = (strokeWidth * (0.4 + pressure * 1.2)) / 2;
+    ctx.arc(screenX, screenY, Math.max(0.5, initR), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   lastBookScreenPoint = { x: screenX, y: screenY, p: pressure };
-  drawBookLivePoint(screenX, screenY, pressure, currentBookTool, strokeColor, strokeWidth);
 }
 
 function onBookPointerMove(e) {
@@ -2720,6 +2683,8 @@ function onBookPointerMove(e) {
   }
 
   if (!currentBookStroke || !lastBookScreenPoint) return;
+  const ctx = bookAnnotationCtx;
+  if (!ctx) return;
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
@@ -2731,17 +2696,20 @@ function onBookPointerMove(e) {
 
     const dx = screenX - lastBookScreenPoint.x;
     const dy = screenY - lastBookScreenPoint.y;
-    if (dx * dx + dy * dy >= 0.8) {
-      const currentPoint = { x: screenX, y: screenY, p: pressure };
+    if (dx * dx + dy * dy >= 0.5) {
       currentBookStroke.points.push({ x: normX, y: normY, p: pressure });
-      drawBookLiveSegment(
-        lastBookScreenPoint,
-        currentPoint,
-        currentBookStroke.tool,
-        currentBookStroke.color,
-        currentBookStroke.width
-      );
-      lastBookScreenPoint = currentPoint;
+
+      if (currentBookStroke.tool !== "highlighter") {
+        const avgP = (lastBookScreenPoint.p + pressure) / 2;
+        ctx.lineWidth = Math.max(1, (currentBookStroke.width || 3) * (0.4 + avgP * 1.2));
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(lastBookScreenPoint.x, lastBookScreenPoint.y);
+      ctx.lineTo(screenX, screenY);
+      ctx.stroke();
+
+      lastBookScreenPoint = { x: screenX, y: screenY, p: pressure };
     }
   }
 }
@@ -2862,6 +2830,8 @@ function syncBookAnnotationCanvasSize() {
     canvas.height = targetPixelH;
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
+    const ctx = bookAnnotationCtx || canvas.getContext("2d");
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   bookCanvasRect = null;
@@ -2871,11 +2841,13 @@ function syncBookAnnotationCanvasSize() {
 function redrawBookAnnotations() {
   const canvas = document.getElementById("book-annotation-canvas");
   if (!canvas) return;
-  const ctx = canvas.getContext("2d");
+  const ctx = bookAnnotationCtx || canvas.getContext("2d");
   if (!ctx) return;
 
   const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const cssW = canvas.clientWidth || (canvas.width / dpr);
   const cssH = canvas.clientHeight || (canvas.height / dpr);
@@ -2883,9 +2855,6 @@ function redrawBookAnnotations() {
 
   for (const stroke of bookAnnotationStrokes) {
     if (!stroke.points || stroke.points.length === 0) continue;
-
-    ctx.save();
-    ctx.scale(dpr, dpr);
 
     if (stroke.tool === "highlighter") {
       ctx.globalAlpha = 0.38;
@@ -2917,24 +2886,20 @@ function redrawBookAnnotations() {
         const r = (baseWidth * (0.4 + p * 1.2)) / 2;
         ctx.fillStyle = stroke.color || "#2563eb";
         ctx.beginPath();
-        ctx.arc(pt.x * cssW, pt.y * cssH, Math.max(1, r), 0, Math.PI * 2);
+        ctx.arc(pt.x * cssW, pt.y * cssH, Math.max(0.5, r), 0, Math.PI * 2);
         ctx.fill();
       } else {
+        ctx.beginPath();
+        const p0 = stroke.points[0];
+        ctx.moveTo(p0.x * cssW, p0.y * cssH);
         for (let i = 1; i < stroke.points.length; i++) {
-          const p0 = stroke.points[i - 1];
-          const p1 = stroke.points[i];
-          const avgP = ((p0.p || 0.5) + (p1.p || 0.5)) / 2;
-          ctx.lineWidth = Math.max(1, baseWidth * (0.4 + avgP * 1.2));
-
-          ctx.beginPath();
-          ctx.moveTo(p0.x * cssW, p0.y * cssH);
-          ctx.lineTo(p1.x * cssW, p1.y * cssH);
-          ctx.stroke();
+          const pt = stroke.points[i];
+          ctx.lineTo(pt.x * cssW, pt.y * cssH);
         }
+        ctx.lineWidth = baseWidth;
+        ctx.stroke();
       }
     }
-
-    ctx.restore();
   }
 }
 
