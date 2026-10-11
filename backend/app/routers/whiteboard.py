@@ -147,6 +147,8 @@ def generate_mock_tutor_hint(session_id: str, db: Session = Depends(get_db)):
         ]
     }
 
+from backend.app.models.material import Material
+
 @router.post("/sessions/{session_id}/ask-tutor", response_model=TutorAskResponse)
 def ask_tutor_endpoint(
     session_id: str,
@@ -159,12 +161,48 @@ def ask_tutor_endpoint(
 
     subject_name = session.subject.name if session.subject else "Mathematik"
 
+    # 1. Spezifisches Material (falls übergeben oder in Session hinterlegt)
+    material_context = None
+    mat_id = payload.material_id or getattr(session, "material_id", None)
+    if mat_id:
+        mat = db.query(Material).filter(Material.id == mat_id).first()
+        if mat:
+            material_context = {
+                "id": mat.id,
+                "title": mat.title,
+                "kind": mat.kind,
+                "topic": mat.topic.name if mat.topic else None,
+                "summary": mat.summary,
+                "text_snippet": (mat.extracted_text or "")[:3500]
+            }
+
+    # 2. Alle Unterlagen dieses Fachs für didaktischen Überblick
+    available_materials = []
+    if session.subject_id:
+        all_mats = db.query(Material).filter(Material.subject_id == session.subject_id).all()
+        for m in all_mats[:15]:
+            available_materials.append({
+                "id": m.id,
+                "title": m.title,
+                "kind": m.kind,
+                "summary": m.summary
+            })
+
+    # 3. Alle Themen des Fachs aus dem Lehrplan
+    curriculum_topics = []
+    if session.subject_id:
+        topics = db.query(Topic).filter(Topic.subject_id == session.subject_id).all()
+        curriculum_topics = [t.name for t in topics]
+
     res = analyze_whiteboard_and_speak(
         image_base64=payload.image_base64,
         subject_name=subject_name,
         grade_level=session.grade_level or 7,
         student_question=payload.student_question,
-        audio_enabled=payload.audio_enabled
+        audio_enabled=payload.audio_enabled,
+        material_context=material_context,
+        available_materials=available_materials,
+        curriculum_topics=curriculum_topics
     )
 
     return TutorAskResponse(**res)

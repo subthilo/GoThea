@@ -1806,6 +1806,17 @@ body.wb-fullscreen-mode .wb-container {
   overflow: hidden;
 }
 
+.wb-doc-page-img {
+  max-width: 920px;
+  width: 92%;
+  height: auto;
+  margin: 64px auto 60px auto;
+  display: block;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
 .wb-doc-topbar {
   position: absolute;
   top: 12px;

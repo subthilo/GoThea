@@ -27,6 +27,10 @@ DEINE PÄDAGOGISCHEN GRUNDREGELN:
 4. TAFEL-BEZUG:
    - Beziehe dich direkt auf das, was auf der Tafel zu sehen ist.
    - Falls du eine fehlerhafte Zeile oder einen Term siehst, gib ungefähre Prozent-Koordinaten für einen Markierungsrahmen an (x_pct, y_pct, w_pct, h_pct von 0 bis 100 bezogen auf das Bild).
+5. GEZIELTER BEZUG ZU THEAS UNTERLAGEN:
+   - Du hast VOLLEN Zugriff auf Theas Schulunterlagen, Arbeitsblätter und Lehrbücher in diesem Fach!
+   - Wenn Thea an einer konkreten Unterlage arbeitet (oder eine Aufgabe daraus auf der Tafel rechnet), beziehe dich gezielt auf den Aufgabentext oder die Fragestellung aus ihren Unterlagen (z. B. "Aufgabe 2 auf deinem Arbeitsblatt...", "Schau dir die Tabelle für proportionale Zuordnungen an").
+   - Nutze dieselben Rechenverfahren und Begriffe wie in ihren Schulbüchern.
 
 Antworte IMMER im gültigen JSON-Format:
 {
@@ -46,11 +50,15 @@ def analyze_whiteboard_and_speak(
     subject_name: str = "Mathematik",
     grade_level: int = 7,
     student_question: Optional[str] = None,
-    audio_enabled: bool = True
+    audio_enabled: bool = True,
+    material_context: Optional[Dict[str, Any]] = None,
+    available_materials: Optional[list] = None,
+    curriculum_topics: Optional[list] = None
 ) -> Dict[str, Any]:
     """
     Analysiert das Tafelbild mit OpenAI Vision (sokratischer Tutor) und
-    generiert eine Sprachausgabe (MP3 via OpenAI TTS 'nova').
+    generiert eine Sprachausgabe (MP3 via OpenAI TTS 'nova'), unter Einbezug
+    von Theas echten Unterrichtsmaterialien.
     """
     # 1. Base64 bereinigen
     clean_b64 = image_base64
@@ -68,11 +76,28 @@ def analyze_whiteboard_and_speak(
             from openai import OpenAI
             client = OpenAI(api_key=OPENAI_API_KEY)
 
-            user_prompt = f"Schulfach: {subject_name} (Klasse {grade_level})."
+            user_prompt = f"SCHULFACH: {subject_name} (Klasse {grade_level} Gymnasium, Brandenburg).\n"
+            if curriculum_topics:
+                user_prompt += f"Lehrplanthemen: {', '.join(curriculum_topics[:8])}\n"
+
+            if material_context:
+                user_prompt += (
+                    f"\nAKTUELL GEWÄHLTE UNTERLAGE AUF DER TAFEL:\n"
+                    f"- Titel: {material_context.get('title')} ({material_context.get('kind')})\n"
+                    f"- Thema: {material_context.get('topic') or 'Allgemein'}\n"
+                )
+                if material_context.get("summary"):
+                    user_prompt += f"- Inhalt: {material_context.get('summary')}\n"
+                if material_context.get("text_snippet"):
+                    user_prompt += f"- Aufgabenstellung / Auszug aus der Unterlage:\n\"\"\"{material_context.get('text_snippet')}\"\"\"\n"
+            elif available_materials:
+                mat_titles = [f"{m['title']} ({m['kind']})" for m in available_materials[:8]]
+                user_prompt += f"\nVorhandene Unterlagen der Schülerin in diesem Fach: {'; '.join(mat_titles)}\n"
+
             if student_question:
-                user_prompt += f" Frage der Schülerin: {student_question}"
+                user_prompt += f"\nFrage der Schülerin: {student_question}\n"
             else:
-                user_prompt += " Bitte schau dir meine Tafel an und gib mir einen sokratischen Hinweis."
+                user_prompt += "\nBitte schau dir das Tafelbild an und beziehe deine Rückmeldung gezielt auf die bearbeitete Aufgabe und Theas Rechenschritte."
 
             response = client.chat.completions.create(
                 model=OPENAI_MODEL,

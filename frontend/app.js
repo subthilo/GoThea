@@ -1005,6 +1005,9 @@ function buildMaterialCard(m, onDeleted) {
       <button class="btn-mat-action btn-mat-reader" title="Im Dokument-Reader öffnen & mit Apple Pencil beschreiben">
         📖 Reader
       </button>
+      <button class="btn-mat-action btn-mat-wb" title="Dieses Dokument auf der digitalen Tafel mit KI-Tutorin Luna üben">
+        🦉 Tafel
+      </button>
       <button class="btn-mat-action btn-mat-edit" title="Dokument anpassen (Fach, Thema, Titel)">
         ✏️ Ändern
       </button>
@@ -1024,6 +1027,18 @@ function buildMaterialCard(m, onDeleted) {
     ttBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       switchToTab("timetable");
+    });
+  }
+
+  const wbBtn = card.querySelector(".btn-mat-wb");
+  if (wbBtn) {
+    wbBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (typeof window.openMaterialOnWhiteboard === "function") {
+        window.openMaterialOnWhiteboard(m.id, m.subject_id);
+      } else {
+        switchToTab("whiteboard");
+      }
     });
   }
 

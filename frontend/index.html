@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="GoThea">
   <meta name="theme-color" content="#0f1115">
 
-  <link rel="stylesheet" href="/static/style.css?v=3.9">
+  <link rel="stylesheet" href="/static/style.css?v=4.4">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -566,6 +566,13 @@
               <select id="wb-subject-select" class="wb-select">
                 <!-- Dynamisch mit Schulfächern befüllt -->
               </select>
+
+              <span class="wb-label" style="margin-left: 6px;">Unterlage:</span>
+              <select id="wb-material-select" class="wb-select" style="max-width: 250px;" title="Wähle eine Unterlage, ein Arbeitsblatt oder Buchkapitel zum gezielten Üben">
+                <option value="">✨ Freies Üben</option>
+              </select>
+              <button id="btn-wb-toggle-underlay" class="wb-btn-subtle" style="display: none; padding: 4px 10px; font-size: 0.8rem;" title="Vorlage auf Tafel ein-/ausblenden">📄 Vorlage</button>
+
               <div class="wb-conn-badge">
                 <span class="wb-session-dot" id="wb-ws-dot"></span>
                 <span class="wb-session-status" id="wb-ws-status">Tafel aktiv</span>
@@ -584,6 +591,25 @@
 
           <!-- Zeichenfläche / Viewport -->
           <div class="wb-viewport pattern-chalkboard" id="wb-viewport">
+            <!-- 0. Dokument-Underlay (Ebene 1: Arbeitsblatt hinter der Schülertinte) -->
+            <div id="wb-doc-underlay" class="wb-doc-underlay" style="display: none;">
+              <img id="wb-doc-underlay-img" class="wb-doc-page-img" alt="Unterlage" />
+            </div>
+
+            <!-- Dokument-Leiste oben auf der Tafel -->
+            <div id="wb-doc-topbar" class="wb-doc-topbar" style="display: none;">
+              <div class="wb-doc-info">
+                <span class="wb-doc-badge" id="wb-doc-badge">Arbeitsblatt</span>
+                <span class="wb-doc-title-text" id="wb-doc-title">Titel</span>
+              </div>
+              <div class="wb-doc-pager">
+                <button type="button" class="btn-pager" id="btn-wb-doc-prev">◀</button>
+                <span id="wb-doc-page-info">Seite 1 / 1</span>
+                <button type="button" class="btn-pager" id="btn-wb-doc-next">▶</button>
+                <button type="button" class="btn-pager" id="btn-wb-doc-close" title="Vorlage schließen">✕ Ausblenden</button>
+              </div>
+            </div>
+
             <!-- 1. Base Ink Canvas (Zeichenebene des Schülers für freie Lernsessions) -->
             <canvas id="wb-canvas" class="wb-canvas-layer"></canvas>
             <!-- 2. Overlay Canvas (Transparente Ebene für KI-Tipps & Overlays) -->
@@ -1185,7 +1211,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=4.2"></script>
-  <script src="/static/whiteboard.js?v=4.3"></script>
+  <script src="/static/app.js?v=4.4"></script>
+  <script src="/static/whiteboard.js?v=4.4"></script>
 </body>
 </html>

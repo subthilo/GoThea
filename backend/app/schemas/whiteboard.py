@@ -59,6 +59,8 @@ class TutorAskRequest(BaseModel):
     image_base64: str = Field(description="Base64-kodiertes Bild des aktuellen Whiteboards")
     student_question: Optional[str] = Field(default=None, description="Optionale Frage der Schülerin")
     audio_enabled: bool = Field(default=True, description="Ob MP3-Sprachausgabe erzeugt werden soll")
+    material_id: Optional[str] = Field(default=None, description="Optional: ID des aktuell auf der Tafel bearbeiteten Materials / Arbeitsblatts")
+    topic_id: Optional[str] = Field(default=None, description="Optional: ID des gewählten Themas")
 
 class TutorAskResponse(BaseModel):
     status: str = "success"

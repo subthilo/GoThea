@@ -36,8 +36,26 @@
   const hintIcon = document.getElementById("wb-hint-icon");
   const hintLabel = document.getElementById("wb-hint-label");
 
+  // Unterlagen- & Arbeitsblatt-Elemente
+  const materialSelect = document.getElementById("wb-material-select");
+  const btnToggleUnderlay = document.getElementById("btn-wb-toggle-underlay");
+  const docUnderlay = document.getElementById("wb-doc-underlay");
+  const docUnderlayImg = document.getElementById("wb-doc-underlay-img");
+  const docTopbar = document.getElementById("wb-doc-topbar");
+  const docBadge = document.getElementById("wb-doc-badge");
+  const docTitle = document.getElementById("wb-doc-title");
+  const docPageInfo = document.getElementById("wb-doc-page-info");
+  const btnDocPrev = document.getElementById("btn-wb-doc-prev");
+  const btnDocNext = document.getElementById("btn-wb-doc-next");
+  const btnDocClose = document.getElementById("btn-wb-doc-close");
+
   let currentTutorAudio = null;
   let tutorAudioEnabled = true;
+
+  let currentSubjectMaterialsList = [];
+  let activeMaterial = null;
+  let activeMaterialPage = 1;
+  let isUnderlayVisible = false;
 
   if (!inkCanvas || !overlayCanvas || !viewport) {
     return;
@@ -144,6 +162,11 @@
     viewport.style.backgroundPositionY = `${panY}px`;
     viewport.style.backgroundPositionX = `${panX}px`;
     viewport.style.backgroundSize = `${24 * scale}px ${24 * scale}px`;
+
+    if (docUnderlay && isUnderlayVisible) {
+      docUnderlay.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      docUnderlay.style.transformOrigin = "0 0";
+    }
 
     redrawAllStrokes();
     updateScrollUI();
@@ -846,6 +869,21 @@
     octx.fillStyle = isChalk ? "#1e293b" : "#ffffff";
     octx.fillRect(0, 0, offscreen.width, offscreen.height);
 
+    // Falls Vorlage sichtbar ist, Dokumentenseite zuerst einzeichnen
+    if (isUnderlayVisible && docUnderlayImg && docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
+      try {
+        const uRect = docUnderlayImg.getBoundingClientRect();
+        const vRect = viewport.getBoundingClientRect();
+        const dx = (uRect.left - vRect.left) * dpr;
+        const dy = (uRect.top - vRect.top) * dpr;
+        const dw = uRect.width * dpr;
+        const dh = uRect.height * dpr;
+        octx.drawImage(docUnderlayImg, dx, dy, dw, dh);
+      } catch (err) {
+        console.warn("Fehler beim Zeichnen der Vorlage in Snapshot:", err);
+      }
+    }
+
     // Striche der Schülerin darauf übertragen
     octx.drawImage(inkCanvas, 0, 0);
 
@@ -872,6 +910,119 @@
     }, 1500);
   }
 
+  // 9.1 Unterlagen- & Arbeitsblatt-Verwaltung für die Tafel
+  async function loadMaterialsForSubject(subjectId) {
+    if (!materialSelect) return;
+    materialSelect.innerHTML = `<option value="">Lade Unterlagen...</option>`;
+    currentSubjectMaterialsList = [];
+
+    try {
+      const res = await fetch(`/api/v1/materials?subject_id=${encodeURIComponent(subjectId)}`);
+      if (res.ok) {
+        currentSubjectMaterialsList = await res.json();
+      }
+    } catch (err) {
+      console.warn("Fehler beim Laden der Fach-Materialien:", err);
+    }
+
+    materialSelect.innerHTML = `<option value="">✨ Freies Üben (ohne Vorlage)</option>`;
+    if (currentSubjectMaterialsList.length === 0) {
+      clearWhiteboardMaterial();
+      return;
+    }
+
+    const groups = {
+      "Arbeitsblätter": currentSubjectMaterialsList.filter(m => m.kind === "Arbeitsblatt"),
+      "Schulbuch": currentSubjectMaterialsList.filter(m => (m.kind || "").includes("Buch")),
+      "Hefter": currentSubjectMaterialsList.filter(m => (m.kind || "").includes("Heft")),
+      "Tests & Übungen": currentSubjectMaterialsList.filter(m => {
+        const k = m.kind || "";
+        return k.includes("Test") || k.includes("Klassenarbeit") || k.includes("Übung");
+      }),
+      "Sonstige": currentSubjectMaterialsList.filter(m => {
+        const k = m.kind || "";
+        return k !== "Arbeitsblatt" && !k.includes("Buch") && !k.includes("Heft") && !k.includes("Test") && !k.includes("Klassenarbeit") && !k.includes("Übung");
+      })
+    };
+
+    Object.entries(groups).forEach(([groupName, items]) => {
+      if (items.length > 0) {
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = groupName;
+        items.forEach(m => {
+          const opt = document.createElement("option");
+          opt.value = m.id;
+          opt.textContent = `${m.title} (${m.page_count || 1} S.)`;
+          optgroup.appendChild(opt);
+        });
+        materialSelect.appendChild(optgroup);
+      }
+    });
+
+    if (activeMaterial) {
+      materialSelect.value = activeMaterial.id;
+    }
+  }
+
+  function setWhiteboardMaterial(material, page = 1, showUnderlay = true) {
+    activeMaterial = material;
+    activeMaterialPage = Math.max(1, Math.min(page, material.page_count || 1));
+    if (materialSelect) {
+      materialSelect.value = material.id;
+    }
+    if (btnToggleUnderlay) {
+      btnToggleUnderlay.style.display = "inline-block";
+    }
+
+    if (showUnderlay) {
+      isUnderlayVisible = true;
+      renderUnderlayPage();
+    }
+    updateUnderlayVisibility();
+  }
+
+  function clearWhiteboardMaterial() {
+    activeMaterial = null;
+    activeMaterialPage = 1;
+    isUnderlayVisible = false;
+    if (materialSelect) materialSelect.value = "";
+    if (btnToggleUnderlay) btnToggleUnderlay.style.display = "none";
+    updateUnderlayVisibility();
+  }
+
+  function renderUnderlayPage() {
+    if (!activeMaterial || !docUnderlayImg) return;
+    const p = activeMaterialPage;
+    docUnderlayImg.src = `/api/v1/materials/${activeMaterial.id}/preview?page=${p}`;
+
+    if (docBadge) docBadge.textContent = activeMaterial.kind || "Vorlage";
+    if (docTitle) docTitle.textContent = activeMaterial.title || "Dokument";
+    if (docPageInfo) docPageInfo.textContent = `Seite ${p} / ${activeMaterial.page_count || 1}`;
+
+    if (btnDocPrev) btnDocPrev.disabled = p <= 1;
+    if (btnDocNext) btnDocNext.disabled = p >= (activeMaterial.page_count || 1);
+  }
+
+  function updateUnderlayVisibility() {
+    if (!docUnderlay || !docTopbar) return;
+    if (isUnderlayVisible && activeMaterial) {
+      docUnderlay.style.display = "block";
+      docTopbar.style.display = "flex";
+      if (btnToggleUnderlay) {
+        btnToggleUnderlay.textContent = "🙈 Ausblenden";
+        btnToggleUnderlay.classList.add("active");
+      }
+      updateViewportPan();
+    } else {
+      docUnderlay.style.display = "none";
+      docTopbar.style.display = "none";
+      if (btnToggleUnderlay) {
+        btnToggleUnderlay.textContent = "📄 Vorlage";
+        btnToggleUnderlay.classList.remove("active");
+      }
+    }
+  }
+
   async function initSession() {
     try {
       // 1. Fächer in Dropdown einbinden
@@ -890,6 +1041,7 @@
         if (data) {
           currentSession = data;
           subjectSelect.value = data.subject_id;
+          await loadMaterialsForSubject(data.subject_id);
           if (data.board_state_json) {
             try {
               strokes = JSON.parse(data.board_state_json) || [];
@@ -1139,7 +1291,55 @@
 
   if (subjectSelect) {
     subjectSelect.addEventListener("change", async () => {
+      await loadMaterialsForSubject(subjectSelect.value);
       await createNewSession();
+    });
+  }
+
+  // Material-Auswahl Listener
+  if (materialSelect) {
+    materialSelect.addEventListener("change", () => {
+      const matId = materialSelect.value;
+      if (!matId) {
+        clearWhiteboardMaterial();
+      } else {
+        const found = currentSubjectMaterialsList.find(m => m.id === matId);
+        if (found) {
+          setWhiteboardMaterial(found, 1, true);
+        }
+      }
+    });
+  }
+
+  // Underlay Ein-/Ausblenden Button
+  if (btnToggleUnderlay) {
+    btnToggleUnderlay.addEventListener("click", () => {
+      isUnderlayVisible = !isUnderlayVisible;
+      updateUnderlayVisibility();
+    });
+  }
+
+  // Vorlagen-Pager Buttons
+  if (btnDocPrev) {
+    btnDocPrev.addEventListener("click", () => {
+      if (activeMaterial && activeMaterialPage > 1) {
+        activeMaterialPage--;
+        renderUnderlayPage();
+      }
+    });
+  }
+  if (btnDocNext) {
+    btnDocNext.addEventListener("click", () => {
+      if (activeMaterial && activeMaterialPage < (activeMaterial.page_count || 1)) {
+        activeMaterialPage++;
+        renderUnderlayPage();
+      }
+    });
+  }
+  if (btnDocClose) {
+    btnDocClose.addEventListener("click", () => {
+      isUnderlayVisible = false;
+      updateUnderlayVisibility();
     });
   }
 
@@ -1170,8 +1370,8 @@
       if (!currentSession) return;
       stopTutorSpeech();
 
-      if (strokes.length === 0) {
-        playTutorSpeech(null, "Deine Tafel ist noch ganz leer. Schreib mir gerne eine Aufgabe oder einen Rechenschritt auf!");
+      if (strokes.length === 0 && !isUnderlayVisible) {
+        playTutorSpeech(null, "Deine Tafel ist noch ganz leer. Schreib mir gerne eine Aufgabe oder deinen Rechenschritt auf!");
         return;
       }
 
@@ -1189,7 +1389,8 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             image_base64: snapshot,
-            audio_enabled: tutorAudioEnabled
+            audio_enabled: tutorAudioEnabled,
+            material_id: activeMaterial ? activeMaterial.id : null
           })
         });
 
@@ -1246,6 +1447,38 @@
       }
     }
   });
+
+  // Globale Funktion: Material direkt auf der Tafel öffnen
+  window.openMaterialOnWhiteboard = async function(materialId, subjectId = null) {
+    if (typeof switchToTab === "function") {
+      switchToTab("whiteboard");
+    } else {
+      const tabBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
+      if (tabBtn) tabBtn.click();
+    }
+
+    if (subjectId && subjectSelect && subjectSelect.value !== subjectId) {
+      subjectSelect.value = subjectId;
+      await loadMaterialsForSubject(subjectId);
+    } else if (!currentSubjectMaterialsList.length && subjectSelect) {
+      await loadMaterialsForSubject(subjectSelect.value);
+    }
+
+    const mat = currentSubjectMaterialsList.find(m => m.id === materialId);
+    if (mat) {
+      setWhiteboardMaterial(mat, 1, true);
+    } else {
+      try {
+        const r = await fetch(`/api/v1/materials/${materialId}`);
+        if (r.ok) {
+          const mData = await r.json();
+          setWhiteboardMaterial(mData, 1, true);
+        }
+      } catch (err) {
+        console.warn("Fehler beim Öffnen des Materials auf Tafel:", err);
+      }
+    }
+  };
 
   // Start
   setTimeout(() => {
