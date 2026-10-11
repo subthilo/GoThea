@@ -43,8 +43,9 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
       saveCurrentBookAnnotations();
     }
 
-    if (btn.dataset.tab === "subjects") {
+    if (btn.dataset.tab === "uploads") {
       checkInboxStatus();
+      loadUploadsHistory();
     }
     if (btn.dataset.tab === "timetable") {
       loadTimetable();
@@ -100,67 +101,252 @@ async function loadTaxonomy() {
       });
 
       renderDashboardSubjects(currentSubjects, topicsBySubject);
-      renderDetailedSubjects(currentSubjects, topicsBySubject);
+      if (currentDetailSubjectId) {
+        openSubjectDetail(currentDetailSubjectId);
+      }
     }
   } catch (err) {
     console.error("Fehler beim Laden der Fächer:", err);
   }
 }
 
-// Render Dashboard Cards
+let cachedSubjects = [];
+let cachedTopicsMap = {};
+let currentDetailSubjectId = null;
+let currentSubjectMaterials = [];
+let activeSubjectKindFilter = "all";
+
+// Render Dashboard Cards (klickbar zur Fach-Detailseite)
 function renderDashboardSubjects(subjects, topicsMap) {
+  cachedSubjects = subjects;
+  cachedTopicsMap = topicsMap;
+  if (!dashboardSubjectsGrid) return;
   dashboardSubjectsGrid.innerHTML = "";
+
   subjects.forEach((s) => {
     const topics = topicsMap[s.id] || [];
     const card = document.createElement("div");
     card.className = "subject-card";
-    card.style.borderLeft = `4px solid ${s.color_code}`;
+    card.style.borderLeft = `5px solid ${s.color_code}`;
+    card.style.cursor = "pointer";
+    card.dataset.subjectId = s.id;
 
     const topicPreview = topics.slice(0, 2).map((t) => t.name).join(", ");
 
     card.innerHTML = `
       <div>
         <div class="subject-header">
-          <div class="subject-badge-icon">${s.icon}</div>
-          <div class="subject-name">${s.name}</div>
+          <div class="subject-badge-icon" style="background: ${s.color_code}18; border: 1px solid ${s.color_code}35;">${s.icon}</div>
+          <div class="subject-name">${escapeHtml(s.name)}</div>
         </div>
         <div class="subject-topics-summary">
-          ${topics.length > 0 ? topicPreview : "Noch keine Themen hinterlegt"}
+          ${topics.length > 0 ? escapeHtml(topicPreview) : "Materialien & Hefter öffnen"}
         </div>
       </div>
-      <div class="subject-footer">
-        <span>${topics.length} Themen im Katalog</span>
-        <span style="color: ${s.color_code}; font-weight: 600;">Klasse ${s.min_grade}–${s.max_grade}</span>
+      <div>
+        <div class="subject-footer">
+          <span>${topics.length} Themen</span>
+          <span style="color: ${s.color_code}; font-weight: 600;">Klasse ${s.min_grade}–${s.max_grade}</span>
+        </div>
+        <div class="subject-card-action-hint">
+          <span>Mediathek öffnen</span>
+          <span>➔</span>
+        </div>
       </div>
     `;
+
+    card.addEventListener("click", () => {
+      openSubjectDetail(s.id);
+    });
+
     dashboardSubjectsGrid.appendChild(card);
   });
 }
 
-// Render Detailed View
-function renderDetailedSubjects(subjects, topicsMap) {
-  subjectsDetailedList.innerHTML = "";
-  subjects.forEach((s) => {
-    const topics = topicsMap[s.id] || [];
-    const box = document.createElement("div");
-    box.className = "subject-detail-box";
+function openSubjectDetail(subjectId) {
+  currentDetailSubjectId = subjectId;
+  const s = cachedSubjects.find((sub) => sub.id === subjectId) || {
+    id: subjectId,
+    name: "Schulfach",
+    icon: "📚",
+    color_code: "#6366f1",
+    min_grade: 7,
+    max_grade: 7
+  };
 
-    let pillsHtml = topics.map((t) => `
-      <div class="topic-pill">
-        <span>${t.name}</span>
-        ${t.rlp_level_code ? `<span class="topic-rlp-tag">RLP ${t.rlp_level_code}</span>` : ""}
-      </div>
-    `).join("");
+  const breadcrumb = document.getElementById("subject-detail-breadcrumb");
+  if (breadcrumb) breadcrumb.textContent = `Übersicht / ${s.name}`;
 
+  const heroCard = document.getElementById("subject-hero-card");
+  if (heroCard) {
+    heroCard.style.borderLeft = `6px solid ${s.color_code}`;
+    heroCard.style.boxShadow = `0 10px 32px rgba(0, 0, 0, 0.35), 0 0 24px ${s.color_code}15`;
+  }
+
+  const iconEl = document.getElementById("subject-detail-icon");
+  if (iconEl) {
+    iconEl.textContent = s.icon || "📚";
+    iconEl.style.background = `${s.color_code}22`;
+    iconEl.style.borderColor = `${s.color_code}44`;
+  }
+
+  const nameEl = document.getElementById("subject-detail-name");
+  if (nameEl) nameEl.textContent = s.name;
+
+  const gradeEl = document.getElementById("subject-detail-grade");
+  if (gradeEl) gradeEl.textContent = `Klasse ${s.min_grade}–${s.max_grade}`;
+
+  const descEl = document.getElementById("subject-detail-desc");
+  if (descEl) descEl.textContent = `Humboldt-Gymnasium Eichwalde • Brandenburger Rahmenlehrplan`;
+
+  const btnWb = document.getElementById("btn-subject-open-wb");
+  if (btnWb) {
+    btnWb.onclick = () => {
+      switchToTab("whiteboard");
+      const subSel = document.getElementById("wb-subject-select");
+      if (subSel) {
+        subSel.value = s.id;
+        subSel.dispatchEvent(new Event("change"));
+      }
+    };
+  }
+
+  const btnUpload = document.getElementById("btn-subject-upload-doc");
+  if (btnUpload) {
+    btnUpload.onclick = () => {
+      openMaterialUploadModal(s.id);
+    };
+  }
+
+  const topics = cachedTopicsMap[s.id] || [];
+  const topicsCount = document.getElementById("subject-topics-count");
+  if (topicsCount) topicsCount.textContent = `${topics.length} Thema${topics.length === 1 ? "" : "n"}`;
+
+  const topicsContainer = document.getElementById("subject-detail-topics");
+  if (topicsContainer) {
     if (topics.length === 0) {
-      pillsHtml = `<span style="color: var(--text-muted);">Keine Themen für diese Klassenstufe hinterlegt.</span>`;
+      topicsContainer.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">Keine spezifischen Themen für dieses Fach hinterlegt.</span>`;
+    } else {
+      topicsContainer.innerHTML = topics.map((t) => `
+        <div class="subject-topic-chip">
+          <span>${escapeHtml(t.name)}</span>
+          ${t.rlp_level_code ? `<span class="topic-rlp-tag">RLP ${t.rlp_level_code}</span>` : ""}
+        </div>
+      `).join("");
     }
+  }
 
-    box.innerHTML = `
-      <h3>${s.icon} ${s.name}</h3>
-      <div class="topic-pills">${pillsHtml}</div>
+  // Filter-Pills zurücksetzen
+  activeSubjectKindFilter = "all";
+  const pills = document.querySelectorAll("#subject-materials-filter-bar .filter-pill");
+  pills.forEach((p) => {
+    p.classList.toggle("active", p.dataset.kind === "all");
+  });
+
+  loadSubjectMaterials(subjectId);
+
+  // View aktivieren
+  document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach((b) => b.classList.remove("active"));
+  const tabEl = document.getElementById("tab-subject-detail");
+  if (tabEl) tabEl.classList.add("active");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function loadSubjectMaterials(subjectId) {
+  const grid = document.getElementById("subject-materials-grid");
+  const countBadge = document.getElementById("subject-materials-count");
+  if (!grid) return;
+
+  grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-secondary);">Lade Materialien...</div>`;
+
+  try {
+    const res = await fetch(`/api/v1/materials?subject_id=${encodeURIComponent(subjectId)}`);
+    if (res.ok) {
+      currentSubjectMaterials = await res.json();
+      if (countBadge) {
+        countBadge.textContent = `${currentSubjectMaterials.length} Dokument${currentSubjectMaterials.length === 1 ? "" : "e"}`;
+      }
+      renderSubjectMaterialsList(currentSubjectMaterials);
+    } else {
+      grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--danger);">Fehler beim Laden der Materialien.</div>`;
+    }
+  } catch (err) {
+    console.error("Fehler beim Laden der Fach-Materialien:", err);
+    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--danger);">Netzwerkfehler.</div>`;
+  }
+}
+
+function renderSubjectMaterialsList(materials) {
+  const grid = document.getElementById("subject-materials-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  const filtered = materials.filter((m) => {
+    if (activeSubjectKindFilter === "all") return true;
+    if (activeSubjectKindFilter === "Stundenplan") return (m.kind || "").includes("Stundenplan");
+    if (activeSubjectKindFilter === "Arbeitsblatt") return m.kind === "Arbeitsblatt";
+    if (activeSubjectKindFilter === "Hefter") return (m.kind || "").includes("Heft");
+    if (activeSubjectKindFilter === "Buch") return (m.kind || "").includes("Buch");
+    if (activeSubjectKindFilter === "Test") {
+      const k = m.kind || "";
+      return k.includes("Test") || k.includes("Klassenarbeit") || k.includes("Übung") || k.includes("Klausur");
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    const filterName = activeSubjectKindFilter === "all" ? "" : ` in der Kategorie „${activeSubjectKindFilter}“`;
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 16px; color: var(--text-secondary);">
+        <span style="font-size: 2.4rem; display: block; margin-bottom: 8px;">📭</span>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 6px;">Keine Dokumente${filterName}</div>
+        <p style="font-size: 0.88rem; max-width: 440px; margin: 0 auto 16px;">
+          Lade Arbeitsblätter, Hefterseiten oder Schulbuchauszüge für dieses Fach hoch, um sie hier direkt zu öffnen und auf der Tafel zu bearbeiten.
+        </p>
+        <button class="btn-primary-sm" onclick="openMaterialUploadModal('${currentDetailSubjectId || ''}')">➕ Jetzt Dokument hochladen</button>
+      </div>
     `;
-    subjectsDetailedList.appendChild(box);
+    return;
+  }
+
+  filtered.forEach((m) => {
+    const card = buildMaterialCard(m, () => {
+      loadSubjectMaterials(currentDetailSubjectId);
+      loadUploadsHistory();
+    });
+    grid.appendChild(card);
+  });
+}
+
+function setupSubjectDetailEvents() {
+  const btnBack = document.getElementById("btn-back-to-dashboard");
+  if (btnBack) {
+    btnBack.addEventListener("click", () => {
+      switchToTab("dashboard");
+    });
+  }
+
+  const btnToggleTopics = document.getElementById("btn-toggle-subject-topics");
+  if (btnToggleTopics) {
+    btnToggleTopics.addEventListener("click", () => {
+      const chips = document.getElementById("subject-detail-topics");
+      const arrow = document.getElementById("subject-topics-arrow");
+      if (!chips) return;
+      const isHidden = chips.style.display === "none";
+      chips.style.display = isHidden ? "flex" : "none";
+      if (arrow) arrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+    });
+  }
+
+  const subjectFilterPills = document.querySelectorAll("#subject-materials-filter-bar .filter-pill");
+  subjectFilterPills.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      subjectFilterPills.forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      activeSubjectKindFilter = pill.dataset.kind || "all";
+      renderSubjectMaterialsList(currentSubjectMaterials);
+    });
   });
 }
 
@@ -529,10 +715,9 @@ if (btnResetStaging) {
 
 let currentMaterials = [];
 let currentUploadToken = null;
+let currentPreselectedSubjectId = null;
 let allTopicsCache = [];
 
-const materialsList = document.getElementById("materials-list");
-const materialsCountBadge = document.getElementById("materials-count-badge");
 const btnOpenMaterialModal = document.getElementById("btn-open-material-modal");
 const modalMaterial = document.getElementById("modal-material");
 const btnCloseMaterialModal = document.getElementById("btn-close-material-modal");
@@ -712,6 +897,8 @@ async function processInbox() {
 
       await loadTaxonomy();
       await loadMaterials();
+      await loadUploadsHistory();
+      if (currentDetailSubjectId) await loadSubjectMaterials(currentDetailSubjectId);
       await checkInboxStatus();
 
       setTimeout(() => {
@@ -762,152 +949,216 @@ if (btnProcessInbox) {
   });
 }
 
-let activeKindFilter = "all";
+function buildMaterialCard(m, onDeleted) {
+  const card = document.createElement("div");
+  card.className = "material-card";
 
-document.querySelectorAll("#materials-filter-bar .filter-pill").forEach((pill) => {
-  pill.addEventListener("click", () => {
-    document.querySelectorAll("#materials-filter-bar .filter-pill").forEach((p) => p.classList.remove("active"));
-    pill.classList.add("active");
-    activeKindFilter = pill.dataset.kind || "all";
-    renderMaterialsList(currentMaterials);
-  });
-});
+  const isPdf = (m.mime_type || "").includes("pdf");
+  let docIcon = "📄";
+  if (m.kind && m.kind.includes("Stundenplan")) docIcon = "📅";
+  else if (m.kind && m.kind.includes("Buch")) docIcon = "📚";
+  else if (m.kind && m.kind.includes("Heft")) docIcon = "📁";
+  else if (m.kind && (m.kind.includes("Klassenarbeit") || m.kind.includes("Test") || m.kind.includes("Übung"))) docIcon = "📝";
+  else if (!isPdf) docIcon = "🖼️";
+
+  const sizeKb = Math.round((m.file_size || 0) / 1024);
+  const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+
+  card.innerHTML = `
+    <div>
+      <div class="mat-card-header">
+        <div class="mat-card-title">${escapeHtml(m.title)}</div>
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          ${m.dossier_title ? `<span class="mat-dossier-badge" title="Zugeordneter Hefter">📁 ${escapeHtml(m.dossier_title)}</span>` : ""}
+          <span class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light); border: 1px solid rgba(99, 102, 241, 0.3);">
+            ${escapeHtml(m.kind || "Dokument")}
+          </span>
+        </div>
+      </div>
+      <div class="mat-card-meta">
+        <span style="color: ${m.subject_color || 'var(--text-primary)'}; font-weight: 600;">
+          ${m.subject_icon || '📚'} ${escapeHtml(m.subject_name || 'Fach')}
+        </span>
+        ${m.topic_name ? `<span>• 📑 ${escapeHtml(m.topic_name)}</span>` : ""}
+        <span>• ${docIcon} ${m.page_count} S. (${sizeStr})</span>
+        ${m.start_page && m.end_page ? `<span>• S. ${m.start_page}–${m.end_page}</span>` : ""}
+      </div>
+      ${m.summary ? `<div class="mat-card-summary">“${escapeHtml(m.summary)}”</div>` : ""}
+    </div>
+    <div class="mat-card-actions">
+      ${m.kind && m.kind.includes("Stundenplan") ? `
+        <button class="btn-mat-action btn-mat-tt" style="background: rgba(99, 102, 241, 0.2); border-color: var(--accent); color: var(--accent-light); font-weight: 700;" title="Als interaktives Stundenplan-Widget öffnen">
+          🗓️ Stundenplan
+        </button>
+      ` : ""}
+      <button class="btn-mat-action btn-mat-view" title="${m.kind && m.kind.includes('Stundenplan') ? 'Original-Scan als Dokument ansehen' : 'Dokument im Popup ansehen'}">
+        👁️ ${m.kind && m.kind.includes('Stundenplan') ? 'Scan' : 'Öffnen'}
+      </button>
+      <button class="btn-mat-action btn-mat-reader" title="Im Dokument-Reader öffnen & mit Apple Pencil beschreiben">
+        📖 Reader
+      </button>
+      <button class="btn-mat-action btn-mat-del" data-id="${m.id}" title="Material löschen">
+        🗑️
+      </button>
+    </div>
+  `;
+
+  const ttBtn = card.querySelector(".btn-mat-tt");
+  if (ttBtn) {
+    ttBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      switchToTab("timetable");
+    });
+  }
+
+  const viewBtn = card.querySelector(".btn-mat-view");
+  if (viewBtn) {
+    viewBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openDocumentViewerModal(m);
+    });
+  }
+
+  const readerBtn = card.querySelector(".btn-mat-reader");
+  if (readerBtn) {
+    readerBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openMaterialInReader(m);
+    });
+  }
+
+  const delBtn = card.querySelector(".btn-mat-del");
+  if (delBtn) {
+    delBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Möchtest du das Material „${m.title}“ wirklich löschen?`)) return;
+      try {
+        const delRes = await fetch(`/api/v1/materials/${m.id}`, { method: "DELETE" });
+        if (delRes.ok) {
+          if (typeof onDeleted === "function") {
+            onDeleted();
+          } else {
+            await loadMaterials();
+            await loadUploadsHistory();
+            if (currentDetailSubjectId) await loadSubjectMaterials(currentDetailSubjectId);
+          }
+        } else {
+          alert("Fehler beim Löschen des Materials.");
+        }
+      } catch (err) {
+        alert("Netzwerkfehler beim Löschen.");
+      }
+    });
+  }
+
+  return card;
+}
 
 async function loadMaterials() {
-  if (!materialsList) return;
   try {
     const res = await fetch("/api/v1/materials");
     if (res.ok) {
       currentMaterials = await res.json();
-      if (materialsCountBadge) {
-        materialsCountBadge.textContent = `${currentMaterials.length} Dokument${currentMaterials.length === 1 ? "" : "e"}`;
-      }
-      renderMaterialsList(currentMaterials);
+      renderUploadsHistory(currentMaterials);
     }
   } catch (err) {
     console.error("Fehler beim Laden der Materialien:", err);
   }
 }
 
-function renderMaterialsList(materials) {
-  if (!materialsList) return;
-  materialsList.innerHTML = "";
-
-  const filtered = materials.filter((m) => {
-    if (activeKindFilter === "all") return true;
-    if (activeKindFilter === "Stundenplan") return (m.kind || "").includes("Stundenplan");
-    if (activeKindFilter === "Arbeitsblatt") return m.kind === "Arbeitsblatt";
-    if (activeKindFilter === "Hefter") return (m.kind || "").includes("Heft");
-    if (activeKindFilter === "Buch") return (m.kind || "").includes("Buch");
-    if (activeKindFilter === "Test") {
-      const k = m.kind || "";
-      return k.includes("Test") || k.includes("Klassenarbeit") || k.includes("Übung") || k.includes("Klausur");
+async function loadUploadsHistory() {
+  const historyList = document.getElementById("uploads-history-list");
+  if (!historyList) return;
+  try {
+    const res = await fetch("/api/v1/materials");
+    if (res.ok) {
+      currentMaterials = await res.json();
+      renderUploadsHistory(currentMaterials);
     }
-    return true;
-  });
+  } catch (err) {
+    console.error("Fehler beim Laden der Upload-Historie:", err);
+  }
+}
 
-  if (filtered.length === 0) {
-    const hint = activeKindFilter === "all"
-      ? `Tippe oben auf <strong>„➕ Dokument hochladen“</strong> oder ziehe Schulbücher, Hefter, Arbeitsblätter oder Klassenarbeiten in deinen Finder-Netzwerkordner.`
-      : `Noch keine Dokumente in der Kategorie <strong>${activeKindFilter}</strong> vorhanden.`;
+function renderUploadsHistory(materials) {
+  const historyList = document.getElementById("uploads-history-list");
+  const countBadge = document.getElementById("uploads-history-count");
+  if (!historyList) return;
 
-    materialsList.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 36px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
+  historyList.innerHTML = "";
+  if (countBadge) {
+    countBadge.textContent = `${materials.length} Dokument${materials.length === 1 ? "" : "e"}`;
+  }
+
+  if (materials.length === 0) {
+    historyList.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
         <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">📭</span>
-        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Keine Dokumente gefunden</div>
-        <p style="font-size: 0.85rem; max-width: 440px; margin: 0 auto;">${hint}</p>
+        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Noch keine Uploads vorhanden</div>
+        <p style="font-size: 0.85rem; max-width: 440px; margin: 0 auto;">Ziehe Dateien in die Upload-Zone oben oder in deinen Finder-Netzwerkordner, um sie automatisch hier einzulesen.</p>
       </div>
     `;
     return;
   }
 
-  filtered.forEach((m) => {
-    const card = document.createElement("div");
-    card.className = "material-card";
-
-    const isPdf = m.mime_type.includes("pdf");
-    let docIcon = "📄";
-    if (m.kind && m.kind.includes("Stundenplan")) docIcon = "📅";
-    else if (m.kind && m.kind.includes("Buch")) docIcon = "📚";
-    else if (m.kind && m.kind.includes("Heft")) docIcon = "📁";
-    else if (m.kind && (m.kind.includes("Klassenarbeit") || m.kind.includes("Test"))) docIcon = "📝";
-    else if (!isPdf) docIcon = "🖼️";
-    const sizeKb = Math.round(m.file_size / 1024);
-    const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
-
-    card.innerHTML = `
-      <div>
-        <div class="mat-card-header">
-          <div class="mat-card-title">${m.title}</div>
-          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-            ${m.dossier_title ? `<span class="mat-dossier-badge" title="Zugeordneter Hefter">📁 ${m.dossier_title}</span>` : ""}
-            <span class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light); border: 1px solid rgba(99, 102, 241, 0.3);">
-              ${m.kind}
-            </span>
-          </div>
-        </div>
-        <div class="mat-card-meta">
-          <span style="color: ${m.subject_color || 'var(--text-primary)'}; font-weight: 600;">
-            ${m.subject_icon || '📚'} ${m.subject_name || 'Fach'}
-          </span>
-          ${m.topic_name ? `<span>• 📑 ${m.topic_name}</span>` : ""}
-          <span>• ${docIcon} ${m.page_count} S. (${sizeStr})</span>
-          ${m.start_page && m.end_page ? `<span>• S. ${m.start_page}–${m.end_page}</span>` : ""}
-        </div>
-        ${m.summary ? `<div class="mat-card-summary">“${m.summary}”</div>` : ""}
-      </div>
-      <div class="mat-card-actions">
-        ${m.kind && m.kind.includes("Stundenplan") ? `
-          <button class="btn-mat-action btn-mat-tt" style="background: rgba(99, 102, 241, 0.2); border-color: var(--accent); color: var(--accent-light); font-weight: 700;" title="Als interaktives Stundenplan-Widget öffnen">
-            🗓️ Stundenplan
-          </button>
-        ` : ""}
-        <button class="btn-mat-action btn-mat-view" title="${m.kind && m.kind.includes('Stundenplan') ? 'Original-Scan als Dokument ansehen' : 'Dokument im Popup ansehen'}">
-          👁️ ${m.kind && m.kind.includes('Stundenplan') ? 'Scan' : 'Öffnen'}
-        </button>
-        <button class="btn-mat-action btn-mat-reader" title="Im Dokument-Reader öffnen & mit Apple Pencil beschreiben">
-          📖 Reader
-        </button>
-        <button class="btn-mat-action btn-mat-del" data-id="${m.id}" title="Material löschen">
-          🗑️
-        </button>
-      </div>
-    `;
-
-    const ttBtn = card.querySelector(".btn-mat-tt");
-    if (ttBtn) {
-      ttBtn.addEventListener("click", () => {
-        switchToTab("timetable");
-      });
-    }
-
-    card.querySelector(".btn-mat-view").addEventListener("click", () => {
-      openDocumentViewerModal(m);
+  materials.forEach((m) => {
+    const card = buildMaterialCard(m, async () => {
+      await loadMaterials();
+      await loadUploadsHistory();
+      if (currentDetailSubjectId) await loadSubjectMaterials(currentDetailSubjectId);
     });
+    historyList.appendChild(card);
+  });
+}
 
-    const readerBtn = card.querySelector(".btn-mat-reader");
-    if (readerBtn) {
-      readerBtn.addEventListener("click", () => {
-        openMaterialInReader(m);
-      });
-    }
+function setupUploadsPageEvents() {
+  const dropzone = document.getElementById("page-upload-dropzone");
+  const fileInput = document.getElementById("page-file-input");
+  const btnTrigger = document.getElementById("btn-trigger-page-upload");
 
-    card.querySelector(".btn-mat-del").addEventListener("click", async () => {
-      if (!confirm(`Möchtest du das Material „${m.title}“ wirklich löschen?`)) return;
-      try {
-        const delRes = await fetch(`/api/v1/materials/${m.id}`, { method: "DELETE" });
-        if (delRes.ok) {
-          await loadMaterials();
-        } else {
-          alert("Fehler beim Löschen.");
-        }
-      } catch (err) {
-        alert("Netzwerkfehler beim Löschen.");
+  if (btnTrigger && fileInput) {
+    btnTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      fileInput.click();
+    });
+  }
+
+  if (dropzone && fileInput) {
+    dropzone.addEventListener("click", (e) => {
+      if (e.target !== btnTrigger) {
+        fileInput.click();
       }
     });
 
-    materialsList.appendChild(card);
-  });
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("drag-over");
+    });
+
+    dropzone.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("drag-over");
+    });
+
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("drag-over");
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        openMaterialUploadModal();
+        handleFileUpload(e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        openMaterialUploadModal();
+        handleFileUpload(file);
+      }
+    });
+  }
 }
 
 function updateMaterialTopicOptions(subjectId, selectedTopicId = null) {
@@ -967,11 +1218,12 @@ async function handleFileUpload(file) {
     }
 
     matConfirmSubject.innerHTML = "";
+    const activeSubId = currentPreselectedSubjectId || data.predicted_subject_id;
     currentSubjects.forEach((s) => {
       const opt = document.createElement("option");
       opt.value = s.id;
       opt.textContent = `${s.icon} ${s.name}`;
-      if (data.predicted_subject_id && s.id === data.predicted_subject_id) {
+      if (activeSubId && s.id === activeSubId) {
         opt.selected = true;
       }
       matConfirmSubject.appendChild(opt);
@@ -990,11 +1242,18 @@ async function handleFileUpload(file) {
 
 function resetMaterialModal() {
   currentUploadToken = null;
+  currentPreselectedSubjectId = null;
   if (matFileInput) matFileInput.value = "";
   if (matDropzone) matDropzone.style.display = "flex";
   if (matUploadSpinner) matUploadSpinner.style.display = "none";
   if (matStepUpload) matStepUpload.style.display = "block";
   if (matStepConfirm) matStepConfirm.style.display = "none";
+}
+
+function openMaterialUploadModal(preselectedSubjectId = null) {
+  currentPreselectedSubjectId = preselectedSubjectId;
+  resetMaterialModal();
+  if (modalMaterial) modalMaterial.style.display = "flex";
 }
 
 if (matConfirmSubject) {
@@ -1005,8 +1264,7 @@ if (matConfirmSubject) {
 
 if (btnOpenMaterialModal) {
   btnOpenMaterialModal.addEventListener("click", () => {
-    resetMaterialModal();
-    if (modalMaterial) modalMaterial.style.display = "flex";
+    openMaterialUploadModal();
   });
 }
 
@@ -1104,6 +1362,8 @@ if (btnSubmitMaterial) {
         if (modalMaterial) modalMaterial.style.display = "none";
         resetMaterialModal();
         await loadMaterials();
+        await loadUploadsHistory();
+        if (currentDetailSubjectId) await loadSubjectMaterials(currentDetailSubjectId);
       } else {
         const errData = await res.json().catch(() => ({}));
         alert(errData.detail || "Fehler beim Speichern des Materials.");
@@ -1884,21 +2144,10 @@ if (btnTtGotoMaterials) {
     if (!activeDetailSlot) return;
     const sId = activeDetailSlot.subject_id;
     closeTimetableSlotDetailModal();
-    switchToTab("subjects");
     if (sId) {
-      const filterPills = document.querySelectorAll(".filter-pill");
-      filterPills.forEach((p) => p.classList.remove("active"));
-      const allPill = document.querySelector('.filter-pill[data-kind="all"]');
-      if (allPill) allPill.classList.add("active");
-      activeKindFilter = "all";
-      const subCards = document.querySelectorAll(".subject-detail-card");
-      subCards.forEach((c) => {
-        if (c.dataset.subjectId === sId) {
-          c.scrollIntoView({ behavior: "smooth", block: "start" });
-          c.style.boxShadow = "0 0 15px rgba(99, 102, 241, 0.6)";
-          setTimeout(() => { c.style.boxShadow = ""; }, 2000);
-        }
-      });
+      openSubjectDetail(sId);
+    } else {
+      switchToTab("dashboard");
     }
   });
 }
@@ -3040,6 +3289,8 @@ async function initApp() {
   await safeRun(loadTimetable, "loadTimetable");
   await safeRun(loadBooks, "loadBooks");
   safeRun(setupBookBrowserEvents, "setupBookBrowserEvents");
+  safeRun(setupSubjectDetailEvents, "setupSubjectDetailEvents");
+  safeRun(setupUploadsPageEvents, "setupUploadsPageEvents");
   safeRun(connectWebSocket, "connectWebSocket");
 }
 
