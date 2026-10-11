@@ -2421,6 +2421,7 @@ let bookAnnotationLoadedKey = null;
 let currentBookAnnotationMaterialId = null;
 let currentBookAnnotationPage = null;
 let lastBookScreenPoint = null;
+let lastBookMidPoint = null;
 let bookCanvasRect = null;
 let currentBookSmoothWidth = 3.5;
 
@@ -2651,6 +2652,7 @@ function onBookPointerDown(e) {
   }
 
   lastBookScreenPoint = { x: screenX, y: screenY };
+  lastBookMidPoint = { x: screenX, y: screenY };
 }
 
 function onBookPointerMove(e) {
@@ -2680,11 +2682,9 @@ function onBookPointerMove(e) {
   const ctx = bookAnnotationCtx;
   if (!ctx) return;
 
-  // Konstante Strichstärke (Fineliner-Modus):
-  // Keine dynamischen lineWidth-Mutationen pro Teilstück.
-  // Alle 240Hz Coalesced Sub-Events werden in einem einzigen hardware-beschleunigten GPU-Pfad gezeichnet.
+  // Leichte Glättung via Midpoint Quadratic Bézier (Zero Overhead, geschmeidig wie Apple Notes)
   ctx.beginPath();
-  ctx.moveTo(lastBookScreenPoint.x, lastBookScreenPoint.y);
+  ctx.moveTo(lastBookMidPoint.x, lastBookMidPoint.y);
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
@@ -2694,8 +2694,14 @@ function onBookPointerMove(e) {
     const normY = Math.max(0, Math.min(1, screenY / rect.height));
 
     currentBookStroke.points.push({ x: normX, y: normY });
-    ctx.lineTo(screenX, screenY);
+
+    const midX = (lastBookScreenPoint.x + screenX) * 0.5;
+    const midY = (lastBookScreenPoint.y + screenY) * 0.5;
+
+    ctx.quadraticCurveTo(lastBookScreenPoint.x, lastBookScreenPoint.y, midX, midY);
+
     lastBookScreenPoint = { x: screenX, y: screenY };
+    lastBookMidPoint = { x: midX, y: midY };
   }
 
   ctx.stroke();
@@ -2708,9 +2714,20 @@ function onBookPointerUp(e) {
   if (bookPenOnlyMode && e.pointerType === "touch") return;
 
   if (isBookDrawing && e.pointerId === activeBookPointerId) {
+    if (lastBookMidPoint && lastBookScreenPoint && (lastBookMidPoint.x !== lastBookScreenPoint.x || lastBookMidPoint.y !== lastBookScreenPoint.y)) {
+      const ctx = bookAnnotationCtx;
+      if (ctx) {
+        ctx.beginPath();
+        ctx.moveTo(lastBookMidPoint.x, lastBookMidPoint.y);
+        ctx.lineTo(lastBookScreenPoint.x, lastBookScreenPoint.y);
+        ctx.stroke();
+      }
+    }
+
     isBookDrawing = false;
     activeBookPointerId = null;
     lastBookScreenPoint = null;
+    lastBookMidPoint = null;
     bookCanvasRect = null;
     try {
       if (bookAnnotationCanvas.hasPointerCapture(e.pointerId)) {
@@ -2733,6 +2750,7 @@ function cancelCurrentBookStroke() {
   isBookDrawing = false;
   activeBookPointerId = null;
   lastBookScreenPoint = null;
+  lastBookMidPoint = null;
   bookCanvasRect = null;
 }
 
@@ -2841,14 +2859,31 @@ function redrawBookAnnotations() {
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
 
-      ctx.beginPath();
-      const first = stroke.points[0];
-      ctx.moveTo(first.x * cssW, first.y * cssH);
-      for (let i = 1; i < stroke.points.length; i++) {
-        const pt = stroke.points[i];
-        ctx.lineTo(pt.x * cssW, pt.y * cssH);
+      if (stroke.points.length === 1) {
+        const pt = stroke.points[0];
+        ctx.beginPath();
+        ctx.arc(pt.x * cssW, pt.y * cssH, (stroke.width || 22) / 2, 0, Math.PI * 2);
+        ctx.fillStyle = stroke.color || "#facc15";
+        ctx.fill();
+      } else if (stroke.points.length === 2) {
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x * cssW, stroke.points[0].y * cssH);
+        ctx.lineTo(stroke.points[1].x * cssW, stroke.points[1].y * cssH);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x * cssW, stroke.points[0].y * cssH);
+        for (let i = 1; i < stroke.points.length - 1; i++) {
+          const p1 = stroke.points[i];
+          const p2 = stroke.points[i + 1];
+          const midX = (p1.x + p2.x) * 0.5 * cssW;
+          const midY = (p1.y + p2.y) * 0.5 * cssH;
+          ctx.quadraticCurveTo(p1.x * cssW, p1.y * cssH, midX, midY);
+        }
+        const last = stroke.points[stroke.points.length - 1];
+        ctx.lineTo(last.x * cssW, last.y * cssH);
+        ctx.stroke();
       }
-      ctx.stroke();
     } else {
       ctx.globalAlpha = 1.0;
       ctx.globalCompositeOperation = "source-over";
@@ -2857,6 +2892,7 @@ function redrawBookAnnotations() {
       ctx.lineJoin = "round";
 
       const baseWidth = stroke.width || 2.6;
+      ctx.lineWidth = baseWidth;
       if (stroke.points.length === 1) {
         const pt = stroke.points[0];
         const r = Math.max(0.5, baseWidth / 2);
@@ -2864,15 +2900,23 @@ function redrawBookAnnotations() {
         ctx.beginPath();
         ctx.arc(pt.x * cssW, pt.y * cssH, r, 0, Math.PI * 2);
         ctx.fill();
+      } else if (stroke.points.length === 2) {
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x * cssW, stroke.points[0].y * cssH);
+        ctx.lineTo(stroke.points[1].x * cssW, stroke.points[1].y * cssH);
+        ctx.stroke();
       } else {
         ctx.beginPath();
-        const p0 = stroke.points[0];
-        ctx.moveTo(p0.x * cssW, p0.y * cssH);
-        for (let i = 1; i < stroke.points.length; i++) {
-          const pt = stroke.points[i];
-          ctx.lineTo(pt.x * cssW, pt.y * cssH);
+        ctx.moveTo(stroke.points[0].x * cssW, stroke.points[0].y * cssH);
+        for (let i = 1; i < stroke.points.length - 1; i++) {
+          const p1 = stroke.points[i];
+          const p2 = stroke.points[i + 1];
+          const midX = (p1.x + p2.x) * 0.5 * cssW;
+          const midY = (p1.y + p2.y) * 0.5 * cssH;
+          ctx.quadraticCurveTo(p1.x * cssW, p1.y * cssH, midX, midY);
         }
-        ctx.lineWidth = baseWidth;
+        const last = stroke.points[stroke.points.length - 1];
+        ctx.lineTo(last.x * cssW, last.y * cssH);
         ctx.stroke();
       }
     }

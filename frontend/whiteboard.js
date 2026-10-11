@@ -50,6 +50,7 @@
   let redoStack = [];
   let currentStroke = null;
   let lastPoint = null;
+  let lastMidPoint = null;
   let dragDeletedItems = []; // For object_eraser drag session
   let dpr = window.devicePixelRatio || 1;
   let saveDebounceTimer = null;
@@ -359,12 +360,21 @@
       inkCtx.arc(pts[0].x, pts[0].y, Math.max(1, stroke.width / 2), 0, Math.PI * 2);
       inkCtx.fillStyle = (stroke.tool === "pixel_eraser" || stroke.tool === "eraser") ? "#000" : stroke.color;
       inkCtx.fill();
+    } else if (pts.length === 2) {
+      inkCtx.beginPath();
+      inkCtx.moveTo(pts[0].x, pts[0].y);
+      inkCtx.lineTo(pts[1].x, pts[1].y);
+      inkCtx.stroke();
     } else {
       inkCtx.beginPath();
       inkCtx.moveTo(pts[0].x, pts[0].y);
-      for (let j = 1; j < pts.length; j++) {
-        inkCtx.lineTo(pts[j].x, pts[j].y);
+      for (let j = 1; j < pts.length - 1; j++) {
+        const midX = (pts[j].x + pts[j + 1].x) * 0.5;
+        const midY = (pts[j].y + pts[j + 1].y) * 0.5;
+        inkCtx.quadraticCurveTo(pts[j].x, pts[j].y, midX, midY);
       }
+      const last = pts[pts.length - 1];
+      inkCtx.lineTo(last.x, last.y);
       inkCtx.stroke();
     }
 
@@ -450,6 +460,7 @@
     isDrawing = true;
     const pt = getEventPoint(e);
     lastPoint = pt;
+    lastMidPoint = pt;
     const strokeWidth = currentBaseWidth / scale;
     currentSmoothWidth = strokeWidth;
 
@@ -497,15 +508,20 @@
       return;
     }
 
-    if (!currentStroke || !lastPoint) return;
+    if (!currentStroke || !lastPoint || !lastMidPoint) return;
 
     inkCtx.beginPath();
-    inkCtx.moveTo(lastPoint.x, lastPoint.y);
+    inkCtx.moveTo(lastMidPoint.x, lastMidPoint.y);
     for (let i = 0; i < events.length; i++) {
       const pt = getEventPoint(events[i]);
       currentStroke.points.push(pt);
-      inkCtx.lineTo(pt.x, pt.y);
+
+      const midX = (lastPoint.x + pt.x) * 0.5;
+      const midY = (lastPoint.y + pt.y) * 0.5;
+      inkCtx.quadraticCurveTo(lastPoint.x, lastPoint.y, midX, midY);
+
       lastPoint = pt;
+      lastMidPoint = { x: midX, y: midY };
     }
     inkCtx.stroke();
   }
@@ -545,10 +561,18 @@
       }
     } catch (_) {}
 
+    if (lastMidPoint && lastPoint && (lastMidPoint.x !== lastPoint.x || lastMidPoint.y !== lastPoint.y)) {
+      inkCtx.beginPath();
+      inkCtx.moveTo(lastMidPoint.x, lastMidPoint.y);
+      inkCtx.lineTo(lastPoint.x, lastPoint.y);
+      inkCtx.stroke();
+    }
+
     isDrawing = false;
     activePointerId = null;
     currentStroke = null;
     lastPoint = null;
+    lastMidPoint = null;
   }
 
   // Pointer Event-Listener mit passive: false für e.preventDefault()
