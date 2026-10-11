@@ -344,9 +344,10 @@ def confirm_and_save_material(
     db.commit()
     db.refresh(material)
 
-    # Erste Seiten für sofortige Reaktionszeit vor-rendern
+    # Hintergrund-Rendering für alle Seiten des Dokuments anstoßen
     try:
-        pre_cache_material_pages(material.id, material.file_path, material.mime_type, max_pages=3)
+        from backend.app.services.page_renderer import page_renderer
+        page_renderer.queue_material(material.id, material.file_path, material.mime_type, material.page_count)
     except Exception:
         pass
 
@@ -360,83 +361,16 @@ def render_material_page_as_image(
 ) -> Tuple[bytes, str]:
     """
     Rendert eine Dokumentenseite extrem schnell als JPEG-Bild.
-    Nutzt einen persistenten Festplatten-Cache, sodass Seitenaufrufe nach dem ersten Rendern
-    nur wenige Millisekunden dauern.
+    Delegiert an den priorisierten PageRenderingService.
     """
-    path = Path(file_path)
-    if not path.exists():
-        raise FileNotFoundError("Materialdatei nicht gefunden.")
-
-    # 1. Bilddateien (PNG, JPG, WebP) direkt liefern
-    if "image" in mime_type.lower() or path.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"):
-        out_mime = mime_type or "image/jpeg"
-        if out_mime == "application/octet-stream":
-            out_mime = "image/png" if path.suffix.lower() == ".png" else "image/jpeg"
-        return path.read_bytes(), out_mime
-
-    # 2. PDF-Rendering mit Festplatten-Cache
-    if "pdf" in mime_type.lower() or path.suffix.lower() == ".pdf":
-        try:
-            mtime = int(path.stat().st_mtime)
-        except Exception:
-            mtime = 0
-
-        doc_key = material_id or path.stem
-        cache_file = PAGE_CACHE_DIR / f"{doc_key}_p{page_num}_{mtime}.jpg"
-
-        # Cache-Hit: Sofortige Auslieferung (2-5 Millisekunden)
-        if cache_file.exists() and cache_file.stat().st_size > 0:
-            return cache_file.read_bytes(), "image/jpeg"
-
-        # A) Bevorzugt auf Linux / Raspberry Pi: System-natives pdftoppm mit JPEG
-        # JPEG bei 120 DPI ist auf dem Pi 15x schneller als PNG (ca. 1,2s statt 21s) und 15x kompakter (ca. 60-120 KB statt 1,8 MB).
-        pdftoppm_bin = shutil.which("pdftoppm") or ("/usr/bin/pdftoppm" if Path("/usr/bin/pdftoppm").exists() else None)
-        if pdftoppm_bin:
-            try:
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    out_prefix = os.path.join(tmpdir, "page")
-                    cmd = [
-                        pdftoppm_bin,
-                        "-jpeg",
-                        "-r", "120",
-                        "-f", str(page_num),
-                        "-l", str(page_num),
-                        "-singlefile",
-                        str(path),
-                        out_prefix
-                    ]
-                    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
-                    out_jpg = f"{out_prefix}.jpg"
-                    if res.returncode == 0 and os.path.exists(out_jpg):
-                        img_bytes = Path(out_jpg).read_bytes()
-                        try:
-                            cache_file.write_bytes(img_bytes)
-                        except Exception:
-                            pass
-                        return img_bytes, "image/jpeg"
-            except Exception as e:
-                logger.warning(f"pdftoppm fehlgeschlagen: {e}")
-
-        # B) PyMuPDF (fitz) falls verfügbar (z. B. auf macOS Entwicklungsumgebung)
-        try:
-            import fitz
-            doc = fitz.open(str(path))
-            total_pages = len(doc)
-            target_page = max(0, min(page_num - 1, total_pages - 1))
-            page = doc.load_page(target_page)
-            pix = page.get_pixmap(dpi=120)
-            img_bytes = pix.tobytes("jpeg")
-            try:
-                cache_file.write_bytes(img_bytes)
-            except Exception:
-                pass
-            return img_bytes, "image/jpeg"
-        except Exception:
-            pass
-
-        return path.read_bytes(), mime_type
-
-    return path.read_bytes(), mime_type
+    from backend.app.services.page_renderer import page_renderer, PRIORITY_LIVE
+    return page_renderer.render_page(
+        file_path=file_path,
+        mime_type=mime_type,
+        page_num=page_num,
+        material_id=material_id,
+        priority=PRIORITY_LIVE
+    )
 
 def pre_cache_material_pages(
     material_id: str,
@@ -445,17 +379,9 @@ def pre_cache_material_pages(
     max_pages: int = 3
 ):
     """
-    Rendert die ersten Seiten eines PDFs asynchron/beim Upload vor,
-    sodass der Benutzer beim Klick auf 'Öffnen' keinerlei Wartezeit spürt.
+    Rendert die ersten Seiten eines PDFs asynchron/beim Upload vor.
     """
-    if "pdf" not in mime_type.lower() and not file_path.lower().endswith(".pdf"):
-        return
-    try:
-        for p in range(1, max_pages + 1):
-            try:
-                render_material_page_as_image(file_path, mime_type, page_num=p, material_id=material_id)
-            except Exception:
-                break
-    except Exception as e:
-        logger.warning(f"Fehler beim Vorab-Rendern von {material_id}: {e}")
+    from backend.app.services.page_renderer import page_renderer
+    page_renderer.queue_material(material_id, file_path, mime_type, max_pages)
+
 

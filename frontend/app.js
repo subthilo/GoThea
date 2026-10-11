@@ -14,6 +14,16 @@ const statTopicsCount = document.getElementById("stat-topics-count");
 const dashboardSubjectsGrid = document.getElementById("dashboard-subjects-grid");
 const subjectsDetailedList = document.getElementById("subjects-detailed-list");
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function switchToTab(tabName) {
   const btn = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
   if (btn) btn.click();
@@ -29,11 +39,19 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
     const target = document.getElementById(`tab-${btn.dataset.tab}`);
     if (target) target.classList.add("active");
 
+    if (btn.dataset.tab !== "books" && bookSaveTimer) {
+      saveCurrentBookAnnotations();
+    }
+
     if (btn.dataset.tab === "subjects") {
       checkInboxStatus();
     }
     if (btn.dataset.tab === "timetable") {
       loadTimetable();
+    }
+    if (btn.dataset.tab === "books") {
+      loadBooks();
+      setTimeout(syncBookAnnotationCanvasSize, 100);
     }
   });
 });
@@ -847,8 +865,8 @@ function renderMaterialsList(materials) {
         <button class="btn-mat-action btn-mat-view" title="${m.kind && m.kind.includes('Stundenplan') ? 'Original-Scan als Dokument ansehen' : 'Dokument im Popup ansehen'}">
           👁️ ${m.kind && m.kind.includes('Stundenplan') ? 'Scan' : 'Öffnen'}
         </button>
-        <button class="btn-mat-action btn-mat-wb" title="Auf Tafel öffnen und beschreiben">
-          🎨 Tafel
+        <button class="btn-mat-action btn-mat-reader" title="Im Dokument-Reader öffnen & mit Apple Pencil beschreiben">
+          📖 Reader
         </button>
         <button class="btn-mat-action btn-mat-del" data-id="${m.id}" title="Material löschen">
           🗑️
@@ -867,9 +885,12 @@ function renderMaterialsList(materials) {
       openDocumentViewerModal(m);
     });
 
-    card.querySelector(".btn-mat-wb").addEventListener("click", () => {
-      openMaterialOnWhiteboard(m);
-    });
+    const readerBtn = card.querySelector(".btn-mat-reader");
+    if (readerBtn) {
+      readerBtn.addEventListener("click", () => {
+        openMaterialInReader(m);
+      });
+    }
 
     card.querySelector(".btn-mat-del").addEventListener("click", async () => {
       if (!confirm(`Möchtest du das Material „${m.title}“ wirklich löschen?`)) return;
@@ -1237,22 +1258,18 @@ function closeDocumentViewerModal() {
   activeViewerMaterial = null;
 }
 
-function openMaterialOnWhiteboard(material) {
-  // Tab zur Tafel wechseln
-  const tabWbBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
-  if (tabWbBtn) tabWbBtn.click();
-
-  // Fach der Vorlage einstellen
-  const wbSubSelect = document.getElementById("wb-subject-select");
-  if (wbSubSelect && material.subject_id) {
-    wbSubSelect.value = material.subject_id;
-    wbSubSelect.dispatchEvent(new Event("change"));
-  }
-
-  // Vorlage auf Tafel laden
-  if (typeof window.loadWorksheetOnWhiteboard === "function") {
-    window.loadWorksheetOnWhiteboard(material);
-  }
+function openMaterialInReader(material) {
+  switchToTab("books");
+  const ch = {
+    id: material.id,
+    title: material.title,
+    page_count: material.page_count || 1,
+    start_page: material.start_page || 1,
+    end_page: material.end_page || material.page_count || 1,
+    topic_name: material.topic_name || "Material",
+    focus: material.summary || "Dokumentansicht mit handschriftlichen Notizen"
+  };
+  openChapter(ch);
 }
 
 if (btnCloseViewerModal) {
@@ -1290,7 +1307,7 @@ if (btnViewerOpenWb) {
     if (activeViewerMaterial) {
       const mat = activeViewerMaterial;
       closeDocumentViewerModal();
-      openMaterialOnWhiteboard(mat);
+      openMaterialInReader(mat);
     }
   });
 }
@@ -1900,17 +1917,1029 @@ if (btnTtGotoWb) {
   });
 }
 
+// ==========================================================================
+// 📖 BÜCHER-BROWSER LOGIK (#tab-books)
+// ==========================================================================
+
+let currentBooks = [];
+let activeBookId = null;
+let activeBookDetail = null;
+let activeChapter = null;
+let currentChapterPage = 1;
+let bookZoomMode = "width"; // Standard: Volle Dokumentbreite (100% Breite)
+
+async function loadBooks() {
+  try {
+    const res = await fetch("/api/v1/books");
+    if (!res.ok) return;
+    currentBooks = await res.json();
+    renderBooksShelf();
+
+    if (currentBooks.length > 0) {
+      if (!activeBookId || !currentBooks.some(b => b.id === activeBookId)) {
+        await selectBook(currentBooks[0].id);
+      }
+    }
+  } catch (err) {
+    console.error("Fehler beim Laden der Schulbücher:", err);
+  }
+}
+
+function renderBooksShelf() {
+  const container = document.getElementById("books-shelf-selector");
+  if (!container) return;
+  container.innerHTML = "";
+
+  currentBooks.forEach((book) => {
+    const card = document.createElement("div");
+    card.className = `shelf-book-card ${book.id === activeBookId ? "active" : ""}`;
+    card.dataset.bookId = book.id;
+    card.innerHTML = `
+      <span class="shelf-book-icon">${book.subject_icon || "📚"}</span>
+      <div class="shelf-book-meta">
+        <span class="shelf-book-title">${escapeHtml(book.title)}</span>
+        <span class="shelf-book-sub">${book.chapters_count} Lerneinheiten • ${book.total_pages} Seiten</span>
+      </div>
+    `;
+    card.addEventListener("click", () => selectBook(book.id));
+    container.appendChild(card);
+  });
+}
+
+async function selectBook(bookId) {
+  activeBookId = bookId;
+  renderBooksShelf();
+
+  try {
+    const res = await fetch(`/api/v1/books/${bookId}`);
+    if (!res.ok) return;
+    activeBookDetail = await res.json();
+
+    // Katalog-Header befüllen
+    const iconEl = document.getElementById("catalog-book-icon");
+    const titleEl = document.getElementById("catalog-book-title");
+    const subEl = document.getElementById("catalog-book-subtitle");
+    const drawerSubEl = document.getElementById("drawer-book-subtitle");
+
+    if (iconEl) iconEl.textContent = activeBookDetail.subject_icon || "📚";
+    if (titleEl) titleEl.textContent = activeBookDetail.title;
+    if (subEl) subEl.textContent = `${activeBookDetail.chapters_count} Lerneinheiten • ${activeBookDetail.total_pages} Seiten`;
+    if (drawerSubEl) drawerSubEl.textContent = activeBookDetail.title;
+
+    // Standardmäßig Katalog anzeigen (oder Reader aktualisieren falls bereits geöffnet)
+    const readerView = document.getElementById("book-reader-view");
+    const isReaderOpen = readerView && readerView.style.display !== "none";
+
+    renderBookCatalog();
+    renderDrawerTOC();
+
+    if (isReaderOpen && activeChapter) {
+      // Wenn das Buch gewechselt wurde während der Reader offen war, erstes Kapitel des neuen Buchs laden
+      const chaps = activeBookDetail.chapters || [];
+      const newChap = chaps.find(c => c.id === activeChapter.id) || (chaps.find(c => c.chapter_number === 1) || chaps[0]);
+      if (newChap) openChapter(newChap);
+    }
+  } catch (err) {
+    console.error("Fehler beim Abruf der Buch-Details:", err);
+  }
+}
+
+// Ansicht 1: Übersicht aller Kapitel / Lerneinheiten als Kacheln
+function renderBookCatalog(filterTerm = "") {
+  const container = document.getElementById("book-catalog-grid");
+  if (!container || !activeBookDetail) return;
+  container.innerHTML = "";
+
+  const term = (filterTerm || "").toLowerCase().trim();
+  const chapters = (activeBookDetail.chapters || []).filter((ch) => {
+    if (!term) return true;
+    return (
+      ch.title.toLowerCase().includes(term) ||
+      (ch.topic_name && ch.topic_name.toLowerCase().includes(term)) ||
+      (ch.focus && ch.focus.toLowerCase().includes(term))
+    );
+  });
+
+  if (chapters.length === 0) {
+    container.innerHTML = `<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color);">Keine Lerneinheiten für "${escapeHtml(filterTerm)}" gefunden.</div>`;
+    return;
+  }
+
+  chapters.forEach((ch) => {
+    const card = document.createElement("div");
+    card.className = "catalog-chapter-card";
+    card.dataset.chapterId = ch.id;
+
+    const unitLabel = ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`;
+    card.innerHTML = `
+      <div class="catalog-card-header">
+        <span class="catalog-badge">${unitLabel}</span>
+        <span class="catalog-pages">S. ${ch.start_page}–${ch.end_page} (${ch.page_count} Seiten)</span>
+      </div>
+      <div class="catalog-card-title">${escapeHtml(ch.title)}</div>
+      ${ch.topic_name ? `<div class="catalog-card-topic"><span>📐</span> ${escapeHtml(ch.topic_name)}</div>` : ""}
+      <div class="catalog-card-focus">${escapeHtml(ch.focus || "Lerneinheit aus dem Schulbuch.")}</div>
+      <div class="catalog-card-footer">
+        <span>Kapitel aufschlagen</span> <span>📖 ➔</span>
+      </div>
+    `;
+    card.addEventListener("click", () => openChapter(ch));
+    container.appendChild(card);
+  });
+}
+
+// Ansicht 2: Vollbreiten-Reader für ein gewähltes Kapitel öffnen
+function openChapter(ch) {
+  if (!ch) return;
+  activeChapter = ch;
+  currentChapterPage = 1;
+
+  // Umschalten auf Reader-Ansicht
+  const catalogView = document.getElementById("book-catalog-view");
+  const readerView = document.getElementById("book-reader-view");
+  if (catalogView) catalogView.style.display = "none";
+  if (readerView) readerView.style.display = "flex";
+
+  // Breadcrumbs & Header
+  const bcBook = document.getElementById("bc-book-name");
+  const bcChap = document.getElementById("bc-chapter-name");
+  if (bcBook && activeBookDetail) bcBook.textContent = activeBookDetail.title;
+  if (bcChap) bcChap.textContent = ch.title;
+
+  const badgeEl = document.getElementById("reader-chapter-badge");
+  const titleEl = document.getElementById("reader-chapter-title");
+  const topicEl = document.getElementById("reader-chapter-topic");
+  const pagesEl = document.getElementById("reader-chapter-pages");
+  const focusEl = document.getElementById("reader-chapter-focus");
+  const downloadBtn = document.getElementById("btn-book-download-pdf");
+
+  if (badgeEl) badgeEl.textContent = ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`;
+  if (titleEl) titleEl.textContent = ch.title;
+  if (topicEl) topicEl.textContent = `📐 ${ch.topic_name || "Mathematik 7"}`;
+  if (pagesEl) pagesEl.textContent = `S. ${ch.start_page} – ${ch.end_page} (${ch.page_count} Seiten)`;
+  if (focusEl) focusEl.textContent = ch.focus || "Lerneinheit aus dem Schulbuch.";
+  if (downloadBtn) {
+    downloadBtn.href = ch.file_url;
+    downloadBtn.setAttribute("download", ch.filename);
+  }
+
+  // Vorh. / Nächste Einheit Buttons aktualisieren
+  updateChapterNavButtons();
+
+  // Drawer aktiv markieren
+  updateDrawerActiveState();
+
+  // Drawer schließen falls offen
+  closeTOCDrawer();
+
+  // Seiten-Pills & erste Seite anzeigen
+  renderBookPageStrip();
+  renderChapterPage();
+
+  // Nach oben scrollen für optimales Leseerlebnis
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeReaderToCatalog() {
+  const catalogView = document.getElementById("book-catalog-view");
+  const readerView = document.getElementById("book-reader-view");
+  if (readerView) readerView.style.display = "none";
+  if (catalogView) catalogView.style.display = "flex";
+  closeTOCDrawer();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function updateChapterNavButtons() {
+  const prevBtn = document.getElementById("btn-reader-prev-chapter");
+  const nextBtn = document.getElementById("btn-reader-next-chapter");
+  if (!activeBookDetail || !activeChapter) return;
+
+  const chaps = activeBookDetail.chapters || [];
+  const idx = chaps.findIndex(c => c.id === activeChapter.id);
+
+  if (prevBtn) prevBtn.disabled = idx <= 0;
+  if (nextBtn) nextBtn.disabled = idx < 0 || idx >= chaps.length - 1;
+}
+
+function navigateChapter(delta) {
+  if (!activeBookDetail || !activeChapter) return;
+  const chaps = activeBookDetail.chapters || [];
+  const idx = chaps.findIndex(c => c.id === activeChapter.id);
+  const targetIdx = idx + delta;
+  if (targetIdx >= 0 && targetIdx < chaps.length) {
+    openChapter(chaps[targetIdx]);
+  }
+}
+
+// 3. Offcanvas TOC Drawer
+function openTOCDrawer() {
+  const drawer = document.getElementById("book-toc-drawer");
+  const backdrop = document.getElementById("book-toc-drawer-backdrop");
+  if (drawer) drawer.classList.add("open");
+  if (backdrop) backdrop.classList.add("open");
+}
+
+function closeTOCDrawer() {
+  const drawer = document.getElementById("book-toc-drawer");
+  const backdrop = document.getElementById("book-toc-drawer-backdrop");
+  if (drawer) drawer.classList.remove("open");
+  if (backdrop) backdrop.classList.remove("open");
+}
+
+function renderDrawerTOC(filterTerm = "") {
+  const container = document.getElementById("drawer-chapters-list");
+  if (!container || !activeBookDetail) return;
+  container.innerHTML = "";
+
+  const term = (filterTerm || "").toLowerCase().trim();
+  const chapters = (activeBookDetail.chapters || []).filter((ch) => {
+    if (!term) return true;
+    return (
+      ch.title.toLowerCase().includes(term) ||
+      (ch.topic_name && ch.topic_name.toLowerCase().includes(term))
+    );
+  });
+
+  if (chapters.length === 0) {
+    container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.88rem;">Keine Lerneinheiten für "${escapeHtml(filterTerm)}" gefunden.</div>`;
+    return;
+  }
+
+  chapters.forEach((ch) => {
+    const item = document.createElement("div");
+    const isActive = activeChapter && activeChapter.id === ch.id;
+    item.className = `drawer-chapter-item ${isActive ? "active" : ""}`;
+    item.dataset.chapterId = ch.id;
+
+    const unitLabel = ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`;
+    item.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span class="catalog-badge">${unitLabel}</span>
+        <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">S. ${ch.start_page}–${ch.end_page}</span>
+      </div>
+      <div style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary);">${escapeHtml(ch.title)}</div>
+      ${ch.topic_name ? `<div style="font-size: 0.76rem; color: #94a3b8;">📐 ${escapeHtml(ch.topic_name)}</div>` : ""}
+    `;
+    item.addEventListener("click", () => openChapter(ch));
+    container.appendChild(item);
+  });
+}
+
+function updateDrawerActiveState() {
+  document.querySelectorAll(".drawer-chapter-item").forEach((it) => {
+    it.classList.toggle("active", activeChapter && it.dataset.chapterId === activeChapter.id);
+  });
+}
+
+// 4. Seiten-Pills & Seiten-Rendering
+function renderBookPageStrip() {
+  const strip = document.getElementById("book-page-strip");
+  if (!strip || !activeChapter) return;
+  strip.innerHTML = "";
+
+  for (let p = 1; p <= activeChapter.page_count; p++) {
+    const absPage = activeChapter.start_page + p - 1;
+    const pill = document.createElement("div");
+    pill.className = `book-page-pill ${p === currentChapterPage ? "active" : ""}`;
+    pill.dataset.page = p;
+    pill.textContent = p;
+    pill.title = `Seite ${p} des Kapitels (Buchseite ${absPage})`;
+    pill.addEventListener("click", () => {
+      currentChapterPage = p;
+      renderChapterPage();
+    });
+    strip.appendChild(pill);
+  }
+}
+
+async function renderChapterPage() {
+  if (!activeChapter) return;
+
+  // Wenn noch ein Autosave der vorherigen Seite aussteht, sofort speichern
+  if (bookSaveTimer) {
+    await saveCurrentBookAnnotations();
+  }
+
+  const counterEl = document.getElementById("book-page-counter");
+  const prevBtn = document.getElementById("btn-book-prev-page");
+  const nextBtn = document.getElementById("btn-book-next-page");
+  const imgEl = document.getElementById("book-page-img");
+  const loadingEl = document.getElementById("book-page-loading");
+
+  const absPage = activeChapter.start_page + currentChapterPage - 1;
+  if (counterEl) {
+    counterEl.innerHTML = `Seite ${currentChapterPage} von ${activeChapter.page_count} <small id="book-page-absolute">(Buchseite ${absPage})</small>`;
+  }
+
+  if (prevBtn) prevBtn.disabled = currentChapterPage <= 1;
+  if (nextBtn) nextBtn.disabled = currentChapterPage >= activeChapter.page_count;
+
+  // Aktive Pill markieren und ins Sichtfeld scrollen (nur wenn Bücher-Tab aktiv ist)
+  document.querySelectorAll(".book-page-pill").forEach((pill) => {
+    const isAct = parseInt(pill.dataset.page, 10) === currentChapterPage;
+    pill.classList.toggle("active", isAct);
+    if (isAct) {
+      const booksTab = document.getElementById("tab-books");
+      if (booksTab && booksTab.classList.contains("active")) {
+        try {
+          pill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        } catch (e) {
+          pill.scrollIntoView();
+        }
+      }
+    }
+  });
+
+  // Bild in voller Breite laden
+  if (imgEl) {
+    if (loadingEl) loadingEl.style.display = "flex";
+    imgEl.className = `book-page-img mode-${bookZoomMode}`;
+    const targetUrl = `/api/v1/materials/${activeChapter.id}/preview?page=${currentChapterPage}`;
+
+    const onImageLoaded = () => {
+      if (loadingEl) loadingEl.style.display = "none";
+      syncBookAnnotationCanvasSize();
+      loadBookAnnotations(activeChapter.id, currentChapterPage);
+    };
+
+    imgEl.onload = onImageLoaded;
+    imgEl.onerror = () => {
+      if (loadingEl) loadingEl.style.display = "none";
+    };
+    imgEl.src = targetUrl;
+
+    if (imgEl.complete && imgEl.naturalWidth > 0) {
+      onImageLoaded();
+    }
+  }
+
+  // Benachbarte Seiten intelligent im Hintergrund vorladen
+  prefetchAdjacentPages();
+}
+
+function prefetchAdjacentPages() {
+  if (!activeChapter) return;
+  const p = currentChapterPage;
+  const pagesToPrefetch = [p + 1, p - 1, p + 2];
+
+  pagesToPrefetch.forEach((targetP) => {
+    if (targetP >= 1 && targetP <= activeChapter.page_count) {
+      // 1. Browser-Bild-Cache vorwärmen
+      const preloadImg = new Image();
+      preloadImg.src = `/api/v1/materials/${activeChapter.id}/preview?page=${targetP}`;
+    }
+  });
+
+  // 2. Server-seitige Prioritäts-Queue triggern
+  try {
+    fetch(`/api/v1/materials/${activeChapter.id}/prefetch?page=${p}`, {
+      method: "POST"
+    }).catch(() => {});
+  } catch (e) {}
+}
+
+function setupBookBrowserEvents() {
+  // Zurück zur Kapitelübersicht
+  const btnBack = document.getElementById("btn-back-to-catalog");
+  if (btnBack) {
+    btnBack.addEventListener("click", closeReaderToCatalog);
+  }
+
+  // Drawer öffnen / schließen
+  const btnOpenDrawer = document.getElementById("btn-open-toc-drawer");
+  if (btnOpenDrawer) {
+    btnOpenDrawer.addEventListener("click", openTOCDrawer);
+  }
+
+  const btnCloseDrawer = document.getElementById("btn-close-toc-drawer");
+  if (btnCloseDrawer) {
+    btnCloseDrawer.addEventListener("click", closeTOCDrawer);
+  }
+
+  const backdrop = document.getElementById("book-toc-drawer-backdrop");
+  if (backdrop) {
+    backdrop.addEventListener("click", closeTOCDrawer);
+  }
+
+  // Filter in Katalog-Ansicht
+  const catalogFilter = document.getElementById("book-catalog-filter-input");
+  if (catalogFilter) {
+    catalogFilter.addEventListener("input", (e) => {
+      renderBookCatalog(e.target.value);
+    });
+  }
+
+  // Filter im Offcanvas Drawer
+  const drawerFilter = document.getElementById("drawer-filter-input");
+  if (drawerFilter) {
+    drawerFilter.addEventListener("input", (e) => {
+      renderDrawerTOC(e.target.value);
+    });
+  }
+
+  // Vorheriges / Nächstes Kapitel Buttons im Reader
+  const prevChapBtn = document.getElementById("btn-reader-prev-chapter");
+  if (prevChapBtn) {
+    prevChapBtn.addEventListener("click", () => navigateChapter(-1));
+  }
+
+  const nextChapBtn = document.getElementById("btn-reader-next-chapter");
+  if (nextChapBtn) {
+    nextChapBtn.addEventListener("click", () => navigateChapter(1));
+  }
+
+  // Seiten-Navigation Buttons
+  const prevBtn = document.getElementById("btn-book-prev-page");
+  const nextBtn = document.getElementById("btn-book-next-page");
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      if (activeChapter && currentChapterPage > 1) {
+        currentChapterPage--;
+        renderChapterPage();
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      if (activeChapter && currentChapterPage < activeChapter.page_count) {
+        currentChapterPage++;
+        renderChapterPage();
+      }
+    });
+  }
+
+  // Zoom Fit / Width Umschalter
+  const zoomFitBtn = document.getElementById("btn-book-zoom-fit");
+  const zoomWidthBtn = document.getElementById("btn-book-zoom-width");
+  const imgEl = document.getElementById("book-page-img");
+
+  if (zoomFitBtn) {
+    zoomFitBtn.addEventListener("click", () => {
+      bookZoomMode = "fit";
+      zoomFitBtn.classList.add("active");
+      if (zoomWidthBtn) zoomWidthBtn.classList.remove("active");
+      if (imgEl) imgEl.className = "book-page-img mode-fit";
+      setTimeout(syncBookAnnotationCanvasSize, 220);
+    });
+  }
+
+  if (zoomWidthBtn) {
+    zoomWidthBtn.addEventListener("click", () => {
+      bookZoomMode = "width";
+      zoomWidthBtn.classList.add("active");
+      if (zoomFitBtn) zoomFitBtn.classList.remove("active");
+      if (imgEl) imgEl.className = "book-page-img mode-width";
+      setTimeout(syncBookAnnotationCanvasSize, 220);
+    });
+  }
+
+  // Inking Engine starten
+  initBookInking();
+}
+
+// ====================================================================
+// Handschrift- & Notizen-Engine im Dokument-/Buch-Reader (Apple Pencil / Touch)
+// ====================================================================
+let bookAnnotationCanvas = null;
+let bookAnnotationCtx = null;
+let bookAnnotationStrokes = []; // Array von { id, tool, color, width, points: [{x, y, p}] }
+let bookUndoStack = [];
+let currentBookStroke = null;
+let currentBookTool = "pen"; // "pen", "highlighter", "eraser"
+let currentBookColor = "#2563eb";
+let bookPenOnlyMode = true; // STANDARD: TRUE! Nur Apple Pencil (oder Maus) zeichnet, Handballenschutz aktiv
+let bookSaveTimer = null;
+let isBookDrawing = false;
+let isBookTouchScrolling = false;
+let bookTouchScrollStartY = 0;
+let bookTouchScrollStartTop = 0;
+let activeBookPointerId = null;
+let bookActiveTouches = new Map();
+let bookAnnotationLoadedKey = null;
+
+function initBookInking() {
+  bookAnnotationCanvas = document.getElementById("book-annotation-canvas");
+  if (!bookAnnotationCanvas) return;
+  bookAnnotationCtx = bookAnnotationCanvas.getContext("2d");
+
+  // Nur-Stift / Handballenschutz Umschalter
+  const btnPenOnly = document.getElementById("btn-book-pen-only");
+  if (btnPenOnly) {
+    btnPenOnly.addEventListener("click", () => {
+      bookPenOnlyMode = !bookPenOnlyMode;
+      btnPenOnly.classList.toggle("active", bookPenOnlyMode);
+    });
+  }
+
+  // Werkzeug-Buttons (Stift, Marker, Radierer)
+  document.querySelectorAll(".btn-ink-tool").forEach((btn) => {
+    if (btn.id === "btn-book-pen-only") return;
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".btn-ink-tool").forEach((b) => {
+        if (b.id !== "btn-book-pen-only") b.classList.remove("active");
+      });
+      btn.classList.add("active");
+      currentBookTool = btn.dataset.tool;
+    });
+  });
+
+  // Farb-Buttons
+  document.querySelectorAll(".ink-color-dot").forEach((dot) => {
+    dot.addEventListener("click", () => {
+      document.querySelectorAll(".ink-color-dot").forEach((d) => d.classList.remove("active"));
+      dot.classList.add("active");
+      currentBookColor = dot.dataset.color;
+      if (currentBookTool === "eraser") {
+        currentBookTool = "pen";
+        document.querySelectorAll(".btn-ink-tool").forEach((b) => {
+          if (b.id !== "btn-book-pen-only") {
+            b.classList.toggle("active", b.dataset.tool === "pen");
+          }
+        });
+      }
+    });
+  });
+
+  // Undo Button
+  const undoBtn = document.getElementById("btn-book-ink-undo");
+  if (undoBtn) {
+    undoBtn.addEventListener("click", undoBookStroke);
+  }
+
+  // Clear Button
+  const clearBtn = document.getElementById("btn-book-ink-clear");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", clearBookAnnotations);
+  }
+
+  // 100% Unterdrückung des iOS Safari 'Teilen...' Menüs und nativer Gesten
+  const blockNativeGesture = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  bookAnnotationCanvas.addEventListener("contextmenu", blockNativeGesture, { capture: true });
+  const stage = document.getElementById("book-page-stage");
+  if (stage) stage.addEventListener("contextmenu", blockNativeGesture, { capture: true });
+  const wrapper = document.getElementById("book-page-canvas-wrapper");
+  if (wrapper) wrapper.addEventListener("contextmenu", blockNativeGesture, { capture: true });
+
+  bookAnnotationCanvas.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false, capture: true });
+  bookAnnotationCanvas.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false, capture: true });
+  bookAnnotationCanvas.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false, capture: true });
+
+  // Auf Canvas touchstart IMMER e.preventDefault(), um iOS Safari Edit-Menu / 'Teilen...' Callout zu blockieren!
+  bookAnnotationCanvas.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+  }, { passive: false });
+
+  // Pointer Events auf Canvas für Apple Pencil & Touch
+  bookAnnotationCanvas.addEventListener("pointerdown", onBookPointerDown, { passive: false });
+  bookAnnotationCanvas.addEventListener("pointermove", onBookPointerMove, { passive: false });
+  bookAnnotationCanvas.addEventListener("pointerup", onBookPointerUp, { passive: false });
+  bookAnnotationCanvas.addEventListener("pointercancel", onBookPointerUp, { passive: false });
+  bookAnnotationCanvas.addEventListener("pointerleave", onBookPointerLeave, { passive: false });
+
+  window.addEventListener("resize", () => {
+    syncBookAnnotationCanvasSize();
+  });
+}
+
+function onBookPointerDown(e) {
+  if (!bookAnnotationCanvas) return;
+  e.preventDefault();
+
+  // 1. PALM REJECTION: Wenn 'Nur Stift' aktiv ist und ein Finger/Handballen (touch) berührt:
+  if (bookPenOnlyMode && e.pointerType === "touch") {
+    // Finger darf NICHT zeichnen!
+    // Stattdessen vertikales Scrollen durch Fingerberührung ermöglichen
+    const wrapper = document.getElementById("book-page-canvas-wrapper");
+    if (wrapper) {
+      isBookTouchScrolling = true;
+      activeBookPointerId = e.pointerId;
+      bookTouchScrollStartY = e.clientY;
+      bookTouchScrollStartTop = wrapper.scrollTop;
+      try {
+        bookAnnotationCanvas.setPointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+    return;
+  }
+
+  // Multi-Touch-Handling falls Palm Rejection aus ist
+  if (e.pointerType === "touch") {
+    bookActiveTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (bookActiveTouches.size >= 2) {
+      if (isBookDrawing) {
+        cancelCurrentBookStroke();
+      }
+      return;
+    }
+  }
+
+  // Wenn bereits mit Stift gezeichnet wird und ein Handballen-Touch ankommt: Touch ignorieren
+  if (isBookDrawing && activeBookPointerId !== null && e.pointerType === "touch") {
+    return;
+  }
+
+  const rect = bookAnnotationCanvas.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return;
+
+  const screenX = e.clientX - rect.left;
+  const screenY = e.clientY - rect.top;
+  const normX = Math.max(0, Math.min(1, screenX / rect.width));
+  const normY = Math.max(0, Math.min(1, screenY / rect.height));
+  const pressure = (typeof e.pressure === "number" && e.pressure > 0) ? e.pressure : 0.5;
+
+  isBookDrawing = true;
+  activeBookPointerId = e.pointerId;
+  try {
+    bookAnnotationCanvas.setPointerCapture(e.pointerId);
+  } catch (err) {}
+
+  if (currentBookTool === "eraser") {
+    eraseBookStrokesAt(normX, normY, 24 / rect.width);
+    return;
+  }
+
+  const strokeWidth = currentBookTool === "highlighter" ? 22 : 3;
+  let strokeColor = currentBookColor;
+  if (currentBookTool === "highlighter" && (strokeColor === "#2563eb" || strokeColor === "#0f172a")) {
+    strokeColor = "#facc15";
+  }
+
+  currentBookStroke = {
+    id: "str_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+    tool: currentBookTool,
+    color: strokeColor,
+    width: strokeWidth,
+    points: [{ x: normX, y: normY, p: pressure }]
+  };
+
+  bookAnnotationStrokes.push(currentBookStroke);
+  bookUndoStack.push({ type: "add", stroke: currentBookStroke });
+  redrawBookAnnotations();
+}
+
+function onBookPointerMove(e) {
+  // Finger-Scroll wenn Nur-Stift-Modus aktiv ist:
+  if (isBookTouchScrolling && e.pointerId === activeBookPointerId) {
+    e.preventDefault();
+    const wrapper = document.getElementById("book-page-canvas-wrapper");
+    if (wrapper) {
+      const dy = e.clientY - bookTouchScrollStartY;
+      wrapper.scrollTop = bookTouchScrollStartTop - dy;
+    }
+    return;
+  }
+
+  if (e.pointerType === "touch" && bookActiveTouches.has(e.pointerId)) {
+    const prev = bookActiveTouches.get(e.pointerId);
+    bookActiveTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (bookActiveTouches.size >= 2) {
+      // 2 Finger = Vertikales Scrollen durch die Seite
+      const wrapper = document.getElementById("book-page-canvas-wrapper");
+      if (wrapper && prev) {
+        const dy = e.clientY - prev.y;
+        wrapper.scrollTop -= dy;
+      }
+      return;
+    }
+  }
+
+  if (!isBookDrawing || e.pointerId !== activeBookPointerId) return;
+  e.preventDefault();
+
+  const rect = bookAnnotationCanvas.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return;
+
+  const screenX = e.clientX - rect.left;
+  const screenY = e.clientY - rect.top;
+  const normX = Math.max(0, Math.min(1, screenX / rect.width));
+  const normY = Math.max(0, Math.min(1, screenY / rect.height));
+  const pressure = (typeof e.pressure === "number" && e.pressure > 0) ? e.pressure : 0.5;
+
+  if (currentBookTool === "eraser") {
+    eraseBookStrokesAt(normX, normY, 24 / rect.width);
+    return;
+  }
+
+  if (currentBookStroke) {
+    const pts = currentBookStroke.points;
+    const lastPt = pts[pts.length - 1];
+    const dx = (normX - lastPt.x) * rect.width;
+    const dy = (normY - lastPt.y) * rect.height;
+    if (dx * dx + dy * dy >= 1.2) {
+      pts.push({ x: normX, y: normY, p: pressure });
+      redrawBookAnnotations();
+    }
+  }
+}
+
+function onBookPointerUp(e) {
+  if (isBookTouchScrolling && e.pointerId === activeBookPointerId) {
+    isBookTouchScrolling = false;
+    activeBookPointerId = null;
+    try {
+      if (bookAnnotationCanvas.hasPointerCapture(e.pointerId)) {
+        bookAnnotationCanvas.releasePointerCapture(e.pointerId);
+      }
+    } catch (err) {}
+    return;
+  }
+
+  if (e.pointerType === "touch") {
+    bookActiveTouches.delete(e.pointerId);
+  }
+
+  if (isBookDrawing && e.pointerId === activeBookPointerId) {
+    isBookDrawing = false;
+    activeBookPointerId = null;
+    currentBookStroke = null;
+    try {
+      if (bookAnnotationCanvas.hasPointerCapture(e.pointerId)) {
+        bookAnnotationCanvas.releasePointerCapture(e.pointerId);
+      }
+    } catch (err) {}
+    scheduleBookAnnotationSave();
+  }
+}
+
+function onBookPointerLeave(e) {
+  if (isBookTouchScrolling && e.pointerId === activeBookPointerId) {
+    isBookTouchScrolling = false;
+    activeBookPointerId = null;
+  }
+  if (e.pointerType === "touch") {
+    bookActiveTouches.delete(e.pointerId);
+  }
+}
+
+function cancelCurrentBookStroke() {
+  if (currentBookStroke) {
+    bookAnnotationStrokes = bookAnnotationStrokes.filter((s) => s.id !== currentBookStroke.id);
+    bookUndoStack = bookUndoStack.filter((a) => !(a.type === "add" && a.stroke.id === currentBookStroke.id));
+    currentBookStroke = null;
+    redrawBookAnnotations();
+  }
+  isBookDrawing = false;
+  activeBookPointerId = null;
+}
+
+function eraseBookStrokesAt(normX, normY, radiusNorm) {
+  if (bookAnnotationStrokes.length === 0) return;
+  const remaining = [];
+  const removed = [];
+
+  for (const stroke of bookAnnotationStrokes) {
+    let hit = false;
+    for (const pt of stroke.points) {
+      const dx = pt.x - normX;
+      const dy = pt.y - normY;
+      if (Math.sqrt(dx * dx + dy * dy) < radiusNorm) {
+        hit = true;
+        break;
+      }
+    }
+    if (hit) {
+      removed.push(stroke);
+    } else {
+      remaining.push(stroke);
+    }
+  }
+
+  if (removed.length > 0) {
+    bookAnnotationStrokes = remaining;
+    bookUndoStack.push({ type: "delete", strokes: removed });
+    redrawBookAnnotations();
+    scheduleBookAnnotationSave();
+  }
+}
+
+function undoBookStroke() {
+  if (bookUndoStack.length === 0) return;
+  const action = bookUndoStack.pop();
+  if (action.type === "add") {
+    bookAnnotationStrokes = bookAnnotationStrokes.filter((s) => s.id !== action.stroke.id);
+  } else if (action.type === "delete") {
+    bookAnnotationStrokes.push(...action.strokes);
+  } else if (action.type === "clear") {
+    bookAnnotationStrokes = action.strokes;
+  }
+  redrawBookAnnotations();
+  scheduleBookAnnotationSave();
+}
+
+function clearBookAnnotations() {
+  if (bookAnnotationStrokes.length === 0) return;
+  if (!confirm("Möchtest du alle handschriftlichen Notizen auf dieser Seite löschen?")) return;
+  bookUndoStack.push({ type: "clear", strokes: [...bookAnnotationStrokes] });
+  bookAnnotationStrokes = [];
+  redrawBookAnnotations();
+  scheduleBookAnnotationSave();
+}
+
+function syncBookAnnotationCanvasSize() {
+  const imgEl = document.getElementById("book-page-img");
+  const canvas = document.getElementById("book-annotation-canvas");
+  if (!imgEl || !canvas) return;
+
+  const w = imgEl.clientWidth;
+  const h = imgEl.clientHeight;
+  if (w === 0 || h === 0) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const targetPixelW = Math.round(w * dpr);
+  const targetPixelH = Math.round(h * dpr);
+
+  if (canvas.width !== targetPixelW || canvas.height !== targetPixelH) {
+    canvas.width = targetPixelW;
+    canvas.height = targetPixelH;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+  }
+
+  redrawBookAnnotations();
+}
+
+function redrawBookAnnotations() {
+  const canvas = document.getElementById("book-annotation-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const cssW = canvas.clientWidth || (canvas.width / dpr);
+  const cssH = canvas.clientHeight || (canvas.height / dpr);
+  if (cssW === 0 || cssH === 0) return;
+
+  for (const stroke of bookAnnotationStrokes) {
+    if (!stroke.points || stroke.points.length === 0) continue;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    if (stroke.tool === "highlighter") {
+      ctx.globalAlpha = 0.38;
+      ctx.globalCompositeOperation = "multiply";
+      ctx.strokeStyle = stroke.color || "#facc15";
+      ctx.lineWidth = stroke.width || 22;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      ctx.beginPath();
+      const first = stroke.points[0];
+      ctx.moveTo(first.x * cssW, first.y * cssH);
+      for (let i = 1; i < stroke.points.length; i++) {
+        const pt = stroke.points[i];
+        ctx.lineTo(pt.x * cssW, pt.y * cssH);
+      }
+      ctx.stroke();
+    } else {
+      ctx.globalAlpha = 1.0;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = stroke.color || "#2563eb";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      const baseWidth = stroke.width || 3;
+      if (stroke.points.length === 1) {
+        const pt = stroke.points[0];
+        const p = pt.p || 0.5;
+        const r = (baseWidth * (0.4 + p * 1.2)) / 2;
+        ctx.fillStyle = stroke.color || "#2563eb";
+        ctx.beginPath();
+        ctx.arc(pt.x * cssW, pt.y * cssH, Math.max(1, r), 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        for (let i = 1; i < stroke.points.length; i++) {
+          const p0 = stroke.points[i - 1];
+          const p1 = stroke.points[i];
+          const avgP = ((p0.p || 0.5) + (p1.p || 0.5)) / 2;
+          ctx.lineWidth = Math.max(1, baseWidth * (0.4 + avgP * 1.2));
+
+          ctx.beginPath();
+          ctx.moveTo(p0.x * cssW, p0.y * cssH);
+          ctx.lineTo(p1.x * cssW, p1.y * cssH);
+          ctx.stroke();
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+}
+
+function setBookSaveStatus(status) {
+  const el = document.getElementById("book-ink-save-status");
+  if (!el) return;
+  if (status === "saving") {
+    el.textContent = "⏳ Speichert...";
+    el.className = "ink-save-status saving";
+  } else if (status === "saved") {
+    el.textContent = "✓ Gespeichert";
+    el.className = "ink-save-status";
+  } else if (status === "error") {
+    el.textContent = "⚠ Fehler";
+    el.className = "ink-save-status saving";
+  }
+}
+
+function scheduleBookAnnotationSave() {
+  clearTimeout(bookSaveTimer);
+  setBookSaveStatus("saving");
+  bookSaveTimer = setTimeout(() => {
+    saveCurrentBookAnnotations();
+  }, 600);
+}
+
+async function saveCurrentBookAnnotations() {
+  if (!activeChapter) return;
+  clearTimeout(bookSaveTimer);
+  bookSaveTimer = null;
+
+  const matId = activeChapter.id;
+  const pageNum = currentChapterPage;
+
+  try {
+    const payload = {
+      material_id: matId,
+      page_number: pageNum,
+      strokes_json: JSON.stringify(bookAnnotationStrokes)
+    };
+    const res = await fetch(`/api/v1/materials/${matId}/pages/${pageNum}/annotations`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      setBookSaveStatus("saved");
+    } else {
+      setBookSaveStatus("error");
+    }
+  } catch (err) {
+    console.error("Fehler beim Speichern der Notizen:", err);
+    setBookSaveStatus("error");
+  }
+}
+
+async function loadBookAnnotations(materialId, pageNum) {
+  clearTimeout(bookSaveTimer);
+  bookSaveTimer = null;
+  bookAnnotationStrokes = [];
+  bookUndoStack = [];
+  redrawBookAnnotations();
+
+  const key = `${materialId}_${pageNum}`;
+  bookAnnotationLoadedKey = key;
+
+  try {
+    const res = await fetch(`/api/v1/materials/${materialId}/pages/${pageNum}/annotations`);
+    if (res.ok) {
+      const data = await res.json();
+      if (bookAnnotationLoadedKey === key) {
+        if (data.strokes_json) {
+          try {
+            bookAnnotationStrokes = JSON.parse(data.strokes_json) || [];
+          } catch (e) {
+            bookAnnotationStrokes = [];
+          }
+        }
+        redrawBookAnnotations();
+        setBookSaveStatus("saved");
+      }
+    }
+  } catch (err) {
+    console.error("Fehler beim Laden der Notizen:", err);
+  }
+}
+
 // Init
 async function initApp() {
-  await checkEnvironment();
-  await loadProfile();
-  await loadTaxonomy();
-  await loadPlan();
-  await loadMaterials();
-  await checkInboxStatus();
-  await loadTodayDashboardWidget();
-  await loadTimetable();
-  connectWebSocket();
+  const safeRun = async (fn, name) => {
+    try {
+      await fn();
+    } catch (err) {
+      console.error(`Init error in ${name}:`, err);
+    }
+  };
+
+  await safeRun(checkEnvironment, "checkEnvironment");
+  await safeRun(loadProfile, "loadProfile");
+  await safeRun(loadTaxonomy, "loadTaxonomy");
+  await safeRun(loadPlan, "loadPlan");
+  await safeRun(loadMaterials, "loadMaterials");
+  await safeRun(checkInboxStatus, "checkInboxStatus");
+  await safeRun(loadTodayDashboardWidget, "loadTodayDashboardWidget");
+  await safeRun(loadTimetable, "loadTimetable");
+  await safeRun(loadBooks, "loadBooks");
+  safeRun(setupBookBrowserEvents, "setupBookBrowserEvents");
+  safeRun(connectWebSocket, "connectWebSocket");
 }
 
 initApp();

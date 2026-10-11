@@ -20,9 +20,10 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 * **[02.5 Whiteboard Engine](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/whiteboard_engine.md):** Latenzarme Apple-Pencil-Erfassung, Vektoren, Diff-Snapshots, Overlays.
 * **[02.6 Sokratischer KI-Tutor & Audio](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/socratic_tutor.md):** Pädagogischer Prompt-Governor, Leitfragen-System, Streaming TTS & Barge-In.
 * **[02.7 Stundenplan & Organisation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/timetable_widget.md):** Natives Wochenraster, Untis-Klassenplan 7D, A/B-Wochen Switcher, Dashboard-Widget, Deep-Links zu Tafel & Mediathek.
+* **[02.8 Schulbücher & Lehrwerke-Browser](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/book_browser.md):** Interaktiver Browser für Lehrbücher (z. B. Mathematik 7), Inhaltsverzeichnis (TOC), Retina-Seitenanzeige & Tafel-Übernahme.
 
 ### [03. Schnittstellen-Spezifikationen](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/rest_api.md)
-* **[03.1 REST API Spezifikation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/rest_api.md):** Alle HTTP-Endpunkte (Profile, Taxonomie, Environment, Material-Ingestion, Inbox, Stundenplan & CRUD).
+* **[03.1 REST API Spezifikation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/rest_api.md):** Alle HTTP-Endpunkte (Profile, Taxonomie, Environment, Material-Ingestion, Inbox, Stundenplan, Schulbücher & CRUD).
 * **[03.2 WebSocket Protokoll](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/websocket_protocol.md):** Event-Typen für Whiteboard-Synchronisation und Audio-Streaming.
 
 ### [04. Testberichte](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/)

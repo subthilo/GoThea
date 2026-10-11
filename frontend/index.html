@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="GoThea">
   <meta name="theme-color" content="#0f1115">
 
-  <link rel="stylesheet" href="/static/style.css?v=2.5">
+  <link rel="stylesheet" href="/static/style.css?v=3.1">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -36,6 +36,7 @@
       <nav class="nav-tabs">
         <button class="nav-tab active" data-tab="dashboard">📊 Übersicht</button>
         <button class="nav-tab" data-tab="timetable">🗓️ Stundenplan</button>
+        <button class="nav-tab" data-tab="books">📖 Bücher</button>
         <button class="nav-tab" data-tab="subjects">📚 Fächer & Themen<span id="nav-inbox-badge" class="nav-counter-badge" style="display: none;">0</span></button>
         <button class="nav-tab" data-tab="planner">📅 Lernplan</button>
         <button class="nav-tab" data-tab="whiteboard">🎨 Tafel</button>
@@ -170,6 +171,183 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Tab: Bücher-Browser (Lehrwerke & Kapitel-Navigator) -->
+      <section id="tab-books" class="tab-pane">
+        <div class="books-container">
+          <!-- Bücher-Header & Shelf -->
+          <div class="books-shelf-header">
+            <div class="books-shelf-info">
+              <div class="shelf-title-row">
+                <span class="shelf-icon">📖</span>
+                <div>
+                  <h2>Schulbücher & Lehrwerke</h2>
+                  <p class="subtitle">Wähle ein Lehrbuch aus und navigiere interaktiv durch alle Sektionen, Lerneinheiten und Buchseiten.</p>
+                </div>
+              </div>
+            </div>
+            <div class="books-shelf-selector" id="books-shelf-selector">
+              <!-- Dynamisch gerenderte Buchauswahl-Karten -->
+            </div>
+          </div>
+
+          <!-- Ansicht 1: Übersicht aller Lerneinheiten (Kapitel-Katalog) -->
+          <div class="book-catalog-view" id="book-catalog-view">
+            <div class="book-catalog-toolbar">
+              <div class="catalog-book-info">
+                <span class="catalog-book-icon" id="catalog-book-icon">📐</span>
+                <div>
+                  <h3 id="catalog-book-title">Mathematik 7</h3>
+                  <span class="catalog-book-sub" id="catalog-book-subtitle">11 Lerneinheiten • 196 Seiten</span>
+                </div>
+              </div>
+              <div class="book-catalog-search">
+                <input type="text" id="book-catalog-filter-input" placeholder="🔍 Kapitel oder Thema suchen..." />
+              </div>
+            </div>
+
+            <div class="book-catalog-grid" id="book-catalog-grid">
+              <!-- Dynamisch gerenderte Kacheln für alle Lerneinheiten -->
+            </div>
+          </div>
+
+          <!-- Ansicht 2: Vollbreiter Dokument-Reader (Keine Seitenleiste daneben) -->
+          <div class="book-reader-view" id="book-reader-view" style="display: none;">
+            <!-- Kopfzeile mit Zurück-Button, Drawer-Trigger & Aktionen -->
+            <div class="book-reader-header">
+              <div class="reader-nav-left">
+                <button id="btn-back-to-catalog" class="btn-back-catalog" title="Zurück zur Kapitelübersicht">
+                  <span>←</span> <span>Alle Kapitel</span>
+                </button>
+                <button id="btn-open-toc-drawer" class="btn-toc-drawer-toggle" title="Schnellwechsel zu einem anderen Kapitel">
+                  <span>☰</span> <span>Kapitel wechseln</span>
+                </button>
+                <div class="book-breadcrumb" id="book-reader-breadcrumb">
+                  <span id="bc-book-name">Mathematik 7</span> &rsaquo; 
+                  <span id="bc-chapter-name" class="active">Lerneinheit 1</span>
+                </div>
+              </div>
+
+              <div class="book-reader-actions">
+                <a id="btn-book-download-pdf" class="btn-action-secondary" href="#" target="_blank" download>
+                  💾 Kapitel PDF
+                </a>
+              </div>
+            </div>
+
+            <!-- Kapitel-Info-Banner mit Schnellwechsel zu Vorherigem / Nächstem Kapitel -->
+            <div class="book-chapter-info-card" id="book-chapter-info-card">
+              <div class="chapter-info-main">
+                <div class="chapter-badge-title-wrap">
+                  <span class="chapter-badge" id="reader-chapter-badge">Einheit 1</span>
+                  <h3 id="reader-chapter-title">Lerneinheit 1: Zahlen und Rechenoperationen</h3>
+                </div>
+                <div class="chapter-tags">
+                  <span class="tag-topic" id="reader-chapter-topic">📐 Rationale Zahlen</span>
+                  <span class="tag-pages" id="reader-chapter-pages">S. 10 – 21 (12 Seiten)</span>
+                </div>
+                <p class="chapter-focus-text" id="reader-chapter-focus">
+                  Rationale Zahlen ordnen, Rechenoperationen mit Vorzeichen, Potenzen...
+                </p>
+              </div>
+              <div class="chapter-quick-nav">
+                <button id="btn-reader-prev-chapter" class="btn-chapter-quick" title="Vorherige Lerneinheit">◀ Vorh. Einheit</button>
+                <button id="btn-reader-next-chapter" class="btn-chapter-quick" title="Nächste Lerneinheit">Nächste Einheit ▶</button>
+              </div>
+            </div>
+
+            <!-- Interaktiver Seiten-Viewer in voller Dokumentbreite -->
+            <div class="book-page-viewer-card full-width-viewer">
+              <!-- Paginierungs- & Stift-Steuerung oben -->
+              <div class="book-viewer-controls">
+                <div class="page-nav-btns">
+                  <button id="btn-book-prev-page" class="btn-page-nav" title="Vorherige Seite">◀ Vorherige Seite</button>
+                  <span class="book-page-counter" id="book-page-counter">Seite 1 von 12 <small id="book-page-absolute">(Buchseite 10)</small></span>
+                  <button id="btn-book-next-page" class="btn-page-nav" title="Nächste Seite">Nächste Seite ▶</button>
+                </div>
+
+                <!-- Handschrift- & Notizen-Toolbar (Apple Pencil / Touch) -->
+                <div class="book-ink-toolbar" id="book-ink-toolbar">
+                  <div class="ink-tool-group">
+                    <button type="button" class="btn-ink-tool active" id="btn-book-pen-only" title="Nur Apple Pencil zeichnet (Handballenschutz aktiviert)">
+                      <span class="ink-tool-label">✏️ Nur Stift</span>
+                    </button>
+                    <button type="button" class="btn-ink-tool active" data-tool="pen" title="Kugelschreiber / Apple Pencil">
+                      <span class="ink-tool-label">Stift</span>
+                    </button>
+                    <button type="button" class="btn-ink-tool" data-tool="highlighter" title="Textmarker (Halbtransparent)">
+                      <span class="ink-tool-label">Marker</span>
+                    </button>
+                    <button type="button" class="btn-ink-tool" data-tool="eraser" title="Radierer (Striche entfernen)">
+                      <span class="ink-tool-label">Radierer</span>
+                    </button>
+                  </div>
+
+                  <div class="ink-color-group" id="book-ink-colors">
+                    <button type="button" class="ink-color-dot active" data-color="#2563eb" style="background-color: #2563eb;" title="Blau"></button>
+                    <button type="button" class="ink-color-dot" data-color="#0f172a" style="background-color: #0f172a;" title="Schwarz"></button>
+                    <button type="button" class="ink-color-dot" data-color="#dc2626" style="background-color: #dc2626;" title="Rot"></button>
+                    <button type="button" class="ink-color-dot" data-color="#16a34a" style="background-color: #16a34a;" title="Grün"></button>
+                    <button type="button" class="ink-color-dot" data-color="#facc15" style="background-color: #facc15;" title="Gelb"></button>
+                  </div>
+
+                  <div class="ink-action-group">
+                    <button type="button" class="btn-ink-action" id="btn-book-ink-undo" title="Letzten Strich rückgängig machen">↩</button>
+                    <button type="button" class="btn-ink-action" id="btn-book-ink-clear" title="Alle Notizen auf dieser Seite löschen">🗑️</button>
+                    <span id="book-ink-save-status" class="ink-save-status" title="Autosave-Status">✓ Gespeichert</span>
+                  </div>
+                </div>
+
+                <div class="page-zoom-controls">
+                  <button id="btn-book-zoom-width" class="btn-zoom-mode active" title="Auf volle Dokumentbreite anpassen (Standard)">↔ Volle Breite</button>
+                  <button id="btn-book-zoom-fit" class="btn-zoom-mode" title="Ganze Seite vertikal einpassen">⛶ Ganze Seite</button>
+                </div>
+              </div>
+
+              <!-- Vorschau-Fläche mit 100% Breite & scharfem Retina-PNG & Inking Canvas -->
+              <div class="book-page-canvas-wrapper" id="book-page-canvas-wrapper">
+                <div class="book-page-loading" id="book-page-loading" style="display: none;">
+                  <div class="spinner"></div>
+                  <span>Lade Buchseite in Retina-Auflösung...</span>
+                </div>
+                <div class="book-page-stage" id="book-page-stage">
+                  <img id="book-page-img" class="book-page-img mode-width" src="" alt="Buchseite" />
+                  <canvas id="book-annotation-canvas" class="book-annotation-canvas"></canvas>
+                </div>
+              </div>
+
+              <!-- Schnelle Mini-Pill-Leiste unten -->
+              <div class="book-page-strip-container">
+                <div class="book-strip-label">Schnellauswahl Seite:</div>
+                <div class="book-page-strip" id="book-page-strip">
+                  <!-- Dynamische Seiten-Pills -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Offcanvas Drawer für Kapitel-Schnellwechsel während des Lesens -->
+        <div class="book-toc-drawer-backdrop" id="book-toc-drawer-backdrop"></div>
+        <aside class="book-toc-drawer" id="book-toc-drawer">
+          <div class="drawer-header">
+            <div class="drawer-title-row">
+              <span class="drawer-icon">📑</span>
+              <div>
+                <h4>Lerneinheiten</h4>
+                <span class="drawer-sub" id="drawer-book-subtitle">Mathematik 7</span>
+              </div>
+            </div>
+            <button id="btn-close-toc-drawer" class="btn-drawer-close" title="Schließen">✕</button>
+          </div>
+          <div class="drawer-search">
+            <input type="text" id="drawer-filter-input" placeholder="🔍 Sektion suchen..." />
+          </div>
+          <div class="drawer-chapters-list" id="drawer-chapters-list">
+            <!-- Dynamisch gerenderte Einheiten im Drawer -->
+          </div>
+        </aside>
       </section>
 
       <!-- Tab 2: Fächer & Themen Detail -->
@@ -321,29 +499,10 @@
 
           <!-- Zeichenfläche / Viewport -->
           <div class="wb-viewport pattern-chalkboard" id="wb-viewport">
-            <!-- 1. Dokument-Vorlage Ebene (HINTER dem Zeichen-Canvas) -->
-            <div id="wb-doc-underlay" class="wb-doc-underlay" style="display: none;">
-              <div class="wb-doc-sheet" id="wb-doc-sheet"></div>
-            </div>
-
-            <!-- 2. Base Ink Canvas (Zeichenebene des Schülers VOR der Vorlage) -->
+            <!-- 1. Base Ink Canvas (Zeichenebene des Schülers für freie Lernsessions) -->
             <canvas id="wb-canvas" class="wb-canvas-layer"></canvas>
-            <!-- 3. Overlay Canvas (Transparente Ebene für KI-Tipps & Overlays) -->
+            <!-- 2. Overlay Canvas (Transparente Ebene für KI-Tipps & Overlays) -->
             <canvas id="wb-overlay" class="wb-canvas-layer wb-overlay-layer"></canvas>
-
-            <!-- 4. Dokument-Leiste (Steuerung VOR dem Canvas) -->
-            <div id="wb-doc-topbar" class="wb-doc-topbar" style="display: none;">
-              <div class="wb-doc-info">
-                <span class="wb-doc-badge">📄 Arbeitsblatt-Vorlage</span>
-                <span id="wb-doc-title-text" class="wb-doc-title-text">Titel</span>
-                <div id="wb-doc-pager" class="wb-doc-pager" style="display: none;">
-                  <button type="button" id="btn-wb-prev-page" class="btn-pager">◀</button>
-                  <span id="wb-doc-page-indicator">Seite 1 / 1</span>
-                  <button type="button" id="btn-wb-next-page" class="btn-pager">▶</button>
-                </div>
-              </div>
-              <button type="button" id="btn-wb-remove-doc" class="btn-wb-remove-doc" title="Vorlage ausblenden">✖ Vorlage schließen</button>
-            </div>
 
             <!-- Scroll-Indikator & Nach-Oben-Button -->
             <button id="btn-wb-scroll-top" class="wb-scroll-top-btn" title="Zum Anfang der Tafel">⤒ Zum Anfang</button>
@@ -635,8 +794,8 @@
           </div>
 
           <button id="btn-viewer-open-wb" class="btn-primary-sm" style="display: flex; align-items: center; gap: 6px;">
-            <span>🎨</span>
-            <span>Auf Tafel bearbeiten</span>
+            <span>📖</span>
+            <span>Im Reader öffnen</span>
           </button>
           <a id="btn-viewer-download" href="#" target="_blank" download class="btn-secondary-sm" title="Originaldatei herunterladen">⬇️</a>
           <button class="modal-close" id="btn-close-viewer-modal">&times;</button>
@@ -773,7 +932,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=2.6"></script>
-  <script src="/static/whiteboard.js?v=2.6"></script>
+  <script src="/static/app.js?v=3.1"></script>
+  <script src="/static/whiteboard.js?v=3.1"></script>
 </body>
 </html>

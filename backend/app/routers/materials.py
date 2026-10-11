@@ -252,6 +252,23 @@ def get_material_preview_image(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler beim Rendern der Dokumentseite: {str(e)}")
 
+@router.post("/{material_id}/prefetch")
+def prefetch_material_pages(
+    material_id: str,
+    page: int = 1,
+    db: Session = Depends(get_db)
+):
+    """
+    Stößt das vorausschauende Rendern der nächsten Seiten im Hintergrund mit hoher Priorität (2) an.
+    """
+    mat = db.query(Material).filter_by(id=material_id).first()
+    if not mat:
+        raise HTTPException(status_code=404, detail="Material nicht gefunden.")
+
+    from backend.app.services.page_renderer import page_renderer
+    page_renderer.prefetch_adjacent_pages(mat.id, mat.file_path, mat.mime_type, page)
+    return {"status": "ok", "prefetched_around_page": page}
+
 @router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_material(
     material_id: str,

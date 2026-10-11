@@ -1,6 +1,6 @@
 # 02.5 Multimodale Whiteboard Engine
 
-Die **Whiteboard Engine** stellt das digitale Klassenzimmer für Schüler (Fokus: 7. Klasse Gymnasium) und den KI-Tutor bereit. Sie wurde gezielt für den Einsatz auf dem **iPad mit Apple Pencil via iPadOS Safari** konzipiert und optimiert.
+Die **Whiteboard Engine** stellt das digitale Klassenzimmer für Schüler und den KI-Tutor bereit. Sie wurde gezielt für den Einsatz auf dem **iPad mit Apple Pencil via iPadOS Safari** konzipiert und optimiert.
 
 ---
 

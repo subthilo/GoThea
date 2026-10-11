@@ -22,25 +22,11 @@
   const scrollTrack = document.getElementById("wb-scroll-track");
   const scrollThumb = document.getElementById("wb-scroll-thumb");
 
-  // Dokument-Vorlage Underlay Elemente
-  const wbDocUnderlay = document.getElementById("wb-doc-underlay");
-  const wbDocTopbar = document.getElementById("wb-doc-topbar");
-  const wbDocTitleText = document.getElementById("wb-doc-title-text");
-  const wbDocPager = document.getElementById("wb-doc-pager");
-  const wbDocPageIndicator = document.getElementById("wb-doc-page-indicator");
-  const btnWbPrevPage = document.getElementById("btn-wb-prev-page");
-  const btnWbNextPage = document.getElementById("btn-wb-next-page");
-  const btnWbRemoveDoc = document.getElementById("btn-wb-remove-doc");
-  const wbDocSheet = document.getElementById("wb-doc-sheet");
-  const wbDocImg = document.getElementById("wb-doc-img");
-
   // Zoom Steuerung
   const btnWbZoomIn = document.getElementById("btn-wb-zoom-in");
   const btnWbZoomOut = document.getElementById("btn-wb-zoom-out");
   const btnWbZoomReset = document.getElementById("btn-wb-zoom-reset");
   const wbZoomLevelText = document.getElementById("wb-zoom-level-text");
-
-  let activeWorksheet = null;
 
   if (!inkCanvas || !overlayCanvas || !viewport) {
     return;
@@ -147,15 +133,6 @@
     viewport.style.backgroundPositionX = `${panX}px`;
     viewport.style.backgroundSize = `${24 * scale}px ${24 * scale}px`;
 
-    if (wbDocSheet) {
-      const rect = viewport.getBoundingClientRect();
-      const sheetWidth = Math.min(860, Math.max(300, rect.width * 0.92));
-      const sheetVirtX = (rect.width - sheetWidth) / 2;
-      const sheetVirtY = 60;
-      wbDocSheet.style.width = `${sheetWidth}px`;
-      wbDocSheet.style.transform = `translate(${sheetVirtX * scale + panX}px, ${sheetVirtY * scale + panY}px) scale(${scale})`;
-    }
-
     redrawAllStrokes();
     updateScrollUI();
   }
@@ -202,99 +179,6 @@
     btnWbZoomReset.addEventListener("click", () => setZoomLevel(1.0));
   }
 
-  function scrollWorksheetToPage(pageNum) {
-    if (!activeWorksheet) return;
-    const targetPage = Math.max(1, Math.min(activeWorksheet.pageCount, pageNum));
-    activeWorksheet.currentPage = targetPage;
-    if (wbDocPageIndicator) {
-      wbDocPageIndicator.textContent = `Seite ${targetPage} / ${activeWorksheet.pageCount}`;
-    }
-    const pageCard = document.getElementById(`wb-doc-page-${targetPage}`);
-    if (pageCard) {
-      const targetPanY = -(pageCard.offsetTop * scale) + (60 * scale);
-      smoothScrollPanTo(targetPanY);
-    }
-  }
-
-  window.loadWorksheetOnWhiteboard = function(material) {
-    activeWorksheet = {
-      id: material.id,
-      title: material.title,
-      pageCount: material.page_count || 1,
-      currentPage: 1
-    };
-
-    if (wbDocUnderlay && wbDocSheet) {
-      wbDocUnderlay.style.display = "block";
-      if (wbDocTopbar) wbDocTopbar.style.display = "flex";
-      if (wbDocTitleText) wbDocTitleText.textContent = material.title;
-
-      // Vorlage Seiten aufbauen
-      wbDocSheet.innerHTML = "";
-      const pageCount = activeWorksheet.pageCount;
-      for (let p = 1; p <= pageCount; p++) {
-        const pageCard = document.createElement("div");
-        pageCard.className = "wb-doc-page-card";
-        pageCard.id = `wb-doc-page-${p}`;
-        pageCard.innerHTML = `
-          ${pageCount > 1 ? `<div class="wb-doc-page-num-tag">Seite ${p} von ${pageCount}</div>` : ""}
-          <img class="wb-doc-img" src="/api/v1/materials/${material.id}/preview?page=${p}" alt="Seite ${p}">
-        `;
-        wbDocSheet.appendChild(pageCard);
-      }
-
-      if (wbDocPager) {
-        wbDocPager.style.display = pageCount > 1 ? "flex" : "none";
-        if (wbDocPageIndicator) {
-          wbDocPageIndicator.textContent = `Seite 1 / ${pageCount}`;
-        }
-      }
-    }
-
-    // Blaue Tinte auswählen für weißen Papierhintergrund
-    const blueBtn = document.querySelector('.wb-color-btn[data-color="#3b82f6"]');
-    if (blueBtn) blueBtn.click();
-
-    // Scroll & Zoom zurück zum Anfang
-    scale = 1.0;
-    panX = 0;
-    panY = 0;
-    updateViewportPan();
-    updateZoomUI();
-  };
-
-  if (btnWbPrevPage) {
-    btnWbPrevPage.addEventListener("click", () => {
-      if (activeWorksheet && activeWorksheet.currentPage > 1) {
-        scrollWorksheetToPage(activeWorksheet.currentPage - 1);
-      }
-    });
-  }
-
-  if (btnWbNextPage) {
-    btnWbNextPage.addEventListener("click", () => {
-      if (activeWorksheet && activeWorksheet.currentPage < activeWorksheet.pageCount) {
-        scrollWorksheetToPage(activeWorksheet.currentPage + 1);
-      }
-    });
-  }
-
-  if (btnWbRemoveDoc) {
-    btnWbRemoveDoc.addEventListener("click", () => {
-      activeWorksheet = null;
-      if (wbDocUnderlay) wbDocUnderlay.style.display = "none";
-      if (wbDocTopbar) wbDocTopbar.style.display = "none";
-      if (wbDocSheet) wbDocSheet.innerHTML = "";
-      scale = 1.0;
-      panX = 0;
-      panY = 0;
-      updateViewportPan();
-      updateZoomUI();
-      const whiteBtn = document.querySelector('.wb-color-btn[data-color="#f8fafc"]');
-      if (whiteBtn) whiteBtn.click();
-    });
-  }
-
   function updateScrollUI() {
     // "Zum Anfang" Button ein-/ausblenden
     if (btnScrollTop) {
@@ -319,12 +203,8 @@
           maxStrokeY = strokes[i].bbox.maxY;
         }
       }
-      let docH = 0;
-      if (activeWorksheet && wbDocSheet) {
-        docH = wbDocSheet.offsetHeight || 0;
-      }
       const viewH = viewport.clientHeight || 600;
-      const totalH = Math.max(viewH, -panY + viewH, maxStrokeY + 400, docH + 200);
+      const totalH = Math.max(viewH, -panY + viewH, maxStrokeY + 400);
 
       const trackH = scrollTrack.clientHeight || (viewH - 24);
       const thumbH = Math.max(30, Math.min(trackH, (viewH / totalH) * trackH));

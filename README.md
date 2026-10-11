@@ -1,13 +1,13 @@
 # 🎓 GoThea – Multimodale Lernzentrale & Sokratischer KI-Tutor
 
-[![Test Suite](https://img.shields.io/badge/Tests-76%2F76%20Passed-success?style=flat-square&logo=pytest)](docs/04_test_reports/iteration_05_timetable_and_organization.md)
-[![Code Coverage](https://img.shields.io/badge/Coverage-86%25-brightgreen?style=flat-square)](docs/04_test_reports/iteration_05_timetable_and_organization.md)
+[![Test Suite](https://img.shields.io/badge/Tests-82%2F82%20Passed-success?style=flat-square&logo=pytest)](docs/04_test_reports/iteration_05_timetable_and_organization.md)
+[![Code Coverage](https://img.shields.io/badge/Coverage-87%25-brightgreen?style=flat-square)](docs/04_test_reports/iteration_05_timetable_and_organization.md)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)](backend/)
 [![Platform](https://img.shields.io/badge/Hardware-Raspberry%20Pi%204%2F5%20%26%20iPadOS-orange?style=flat-square&logo=raspberrypi)](docs/01_architecture/overview.md)
 [![License](https://img.shields.io/badge/License-Proprietary-lightgrey?style=flat-square)](#)
 
 > **GoThea** ist eine adaptive, multimodale Lernumgebung für Schülerinnen und Schüler (Initialkonfiguration: 7. Klasse Gymnasium, Land Brandenburg; erweiterbar auf Klassen 1 bis 13).  
-> Sie verbindet ein intelligentes, countdownbasiertes Lernplansystem mit einem interaktiven, sokratischen KI-Lernbegleiter auf einem hardwarebeschleunigten iPad-Whiteboard sowie einem vollintegrierten Untis-Stundenplan-Widget mit A-/B-Wochen Turnus.
+> Sie verbindet ein intelligentes, countdownbasiertes Lernplansystem mit einem interaktiven, sokratischen KI-Lernbegleiter auf einem hardwarebeschleunigten iPad-Whiteboard, einem vollintegrierten Untis-Stundenplan-Widget sowie einem interaktiven **Schulbücher- & Lehrwerke-Browser** mit Sektions-Navigation.
 
 ---
 
@@ -20,8 +20,9 @@
    * [2. Smarte Material-Ingestion & Vorlagen](#2-smarte-material-ingestion--vorlagen-in-app-viewer)
    * [3. Countdown- & Lernplan-Engine](#3-altersadaptiver-countdown--lernplan-algorithmus)
    * [4. Stundenplan-Widget & Organisation (Untis 7D & A/B-Wochen)](#4-stundenplan-widget--organisation-untis-7d--ab-wochen)
-   * [5. Schülerprofil & Brandenburger Lehrplan](#5-schülerprofil--brandenburger-lehrplan-rlp-a-h)
-   * [6. Staging- vs. Produktions-Umgebung](#6-staging--vs-produktions-umgebung-auf-dem-pi)
+   * [5. Schulbücher- & Lehrwerke-Browser (Master-Detail Navigator)](#5-schulbücher--lehrwerke-browser-master-detail-navigator)
+   * [6. Schülerprofil & Brandenburger Lehrplan](#6-schülerprofil--brandenburger-lehrplan-rlp-a-h)
+   * [7. Staging- vs. Produktions-Umgebung](#7-staging--vs-produktions-umgebung-auf-dem-pi)
 4. [Technologie-Stack](#-technologie-stack)
 5. [Repository- & Verzeichnisstruktur](#-repository--verzeichnisstruktur)
 6. [Installation & Lokale Entwicklung](#-installation--lokale-entwicklung)
@@ -164,12 +165,25 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 * **Auto-Routing ins Fach „Organisation“ (`sub_orga`):**
   * Stundenpläne werden beim Hochladen über beliebige Kanäle (Upload, Samba-Dropzone) automatisch als Dokumentart `Stundenplan` erkannt und unverrückbar im Fach *Organisation* und Dossier *Stundenplan & Organisation* abgelegt (Verhinderung versehentlicher Fehlablagen in Einzelfächern).
 
-### 5. Schülerprofil & Brandenburger Lehrplan (RLP A–H)
+### 5. Schulbücher- & Lehrwerke-Browser (Master-Detail Navigator)
+* **Bücher-Regal (`#tab-books`):**
+  * Übersicht aller Schulbücher (z. B. *Mathematik – Lehrbuch für die 7. Klasse*, 196 Seiten) mit Autoren, Lerneinheiten und Fach-Tag.
+* **Interaktives Inhaltsverzeichnis (TOC) & Suche:**
+  * Schneller Zugriff auf alle 11 Lerneinheiten mit Seitenbereichen (`S. 152–173`), RLP-Themen und didaktischem Schwerpunkt.
+  * Sofortige Volltext-Suche im Inhaltsverzeichnis (z. B. nach *"Pythagoras"*, *"Kreis"*, *"Wurzeln"*).
+* **Sektions-Reader & Paginierung:**
+  * Gestochen scharfes 150 DPI Retina-Rendering der Buchseiten über system-natives `pdftoppm`.
+  * Thumbnail-Leiste zum sofortigen Anspringen jeder Einzelseite innerhalb des Kapitels.
+  * Umschaltbarer Ansichtsmodus (*Ganze Seite einpassen* vs. *Auf Seitenbreite anpassen*).
+* **Nahtlose Whiteboard-Übergabe:**
+  * One-Tap-Button **„🎨 Auf Tafel öffnen“** übergibt das Kapitel direkt an die Whiteboard-Engine als Arbeitsblatt-Vorlage zum Lösen mit dem Apple Pencil.
+
+### 6. Schülerprofil & Brandenburger Lehrplan (RLP A–H)
 * **Klassenstufen 1 bis 13:** Dynamische Kalibrierung von Fächern, Themen und Niveaustufen.
 * **Brandenburger Rahmenlehrplan (RLP):** Niveaustufe E für Klasse 7 Gymnasium.
 * **Dynamische Taxonomie:** Vollständige CRUD-Schnittstelle für Fächer (Farben, Icons) und Themen.
 
-### 6. Staging- vs. Produktions-Umgebung auf dem Pi
+### 7. Staging- vs. Produktions-Umgebung auf dem Pi
 * **Port 8000 (Produktion):** Persistente Echtdaten der Schülerin (`data/prod/app_data.db`, `inbox/prod`).
 * **Port 8001 (Staging):** Isolierte Testumgebung (`data/staging/app_data.db`, `inbox/staging`) mit Ein-Klick-Reset-Funktion und Dummy-Daten-Generierung.
 
@@ -183,11 +197,11 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 | **KI / Multimodal Ingestion** | **OpenAI `gpt-4o-mini` (Vision)** | Schnelle Bild- & Textanalyse von Scans, Titelerkennung, JSON-Mode |
 | **KI / Didaktischer Tutor** | **`gpt-6-luna` & `gpt-6.1-sol`** | Sokratischer Live-Tutor (iPad Whiteboard / Audio) & Tafel-Diagnose |
 | **Datenbank** | **SQLite (WAL-Modus)** | Lokale Edge-Datenbank, latenzarm, ausfallsicher, zero-maintenance |
-| **ORM** | **SQLAlchemy 2.0** | Typisierte Datenbankmodelle (`timetable_slots`, `dossiers`, `materials`, `taxonomy`) |
+| **ORM** | **SQLAlchemy 2.0** | Typisierte Datenbankmodelle (`materials`, `dossiers`, `timetable_slots`, `taxonomy`) |
 | **PDF Rendering** | **Poppler `pdftoppm`** | Natives C-Tool auf Linux/Pi für ultraschnelles Seiten-Rendering |
 | **Frontend Core** | **HTML5 / Vanilla JavaScript (ES6+)** | Leichtgewichtig, frameworklos für maximale iPadOS-Safari-Performance |
 | **Styling** | **Modern Vanilla CSS** | HSL-Farbsystem, dynamisches Theme, iOS Human Interface Design |
-| **Testsuite** | **pytest / pytest-cov** | 76 Unit- & Integrationstests mit 86% Code Coverage |
+| **Testsuite** | **pytest / pytest-cov** | 82 Unit- & Integrationstests mit 87% Code Coverage |
 | **Deployment** | **systemd & Bash (`deploy.sh`)** | Dual-Service-Management auf Raspberry Pi OS (Staging & Prod) |
 
 ---
@@ -315,5 +329,6 @@ Die vollständige technische Dokumentation ist modular im Ordner [`docs/`](docs/
 * **[02.5 Multimodale Whiteboard Engine](docs/02_modules/whiteboard_engine.md):** Low-Latency iPad Canvas, Gestenschutz, Zoom & Ebenen.
 * **[02.6 Sokratischer KI-Tutor](docs/02_modules/socratic_tutor.md):** Leitfragen, Handschrift-Diagnose und Knowledge Tracing.
 * **[02.7 Stundenplan & Organisation](docs/02_modules/timetable_widget.md):** Natives Wochenraster, Untis 7D, A/B-Wochen Switcher & Deep-Links.
-* **[03.1 REST API Spezifikation](docs/03_api_specs/rest_api.md):** Interaktive HTTP-Endpunkte und DTOs (inkl. Section 7 Stundenplan).
-* **[04.5 Testbericht Iteration 05](docs/04_test_reports/iteration_05_timetable_and_organization.md):** Detaillierter Testlauf & Coverage-Matrix (76 Tests, 100% Passed).
+* **[02.8 Schulbücher & Lehrwerke-Browser](docs/02_modules/book_browser.md):** Interaktiver Browser für Lehrwerke, Inhaltsverzeichnis (TOC), Retina-Reader & Tafel-Übernahme.
+* **[03.1 REST API Spezifikation](docs/03_api_specs/rest_api.md):** Interaktive HTTP-Endpunkte und DTOs (inkl. Section 8 Schulbücher).
+* **[04.5 Testbericht Iteration 05](docs/04_test_reports/iteration_05_timetable_and_organization.md):** Detaillierter Testlauf & Coverage-Matrix (82 Tests, 100% Passed).

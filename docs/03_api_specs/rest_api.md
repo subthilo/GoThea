@@ -535,4 +535,73 @@
 }
 ```
 
+---
+
+## 8. Schulbücher & Lehrwerke-Browser
+
+### `GET /api/v1/books`
+* **Beschreibung:** Liefert alle verfügbaren Schulbücher der Schülerin mit Metadaten (Titel, Autoren, Schulfach, Gesamtzahl der Seiten, Anzahl der Kapitel/Lerneinheiten und Cover-Vorschau).
+* **Response (200 OK):**
+```json
+[
+  {
+    "id": "mat_book_math_7",
+    "title": "Mathematik – Lehrbuch für die 7. Klasse",
+    "authors": "Mihaela Singer, Sorin Borodi et al.",
+    "grade_level": 7,
+    "subject_id": "sub_math",
+    "subject_name": "Mathematik",
+    "subject_icon": "📐",
+    "subject_color": "#0284c7",
+    "total_pages": 196,
+    "chapters_count": 11,
+    "summary": "Gesamt-Lehrbuch für Klasse 7 Gymnasium.",
+    "cover_preview_url": "/api/v1/materials/mat_book_math_7_ch0/preview?page=1"
+  }
+]
+```
+
+### `GET /api/v1/books/{book_id}`
+* **Beschreibung:** Liefert die vollständige Detailansicht eines Schulbuchs inklusive aller extrahierten Lerneinheiten und Kapitel mit Seitenzahlen, Themen und Lernfokus.
+* **Response (200 OK):**
+```json
+{
+  "id": "mat_book_math_7",
+  "title": "Mathematik – Lehrbuch für die 7. Klasse",
+  "authors": "Mihaela Singer, Sorin Borodi et al.",
+  "grade_level": 7,
+  "subject_id": "sub_math",
+  "subject_name": "Mathematik",
+  "subject_icon": "📐",
+  "subject_color": "#0284c7",
+  "total_pages": 196,
+  "chapters_count": 11,
+  "summary": "Gesamt-Lehrbuch für Klasse 7 Gymnasium.",
+  "cover_preview_url": "/api/v1/materials/mat_book_math_7_ch0/preview?page=1",
+  "dossier_id": "dos_math_book_7",
+  "chapters": [
+    {
+      "id": "mat_book_math_7_ch1",
+      "chapter_number": 1,
+      "title": "Lerneinheit 1: Zahlen und Rechenoperationen (Wiederholung & Ergänzungen)",
+      "kind": "Buchauszug",
+      "topic_id": "top_math_7_rationale_zahlen",
+      "topic_name": "Rationale Zahlen",
+      "start_page": 10,
+      "end_page": 21,
+      "page_count": 12,
+      "focus": "Rationale Zahlen ordnen, Rechenoperationen mit Vorzeichen, Potenzen...",
+      "filename": "Mathe_7_Kapitel_01_Lerneinheit_1_Zahlen_und_Rechenoperationen.pdf",
+      "file_size": 3701383,
+      "file_url": "/api/v1/materials/mat_book_math_7_ch1/file",
+      "preview_url": "/api/v1/materials/mat_book_math_7_ch1/preview"
+    }
+  ]
+}
+```
+
+### `GET /api/v1/books/{book_id}/chapters/{chapter_id}`
+* **Beschreibung:** Liefert Detaildaten einer einzelnen Lerneinheit eines Schulbuchs.
+* **Status:** `200 OK` (oder `404 Not Found`).
+
 
