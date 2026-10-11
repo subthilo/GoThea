@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="GoThea">
   <meta name="theme-color" content="#0f1115">
 
-  <link rel="stylesheet" href="/static/style.css?v=3.8">
+  <link rel="stylesheet" href="/static/style.css?v=3.9">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -167,7 +167,7 @@
               <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #475569;"></span> Pausen & Mensa</div>
             </div>
             <div style="font-size: 0.8rem; color: var(--text-muted);">
-              Tipp: Klicke auf ein Fach, um direkt zu den Heftern, Arbeitsblättern oder zur Tafel zu springen.
+              Tipp: Klicke auf ein Fach, um direkt zu dessen Fachseite (Mediathek, Hefter & Tafel) zu springen.
             </div>
           </div>
         </div>
@@ -500,7 +500,6 @@
             <button class="filter-pill" data-kind="Hefter">📁 Hefter & Notizen</button>
             <button class="filter-pill" data-kind="Buch">📚 Schulbücher</button>
             <button class="filter-pill" data-kind="Test">📝 Tests & Arbeiten</button>
-            <button class="filter-pill" data-kind="Stundenplan">📅 Stundenpläne</button>
           </div>
 
           <div id="subject-materials-grid" class="materials-grid">
@@ -997,7 +996,7 @@
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 18px;">
           <button id="btn-tt-goto-materials" class="btn-primary" style="justify-content: center; gap: 8px;">
             <span>📚</span>
-            <span>Zu Heftern & Arbeitsblättern springen</span>
+            <span>Fachseite & Mediathek öffnen</span>
           </button>
           <button id="btn-tt-goto-whiteboard" class="btn-secondary-sm" style="justify-content: center; gap: 8px; padding: 10px 14px;">
             <span>🎨</span>
@@ -1008,7 +1007,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=3.8"></script>
-  <script src="/static/whiteboard.js?v=3.8"></script>
+  <script src="/static/app.js?v=3.9"></script>
+  <script src="/static/whiteboard.js?v=3.9"></script>
 </body>
 </html>

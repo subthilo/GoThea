@@ -163,7 +163,10 @@ function renderDashboardSubjects(subjects, topicsMap) {
   });
 }
 
-function openSubjectDetail(subjectId) {
+let subjectDetailSourceTab = "dashboard";
+
+function openSubjectDetail(subjectId, sourceTab = "dashboard") {
+  subjectDetailSourceTab = sourceTab;
   currentDetailSubjectId = subjectId;
   const s = cachedSubjects.find((sub) => sub.id === subjectId) || {
     id: subjectId,
@@ -175,7 +178,13 @@ function openSubjectDetail(subjectId) {
   };
 
   const breadcrumb = document.getElementById("subject-detail-breadcrumb");
-  if (breadcrumb) breadcrumb.textContent = `Übersicht / ${s.name}`;
+  const sourceName = sourceTab === "timetable" ? "Stundenplan" : "Übersicht";
+  if (breadcrumb) breadcrumb.textContent = `${sourceName} / ${s.name}`;
+
+  const btnBack = document.getElementById("btn-back-to-dashboard");
+  if (btnBack) {
+    btnBack.innerHTML = `<span>← Zurück ${sourceTab === "timetable" ? "zum Stundenplan" : "zur Übersicht"}</span>`;
+  }
 
   const heroCard = document.getElementById("subject-hero-card");
   if (heroCard) {
@@ -284,7 +293,6 @@ function renderSubjectMaterialsList(materials) {
 
   const filtered = materials.filter((m) => {
     if (activeSubjectKindFilter === "all") return true;
-    if (activeSubjectKindFilter === "Stundenplan") return (m.kind || "").includes("Stundenplan");
     if (activeSubjectKindFilter === "Arbeitsblatt") return m.kind === "Arbeitsblatt";
     if (activeSubjectKindFilter === "Hefter") return (m.kind || "").includes("Heft");
     if (activeSubjectKindFilter === "Buch") return (m.kind || "").includes("Buch");
@@ -323,7 +331,7 @@ function setupSubjectDetailEvents() {
   const btnBack = document.getElementById("btn-back-to-dashboard");
   if (btnBack) {
     btnBack.addEventListener("click", () => {
-      switchToTab("dashboard");
+      switchToTab(subjectDetailSourceTab || "dashboard");
     });
   }
 
@@ -1924,10 +1932,13 @@ function renderTimetableGrid() {
 
           card.innerHTML = `
             <div class="tt-lesson-top">
-              <span class="tt-lesson-name" title="${matchingSlot.subject_name}">
+              <span class="tt-lesson-name" title="Fachseite für ${matchingSlot.subject_name} öffnen">
                 ${matchingSlot.subject_icon || "📚"} ${matchingSlot.subject_name}
               </span>
-              ${matchingSlot.subject_code ? `<span class="tt-lesson-code">${matchingSlot.subject_code}</span>` : ""}
+              <div style="display: flex; align-items: center; gap: 4px;">
+                ${matchingSlot.subject_code ? `<span class="tt-lesson-code">${matchingSlot.subject_code}</span>` : ""}
+                <button class="btn-tt-slot-info" title="Raum & Lehrer Details anzeigen" type="button">ℹ️</button>
+              </div>
             </div>
             <div class="tt-lesson-meta">
               <span class="tt-lesson-room">${roomStr}</span>
@@ -1936,8 +1947,20 @@ function renderTimetableGrid() {
             </div>
           `;
 
+          const infoBtn = card.querySelector(".btn-tt-slot-info");
+          if (infoBtn) {
+            infoBtn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              openTimetableSlotDetailModal(matchingSlot, period);
+            });
+          }
+
           card.addEventListener("click", () => {
-            openTimetableSlotDetailModal(matchingSlot, period);
+            if (matchingSlot.subject_id) {
+              openSubjectDetail(matchingSlot.subject_id, "timetable");
+            } else {
+              openTimetableSlotDetailModal(matchingSlot, period);
+            }
           });
           slotCell.appendChild(card);
         }
@@ -2055,7 +2078,11 @@ async function loadTodayDashboardWidget() {
       `;
 
       card.addEventListener("click", () => {
-        switchToTab("timetable");
+        if (l.subject_id) {
+          openSubjectDetail(l.subject_id, "dashboard");
+        } else {
+          switchToTab("timetable");
+        }
       });
 
       container.appendChild(card);
@@ -2145,7 +2172,7 @@ if (btnTtGotoMaterials) {
     const sId = activeDetailSlot.subject_id;
     closeTimetableSlotDetailModal();
     if (sId) {
-      openSubjectDetail(sId);
+      openSubjectDetail(sId, "timetable");
     } else {
       switchToTab("dashboard");
     }

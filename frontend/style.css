@@ -2433,6 +2433,33 @@ body.wb-fullscreen-mode .wb-container {
   color: var(--text-muted);
 }
 
+.btn-tt-slot-info {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  padding: 1px 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.btn-tt-slot-info:hover {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: var(--accent);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.tt-lesson-card:hover .tt-lesson-name {
+  color: var(--accent-light);
+}
+
+.dash-tt-slot-card:hover .dash-tt-slot-subject {
+  color: var(--accent-light);
+}
+
 /* Kennzeichnung Doppelstunde & Turnus */
 .tt-tag-turnus {
   font-size: 0.65rem;
