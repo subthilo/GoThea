@@ -2420,11 +2420,17 @@ let bookActiveTouches = new Map();
 let bookAnnotationLoadedKey = null;
 let currentBookAnnotationMaterialId = null;
 let currentBookAnnotationPage = null;
+let lastBookScreenPoint = null;
+let bookCanvasRect = null;
 
 function initBookInking() {
   bookAnnotationCanvas = document.getElementById("book-annotation-canvas");
   if (!bookAnnotationCanvas) return;
-  bookAnnotationCtx = bookAnnotationCanvas.getContext("2d");
+  try {
+    bookAnnotationCtx = bookAnnotationCanvas.getContext("2d", { desynchronized: true });
+  } catch (_) {
+    bookAnnotationCtx = bookAnnotationCanvas.getContext("2d");
+  }
 
   // Nur-Stift / Handballenschutz Umschalter
   const btnPenOnly = document.getElementById("btn-book-pen-only");
@@ -2555,6 +2561,70 @@ function initBookInking() {
   });
 }
 
+function drawBookLivePoint(screenX, screenY, pressure, tool, color, baseWidth) {
+  if (!bookAnnotationCanvas || !bookAnnotationCtx) return;
+  const dpr = window.devicePixelRatio || 1;
+  const ctx = bookAnnotationCtx;
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
+  if (tool === "highlighter") {
+    ctx.globalAlpha = 0.38;
+    ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = color || "#facc15";
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, (baseWidth || 22) / 2, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.globalAlpha = 1.0;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = color || "#2563eb";
+    const r = ((baseWidth || 3) * (0.4 + pressure * 1.2)) / 2;
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, Math.max(1, r), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawBookLiveSegment(p0, p1, tool, color, baseWidth) {
+  if (!bookAnnotationCanvas || !bookAnnotationCtx) return;
+  const dpr = window.devicePixelRatio || 1;
+  const ctx = bookAnnotationCtx;
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
+  if (tool === "highlighter") {
+    ctx.globalAlpha = 0.38;
+    ctx.globalCompositeOperation = "multiply";
+    ctx.strokeStyle = color || "#facc15";
+    ctx.lineWidth = baseWidth || 22;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
+  } else {
+    ctx.globalAlpha = 1.0;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = color || "#2563eb";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const avgP = (p0.p + p1.p) / 2;
+    ctx.lineWidth = Math.max(1, (baseWidth || 3) * (0.4 + avgP * 1.2));
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function onBookPointerDown(e) {
   if (!bookAnnotationCanvas) return;
   e.preventDefault();
@@ -2581,7 +2651,8 @@ function onBookPointerDown(e) {
     return;
   }
 
-  const rect = bookAnnotationCanvas.getBoundingClientRect();
+  bookCanvasRect = bookAnnotationCanvas.getBoundingClientRect();
+  const rect = bookCanvasRect;
   if (rect.width === 0 || rect.height === 0) return;
 
   const screenX = e.clientX - rect.left;
@@ -2617,7 +2688,10 @@ function onBookPointerDown(e) {
 
   bookAnnotationStrokes.push(currentBookStroke);
   bookUndoStack.push({ type: "add", stroke: currentBookStroke });
-  redrawBookAnnotations();
+
+  // Sofortiger Startpunkt in ultra-flüssiger O(1) Zeichenoperation
+  lastBookScreenPoint = { x: screenX, y: screenY, p: pressure };
+  drawBookLivePoint(screenX, screenY, pressure, currentBookTool, strokeColor, strokeWidth);
 }
 
 function onBookPointerMove(e) {
@@ -2625,28 +2699,49 @@ function onBookPointerMove(e) {
   if (!isBookDrawing || e.pointerId !== activeBookPointerId) return;
   e.preventDefault();
 
-  const rect = bookAnnotationCanvas.getBoundingClientRect();
+  const rect = bookCanvasRect || bookAnnotationCanvas.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return;
 
-  const screenX = e.clientX - rect.left;
-  const screenY = e.clientY - rect.top;
-  const normX = Math.max(0, Math.min(1, screenX / rect.width));
-  const normY = Math.max(0, Math.min(1, screenY / rect.height));
-  const pressure = (typeof e.pressure === "number" && e.pressure > 0) ? e.pressure : 0.5;
+  // Apple Pencil Coalesced Events für maximale Präzision (240Hz iPad Pro)
+  const events = (e.getCoalescedEvents && e.getCoalescedEvents().length > 0)
+    ? e.getCoalescedEvents()
+    : [e];
 
   if (currentBookTool === "eraser") {
-    eraseBookStrokesAt(normX, normY, 24 / rect.width);
+    for (let i = 0; i < events.length; i++) {
+      const ev = events[i];
+      const screenX = ev.clientX - rect.left;
+      const screenY = ev.clientY - rect.top;
+      const normX = Math.max(0, Math.min(1, screenX / rect.width));
+      const normY = Math.max(0, Math.min(1, screenY / rect.height));
+      eraseBookStrokesAt(normX, normY, 24 / rect.width);
+    }
     return;
   }
 
-  if (currentBookStroke) {
-    const pts = currentBookStroke.points;
-    const lastPt = pts[pts.length - 1];
-    const dx = (normX - lastPt.x) * rect.width;
-    const dy = (normY - lastPt.y) * rect.height;
-    if (dx * dx + dy * dy >= 1.2) {
-      pts.push({ x: normX, y: normY, p: pressure });
-      redrawBookAnnotations();
+  if (!currentBookStroke || !lastBookScreenPoint) return;
+
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    const screenX = ev.clientX - rect.left;
+    const screenY = ev.clientY - rect.top;
+    const normX = Math.max(0, Math.min(1, screenX / rect.width));
+    const normY = Math.max(0, Math.min(1, screenY / rect.height));
+    const pressure = (typeof ev.pressure === "number" && ev.pressure > 0) ? ev.pressure : 0.5;
+
+    const dx = screenX - lastBookScreenPoint.x;
+    const dy = screenY - lastBookScreenPoint.y;
+    if (dx * dx + dy * dy >= 0.8) {
+      const currentPoint = { x: screenX, y: screenY, p: pressure };
+      currentBookStroke.points.push({ x: normX, y: normY, p: pressure });
+      drawBookLiveSegment(
+        lastBookScreenPoint,
+        currentPoint,
+        currentBookStroke.tool,
+        currentBookStroke.color,
+        currentBookStroke.width
+      );
+      lastBookScreenPoint = currentPoint;
     }
   }
 }
@@ -2660,12 +2755,19 @@ function onBookPointerUp(e) {
   if (isBookDrawing && e.pointerId === activeBookPointerId) {
     isBookDrawing = false;
     activeBookPointerId = null;
-    currentBookStroke = null;
+    lastBookScreenPoint = null;
+    bookCanvasRect = null;
     try {
       if (bookAnnotationCanvas.hasPointerCapture(e.pointerId)) {
         bookAnnotationCanvas.releasePointerCapture(e.pointerId);
       }
     } catch (err) {}
+
+    // Wenn Highlighter: einmal redrawen für sauberes Multiplizieren des fertigen Pfads
+    if (currentBookStroke && currentBookStroke.tool === "highlighter") {
+      redrawBookAnnotations();
+    }
+    currentBookStroke = null;
     scheduleBookAnnotationSave();
   }
 }
@@ -2685,6 +2787,8 @@ function cancelCurrentBookStroke() {
   }
   isBookDrawing = false;
   activeBookPointerId = null;
+  lastBookScreenPoint = null;
+  bookCanvasRect = null;
 }
 
 function eraseBookStrokesAt(normX, normY, radiusNorm) {
@@ -2760,6 +2864,7 @@ function syncBookAnnotationCanvasSize() {
     canvas.style.height = `${h}px`;
   }
 
+  bookCanvasRect = null;
   redrawBookAnnotations();
 }
 
