@@ -15,7 +15,14 @@
 
   // State
   let currentExercise = null;
-  let currentMode = 'drag'; // 'drag' | 'handwrite'
+  // Modus: 'handwrite' (Handschrift mit Apple Pencil) oder 'drag' (Drag & Drop)
+  let currentMode = 'handwrite'; // Standardmäßig Schreiben mit dem Stift
+  try {
+    const savedMode = localStorage.getItem('gothea_cloze_mode');
+    if (savedMode === 'drag' || savedMode === 'handwrite') {
+      currentMode = savedMode;
+    }
+  } catch (_) {}
   let currentDifficulty = 'with_words'; // 'with_words' | 'without_words'
   let currentSubjectId = null;
   let currentSubjectName = 'Allgemein';
@@ -131,6 +138,17 @@
       btnModeHandwrite.addEventListener('click', () => setMode('handwrite'));
     }
 
+    // Initialisiere Modus-Zustand (Handschrift/Stift als Standard oder gespeicherte Wahl)
+    if (currentMode === 'handwrite') {
+      if (btnModeHandwrite) btnModeHandwrite.classList.add('active');
+      if (btnModeDrag) btnModeDrag.classList.remove('active');
+      if (difficultyToggle) difficultyToggle.style.display = 'flex';
+    } else {
+      if (btnModeDrag) btnModeDrag.classList.add('active');
+      if (btnModeHandwrite) btnModeHandwrite.classList.remove('active');
+      if (difficultyToggle) difficultyToggle.style.display = 'none';
+    }
+
     // Difficulty Toggle (Wortspeicher beim Schreiben anzeigen oder ausblenden)
     if (btnDiffWithWords) {
       btnDiffWithWords.addEventListener('click', () => setDifficulty('with_words'));
@@ -243,13 +261,16 @@
 
   function setMode(mode) {
     currentMode = mode;
+    try {
+      localStorage.setItem('gothea_cloze_mode', mode);
+    } catch (_) {}
     if (mode === 'drag') {
-      btnModeDrag.classList.add('active');
-      btnModeHandwrite.classList.remove('active');
+      if (btnModeDrag) btnModeDrag.classList.add('active');
+      if (btnModeHandwrite) btnModeHandwrite.classList.remove('active');
       if (difficultyToggle) difficultyToggle.style.display = 'none';
     } else {
-      btnModeHandwrite.classList.add('active');
-      btnModeDrag.classList.remove('active');
+      if (btnModeHandwrite) btnModeHandwrite.classList.add('active');
+      if (btnModeDrag) btnModeDrag.classList.remove('active');
       if (difficultyToggle) difficultyToggle.style.display = 'flex';
     }
     setFocusedBlank(null);
@@ -685,6 +706,13 @@
         const word = e.dataTransfer.getData('text/plain');
         if (word) {
           fillBlankWithValue(bId, word);
+        }
+      });
+
+      // Pointerdown: Wenn Thea mit dem Stift (Apple Pencil) auf einen Slot tippt, automatisch auf Stift umschalten!
+      dropEl.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'pen') {
+          setMode('handwrite');
         }
       });
 

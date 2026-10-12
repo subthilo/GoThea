@@ -1349,20 +1349,20 @@
             <button type="button" class="cloze-zoom-btn" id="btn-cloze-zoom-in" title="Vergrößern (Reinzoomen)">+</button>
           </div>
 
-          <!-- Modus-Umschalter: Ziehen vs. Schreiben -->
+          <!-- Modus-Umschalter: Stift (Schreiben) vs. Ziehen -->
           <div class="cloze-mode-toggle" id="cloze-mode-toggle" title="Eingabemodus wählen">
-            <button type="button" class="cloze-mode-btn active" data-mode="drag" id="btn-mode-drag">
+            <button type="button" class="cloze-mode-btn active" data-mode="handwrite" id="btn-mode-handwrite">
+              <span>✍️</span>
+              <span>Stift (Schreiben)</span>
+            </button>
+            <button type="button" class="cloze-mode-btn" data-mode="drag" id="btn-mode-drag">
               <span>🖐️</span>
               <span>Ziehen</span>
-            </button>
-            <button type="button" class="cloze-mode-btn" data-mode="handwrite" id="btn-mode-handwrite">
-              <span>✍️</span>
-              <span>Schreiben</span>
             </button>
           </div>
 
           <!-- Schwierigkeitsgrad: Mit Wörtern vs. Ohne Wörter -->
-          <div class="cloze-difficulty-toggle" id="cloze-difficulty-toggle" title="Hilfestellung: Wortspeicher anzeigen oder ausblenden" style="display: none;">
+          <div class="cloze-difficulty-toggle" id="cloze-difficulty-toggle" title="Hilfestellung: Wortspeicher anzeigen oder ausblenden">
             <button type="button" class="cloze-diff-btn active" data-diff="with_words" id="btn-diff-with-words" title="Wortspeicher anzeigen (Einfacher)">
               <span>💡</span>
               <span>Mit Wörtern</span>
@@ -1437,6 +1437,6 @@
 
   <script src="/static/app.js?v=5.1"></script>
   <script src="/static/whiteboard.js?v=5.1"></script>
-  <script src="/static/cloze_trainer.js?v=2.3"></script>
+  <script src="/static/cloze_trainer.js?v=2.4"></script>
 </body>
 </html>
