@@ -153,3 +153,14 @@ def get_book_chapter(
         file_url=f"/api/v1/materials/{chap.id}/file",
         preview_url=f"/api/v1/materials/{chap.id}/preview"
     )
+
+@router.post("/seed")
+def seed_default_textbook(
+    user_id: str = "usr_thea",
+    db: Session = Depends(get_db)
+):
+    """
+    Importiert das vorinstallierte Mathematik-7 Lehrbuch auf Wunsch des Nutzers.
+    """
+    book_id = seed_textbooks_if_empty(db, user_id=user_id)
+    return {"status": "success", "book_id": book_id}

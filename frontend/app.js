@@ -3128,9 +3128,57 @@ async function loadBooks() {
     currentBooks = await res.json();
     renderBooksShelf();
 
+    const toolbar = document.getElementById("book-catalog-toolbar");
+    const grid = document.getElementById("book-catalog-grid");
+
+    if (currentBooks.length === 0) {
+      if (toolbar) toolbar.style.display = "none";
+      if (grid) {
+        grid.innerHTML = `
+          <div class="empty-state-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 16px; margin: 20px 0;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">📚</div>
+            <h3 style="margin-bottom: 6px;">Noch keine Schulbücher hinterlegt</h3>
+            <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
+              Sobald Lehrwerke hochgeladen oder importiert werden, kannst du hier interaktiv durch alle Kapitel und Seiten navigieren.
+            </p>
+            <button id="btn-seed-sample-book" class="btn-primary-sm" style="display: inline-flex; align-items: center; gap: 8px;">
+              <span>📥</span>
+              <span>Mathematik 7 (Lehrwerk Eichwalde) laden</span>
+            </button>
+          </div>
+        `;
+        const btnSeed = document.getElementById("btn-seed-sample-book");
+        if (btnSeed) {
+          btnSeed.addEventListener("click", async () => {
+            btnSeed.disabled = true;
+            btnSeed.textContent = "Lade Lehrwerk...";
+            try {
+              const seedRes = await fetch("/api/v1/books/seed", { method: "POST" });
+              if (seedRes.ok) {
+                await loadBooks();
+              } else {
+                alert("Fehler beim Laden des Lehrbuchs.");
+                btnSeed.disabled = false;
+                btnSeed.textContent = "Mathematik 7 (Lehrwerk Eichwalde) laden";
+              }
+            } catch (e) {
+              alert("Netzwerkfehler.");
+              btnSeed.disabled = false;
+              btnSeed.textContent = "Mathematik 7 (Lehrwerk Eichwalde) laden";
+            }
+          });
+        }
+      }
+      return;
+    }
+
+    if (toolbar) toolbar.style.display = "flex";
+
     if (currentBooks.length > 0) {
       if (!activeBookId || !currentBooks.some(b => b.id === activeBookId)) {
         await selectBook(currentBooks[0].id);
+      } else {
+        await selectBook(activeBookId);
       }
     }
   } catch (err) {
