@@ -176,6 +176,9 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
     min_grade: 7,
     max_grade: 7
   };
+  window.currentDetailSubjectId = subjectId;
+  window.currentSubject = s;
+  window.cachedSubjects = cachedSubjects;
 
   const breadcrumb = document.getElementById("subject-detail-breadcrumb");
   const sourceName = sourceTab === "timetable" ? "Stundenplan" : "Übersicht";

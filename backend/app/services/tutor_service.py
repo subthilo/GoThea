@@ -199,7 +199,12 @@ EXERCISE_SYSTEM_PROMPT = """Du bist Luna, die warmherzige, didaktisch brillante 
 Deine Aufgabe ist es, eine motivierende, exakt auf Theas Lehrplan abgestimmte Übungsaufgabe für das digitale Whiteboard zu erstellen.
 
 Unterstützte Aufgabentypen (exercise_type):
-1. "fill_in_the_blank": Lückentext mit Fachbegriffen (z. B. Biologie Zellbestandteile, Physik Energieformen, Deutsch Grammatik/Rechtschreibung). Die Lücken im Text als [[Lücke 1: Begriff]] kennzeichnen. Eine Wortauswahl (word_bank) angeben.
+1. "fill_in_the_blank": Lückentext für das jeweilige Schulfach:
+   - Bei Fremdsprachen (z. B. Englisch, Französisch): Übung zu Grammatik, Zeiten (z. B. Simple Past, Past Perfect), Vokabeln oder Präpositionen. Bei Englisch ist der Text komplett in natürlichem Englisch verfasst!
+   - Bei Naturwissenschaften, Deutsch & Mathematik: Fachbegriffe, Rechenregeln, Gesetze oder Definitionen.
+   - Kennzeichnung jeder Lücke im Text: Ausschließlich im Format [[1: RichtigeLösung]], [[2: RichtigeLösung]] etc. mit fortlaufender Nummer und der TATSÄCHLICHEN richtigen Lösung hinter dem Doppelpunkt (z. B. "Yesterday, they [[1: watched]] a movie." oder "Der Zähler steht beim Bruch [[1: oben]].").
+   - STRIKT VERBOTEN: Schreibe NIEMALS Platzhalter wie "Fachbegriff", "Begriff", "Wort" oder "Lücke" als Lösung in die eckigen Klammern! Dort muss IMMER das exakte Lösungswort stehen!
+   - Definiere im Feld "content" das Array "blanks": [{"id": 1, "expected_answer": "...", "hint": "..."}] und "word_bank": ["Lösung1", "Lösung2", "Distraktor1", ...].
 2. "math_problem": Eine typische Rechenaufgabe für Klasse 7 (z. B. Gleichungen, Prozentrechnung, Rationale Zahlen, Bruchterme). Gegeben/Gesucht klar gegliedert, mit Zeilen zum Rechnen.
 3. "math_example": Ein anschaulich vorgerechnetes Musterbeispiel ("So geht's Schritt für Schritt"), gefolgt von einer eigenen Übungsaufgabe ("Jetzt du!").
 4. "physics_diagram": Physikalischer Zusammenhang (z. B. s-t-Diagramm, v-t-Diagramm, Federkraft F-s, Hebelgesetz mit Hebelarmen). Ein sauberes, valides, inline darstellbares SVG-Diagramm (viewBox='0 0 360 220', mit Koordinatenachsen, Beschriftungen t in s, s in m etc., feinem Gitter und eingetragenem Kurvenverlauf oder Kraftpfeilen) MUSS im Feld diagram_svg enthalten sein! Dazu 1-2 gezielte Ablese- oder Berechnungsfragen.
@@ -208,12 +213,12 @@ Unterstützte Aufgabentypen (exercise_type):
 
 Format der JSON-Antwort:
 {
-  "exercise_type": "physics_diagram",
+  "exercise_type": "fill_in_the_blank",
   "title": "Kurzer Titel der Aufgabe",
   "topic": "Themengebiet",
   "instructions": "Arbeitsauftrag für Thea (1-2 klare Sätze)",
   "content": {
-    // Bei fill_in_the_blank: "text": "Text mit [[Lücke 1: Begriff]]", "word_bank": ["A", "B", "C"]
+    // Bei fill_in_the_blank: "text": "Text mit [[1: RichtigeLösung]]", "blanks": [{"id": 1, "expected_answer": "...", "hint": "..."}], "word_bank": ["Lösung1", "Distraktor1"]
     // Bei math_problem: "problem_statement": "...", "given": "...", "prompt": "..."
     // Bei math_example: "example_title": "...", "example_solution": "...", "your_turn": "..."
     // Bei physics_diagram: "diagram_svg": "<svg viewBox='0 0 360 220' xmlns='http://www.w3.org/2000/svg'>...</svg>", "questions": ["..."]
@@ -221,7 +226,7 @@ Format der JSON-Antwort:
     // Bei text_question: "text_snippet": "...", "questions": ["..."]
   },
   "solution_hint": "Didaktischer Lösungs-Tipp für Thea (wird erst bei Klick auf 'Tipp' aufgedeckt)",
-  "tutor_speech": "Gesprochene Begrüßung/Einführung der Aufgabe für Thea (1-2 Sätze, natürliches Deutsch, ABSOLUT KEIN LaTeX!)"
+  "tutor_speech": "Gesprochene Begrüßung/Einführung der Aufgabe für Thea (1-2 Sätze, natürliches Deutsch/Englisch, ABSOLUT KEIN LaTeX!)"
 }
 """
 
@@ -340,23 +345,60 @@ def generate_board_exercise(
                 "tutor_speech": "Ich habe dir ein s-t-Diagramm für eine gleichförmige Bewegung auf die Tafel gelegt. Schau dir die Werte bei 4 Sekunden an!"
             }
         elif ex_type == "fill_in_the_blank":
-            data = {
-                "exercise_type": "fill_in_the_blank",
-                "title": f"Lückentext: {topic_name or subject_name}",
-                "topic": topic_name or subject_name,
-                "instructions": "Setze die passenden Fachbegriffe aus der Wortauswahl in die Lücken ein.",
-                "content": {
-                    "text": "Bei einer gleichförmigen Bewegung ist die [[1:Geschwindigkeit]] über die gesamte Zeit hinweg [[2:konstant]]. Im Weg-Zeit-Diagramm ergibt das eine [[3:Gerade]].",
-                    "blanks": [
-                        {"id": 1, "expected_answer": "Geschwindigkeit", "alternatives": ["Tempo"], "hint": "Wie schnell sich der Körper bewegt.", "width_px": 170},
-                        {"id": 2, "expected_answer": "konstant", "alternatives": ["gleich", "unverändert"], "hint": "Bedeutet, dass sich das Tempo nicht ändert.", "width_px": 150},
-                        {"id": 3, "expected_answer": "Gerade", "alternatives": ["Linie"], "hint": "Eine gerade Linie ohne Biegung.", "width_px": 140}
-                    ],
-                    "word_bank": ["Geschwindigkeit", "konstant", "Gerade", "beschleunigt", "Parabel"]
-                },
-                "solution_hint": "Denke daran: gleichförmig bedeutet, dass sich das Tempo nicht ändert.",
-                "tutor_speech": "Hier ist ein Lückentext für dich. Schreibe die Fachbegriffe direkt mit dem Stift in die Lücken!"
-            }
+            if "Englisch" in subject_name:
+                data = {
+                    "exercise_type": "fill_in_the_blank",
+                    "title": "English Grammar & Tenses: Simple Past & Past Perfect",
+                    "topic": topic_name or "English Grammar (Class 7)",
+                    "instructions": "Fill in the correct past tense verbs from the word bank into the blanks.",
+                    "content": {
+                        "text": "Yesterday, Tom [[1:went]] to the school library after he had [[2:finished]] his homework. While he was reading, he [[3:found]] an exciting mystery novel.",
+                        "blanks": [
+                            {"id": 1, "expected_answer": "went", "alternatives": ["walked"], "hint": "Simple Past of 'go'", "width_px": 130},
+                            {"id": 2, "expected_answer": "finished", "alternatives": ["done"], "hint": "Past participle of 'finish'", "width_px": 150},
+                            {"id": 3, "expected_answer": "found", "alternatives": ["discovered"], "hint": "Simple Past of 'find'", "width_px": 140}
+                        ],
+                        "word_bank": ["went", "finished", "found", "goes", "finishing", "finds"]
+                    },
+                    "solution_hint": "Remember: The earlier action uses Past Perfect ('had finished'), the main action uses Simple Past ('went').",
+                    "tutor_speech": "Here is an English cloze test for you. Fill in the correct past tense verbs into the blanks!"
+                }
+            elif "Mathematik" in subject_name or "Mathe" in subject_name:
+                data = {
+                    "exercise_type": "fill_in_the_blank",
+                    "title": "Bruchrechnung: Grundbegriffe & Regeln",
+                    "topic": topic_name or "Brüche und Rechenoperationen",
+                    "instructions": "Setze die passenden mathematischen Fachbegriffe in die Lücken ein.",
+                    "content": {
+                        "text": "In einem Bruch steht oben der [[1:Zähler]] und unten der [[2:Nenner]]. Um zwei ungleichnamige Brüche zu addieren, bringt man sie zuerst auf einen gemeinsamen [[3:Hauptnenner]].",
+                        "blanks": [
+                            {"id": 1, "expected_answer": "Zähler", "alternatives": [], "hint": "Der Wert oben im Bruch.", "width_px": 140},
+                            {"id": 2, "expected_answer": "Nenner", "alternatives": [], "hint": "Der Wert unten im Bruch.", "width_px": 140},
+                            {"id": 3, "expected_answer": "Hauptnenner", "alternatives": ["Nenner"], "hint": "Der gemeinsame Nenner beider Brüche.", "width_px": 170}
+                        ],
+                        "word_bank": ["Zähler", "Nenner", "Hauptnenner", "Quotient", "Teiler"]
+                    },
+                    "solution_hint": "Der Zähler zählt die Teile, der Nenner benennt die Größe des Teils.",
+                    "tutor_speech": "Hier ist eine Übung zur Bruchrechnung. Fülle die mathematischen Begriffe in die Lücken ein!"
+                }
+            else:
+                data = {
+                    "exercise_type": "fill_in_the_blank",
+                    "title": f"Lückentext: {topic_name or subject_name}",
+                    "topic": topic_name or subject_name,
+                    "instructions": "Setze die passenden Fachbegriffe aus der Wortauswahl in die Lücken ein.",
+                    "content": {
+                        "text": "Bei einer gleichförmigen Bewegung ist die [[1:Geschwindigkeit]] über die gesamte Zeit hinweg [[2:konstant]]. Im Weg-Zeit-Diagramm ergibt das eine [[3:Gerade]].",
+                        "blanks": [
+                            {"id": 1, "expected_answer": "Geschwindigkeit", "alternatives": ["Tempo"], "hint": "Wie schnell sich der Körper bewegt.", "width_px": 170},
+                            {"id": 2, "expected_answer": "konstant", "alternatives": ["gleich", "unverändert"], "hint": "Bedeutet, dass sich das Tempo nicht ändert.", "width_px": 150},
+                            {"id": 3, "expected_answer": "Gerade", "alternatives": ["Linie"], "hint": "Eine gerade Linie ohne Biegung.", "width_px": 140}
+                        ],
+                        "word_bank": ["Geschwindigkeit", "konstant", "Gerade", "beschleunigt", "Parabel"]
+                    },
+                    "solution_hint": "Denke daran: gleichförmig bedeutet, dass sich das Tempo nicht ändert.",
+                    "tutor_speech": "Hier ist ein Lückentext für dich. Schreibe die Fachbegriffe direkt mit dem Stift in die Lücken!"
+                }
         elif ex_type == "formula_derivation":
             data = {
                 "exercise_type": "formula_derivation",
@@ -421,6 +463,12 @@ def generate_board_exercise(
     }
 
 
+GENERIC_PLACEHOLDERS = {
+    "fachbegriff", "begriff", "lücke", "luecke", "wort", "antwort",
+    "lösung", "loesung", "text", "blank", "nomen", "verbe", "substantiv"
+}
+
+
 def extract_cloze_sentences(text: str, blanks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     import re
     blanks_map = {b["id"]: b.get("expected_answer", "") for b in blanks if "id" in b}
@@ -428,33 +476,55 @@ def extract_cloze_sentences(text: str, blanks: List[Dict[str, Any]]) -> List[Dic
     if not raw_sentences:
         raw_sentences = [text.strip()]
 
+    global_blank_counter = 0
     sentences = []
+
     for idx, s_text in enumerate(raw_sentences, 1):
         b_ids = []
-        tokens = re.findall(r"\[\[(.*?)(?::(.*?))?\]\]", s_text)
-        for p1, p2 in tokens:
-            if p2:
-                cid = re.sub(r"[^\d]", "", p1)
-                if cid:
-                    b_ids.append(int(cid))
+        tokens = list(re.finditer(r"\[\[(.*?)(?::(.*?))?\]\]|\[blank_(\d+)\]", s_text))
+        token_info = []
+
+        for t in tokens:
+            global_blank_counter += 1
+            if t.group(3):  # [blank_X]
+                cid = int(t.group(3))
+                expected = blanks_map.get(cid, "")
             else:
-                for bid, ans in blanks_map.items():
-                    if ans == p1.strip() and bid not in b_ids:
-                        b_ids.append(bid)
-                        break
+                p1 = (t.group(1) or "").strip()
+                p2 = (t.group(2) or "").strip()
 
-        def _replace_token(m):
-            p1 = m.group(1)
-            p2 = m.group(2)
-            return p2.strip() if p2 else p1.strip()
+                cid_match = re.search(r"\d+", p1)
+                cid = int(cid_match.group(0)) if cid_match else global_blank_counter
 
-        solved = re.sub(r"\[\[(.*?)(?::(.*?))?\]\]", _replace_token, s_text)
+                expected = blanks_map.get(cid, "")
+                if not expected or expected.lower() in GENERIC_PLACEHOLDERS:
+                    if p2 and p2.lower() not in GENERIC_PLACEHOLDERS:
+                        expected = p2
+                    elif p1 and p1.lower() not in GENERIC_PLACEHOLDERS and not cid_match:
+                        expected = p1
+                    elif cid <= len(blanks):
+                        expected = blanks[cid - 1].get("expected_answer", "")
+
+            if not expected or expected.lower() in GENERIC_PLACEHOLDERS:
+                expected = f"Wort {cid}"
+
+            if cid not in b_ids:
+                b_ids.append(cid)
+            token_info.append((t.span(), cid, expected))
+
+        s_display = s_text
+        s_solved = s_text
+        for span, cid, expected in reversed(token_info):
+            start, end = span
+            s_display = s_display[:start] + f"[blank_{cid}]" + s_display[end:]
+            s_solved = s_solved[:start] + expected + s_solved[end:]
 
         sentences.append({
             "index": idx,
             "text": s_text,
+            "text_with_blanks": s_display,
             "blank_ids": b_ids,
-            "full_text_solved": solved,
+            "full_text_solved": s_solved,
             "audio_base64": None
         })
     return sentences
@@ -464,6 +534,7 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
     """
     Sorgt dafür, dass Lückentexte immer ein standardisiertes 'blanks'-Array
     und ein 'sentences'-Array (mit vorgefertigtem Vorlese-Audio) enthalten.
+    Bereinigt automatisch generische Platzhalter wie 'Fachbegriff'.
     """
     import re
     text = content.get("text", "")
@@ -471,16 +542,22 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
     if not isinstance(blanks, list):
         blanks = []
 
+    # Falls keine Blanks-Definition vorhanden war: aus Tokens extrahieren
     if not blanks and text:
-        tokens = re.findall(r"\[\[(.*?)(?::(.*?))?\]\]", text)
-        for idx, (p1, p2) in enumerate(tokens, 1):
-            if p2:
-                clean_id_str = re.sub(r"[^\d]", "", p1)
-                bid = int(clean_id_str) if clean_id_str else idx
-                expected = p2.strip()
+        tokens = list(re.finditer(r"\[\[(.*?)(?::(.*?))?\]\]", text))
+        for idx, t in enumerate(tokens, 1):
+            p1 = (t.group(1) or "").strip()
+            p2 = (t.group(2) or "").strip()
+            cid_match = re.search(r"\d+", p1)
+            bid = int(cid_match.group(0)) if cid_match else idx
+
+            if p2 and p2.lower() not in GENERIC_PLACEHOLDERS:
+                expected = p2
+            elif p1 and p1.lower() not in GENERIC_PLACEHOLDERS and not cid_match:
+                expected = p1
             else:
-                bid = idx
-                expected = p1.strip()
+                expected = f"Wort {bid}"
+
             blanks.append({
                 "id": bid,
                 "expected_answer": expected,
@@ -488,10 +565,26 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
                 "hint": f"Überlege, welcher Begriff in Lücke {bid} passt.",
                 "width_px": max(140, min(240, len(expected) * 14 + 40))
             })
+    else:
+        # Bestehende Blanks bereinigen falls nötig
+        for idx, b in enumerate(blanks, 1):
+            ans = str(b.get("expected_answer", "")).strip()
+            if ans.lower() in GENERIC_PLACEHOLDERS:
+                b["expected_answer"] = f"Wort {b.get('id', idx)}"
 
     content["blanks"] = blanks
-    if "word_bank" not in content or not isinstance(content["word_bank"], list) or not content["word_bank"]:
-        content["word_bank"] = [b["expected_answer"] for b in blanks if "expected_answer" in b]
+
+    # Word Bank bereinigen
+    raw_wb = content.get("word_bank")
+    if isinstance(raw_wb, list):
+        cleaned_wb = [str(w).strip() for w in raw_wb if str(w).strip().lower() not in GENERIC_PLACEHOLDERS]
+    else:
+        cleaned_wb = []
+
+    if not cleaned_wb:
+        cleaned_wb = [b["expected_answer"] for b in blanks if "expected_answer" in b]
+
+    content["word_bank"] = cleaned_wb
 
     # Sätze für die Vorlese- und Review-Schleife aufbereiten
     sentences = extract_cloze_sentences(text, blanks)

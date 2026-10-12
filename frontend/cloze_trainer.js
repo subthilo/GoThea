@@ -62,13 +62,14 @@
     // Subject Hero Button
     if (btnSubjectStart) {
       btnSubjectStart.addEventListener('click', () => {
-        // Find current active subject in app state if available
-        const activeSub = window.currentSubject || {};
-        openClozeTrainer({
-          subjectId: activeSub.id || 'sub_math',
-          subjectName: activeSub.name || 'Mathematik',
-          materialId: null
-        });
+        const s = window.currentSubject || (window.cachedSubjects || []).find(x => x.id === window.currentDetailSubjectId);
+        if (s) {
+          openClozeTrainer({
+            subjectId: s.id,
+            subjectName: s.name,
+            materialId: null
+          });
+        }
       });
     }
 
@@ -98,8 +99,9 @@
    * Öffnet den Cloze Trainer und lädt / generiert eine Lückentext-Übung
    */
   async function openClozeTrainer(options = {}) {
-    currentSubjectId = options.subjectId || 'sub_math';
-    currentSubjectName = options.subjectName || 'Schulfach';
+    const s = window.currentSubject || (window.cachedSubjects || []).find(x => x.id === window.currentDetailSubjectId);
+    currentSubjectId = options.subjectId || (s ? s.id : 'sub_math');
+    currentSubjectName = options.subjectName || (s ? s.name : 'Schulfach');
     currentMaterialId = options.materialId || null;
 
     modalSubject.textContent = currentSubjectName;
@@ -238,9 +240,18 @@
   function renderExerciseContent() {
     if (!currentExercise || !currentExercise.content) return;
     const content = currentExercise.content;
-    const sentences = content.sentences || [];
+    let sentences = content.sentences || [];
     const blanks = content.blanks || [];
     const wordBank = content.word_bank || [];
+
+    if (sentences.length === 0 && content.text) {
+      sentences = [{
+        index: 1,
+        text: content.text,
+        text_with_blanks: content.text,
+        blank_ids: blanks.map(b => b.id)
+      }];
+    }
 
     // 1. Sätze rendern
     sentencesContainer.innerHTML = '';
@@ -251,18 +262,36 @@
       sRow.dataset.sentenceIndex = sIdx;
 
       // Text mit Lücken parsen
-      let sText = s.text_with_blanks || '';
-      // Ersetze [blank_X] oder [X]
-      const parts = sText.split(/(\[blank_\d+\]|\[\d+\])/g);
+      let sText = s.text_with_blanks || s.text || '';
+      // Ersetze [blank_X] oder [X] oder [[...]]
+      const parts = sText.split(/(\[blank_\d+\]|\[\d+\]|\[\[.*?\]\])/g);
 
       parts.forEach(part => {
-        const match = part.match(/\[(?:blank_)?(\d+)\]/);
-        if (match) {
-          const blankId = parseInt(match[1], 10);
+        if (!part) return;
+        let blankId = null;
+        const matchBlank = part.match(/\[(?:blank_)?(\d+)\]/);
+        if (matchBlank) {
+          blankId = parseInt(matchBlank[1], 10);
+        } else {
+          const matchToken = part.match(/\[\[(.*?)(?::(.*?))?\]\]/);
+          if (matchToken) {
+            const p1 = (matchToken[1] || '').trim();
+            const numMatch = p1.match(/\d+/);
+            if (numMatch) {
+              blankId = parseInt(numMatch[0], 10);
+            } else {
+              const targetWord = (matchToken[2] || p1).trim().toLowerCase();
+              const found = blanks.find(b => (b.expected_answer || '').toLowerCase() === targetWord);
+              if (found) blankId = found.id;
+            }
+          }
+        }
+
+        if (blankId !== null) {
           const blankDef = blanks.find(b => b.id === blankId) || { id: blankId };
           const slot = createBlankSlotElement(blankDef, sIdx);
           sRow.appendChild(slot);
-        } else if (part) {
+        } else {
           const span = document.createElement('span');
           span.textContent = part;
           sRow.appendChild(span);

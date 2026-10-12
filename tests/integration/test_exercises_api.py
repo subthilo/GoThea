@@ -74,3 +74,39 @@ def test_cloze_generate_fallback_api(client):
         assert len(data["content"]["blanks"]) == 1
         assert len(data["content"]["sentences"]) == 1
 
+def test_cloze_generate_english_subject_fallback(client):
+    payload = {
+        "subject_id": "sub_english",
+        "audio_enabled": False
+    }
+    # Ohne Mock: Prüfe, dass ohne Material ein echtes englisches Lückentext-Fallback geliefert wird
+    res = client.post("/api/v1/exercises/cloze/generate", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["exercise_type"] == "fill_in_the_blank"
+    assert len(data["content"]["sentences"]) > 0
+    # Sicherstellen, dass kein Fachbegriff Platzhalter im Audio-Text auftaucht
+    for s in data["content"]["sentences"]:
+        assert "Fachbegriff" not in s["full_text_solved"]
+        assert "fachbegriff" not in s["full_text_solved"].lower()
+        assert len(s["full_text_solved"]) > 5
+
+def test_cloze_fachbegriff_placeholder_removal(client):
+    from backend.app.services.tutor_service import normalize_cloze_content
+    raw_content = {
+        "text": "In einem Bruch steht oben der [[1: Fachbegriff]] und unten der [[2: Fachbegriff]].",
+        "blanks": [
+            {"id": 1, "expected_answer": "Zähler"},
+            {"id": 2, "expected_answer": "Nenner"}
+        ],
+        "word_bank": ["Zähler", "Nenner", "Fachbegriff"]
+    }
+    norm = normalize_cloze_content(raw_content, generate_sentence_audio=False)
+    assert len(norm["sentences"]) == 1
+    s = norm["sentences"][0]
+    assert s["text_with_blanks"] == "In einem Bruch steht oben der [blank_1] und unten der [blank_2]."
+    assert s["full_text_solved"] == "In einem Bruch steht oben der Zähler und unten der Nenner."
+    assert "Fachbegriff" not in s["full_text_solved"]
+    assert "Fachbegriff" not in norm["word_bank"]
+
+
