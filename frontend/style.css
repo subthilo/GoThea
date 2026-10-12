@@ -5060,6 +5060,10 @@ body.wb-fullscreen-mode .wb-container {
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.05);
   transition: all 0.2s ease;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  touch-action: none !important;
 }
 
 .cloze-blank-canvas-wrap.focused {
@@ -5083,7 +5087,10 @@ body.wb-fullscreen-mode .wb-container {
   width: 160px;
   height: 48px;
   display: block;
-  touch-action: none;
+  touch-action: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
   cursor: crosshair;
   border-radius: 8px;
 }

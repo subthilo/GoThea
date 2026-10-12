@@ -225,7 +225,11 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
 
   const btnExercise = document.getElementById("btn-subject-start-exercise");
   if (btnExercise) {
-    btnExercise.onclick = () => {
+    btnExercise.dataset.subjectId = s.id;
+    btnExercise.dataset.subjectName = s.name;
+    btnExercise.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       if (typeof window.openClozeTrainer === "function") {
         window.openClozeTrainer({
           subjectId: s.id,

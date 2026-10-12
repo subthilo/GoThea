@@ -59,20 +59,6 @@
   function init() {
     if (!modal) return;
 
-    // Subject Hero Button
-    if (btnSubjectStart) {
-      btnSubjectStart.addEventListener('click', () => {
-        const s = window.currentSubject || (window.cachedSubjects || []).find(x => x.id === window.currentDetailSubjectId);
-        if (s) {
-          openClozeTrainer({
-            subjectId: s.id,
-            subjectName: s.name,
-            materialId: null
-          });
-        }
-      });
-    }
-
     // Modal Close
     if (btnClose) {
       btnClose.addEventListener('click', closeClozeTrainer);
@@ -99,8 +85,12 @@
    * Öffnet den Cloze Trainer und lädt / generiert eine Lückentext-Übung
    */
   async function openClozeTrainer(options = {}) {
-    const s = window.currentSubject || (window.cachedSubjects || []).find(x => x.id === window.currentDetailSubjectId);
-    currentSubjectId = options.subjectId || (s ? s.id : 'sub_math');
+    let targetSubjectId = options.subjectId;
+    if (!targetSubjectId) {
+      targetSubjectId = window.currentDetailSubjectId || (window.currentSubject ? window.currentSubject.id : null);
+    }
+    const s = (window.cachedSubjects || []).find(x => x.id === targetSubjectId) || window.currentSubject;
+    currentSubjectId = targetSubjectId || (s ? s.id : (window.currentDetailSubjectId || 'sub_english'));
     currentSubjectName = options.subjectName || (s ? s.name : 'Schulfach');
     currentMaterialId = options.materialId || null;
 
@@ -489,16 +479,21 @@
 
     function getCoords(e) {
       const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+      if (clientX === undefined && e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
       return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
+        x: (clientX !== undefined ? clientX : 0) - rect.left,
+        y: (clientY !== undefined ? clientY : 0) - rect.top
       };
     }
 
     function startDraw(e) {
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
       isDrawing = true;
       const coords = getCoords(e);
       lastX = coords.x;
@@ -513,7 +508,7 @@
 
     function draw(e) {
       if (!isDrawing) return;
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       const coords = getCoords(e);
 
       ctx.beginPath();
@@ -533,6 +528,7 @@
     function stopDraw(e) {
       if (!isDrawing) return;
       isDrawing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
 
       // Starte 3-Sekunden Debounce-Timer für lautlose KI-Überprüfung im Hintergrund
       scheduleSilentEvaluation(blankId);
@@ -543,7 +539,22 @@
     canvas.addEventListener('pointerdown', startDraw);
     canvas.addEventListener('pointermove', draw);
     canvas.addEventListener('pointerup', stopDraw);
+    canvas.addEventListener('pointercancel', stopDraw);
     canvas.addEventListener('pointerleave', stopDraw);
+
+    // iOS Safari Anti-Callout ('Teilen...') & Geste-Blockierung
+    const blockNative = (e) => {
+      if (e.cancelable) e.preventDefault();
+    };
+    canvas.addEventListener('contextmenu', blockNative, { capture: true });
+    canvas.addEventListener('selectstart', blockNative, { capture: true });
+    canvas.addEventListener('gesturestart', blockNative, { passive: false, capture: true });
+    canvas.addEventListener('gesturechange', blockNative, { passive: false, capture: true });
+    canvas.addEventListener('gestureend', blockNative, { passive: false, capture: true });
+    canvas.addEventListener('touchstart', blockNative, { passive: false, capture: true });
+    canvas.addEventListener('touchmove', blockNative, { passive: false, capture: true });
+    canvas.addEventListener('touchend', blockNative, { passive: false, capture: true });
+    canvas.addEventListener('touchcancel', blockNative, { passive: false, capture: true });
   }
 
   function clearBlankCanvas(blankId) {
@@ -593,13 +604,14 @@
     const cropBase64 = b.canvas.toDataURL('image/png');
 
     try {
+      const expectedAns = (b.def && (b.def.expected_answer || b.def.correct_answer)) || '';
       const payload = {
         blank_id: blankId,
         crop_image_base64: cropBase64,
-        exercise_title: currentExercise.title || 'Lückentext',
-        expected_answer: b.def.correct_answer || '',
-        alternatives: b.def.alternatives || [],
-        hint: b.def.hint || null
+        exercise_title: (currentExercise && currentExercise.title) || 'Lückentext',
+        expected_answer: expectedAns,
+        alternatives: (b.def && b.def.alternatives) || [],
+        hint: (b.def && b.def.hint) || null
       };
 
       const res = await fetch('/api/v1/exercises/cloze/check-single-blank', {
@@ -787,8 +799,8 @@
 
     if (currentMode === 'drag') {
       const userVal = (b.value || '').trim().toLowerCase();
-      const correctVal = (b.def.correct_answer || '').trim().toLowerCase();
-      const alts = (b.def.alternatives || []).map(a => a.trim().toLowerCase());
+      const correctVal = ((b.def && (b.def.expected_answer || b.def.correct_answer)) || '').trim().toLowerCase();
+      const alts = ((b.def && b.def.alternatives) || []).map(a => a.trim().toLowerCase());
       return userVal === correctVal || alts.includes(userVal);
     } else {
       // Handschrift

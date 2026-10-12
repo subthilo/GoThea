@@ -79,11 +79,23 @@ def generate_cloze_trainer_exercise(
     Nutzt Theas echte Unterrichtsmaterialien als fachliche Grundlage!
     Generiert satzweise aufbereiteten Text und Vorlese-Audio für die geführte Auswertung.
     """
-    subject_name = "Biologie"
+    subject_name = "Englisch" if "english" in (payload.subject_id or "").lower() else "Mathematik"
     if payload.subject_id:
         subj = db.query(Subject).filter(Subject.id == payload.subject_id).first()
         if subj:
             subject_name = subj.name
+        elif "english" in payload.subject_id.lower():
+            subject_name = "Englisch"
+        elif "math" in payload.subject_id.lower():
+            subject_name = "Mathematik"
+        elif "physic" in payload.subject_id.lower():
+            subject_name = "Physik"
+        elif "bio" in payload.subject_id.lower():
+            subject_name = "Biologie"
+        elif "german" in payload.subject_id.lower() or "deutsch" in payload.subject_id.lower():
+            subject_name = "Deutsch"
+
+    logger.info(f"POST /cloze/generate: payload.subject_id={payload.subject_id} -> resolved subject_name='{subject_name}', material_id={payload.material_id}")
 
     topic_name = None
     if payload.topic_id:
@@ -161,6 +173,7 @@ def check_single_cloze_blank(
     eine Lücke ausgefüllt und kurz abgesetzt hat.
     Überprüft nur den kleinen Mini-Crop (< 0,8 s) und liefert das Zwischenergebnis.
     """
+    logger.info(f"POST /cloze/check-single-blank: blank_id={payload.blank_id}, expected='{payload.expected_answer}', alts={payload.alternatives}")
     b_def = {
         "id": payload.blank_id,
         "expected_answer": payload.expected_answer,
@@ -186,6 +199,7 @@ def check_single_cloze_blank(
         results = []
     if results:
         r = results[0]
+        logger.info(f"check_single_blank result: blank_id={payload.blank_id}, recognized='{r.get('recognized_text')}', is_correct={r.get('is_correct')}")
         return CheckSingleBlankResponse(
             blank_id=payload.blank_id,
             recognized_text=r.get("recognized_text"),

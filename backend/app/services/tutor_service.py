@@ -565,12 +565,18 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
                 "hint": f"Überlege, welcher Begriff in Lücke {bid} passt.",
                 "width_px": max(140, min(240, len(expected) * 14 + 40))
             })
-    else:
         # Bestehende Blanks bereinigen falls nötig
         for idx, b in enumerate(blanks, 1):
             ans = str(b.get("expected_answer", "")).strip()
             if ans.lower() in GENERIC_PLACEHOLDERS:
                 b["expected_answer"] = f"Wort {b.get('id', idx)}"
+
+    # Beide Bezeichner (expected_answer & correct_answer) für Frontend- und Backend-Kompatibilität sicherstellen
+    for b in blanks:
+        if "expected_answer" in b and not b.get("correct_answer"):
+            b["correct_answer"] = b["expected_answer"]
+        elif "correct_answer" in b and not b.get("expected_answer"):
+            b["expected_answer"] = b["correct_answer"]
 
     content["blanks"] = blanks
 
@@ -678,6 +684,9 @@ def evaluate_cloze_blanks_targeted(
                 "}"
             )
 
+            import io
+            from PIL import Image
+
             user_content = [
                 {
                     "type": "text",
@@ -689,9 +698,29 @@ def evaluate_cloze_blanks_targeted(
                 bid = itm["blank_id"]
                 exp = itm["expected"]
                 alts = ", ".join(itm["alternatives"]) if itm["alternatives"] else "keine weiteren"
-                clean_img = itm["crop_b64"]
-                if "," in clean_img:
-                    clean_img = clean_img.split(",", 1)[1]
+                raw_b64 = itm["crop_b64"]
+                if "," in raw_b64:
+                    raw_b64 = raw_b64.split(",", 1)[1]
+
+                # Handschrift für OCR aufbereiten: Transparenz eliminieren & satten Kontrast (dunkle Tinte auf weißem Papier) erzeugen
+                processed_b64 = raw_b64
+                try:
+                    raw_bytes = base64.b64decode(raw_b64)
+                    pil_img = Image.open(io.BytesIO(raw_bytes))
+                    if pil_img.mode == "RGBA":
+                        alpha = pil_img.split()[3]
+                        solid_bg = Image.new("RGB", pil_img.size, (255, 255, 255))
+                        ink_layer = Image.new("RGB", pil_img.size, (15, 23, 42)) # Tiefes Dunkelblau/Schwarz für maximale Lesbarkeit
+                        solid_bg.paste(ink_layer, mask=alpha)
+                        final_img = solid_bg
+                    else:
+                        final_img = pil_img.convert("RGB")
+
+                    buf = io.BytesIO()
+                    final_img.save(buf, format="JPEG", quality=95)
+                    processed_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+                except Exception as prep_err:
+                    logger.warning(f"Fehler bei Handschrift-Bildaufbereitung für Lücke {bid}: {prep_err}")
 
                 user_content.append({
                     "type": "text",
@@ -700,8 +729,8 @@ def evaluate_cloze_blanks_targeted(
                 user_content.append({
                     "type": "image_url",
                     "image_url": {
-                        "url": f"data:image/jpeg;base64,{clean_img.strip()}",
-                        "detail": "low"
+                        "url": f"data:image/jpeg;base64,{processed_b64.strip()}",
+                        "detail": "high"
                     }
                 })
 
@@ -723,13 +752,29 @@ def evaluate_cloze_blanks_targeted(
             evals_by_id = {e.get("blank_id"): e for e in evals if "blank_id" in e}
             for itm in items_to_evaluate:
                 bid = itm["blank_id"]
+                exp = itm["expected"]
                 ev = evals_by_id.get(bid)
                 if ev:
+                    rec_text = (ev.get("recognized_text") or "").strip()
+                    model_is_correct = bool(ev.get("is_correct"))
+
+                    # Robuster deterministischer Abgleich (tolerant gegen Satzzeichen & Groß-/Kleinschreibung)
+                    clean_rec = re.sub(r"[^\w\s-]", "", rec_text).strip().lower()
+                    clean_exp = re.sub(r"[^\w\s-]", "", str(exp)).strip().lower()
+                    clean_alts = [re.sub(r"[^\w\s-]", "", str(a)).strip().lower() for a in itm.get("alternatives", [])]
+
+                    if clean_rec and (clean_rec == clean_exp or clean_rec in clean_alts):
+                        is_correct = True
+                    else:
+                        is_correct = model_is_correct
+
+                    logger.info(f"[Lücke {bid}] Handschrift erkannt: '{rec_text}' (Erwartet: '{exp}', Alternativen: {clean_alts}) -> is_correct={is_correct}")
+
                     results.append({
                         "blank_id": bid,
-                        "recognized_text": ev.get("recognized_text"),
-                        "is_correct": bool(ev.get("is_correct")),
-                        "feedback": ev.get("feedback") or ("Richtig!" if ev.get("is_correct") else "Noch nicht ganz richtig."),
+                        "recognized_text": rec_text,
+                        "is_correct": is_correct,
+                        "feedback": ev.get("feedback") or ("Richtig!" if is_correct else "Noch nicht ganz richtig."),
                         "hint": ev.get("hint") or itm["hint"]
                     })
                 else:
