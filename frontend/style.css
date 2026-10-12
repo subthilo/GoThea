@@ -5070,11 +5070,11 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .cloze-sentence-row {
-  line-height: 2.1;
-  font-size: 1.1rem;
+  line-height: 2.6;
+  font-size: 1.18rem;
   color: var(--text-primary, #f1f5f9);
-  padding: 8px 12px;
-  border-radius: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
   transition: all 0.3s ease;
   border: 1px solid transparent;
 }
@@ -5091,22 +5091,22 @@ body.wb-fullscreen-mode .wb-container {
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
 }
 
-/* Drop-Lücke (Drag & Drop Modus) */
+/* Drop-Lücke (Drag & Drop Modus) - Deutlich größer & komfortabler */
 .cloze-blank-drop {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 130px;
-  height: 38px;
-  margin: 0 6px;
-  padding: 2px 12px;
+  min-width: 180px;
+  height: 50px;
+  margin: 3px 8px;
+  padding: 4px 18px;
   vertical-align: middle;
-  border: 2px dashed rgba(255, 255, 255, 0.25);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  border: 2px dashed rgba(255, 255, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-secondary);
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 1.15rem;
+  font-weight: 600;
   transition: all 0.2s ease;
   cursor: pointer;
   user-select: none;
@@ -5159,20 +5159,20 @@ body.wb-fullscreen-mode .wb-container {
   75% { transform: translateX(4px); }
 }
 
-/* Handschrift-Lücke (Schreib-Modus) */
+/* Handschrift-Lücke (Schreib-Modus) - Großzügiges Zeichenfeld */
 .cloze-blank-write-container {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   vertical-align: middle;
-  margin: 0 6px;
+  margin: 3px 8px;
   position: relative;
 }
 
 .cloze-blank-canvas-wrap {
   position: relative;
-  border: 2px dashed rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
+  border: 2px dashed rgba(255, 255, 255, 0.32);
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
   transition: all 0.2s ease;
   -webkit-touch-callout: none !important;
@@ -5205,11 +5205,11 @@ body.wb-fullscreen-mode .wb-container {
   align-items: center;
   justify-content: center;
   font-family: inherit;
-  font-size: 1.15rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: #34d399;
-  background: rgba(6, 78, 59, 0.85);
-  border-radius: 8px;
+  background: rgba(6, 78, 59, 0.88);
+  border-radius: 10px;
   z-index: 5;
   pointer-events: none;
   animation: fadeIn 0.3s ease;
@@ -5222,24 +5222,24 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .cloze-blank-canvas {
-  width: 160px;
-  height: 48px;
+  width: 230px;
+  height: 58px;
   display: block;
   touch-action: none !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
   user-select: none !important;
   cursor: crosshair;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .cloze-blank-clear-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 0.75rem;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }

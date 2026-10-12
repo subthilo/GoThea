@@ -110,3 +110,11 @@ def test_cloze_fachbegriff_placeholder_removal(client):
     assert "Fachbegriff" not in norm["word_bank"]
 
 
+def test_cloze_pool_status_api(client):
+    res = client.get("/api/v1/exercises/cloze/pool-status")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert "pool_counts" in data
+
+

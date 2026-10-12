@@ -10,6 +10,7 @@ from backend.app.database import get_db
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.material import Material
 from backend.app.services.phrase_pool_service import phrase_pool_manager
+from backend.app.services.cloze_pool_service import cloze_pool_manager
 from backend.app.services.tutor_service import (
     generate_board_exercise,
     normalize_cloze_content,
@@ -54,6 +55,17 @@ class CheckSingleBlankResponse(BaseModel):
     hint: Optional[str] = None
 
 
+@router.get("/cloze/pool-status")
+def get_cloze_exercise_pool_status():
+    """
+    Liefert den aktuellen Füllstand des Offline-Vorratsspeichers für alle Schulfächer.
+    """
+    return {
+        "status": "success",
+        "pool_counts": cloze_pool_manager.get_pool_status()
+    }
+
+
 @router.get("/phrases/{category}", response_model=PhraseResponse)
 def get_instant_audio_phrase(category: str):
     """
@@ -76,9 +88,17 @@ def generate_cloze_trainer_exercise(
 ):
     """
     Generiert eine Lückentext-Übung für das eigenständige Übungsfenster.
-    Nutzt Theas echte Unterrichtsmaterialien als fachliche Grundlage!
-    Generiert satzweise aufbereiteten Text und Vorlese-Audio für die geführte Auswertung.
+    Prüft zuerst den Offline-Vorratsspeicher (0 ms Latenz).
+    Stößt im Hintergrund die automatische Nachproduktion an.
     """
+    # 1. Schneller Vorratsspeicher-Check (0 ms): Falls vorab generiert, sofort liefern!
+    if not payload.custom_prompt and not payload.material_id:
+        cached_exercise = cloze_pool_manager.get_exercise_from_pool(payload.subject_id)
+        if cached_exercise:
+            # Im Hintergrund Nachschub produzieren
+            cloze_pool_manager.trigger_background_replenish(payload.subject_id)
+            return cached_exercise
+
     subject_name = "Englisch" if "english" in (payload.subject_id or "").lower() else "Mathematik"
     if payload.subject_id:
         subj = db.query(Subject).filter(Subject.id == payload.subject_id).first()
@@ -151,6 +171,9 @@ def generate_cloze_trainer_exercise(
 
     # Standardisierung mit Satz-Audio durchführen
     content = normalize_cloze_content(content, generate_sentence_audio=payload.audio_enabled)
+
+    # Im Hintergrund den Vorratsspeicher auffüllen
+    cloze_pool_manager.trigger_background_replenish(payload.subject_id)
 
     return {
         "status": "success",

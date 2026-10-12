@@ -598,17 +598,27 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
 
     if generate_sentence_audio and OPENAI_API_KEY:
         try:
+            from concurrent.futures import ThreadPoolExecutor
             from openai import OpenAI
             client = OpenAI(api_key=OPENAI_API_KEY)
-            for s in sentences:
-                if s["full_text_solved"]:
+
+            def _synthesize_sentence(s):
+                target_text = s.get("full_text_solved")
+                if not target_text:
+                    return
+                try:
                     tts_res = client.audio.speech.create(
                         model="tts-1",
                         voice="nova",
-                        input=s["full_text_solved"],
+                        input=target_text,
                         response_format="mp3"
                     )
                     s["audio_base64"] = base64.b64encode(tts_res.content).decode("utf-8")
+                except Exception as ex:
+                    logger.warning(f"Fehler bei TTS für Satz '{target_text[:30]}...': {ex}")
+
+            with ThreadPoolExecutor(max_workers=min(max(len(sentences), 1), 6)) as pool:
+                list(pool.map(_synthesize_sentence, sentences))
         except Exception as e:
             logger.warning(f"Fehler bei Satz-Audio-Generierung: {e}")
 

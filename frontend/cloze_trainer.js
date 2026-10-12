@@ -513,6 +513,10 @@
       dropEl.id = `cloze-blank-slot-${bId}`;
       dropEl.dataset.blankId = bId;
 
+      const expWord = (blankDef.expected_answer || blankDef.correct_answer || '');
+      const dynWidth = Math.max(180, Math.min(320, expWord.length * 16 + 50));
+      dropEl.style.minWidth = `${dynWidth}px`;
+
       if (bState.value) {
         dropEl.textContent = bState.value;
         dropEl.classList.add('is-filled');
@@ -563,6 +567,11 @@
       canvas.className = 'cloze-blank-canvas';
       canvas.id = `cloze-canvas-${bId}`;
       canvas.dataset.blankId = bId;
+
+      const expWord = (blankDef.expected_answer || blankDef.correct_answer || '');
+      const dynWidth = Math.max(220, Math.min(360, expWord.length * 18 + 70));
+      canvas.style.width = `${dynWidth}px`;
+      canvas.style.height = '58px';
 
       const clearBtn = document.createElement('button');
       clearBtn.type = 'button';
@@ -668,8 +677,8 @@
     canvases.forEach(canvas => {
       const bId = parseInt(canvas.dataset.blankId, 10);
       const rect = canvas.getBoundingClientRect();
-      const width = rect.width || 160;
-      const height = rect.height || 48;
+      const width = rect.width || 230;
+      const height = rect.height || 58;
 
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -679,7 +688,7 @@
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 3.2;
 
       if (blankState[bId]) {
         blankState[bId].canvas = canvas;
@@ -1045,7 +1054,9 @@
       await playAudioFromBase64(currentSentence.audio_base64);
       setLunaSpeaking(false);
     } else {
-      await sleep(1500);
+      setLunaSpeaking(true);
+      await speakTextFallback(currentSentence.full_text_solved || currentSentence.text);
+      setLunaSpeaking(false);
     }
 
     if (!isReviewing) return;
@@ -1137,19 +1148,20 @@
       updateReviewButtonState('playing');
 
       if (allFixed) {
-        await playInstantPhrase('correction_success');
-        setLunaBanner('Perfekt korrigiert! Ich lese dir den Satz jetzt nochmal von vorne vor...', 'speaking');
+        setLunaBanner('Perfekt korrigiert! Ich lese dir den Satz jetzt nochmal vor...', 'speaking');
       } else {
-        setLunaBanner('Lösung eingetragen! Ich lese dir den Satz jetzt komplett von vorne vor...', 'speaking');
+        setLunaBanner('Lösung eingetragen! Ich lese dir den Satz jetzt komplett vor...', 'speaking');
       }
 
-      // WICHTIG: Den korrigierten Satz JETZT NOCHMAL VON VORNE VORLESEN!
+      // WICHTIG: Den korrigierten Satz JETZT SOFORT OHNE VERZÖGERUNG VON VORNE VORLESEN!
       if (currentSentence.audio_base64) {
         setLunaSpeaking(true);
         await playAudioFromBase64(currentSentence.audio_base64);
         setLunaSpeaking(false);
       } else {
-        await sleep(1500);
+        setLunaSpeaking(true);
+        await speakTextFallback(currentSentence.full_text_solved || currentSentence.text);
+        setLunaSpeaking(false);
       }
 
       if (!isReviewing) return;
@@ -1272,6 +1284,29 @@
     });
   }
 
+  function speakTextFallback(text) {
+    return new Promise((resolve) => {
+      stopCurrentAudio();
+      if (!('speechSynthesis' in window) || !text) {
+        setTimeout(resolve, 1200);
+        return;
+      }
+      try {
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance(text);
+        const isEnglish = (currentSubjectName && currentSubjectName.toLowerCase().includes('eng')) ||
+                          (currentExercise && currentExercise.title && currentExercise.title.toLowerCase().includes('eng'));
+        utt.lang = isEnglish ? 'en-US' : 'de-DE';
+        utt.rate = 0.95;
+        utt.onend = () => resolve();
+        utt.onerror = () => resolve();
+        window.speechSynthesis.speak(utt);
+      } catch (e) {
+        setTimeout(resolve, 1000);
+      }
+    });
+  }
+
   function stopCurrentAudio() {
     if (activeAudio) {
       try {
@@ -1279,6 +1314,11 @@
         activeAudio.currentTime = 0;
       } catch (e) {}
       activeAudio = null;
+    }
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
     }
   }
 
