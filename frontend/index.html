@@ -490,6 +490,50 @@
           </div>
         </div>
 
+        <!-- Trainingsstand, Scores & Adaptives Niveau des Fachs -->
+        <div class="subject-scores-card" id="subject-scores-card">
+          <div class="subject-scores-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="subject-scores-icon">🎯</span>
+              <div>
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Trainingsstand & Niveau</h3>
+                <p class="subtitle" style="margin: 2px 0 0; font-size: 0.8rem;">Erfolgs-Tracking & automatische Schwierigkeitsanpassung durch Luna</p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span class="badge-adaptive-level" id="subject-adaptive-level-badge">🎯 Stufe 2 (Mittel)</span>
+              <button id="btn-toggle-subject-scores-visibility" class="btn-secondary-xs" title="Scores einblenden oder ausblenden, um Leistungsdruck zu vermeiden">
+                <span id="btn-toggle-subject-scores-icon">👁️</span>
+                <span id="btn-toggle-subject-scores-text">Scores ausblenden</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Modus: Scores sichtbar -->
+          <div class="subject-scores-body" id="subject-scores-body">
+            <div class="subject-scores-methods-grid" id="subject-scores-methods-grid">
+              <!-- Dynamisch mit Methoden-Karten (Lückentext etc.) befüllt -->
+            </div>
+            <div class="subject-scores-adaptive-hint">
+              <span>💡</span>
+              <span id="subject-scores-adaptive-hint-text">
+                Luna passt die Übungen automatisch an: Bei vielen Fehlern wird es leichter, damit Thea stets motiviert bleibt und das meiste sicher löst.
+              </span>
+            </div>
+          </div>
+
+          <!-- Modus: Sanfter Schutzmodus (Scores ausgeblendet) -->
+          <div class="subject-scores-hidden-state" id="subject-scores-hidden-state" style="display: none;">
+            <div class="subject-scores-hidden-content">
+              <span>🌱</span>
+              <div>
+                <strong>Lernmodus aktiv</strong>
+                <p>Ergebnis-Zahlen sind ausgeblendet. Luna passt die Aufgaben im Hintergrund optimal an Theas Lerntempo an.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Materialien & Dokumente des Fachs -->
         <div class="materials-section" style="margin-top: 28px;">
           <div class="section-title-row">
@@ -1287,6 +1331,7 @@
               <h3 id="cloze-modal-title" style="margin: 0; font-size: 1.25rem;">Lückentext-Übung</h3>
               <span class="badge-grade" id="cloze-modal-subject">Mathematik</span>
               <span class="badge-source-doc" id="cloze-modal-doc-source" style="display: none;"></span>
+              <span class="badge-adaptive-level" id="cloze-adaptive-level-badge" title="Aktuelle adaptive Schwierigkeitsstufe">🎯 Stufe 2 (Mittel)</span>
             </div>
             <p id="cloze-modal-topic" class="subtitle" style="margin: 2px 0 0; font-size: 0.85rem;">Thema & Kontext</p>
           </div>

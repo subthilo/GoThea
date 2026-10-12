@@ -6,6 +6,7 @@ from backend.app.models.study_block import StudyBlock
 from backend.app.models.test import Test
 from backend.app.models.completed_task import CompletedTask
 from backend.app.models.whiteboard import TutorSession
+from backend.app.models.exercise_score import ExerciseScore
 
 __all__ = [
     "User",
@@ -18,4 +19,5 @@ __all__ = [
     "Test",
     "CompletedTask",
     "TutorSession",
+    "ExerciseScore",
 ]

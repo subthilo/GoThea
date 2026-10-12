@@ -382,12 +382,19 @@ class ExercisePoolManager:
 
         topic_name = material_context.get("topic") if material_context else None
 
+        chosen_diff = "mittel"
+        try:
+            from backend.app.services.score_service import get_adaptive_difficulty
+            chosen_diff = get_adaptive_difficulty(db, target_sub_id, exercise_type)["difficulty"]
+        except Exception:
+            chosen_diff = "mittel"
+
         res = generate_board_exercise(
             subject_name=subject_name,
             grade_level=7,
             topic_name=topic_name,
             exercise_type=exercise_type,
-            difficulty="mittel",
+            difficulty=chosen_diff,
             material_context=material_context,
             audio_enabled=True
         )

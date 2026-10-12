@@ -21,6 +21,8 @@
   let currentSubjectName = 'Allgemein';
   let currentMaterialId = null;
   let activeAudio = null;
+  let currentAdaptiveDifficulty = 'mittel';
+  let currentAdaptiveLevelLabel = 'Stufe 2 (Mittel) 🎯';
 
   // Blanks & Evaluation state
   // blankState[blankId] = { value: '', canvas: null, ctx: null, lastDraw: 0, timer: null, evalResult: null, dirty: false, attempts: 0, isAutoRevealed: false }
@@ -35,6 +37,7 @@
   const modalSubject = document.getElementById('cloze-modal-subject');
   const modalTopic = document.getElementById('cloze-modal-topic');
   const modalDocSource = document.getElementById('cloze-modal-doc-source');
+  const modalAdaptiveBadge = document.getElementById('cloze-adaptive-level-badge');
   const lunaAvatar = document.getElementById('cloze-luna-avatar');
   const lunaBanner = document.getElementById('cloze-luna-banner');
   const lunaBannerText = document.getElementById('cloze-luna-banner-text');
@@ -162,6 +165,22 @@
     resetState();
     modal.style.display = 'flex';
 
+    // Aktuelle adaptive Schwierigkeitsstufe ermitteln
+    try {
+      const adRes = await fetch(`/api/v1/exercises/adaptive-difficulty/${encodeURIComponent(currentSubjectId)}?exercise_type=cloze`);
+      if (adRes.ok) {
+        const adData = await adRes.json();
+        currentAdaptiveDifficulty = adData.difficulty || 'mittel';
+        currentAdaptiveLevelLabel = adData.level_label || 'Stufe 2 (Mittel) 🎯';
+        if (modalAdaptiveBadge) {
+          modalAdaptiveBadge.textContent = `🎯 ${adData.level_label || 'Stufe 2 (Mittel)'}`;
+          modalAdaptiveBadge.className = `badge-adaptive-level level-${adData.level_code || 2}`;
+        }
+      }
+    } catch (e) {
+      console.warn('Fehler beim Abruf der adaptiven Stufe:', e);
+    }
+
     // Übung laden
     await fetchOrGenerateExercise();
   }
@@ -256,7 +275,7 @@
       const payload = {
         subject_id: currentSubjectId,
         material_id: currentMaterialId,
-        difficulty: 'mittel',
+        difficulty: currentAdaptiveDifficulty || 'mittel',
         audio_enabled: true
       };
 
@@ -1232,6 +1251,62 @@
 
     // Lob-Phrase abspielen ("Klasse!", "Genau richtig!")
     await playInstantPhrase('praise');
+
+    // Score erfassen und an Backend übermitteln
+    const blankIds = Object.keys(blankState);
+    const totalItems = blankIds.length;
+    let correctItems = 0;
+    let mistakesCount = 0;
+    let revealedCount = 0;
+
+    blankIds.forEach(id => {
+      const b = blankState[id];
+      if (b) {
+        if (b.isAutoRevealed) {
+          revealedCount++;
+        } else if (evaluateBlankCorrectness(id)) {
+          correctItems++;
+        }
+        if (b.attempts > 1) {
+          mistakesCount += (b.attempts - 1);
+        }
+      }
+    });
+
+    try {
+      const subRes = await fetch('/api/v1/exercises/results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject_id: currentSubjectId,
+          exercise_type: 'cloze',
+          total_items: totalItems,
+          correct_items: correctItems,
+          mistakes_count: mistakesCount,
+          revealed_count: revealedCount,
+          difficulty_level: currentAdaptiveDifficulty || 'mittel'
+        })
+      });
+
+      if (subRes.ok) {
+        const scoreData = await subRes.json();
+        if (scoreData.adaptive_difficulty) {
+          currentAdaptiveDifficulty = scoreData.adaptive_difficulty;
+          currentAdaptiveLevelLabel = scoreData.adaptive_level_label;
+          if (modalAdaptiveBadge) {
+            modalAdaptiveBadge.textContent = `🎯 ${scoreData.adaptive_level_label}`;
+            modalAdaptiveBadge.className = `badge-adaptive-level level-${scoreData.adaptive_level_code || 2}`;
+          }
+        }
+        const msg = scoreData.feedback_message || `Klasse! Du hast ${correctItems} von ${totalItems} Lücken gelöst.`;
+        setLunaBanner(`🎉 ${msg} (Erfolgsquote: ${scoreData.accuracy_percent}%)`, 'info');
+        window.dispatchEvent(new CustomEvent('gothea:exercise-completed', { detail: scoreData }));
+        return;
+      }
+    } catch (err) {
+      console.warn('Fehler beim Übermitteln des Übungsergebnisses:', err);
+    }
+
     setLunaBanner('🎉 Fantastisch gelöst! Du hast alle Lücken meisterhaft ausgefüllt.', 'info');
   }
 

@@ -273,6 +273,8 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   });
 
   loadSubjectMaterials(subjectId);
+  initSubjectScoresVisibility();
+  loadSubjectScores(subjectId);
 
   // View aktivieren
   document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
@@ -280,6 +282,123 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   const tabEl = document.getElementById("tab-subject-detail");
   if (tabEl) tabEl.classList.add("active");
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function initSubjectScoresVisibility() {
+  const btnToggle = document.getElementById("btn-toggle-subject-scores-visibility");
+  const bodyEl = document.getElementById("subject-scores-body");
+  const hiddenEl = document.getElementById("subject-scores-hidden-state");
+  const iconEl = document.getElementById("btn-toggle-subject-scores-icon");
+  const textEl = document.getElementById("btn-toggle-subject-scores-text");
+
+  let isHidden = localStorage.getItem("gothea_hide_subject_scores") === "true";
+
+  function applyVisibility(hidden) {
+    if (bodyEl) bodyEl.style.display = hidden ? "none" : "block";
+    if (hiddenEl) hiddenEl.style.display = hidden ? "block" : "none";
+    if (iconEl) iconEl.textContent = hidden ? "👁️" : "🙈";
+    if (textEl) textEl.textContent = hidden ? "Scores einblenden" : "Scores ausblenden";
+  }
+
+  applyVisibility(isHidden);
+
+  if (btnToggle) {
+    btnToggle.onclick = () => {
+      isHidden = !isHidden;
+      localStorage.setItem("gothea_hide_subject_scores", isHidden ? "true" : "false");
+      applyVisibility(isHidden);
+    };
+  }
+}
+
+// Bei Abschluss einer Übung im Hintergrund Fach-Scores neu laden
+window.addEventListener("gothea:exercise-completed", (e) => {
+  if (currentDetailSubjectId) {
+    loadSubjectScores(currentDetailSubjectId);
+  }
+});
+
+async function loadSubjectScores(subjectId) {
+  const container = document.getElementById("subject-scores-methods-grid");
+  const badgeEl = document.getElementById("subject-adaptive-level-badge");
+  const hintTextEl = document.getElementById("subject-scores-adaptive-hint-text");
+  if (!container) return;
+
+  container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 18px; color: var(--text-muted); font-size: 0.85rem;">Lade Trainingsstand...</div>`;
+
+  try {
+    const res = await fetch(`/api/v1/exercises/scores/${encodeURIComponent(subjectId)}`);
+    if (!res.ok) {
+      container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); font-size: 0.85rem;">Keine Trainingsdaten verfügbar.</div>`;
+      return;
+    }
+    const data = await res.json();
+
+    if (badgeEl) {
+      badgeEl.textContent = data.difficulty_label || "Stufe 2 (Mittel) 🎯";
+      badgeEl.className = `badge-adaptive-level level-${data.difficulty_level_code || 2}`;
+    }
+
+    if (hintTextEl) {
+      if (data.difficulty_level_code === 1) {
+        hintTextEl.textContent = "Sanfter Aufbau-Modus aktiv: Luna wählt leichtere Aufgaben, damit Thea die Grundlagen festigt und fast alles richtig hat.";
+      } else if (data.difficulty_level_code === 3) {
+        hintTextEl.textContent = "Spitzen-Modus aktiv: Thea löst Übungen mit Bravour! Luna stellt anspruchsvolle Vertiefungsaufgaben bereit.";
+      } else {
+        hintTextEl.textContent = "Ausgewogenes Gymnasial-Niveau: Luna passt den Schwierigkeitsgrad nach jeder Übung an Theas Fortschritt an.";
+      }
+    }
+
+    const methods = data.methods || {};
+    const methodKeys = Object.keys(methods);
+
+    if (methodKeys.length === 0) {
+      container.innerHTML = `
+        <div class="subject-score-empty" style="grid-column: 1 / -1; text-align: center; padding: 24px; color: var(--text-muted);">
+          <span>Noch keine Übungen für dieses Fach absolviert. Starte oben eine Lückentext-Übung!</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = methodKeys.map((k) => {
+      const m = methods[k];
+      const hasData = m.completed_count > 0;
+      const scorePct = hasData ? Math.round(m.average_score) : 0;
+      const levelCode = m.difficulty_level_code || 2;
+      return `
+        <div class="method-score-card">
+          <div class="method-score-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="method-score-icon">${m.icon || "📝"}</span>
+              <strong class="method-score-name">${escapeHtml(m.name)}</strong>
+            </div>
+            <span class="method-difficulty-pill level-${levelCode}">
+              ${escapeHtml(m.difficulty_label)}
+            </span>
+          </div>
+
+          <div class="method-score-metrics">
+            <div class="method-score-main">
+              <span class="method-score-percent">${hasData ? `${scorePct}%` : "–"}</span>
+              <span class="method-score-sublabel">${hasData ? "Erfolgsquote" : "Noch nicht geübt"}</span>
+            </div>
+            <div class="method-score-details">
+              <div><strong>${m.completed_count}</strong> Übung${m.completed_count === 1 ? "" : "en"} absolviert</div>
+              ${m.recent_score !== null && m.recent_score !== undefined ? `<div>Zuletzt: <strong>${Math.round(m.recent_score)}%</strong></div>` : `<div>Starte die erste Übung!</div>`}
+            </div>
+          </div>
+
+          <div class="method-score-bar-wrap">
+            <div class="method-score-bar ${scorePct >= 80 ? "bar-high" : (scorePct >= 60 ? "bar-mid" : "bar-low")}" style="width: ${hasData ? scorePct : 0}%;"></div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    console.warn("Fehler beim Laden der Fach-Scores:", err);
+    container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); font-size: 0.85rem;">Trainingsstand konnte nicht geladen werden.</div>`;
+  }
 }
 
 async function loadSubjectMaterials(subjectId) {
