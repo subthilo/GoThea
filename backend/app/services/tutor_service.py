@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+import re
 from typing import Dict, Any, Optional, List
 
 from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL

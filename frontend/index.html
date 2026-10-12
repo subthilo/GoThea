@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="GoThea">
   <meta name="theme-color" content="#0f1115">
 
-  <link rel="stylesheet" href="/static/style.css?v=4.5">
+  <link rel="stylesheet" href="/static/style.css?v=4.6">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -1292,7 +1292,14 @@
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <!-- Zoom Controls: Alles im Blick vs. Reinzoomen -->
+          <div class="cloze-zoom-controls" id="cloze-zoom-controls" title="Größe anpassen (Kompakt / Reinzoomen)">
+            <button type="button" class="cloze-zoom-btn" id="btn-cloze-zoom-out" title="Verkleinern (Alles im Blick)">−</button>
+            <span class="cloze-zoom-label" id="cloze-zoom-label">100%</span>
+            <button type="button" class="cloze-zoom-btn" id="btn-cloze-zoom-in" title="Vergrößern (Reinzoomen)">+</button>
+          </div>
+
           <!-- Modus-Umschalter: Ziehen vs. Schreiben -->
           <div class="cloze-mode-toggle" id="cloze-mode-toggle" title="Eingabemodus wählen">
             <button type="button" class="cloze-mode-btn active" data-mode="drag" id="btn-mode-drag">
@@ -1363,8 +1370,8 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=4.5"></script>
-  <script src="/static/whiteboard.js?v=4.5"></script>
-  <script src="/static/cloze_trainer.js?v=1.1"></script>
+  <script src="/static/app.js?v=4.6"></script>
+  <script src="/static/whiteboard.js?v=4.6"></script>
+  <script src="/static/cloze_trainer.js?v=1.2"></script>
 </body>
 </html>

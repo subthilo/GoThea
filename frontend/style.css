@@ -4799,10 +4799,10 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .cloze-trainer-box {
-  max-width: 980px;
-  width: 95%;
-  height: 88vh;
-  max-height: 850px;
+  max-width: 1240px;
+  width: 96%;
+  height: 90vh;
+  max-height: 880px;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -4814,23 +4814,25 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .cloze-trainer-header {
-  padding: 16px 24px;
+  padding: 14px 22px;
   background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .cloze-luna-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
   transition: transform 0.3s ease;
   user-select: none;
@@ -4853,6 +4855,47 @@ body.wb-fullscreen-mode .wb-container {
   padding: 2px 8px;
   border-radius: 12px;
   font-weight: 500;
+}
+
+/* Zoom Controls */
+.cloze-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 2px 4px;
+  gap: 4px;
+}
+
+.cloze-zoom-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.95rem;
+  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cloze-zoom-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.cloze-zoom-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+  min-width: 38px;
+  text-align: center;
+  user-select: none;
 }
 
 /* Modus-Umschalter: Ziehen vs. Schreiben */
@@ -4932,11 +4975,37 @@ body.wb-fullscreen-mode .wb-container {
 /* Modal Body */
 .cloze-trainer-body {
   flex: 1;
-  padding: 24px;
+  padding: 18px 24px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
+}
+
+.cloze-exercise-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  zoom: var(--cloze-zoom, 1);
+  transform-origin: top center;
+  transition: zoom 0.15s ease;
+}
+
+/* 2-Spalten-Layout auf Tablets & Desktop im Ziehen-Modus: Text links, Wortspeicher rechts! */
+@media (min-width: 820px) {
+  .cloze-trainer-body.mode-drag .cloze-exercise-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .cloze-trainer-body.mode-drag .cloze-wordbank-container {
+    position: sticky;
+    top: 0;
+    max-height: calc(88vh - 200px);
+    overflow-y: auto;
+  }
 }
 
 .cloze-loading-state {
@@ -4961,18 +5030,18 @@ body.wb-fullscreen-mode .wb-container {
 .cloze-sentences-container {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  background: rgba(0, 0, 0, 0.18);
-  padding: 22px;
+  gap: 14px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 18px 22px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .cloze-sentence-row {
-  line-height: 2.2;
-  font-size: 1.15rem;
+  line-height: 2.1;
+  font-size: 1.1rem;
   color: var(--text-primary, #f1f5f9);
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 12px;
   transition: all 0.3s ease;
   border: 1px solid transparent;
@@ -5009,6 +5078,13 @@ body.wb-fullscreen-mode .wb-container {
   transition: all 0.2s ease;
   cursor: pointer;
   user-select: none;
+  -webkit-user-select: none;
+}
+
+.cloze-blank-drop.focused-blank {
+  border-color: var(--accent-color, #6366f1) !important;
+  background: rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.5) !important;
 }
 
 .cloze-blank-drop.drag-over {
@@ -5166,6 +5242,26 @@ body.wb-fullscreen-mode .wb-container {
   border-color: transparent;
   transform: none !important;
   box-shadow: none !important;
+}
+
+/* Schwebender Drag-Ghost für Touch / iPad */
+.cloze-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 999999;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.7);
+  backdrop-filter: blur(8px);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
 }
 
 /* Footer Actions */

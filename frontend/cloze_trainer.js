@@ -56,8 +56,49 @@
   // Trigger from Subject Detail Page
   const btnSubjectStart = document.getElementById('btn-subject-start-exercise');
 
+  // Zoom & Layout Controls
+  const clozeTrainerBody = document.getElementById('cloze-trainer-body');
+  const btnZoomIn = document.getElementById('btn-cloze-zoom-in');
+  const btnZoomOut = document.getElementById('btn-cloze-zoom-out');
+  const zoomLabel = document.getElementById('cloze-zoom-label');
+
+  const ZOOM_LEVELS = [0.85, 1.0, 1.15, 1.3, 1.5];
+  let currentZoomIndex = 1; // 1.0 = 100%
+  let focusedBlankId = null;
+
+  function applyZoom(index) {
+    currentZoomIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, index));
+    const factor = ZOOM_LEVELS[currentZoomIndex];
+    if (clozeTrainerBody) {
+      clozeTrainerBody.style.setProperty('--cloze-zoom', factor);
+    }
+    if (zoomLabel) {
+      zoomLabel.textContent = `${Math.round(factor * 100)}%`;
+    }
+  }
+
+  function setFocusedBlank(bId) {
+    focusedBlankId = bId;
+    document.querySelectorAll('.cloze-blank-drop').forEach(slot => {
+      const slotId = parseInt(slot.dataset.blankId, 10);
+      if (bId !== null && slotId === bId) {
+        slot.classList.add('focused-blank');
+      } else {
+        slot.classList.remove('focused-blank');
+      }
+    });
+  }
+
   function init() {
     if (!modal) return;
+
+    // Zoom Buttons
+    if (btnZoomIn) {
+      btnZoomIn.addEventListener('click', () => applyZoom(currentZoomIndex + 1));
+    }
+    if (btnZoomOut) {
+      btnZoomOut.addEventListener('click', () => applyZoom(currentZoomIndex - 1));
+    }
 
     // Modal Close
     if (btnClose) {
@@ -140,11 +181,20 @@
       btnModeDrag.classList.add('active');
       btnModeHandwrite.classList.remove('active');
       wordbankContainer.style.display = 'block';
+      if (clozeTrainerBody) {
+        clozeTrainerBody.classList.add('mode-drag');
+        clozeTrainerBody.classList.remove('mode-handwrite');
+      }
     } else {
       btnModeHandwrite.classList.add('active');
       btnModeDrag.classList.remove('active');
       wordbankContainer.style.display = 'none';
+      if (clozeTrainerBody) {
+        clozeTrainerBody.classList.add('mode-handwrite');
+        clozeTrainerBody.classList.remove('mode-drag');
+      }
     }
+    setFocusedBlank(null);
     renderExerciseContent();
   }
 
@@ -306,26 +356,93 @@
       const chip = document.createElement('div');
       chip.className = 'cloze-word-chip';
       chip.textContent = word;
-      chip.draggable = true;
       chip.dataset.word = word;
 
       // Prüfe, ob das Wort bereits in einer Lücke genutzt wird
       const isUsed = Object.values(blankState).some(b => b.value === word);
       if (isUsed) chip.classList.add('used');
 
+      // 1. HTML5 Drag für Desktop-Maus
+      chip.draggable = !isUsed;
       chip.addEventListener('dragstart', (e) => {
+        if (chip.classList.contains('used')) return;
         e.dataTransfer.setData('text/plain', word);
         e.dataTransfer.effectAllowed = 'copy';
       });
 
-      // Klick als Fallback für Touch/iPad
-      chip.addEventListener('click', () => {
+      // 2. Touch- & Pointer-Drag für iPad / Apple Pencil & Touchscreens
+      chip.addEventListener('pointerdown', (e) => {
         if (chip.classList.contains('used')) return;
-        // Finde die erste leere Lücke
-        const firstEmptyId = Object.keys(blankState).find(id => !blankState[id].value);
-        if (firstEmptyId) {
-          fillBlankWithValue(firstEmptyId, word);
-        }
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        let isDragging = false;
+        let ghostEl = null;
+
+        const onPointerMove = (moveEv) => {
+          const dist = Math.hypot(moveEv.clientX - startX, moveEv.clientY - startY);
+          if (!isDragging && dist > 6) {
+            isDragging = true;
+            ghostEl = document.createElement('div');
+            ghostEl.className = 'cloze-drag-ghost';
+            ghostEl.textContent = word;
+            document.body.appendChild(ghostEl);
+          }
+
+          if (isDragging && ghostEl) {
+            ghostEl.style.left = `${moveEv.clientX}px`;
+            ghostEl.style.top = `${moveEv.clientY}px`;
+
+            const elUnder = document.elementFromPoint(moveEv.clientX, moveEv.clientY);
+            const targetSlot = elUnder ? elUnder.closest('.cloze-blank-drop') : null;
+
+            document.querySelectorAll('.cloze-blank-drop').forEach(slot => {
+              if (slot === targetSlot) {
+                slot.classList.add('drag-over');
+              } else {
+                slot.classList.remove('drag-over');
+              }
+            });
+          }
+        };
+
+        const onPointerUp = (upEv) => {
+          window.removeEventListener('pointermove', onPointerMove);
+          window.removeEventListener('pointerup', onPointerUp);
+          window.removeEventListener('pointercancel', onPointerUp);
+
+          if (isDragging) {
+            if (ghostEl) {
+              ghostEl.remove();
+              ghostEl = null;
+            }
+
+            const elUnder = document.elementFromPoint(upEv.clientX, upEv.clientY);
+            const targetSlot = elUnder ? elUnder.closest('.cloze-blank-drop') : null;
+            document.querySelectorAll('.cloze-blank-drop').forEach(s => s.classList.remove('drag-over'));
+
+            if (targetSlot) {
+              const targetId = parseInt(targetSlot.dataset.blankId, 10);
+              fillBlankWithValue(targetId, word);
+            }
+          } else {
+            // Einfacher Tap / Klick: Tap-to-Place!
+            if (focusedBlankId) {
+              fillBlankWithValue(focusedBlankId, word);
+              setFocusedBlank(null);
+            } else {
+              const firstEmptyId = Object.keys(blankState).find(id => !blankState[id].value);
+              if (firstEmptyId) {
+                fillBlankWithValue(parseInt(firstEmptyId, 10), word);
+              }
+            }
+          }
+        };
+
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
       });
 
       wordbankChips.appendChild(chip);
@@ -353,7 +470,7 @@
         dropEl.textContent = '______';
       }
 
-      // Drag Events
+      // Drag Events (Maus)
       dropEl.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropEl.classList.add('drag-over');
@@ -370,10 +487,14 @@
         }
       });
 
-      // Klick zum Leeren
-      dropEl.addEventListener('click', () => {
+      // Klick / Tap auf eine Lücke: Fokussieren oder Leeren
+      dropEl.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (bState.value) {
           fillBlankWithValue(bId, '');
+          setFocusedBlank(bId);
+        } else {
+          setFocusedBlank(focusedBlankId === bId ? null : bId);
         }
       });
 
@@ -420,6 +541,10 @@
     if (!blankState[blankId]) return;
     blankState[blankId].value = word;
     blankState[blankId].evalResult = null; // Zurücksetzen
+
+    if (focusedBlankId === blankId) {
+      setFocusedBlank(null);
+    }
 
     const el = document.getElementById(`cloze-blank-slot-${blankId}`);
     if (el) {
