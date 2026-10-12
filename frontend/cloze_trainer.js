@@ -1576,16 +1576,64 @@
     });
   }
 
+  function cleanMathForSpeech(text, isEnglish) {
+    if (!text) return '';
+    let s = String(text);
+    if (isEnglish) {
+      s = s.replace(/\\sqrt\{([^{}]+)\}/g, 'square root of $1')
+           .replace(/√/g, 'square root of ')
+           .replace(/\\cdot|\\times|[·×]/g, ' times ')
+           .replace(/\s*=\s*/g, ' equals ');
+    } else {
+      s = s.replace(/\\sqrt\[3\]\{([^{}]+)\}/g, 'dritte Wurzel aus $1')
+           .replace(/\\sqrt\{([^{}]+)\}/g, 'Wurzel aus $1')
+           .replace(/\\sqrt\b/g, 'Wurzel')
+           .replace(/√\s*([0-9a-zA-Z]+)/g, 'Wurzel aus $1')
+           .replace(/√/g, 'Wurzel')
+           .replace(/\bsqrt\s*\(([^)]+)\)/gi, 'Wurzel aus $1')
+           .replace(/\bsqrt\b/gi, 'Wurzel')
+           .replace(/\broot\s+aus\b/gi, 'Wurzel aus')
+           .replace(/\broot\b/gi, 'Wurzel')
+           .replace(/\\frac\{1\}\{2\}/g, 'ein Halb')
+           .replace(/\\frac\{1\}\{4\}/g, 'ein Viertel')
+           .replace(/\\frac\{3\}\{4\}/g, 'drei Viertel')
+           .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '$1 geteilt durch $2')
+           .replace(/\\cdot|\\times|[·×]/g, ' mal ')
+           .replace(/([0-9a-zA-Z])\s*\*\s*([0-9a-zA-Z])/g, '$1 mal $2')
+           .replace(/\\div|÷/g, ' geteilt durch ')
+           .replace(/(\b\d+)\s*:\s*(\d+\b)/g, '$1 geteilt durch $2')
+           .replace(/([0-9a-zA-Z])\s+\/\s+([0-9a-zA-Z])/g, '$1 geteilt durch $2')
+           .replace(/\bcm[²2]\b|cm\^2/g, 'Quadratzentimeter')
+           .replace(/\bm[²2]\b|m\^2/g, 'Quadratmeter')
+           .replace(/\bkm\/h\b/g, 'Kilometer pro Stunde')
+           .replace(/\bm\/s\b/g, 'Meter pro Sekunde')
+           .replace(/([0-9a-zA-Z])(?:\^2|²)/g, '$1 hoch zwei')
+           .replace(/([0-9a-zA-Z])(?:\^3|³)/g, '$1 hoch drei')
+           .replace(/\s*=\s*/g, ' ist gleich ')
+           .replace(/\\approx|≈/g, ' ungefähr gleich ')
+           .replace(/\\neq|≠/g, ' ungleich ');
+    }
+    s = s.replace(/\$+/g, '').replace(/\\[a-zA-Z]+\{([^{}]+)\}/g, '$1').replace(/\\[a-zA-Z]+/g, '').replace(/\*+/g, '');
+    return s.replace(/\s+/g, ' ').trim();
+  }
+
   async function speakLuna(text) {
     if (!text) return;
     stopCurrentAudio();
+
+    const isEnglish = (currentSubjectName && currentSubjectName.toLowerCase().includes('eng')) ||
+                      (currentExercise && currentExercise.title && currentExercise.title.toLowerCase().includes('eng'));
 
     // 1. Primär: Authentische OpenAI Nova Stimme via Backend on-demand anfordern (speed=0.90)
     try {
       const res = await fetch('/api/v1/exercises/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, speed: 0.90 })
+        body: JSON.stringify({
+          text: text,
+          speed: 0.90,
+          lang: isEnglish ? 'en' : 'de'
+        })
       });
       if (res.ok) {
         const data = await res.json();
@@ -1608,9 +1656,8 @@
       }
       try {
         window.speechSynthesis.cancel();
-        const utt = new SpeechSynthesisUtterance(text);
-        const isEnglish = (currentSubjectName && currentSubjectName.toLowerCase().includes('eng')) ||
-                          (currentExercise && currentExercise.title && currentExercise.title.toLowerCase().includes('eng'));
+        const cleanedText = cleanMathForSpeech(text, isEnglish);
+        const utt = new SpeechSynthesisUtterance(cleanedText);
         utt.lang = isEnglish ? 'en-US' : 'de-DE';
         utt.rate = 0.82; // Ruhiger und verständlicher
         utt.onend = () => resolve();

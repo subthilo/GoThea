@@ -16,7 +16,8 @@ from backend.app.services.cloze_pool_service import cloze_pool_manager
 from backend.app.services.tutor_service import (
     generate_board_exercise,
     normalize_cloze_content,
-    evaluate_cloze_blanks_targeted
+    evaluate_cloze_blanks_targeted,
+    clean_text_for_speech
 )
 from backend.app.services.score_service import (
     record_exercise_result,
@@ -88,23 +89,26 @@ def get_cloze_exercise_pool_status():
 class QuickTTSRequest(BaseModel):
     text: str
     speed: Optional[float] = 0.90
+    lang: Optional[str] = "de"
 
 
 @router.post("/tts")
 def synthesize_quick_speech(payload: QuickTTSRequest):
     """
     On-Demand Sprachausgabe mit Luna's authentischer OpenAI Nova-Stimme
-    mit ruhigerer Sprechgeschwindigkeit (speed=0.90).
+    mit ruhigerer Sprechgeschwindigkeit (speed=0.90) und natürlicher
+    deutscher Aussprache mathematischer Operatoren (z. B. 'Wurzel aus' statt 'Root').
     """
     if not OPENAI_API_KEY or not payload.text:
         return {"status": "skipped", "audio_base64": None}
     try:
         from openai import OpenAI
         client = OpenAI(api_key=OPENAI_API_KEY)
+        clean_input = clean_text_for_speech(payload.text, lang=payload.lang or "de")
         tts_res = client.audio.speech.create(
             model="tts-1",
             voice="nova",
-            input=payload.text,
+            input=clean_input,
             response_format="mp3",
             speed=payload.speed or 0.90
         )
