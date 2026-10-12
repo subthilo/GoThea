@@ -114,6 +114,8 @@ def generate_cloze_trainer_exercise(
         if cached_exercise:
             # Im Hintergrund Nachschub produzieren
             cloze_pool_manager.trigger_background_replenish(payload.subject_id)
+            if "content" in cached_exercise and isinstance(cached_exercise["content"], dict):
+                cached_exercise["content"] = normalize_cloze_content(cached_exercise["content"], generate_sentence_audio=False)
             return cached_exercise
 
     subject_name = "Englisch" if "english" in (payload.subject_id or "").lower() else "Mathematik"

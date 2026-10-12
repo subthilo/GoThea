@@ -214,6 +214,8 @@
     resetState();
     if (typeof window.openSubjectDetail === 'function' && currentSubjectId) {
       window.openSubjectDetail(currentSubjectId);
+    } else if (typeof window.showTab === 'function') {
+      window.showTab('dashboard');
     }
   }
 
@@ -325,15 +327,30 @@
       const data = await res.json();
       currentExercise = data;
 
-      if (data.title) modalTitle.textContent = data.title;
-      if (data.topic) modalTopic.textContent = data.topic;
-      if (data.source_material_title) {
+      // Sicherstellen, dass content als Objekt vorliegt (falls als JSON-String geliefert)
+      if (typeof currentExercise.content === 'string') {
+        try {
+          currentExercise.content = JSON.parse(currentExercise.content);
+        } catch (e) {
+          console.warn('Fehler beim Parsen von exercise.content:', e);
+        }
+      } else if (!currentExercise.content && currentExercise.content_json) {
+        try {
+          currentExercise.content = typeof currentExercise.content_json === 'string'
+            ? JSON.parse(currentExercise.content_json)
+            : currentExercise.content_json;
+        } catch (e) {}
+      }
+
+      if (data.title && modalTitle) modalTitle.textContent = data.title;
+      if (data.topic && modalTopic) modalTopic.textContent = data.topic;
+      if (data.source_material_title && modalDocSource) {
         modalDocSource.style.display = 'inline-block';
         modalDocSource.textContent = `📄 ${data.source_material_title}`;
       }
 
       // Initialisiere blank states
-      const blanks = (data.content && data.content.blanks) || [];
+      const blanks = (currentExercise.content && currentExercise.content.blanks) || [];
       blanks.forEach(b => {
         blankState[b.id] = {
           value: '',
@@ -367,12 +384,12 @@
 
   function showLoading(show, msg) {
     if (show) {
-      loadingState.style.display = 'flex';
-      exerciseContent.style.display = 'none';
-      if (msg) loadingText.textContent = msg;
+      if (loadingState) loadingState.style.display = 'flex';
+      if (exerciseContent) exerciseContent.style.display = 'none';
+      if (msg && loadingText) loadingText.textContent = msg;
     } else {
-      loadingState.style.display = 'none';
-      exerciseContent.style.display = 'block';
+      if (loadingState) loadingState.style.display = 'none';
+      if (exerciseContent) exerciseContent.style.display = 'flex';
     }
   }
 
@@ -380,11 +397,17 @@
    * Rendert die Sätze und Wortkarten
    */
   function renderExerciseContent() {
-    if (!currentExercise || !currentExercise.content) return;
-    const content = currentExercise.content;
+    if (!currentExercise) return;
+    let content = currentExercise.content;
+    if (typeof content === 'string') {
+      try { content = JSON.parse(content); } catch (e) { content = {}; }
+      currentExercise.content = content;
+    }
+    if (!content) return;
+
     let sentences = content.sentences || [];
-    const blanks = content.blanks || [];
-    const wordBank = content.word_bank || [];
+    let blanks = content.blanks || [];
+    let wordBank = content.word_bank || [];
 
     if (sentences.length === 0 && content.text) {
       sentences = [{
@@ -393,6 +416,10 @@
         text_with_blanks: content.text,
         blank_ids: blanks.map(b => b.id)
       }];
+    }
+
+    if (wordBank.length === 0 && blanks.length > 0) {
+      wordBank = blanks.map(b => b.expected_answer || b.correct_answer || '').filter(Boolean);
     }
 
     // 1. Sätze rendern

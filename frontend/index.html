@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="GoThea">
   <meta name="theme-color" content="#0f1115">
 
-  <link rel="stylesheet" href="/static/style.css?v=4.7">
+  <link rel="stylesheet" href="/static/style.css?v=5.1">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -1324,24 +1324,24 @@
   <div id="modal-cloze-trainer" class="exercise-fullscreen-arena" style="display: none;">
     <div class="exercise-arena-container">
       <div class="exercise-arena-header cloze-trainer-header">
-        <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="cloze-header-left">
           <button type="button" class="btn-back-to-subject" id="btn-exercise-back-to-subject" title="Zurück zur Fach-Übersicht (nicht ausgefüllte Teile werden nicht gewertet)">
             <span>← Zurück zu</span>
-            <strong id="cloze-back-subject-name">Mathematik</strong>
+            <strong id="cloze-back-subject-name">Fach</strong>
           </button>
           <div class="cloze-luna-avatar" id="cloze-luna-avatar">🦉</div>
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <h3 id="cloze-modal-title" style="margin: 0; font-size: 1.15rem;">Lückentext-Übung</h3>
-              <span class="badge-grade" id="cloze-modal-subject">Mathematik</span>
+          <div class="cloze-header-titles">
+            <div class="cloze-header-title-row">
+              <h3 id="cloze-modal-title">Lückentext-Übung</h3>
+              <span class="badge-grade" id="cloze-modal-subject"></span>
               <span class="badge-source-doc" id="cloze-modal-doc-source" style="display: none;"></span>
-              <span class="badge-adaptive-level" id="cloze-adaptive-level-badge" title="Aktuelle adaptive Schwierigkeitsstufe">🎯 Stufe 2 (Mittel)</span>
+              <span class="badge-adaptive-level" id="cloze-adaptive-level-badge" title="Aktuelle adaptive Schwierigkeitsstufe"></span>
             </div>
-            <p id="cloze-modal-topic" class="subtitle" style="margin: 2px 0 0; font-size: 0.82rem;">Thema & Kontext</p>
+            <p id="cloze-modal-topic" class="subtitle">Lerneinheit</p>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div class="cloze-header-right">
           <!-- Zoom Controls: Alles im Blick vs. Reinzoomen -->
           <div class="cloze-zoom-controls" id="cloze-zoom-controls" title="Größe anpassen (Kompakt / Reinzoomen)">
             <button type="button" class="cloze-zoom-btn" id="btn-cloze-zoom-out" title="Verkleinern (Alles im Blick)">−</button>
@@ -1362,7 +1362,7 @@
           </div>
 
           <!-- Schwierigkeitsgrad: Mit Wörtern vs. Ohne Wörter -->
-          <div class="cloze-difficulty-toggle" id="cloze-difficulty-toggle" title="Hilfestellung: Wortspeicher anzeigen oder ausblenden">
+          <div class="cloze-difficulty-toggle" id="cloze-difficulty-toggle" title="Hilfestellung: Wortspeicher anzeigen oder ausblenden" style="display: none;">
             <button type="button" class="cloze-diff-btn active" data-diff="with_words" id="btn-diff-with-words" title="Wortspeicher anzeigen (Einfacher)">
               <span>💡</span>
               <span>Mit Wörtern</span>
@@ -1435,8 +1435,8 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=4.7"></script>
-  <script src="/static/whiteboard.js?v=4.6"></script>
-  <script src="/static/cloze_trainer.js?v=1.5"></script>
+  <script src="/static/app.js?v=5.1"></script>
+  <script src="/static/whiteboard.js?v=5.1"></script>
+  <script src="/static/cloze_trainer.js?v=2.1"></script>
 </body>
 </html>
