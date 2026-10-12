@@ -1,4 +1,9 @@
 import pytest
+from backend.app.services.book_seeder import seed_textbooks_if_empty
+
+@pytest.fixture(autouse=True)
+def seed_book_for_tests(db_session):
+    seed_textbooks_if_empty(db_session, user_id="usr_thea")
 
 def test_list_books_api(client):
     res = client.get("/api/v1/books")

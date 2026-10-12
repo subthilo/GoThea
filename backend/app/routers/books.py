@@ -18,8 +18,6 @@ def list_books(
     """
     Liefert alle verfügbaren Schulbücher der Schülerin.
     """
-    seed_textbooks_if_empty(db, user_id=user_id)
-
     books = db.query(Material).filter(
         Material.kind == "Buch",
         Material.user_id == user_id
@@ -64,8 +62,6 @@ def get_book_detail(
     Liefert die Detailansicht eines Schulbuchs inklusive aller extrahierten
     Kapitel, Seitenzahlen, Themen und Lerninhalte für den Bücher-Browser.
     """
-    seed_textbooks_if_empty(db, user_id=user_id)
-
     book = db.query(Material).filter_by(id=book_id, user_id=user_id).first()
     if not book:
         raise HTTPException(status_code=404, detail="Schulbuch nicht gefunden.")
@@ -132,8 +128,6 @@ def get_book_chapter(
     """
     Liefert ein einzelnes Kapitel eines Buches mit Metadaten.
     """
-    seed_textbooks_if_empty(db, user_id=user_id)
-
     chap = db.query(Material).filter_by(id=chapter_id, parent_id=book_id, user_id=user_id).first()
     if not chap:
         raise HTTPException(status_code=404, detail="Kapitel im angegebenen Buch nicht gefunden.")
