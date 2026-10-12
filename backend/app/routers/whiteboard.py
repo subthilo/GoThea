@@ -28,6 +28,7 @@ from backend.app.services.tutor_service import (
     normalize_cloze_content,
     evaluate_cloze_blanks_targeted,
 )
+from backend.app.services.exercise_pool_service import exercise_pool_manager
 
 router = APIRouter(prefix="/api/v1/whiteboard", tags=["Whiteboard"])
 
@@ -299,16 +300,51 @@ def generate_exercise_for_session(
                 "text_snippet": (mat.extracted_text or "")[:2000]
             }
 
-    generated = generate_board_exercise(
-        subject_name=subject_name,
-        grade_level=session.grade_level or 7,
-        topic_name=topic_name,
-        exercise_type=payload.exercise_type,
-        custom_prompt=payload.custom_prompt,
-        difficulty=payload.difficulty or "mittel",
-        material_context=material_context,
-        audio_enabled=payload.audio_enabled
-    )
+    # 1. Sofortiger Vorratsspeicher-Check (0 ms Latenz): Falls vorab generiert und kein Freitext-Wunsch vorliegt
+    generated = None
+    if not payload.custom_prompt and not payload.material_id:
+        target_type = payload.exercise_type or "auto"
+        cached = exercise_pool_manager.get_exercise_from_pool(
+            subject_id=session.subject_id or subject_name,
+            exercise_type=target_type,
+            difficulty=payload.difficulty or "mittel"
+        )
+        if cached:
+            content_json = cached.get("content_json")
+            if not isinstance(content_json, str):
+                content_json = json.dumps(cached.get("content", {}))
+            generated = {
+                "exercise_type": cached.get("exercise_type", "math_problem"),
+                "title": cached.get("title", f"Übungsaufgabe ({subject_name})"),
+                "topic": cached.get("topic") or topic_name or subject_name,
+                "content_json": content_json,
+                "solution_hint": cached.get("solution_hint"),
+                "tutor_speech": cached.get("tutor_speech") or "Hier ist deine Aufgabe!",
+                "audio_base64": cached.get("audio_base64")
+            }
+            # Hintergrund-Auffüllung anstoßen
+            exercise_pool_manager.trigger_background_replenish(
+                session.subject_id or subject_name,
+                exercise_type=generated["exercise_type"]
+            )
+
+    # 2. Falls nicht im Vorrat vorhanden (oder benutzerdefinierter Wunsch): Live generieren
+    if not generated:
+        generated = generate_board_exercise(
+            subject_name=subject_name,
+            grade_level=session.grade_level or 7,
+            topic_name=topic_name,
+            exercise_type=payload.exercise_type,
+            custom_prompt=payload.custom_prompt,
+            difficulty=payload.difficulty or "mittel",
+            material_context=material_context,
+            audio_enabled=payload.audio_enabled
+        )
+        # Vorrat im Hintergrund auffüllen
+        exercise_pool_manager.trigger_background_replenish(
+            session.subject_id or subject_name,
+            exercise_type=generated.get("exercise_type", "math_problem")
+        )
 
     exercise = TutorExercise(
         session_id=session_id,

@@ -48,4 +48,7 @@ AUDIO_PHRASES_DIR.mkdir(parents=True, exist_ok=True)
 CLOZE_POOL_DIR = DATA_DIR / "cloze_pool"
 CLOZE_POOL_DIR.mkdir(parents=True, exist_ok=True)
 
+EXERCISE_POOL_DIR = DATA_DIR / "exercise_pool"
+EXERCISE_POOL_DIR.mkdir(parents=True, exist_ok=True)
+
 

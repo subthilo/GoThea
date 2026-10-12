@@ -49,8 +49,13 @@ async def lifespan(app: FastAPI):
     page_renderer.start()
     page_renderer.queue_all_database_materials(SessionLocal)
 
+    # 4. Hintergrund-Übungsspeicher starten (kontinuierliches Vorrendern aller Übungsarten)
+    from backend.app.services.exercise_pool_service import exercise_pool_manager
+    exercise_pool_manager.start(SessionLocal)
+
     yield
 
+    exercise_pool_manager.stop()
     page_renderer.stop()
 
 app = FastAPI(title="GoThea Multimodale Lernzentrale", lifespan=lifespan)
