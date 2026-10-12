@@ -106,7 +106,8 @@ def pre_analyze_upload(
     db: Session,
     filename: str,
     file_bytes: bytes,
-    content_type: str
+    content_type: str,
+    subject_id_hint: Optional[str] = None
 ) -> PreAnalysisResponse:
     TEMP_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     upload_token = f"upl_{uuid.uuid4().hex[:12]}"
@@ -124,21 +125,24 @@ def pre_analyze_upload(
 
     corpus = f"{filename} {extracted_text}".lower()
     predicted_subject_id: Optional[str] = None
-    best_score = 0
 
-    all_subjects = db.query(Subject).all()
-    subject_map = {s.id: s for s in all_subjects}
+    if subject_id_hint and db.query(Subject).filter_by(id=subject_id_hint).first():
+        predicted_subject_id = subject_id_hint
+    else:
+        best_score = 0
+        all_subjects = db.query(Subject).all()
+        subject_map = {s.id: s for s in all_subjects}
 
-    for sub_id, keywords in SUBJECT_KEYWORDS.items():
-        score = sum(1 for kw in keywords if kw in corpus)
-        if sub_id in subject_map and subject_map[sub_id].name.lower() in corpus:
-            score += 3
-        if score > best_score:
-            best_score = score
-            predicted_subject_id = sub_id
+        for sub_id, keywords in SUBJECT_KEYWORDS.items():
+            score = sum(1 for kw in keywords if kw in corpus)
+            if sub_id in subject_map and subject_map[sub_id].name.lower() in corpus:
+                score += 3
+            if score > best_score:
+                best_score = score
+                predicted_subject_id = sub_id
 
-    if not predicted_subject_id and all_subjects:
-        predicted_subject_id = all_subjects[0].id
+        if not predicted_subject_id and all_subjects:
+            predicted_subject_id = all_subjects[0].id
 
     predicted_topic_id: Optional[str] = None
     if predicted_subject_id:
@@ -153,14 +157,15 @@ def pre_analyze_upload(
 
     predicted_title = clean_title_from_filename(filename)
     predicted_kind = detect_kind_from_filename_and_text(filename, extracted_text)
-    from backend.app.services.timetable_analyzer import is_timetable_document, get_or_create_organisation_subject
-    if predicted_kind == "Stundenplan" or is_timetable_document(filename, extracted_text):
-        predicted_kind = "Stundenplan"
-        orga_sub = get_or_create_organisation_subject(db)
-        predicted_subject_id = orga_sub.id
-        predicted_topic_id = None
-        if "stundenplan" not in predicted_title.lower():
-            predicted_title = f"Stundenplan: {predicted_title}"
+    if not subject_id_hint:
+        from backend.app.services.timetable_analyzer import is_timetable_document, get_or_create_organisation_subject
+        if predicted_kind == "Stundenplan" or is_timetable_document(filename, extracted_text):
+            predicted_kind = "Stundenplan"
+            orga_sub = get_or_create_organisation_subject(db)
+            predicted_subject_id = orga_sub.id
+            predicted_topic_id = None
+            if "stundenplan" not in predicted_title.lower():
+                predicted_title = f"Stundenplan: {predicted_title}"
 
     preview_snippet = (extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None)
 

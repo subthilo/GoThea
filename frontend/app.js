@@ -1373,14 +1373,32 @@ function updateMaterialTopicOptions(subjectId, selectedTopicId = null) {
   });
 }
 
-async function handleFileUpload(file) {
+async function handleFilesUpload(files) {
+  if (!files || files.length === 0) return;
+  if (files.length === 1) {
+    await handleSingleFileUpload(files[0]);
+  } else {
+    await handleBatchFileUpload(files);
+  }
+}
+
+async function handleSingleFileUpload(file) {
   if (!file) return;
 
   if (matDropzone) matDropzone.style.display = "none";
   if (matUploadSpinner) matUploadSpinner.style.display = "block";
+  const pBar = document.getElementById("mat-batch-progress-bar");
+  if (pBar) pBar.style.display = "none";
+  const pStat = document.getElementById("mat-batch-status");
+  if (pStat) pStat.textContent = "";
+  const spinnerText = document.getElementById("mat-spinner-text");
+  if (spinnerText) spinnerText.textContent = "🦉 Analysiere Dokument & Schlagwörter...";
 
   const formData = new FormData();
   formData.append("file", file);
+  if (currentPreselectedSubjectId) {
+    formData.append("subject_id", currentPreselectedSubjectId);
+  }
 
   try {
     const res = await fetch("/api/v1/materials/pre-analyze", {
@@ -1426,7 +1444,16 @@ async function handleFileUpload(file) {
       matConfirmSubject.appendChild(opt);
     });
 
-    updateMaterialTopicOptions(matConfirmSubject.value, data.predicted_topic_id);
+    const fixedBadge = document.getElementById("mat-fixed-subject-badge");
+    if (currentPreselectedSubjectId) {
+      matConfirmSubject.disabled = true;
+      if (fixedBadge) fixedBadge.style.display = "block";
+    } else {
+      matConfirmSubject.disabled = false;
+      if (fixedBadge) fixedBadge.style.display = "none";
+    }
+
+    updateMaterialTopicOptions(activeSubId, data.predicted_topic_id);
 
     matConfirmTitle.value = data.predicted_title || "Lernmaterial";
     matConfirmKind.value = data.predicted_kind || "Arbeitsblatt";
@@ -1437,6 +1464,101 @@ async function handleFileUpload(file) {
   }
 }
 
+async function handleBatchFileUpload(files) {
+  if (!files || files.length === 0) return;
+
+  if (matDropzone) matDropzone.style.display = "none";
+  if (matUploadSpinner) matUploadSpinner.style.display = "block";
+
+  const pBar = document.getElementById("mat-batch-progress-bar");
+  const pFill = document.getElementById("mat-batch-progress-fill");
+  const pStat = document.getElementById("mat-batch-status");
+  const spinnerText = document.getElementById("mat-spinner-text");
+
+  if (pBar) pBar.style.display = "block";
+
+  const targetSub = currentPreselectedSubjectId
+    ? currentSubjects.find((s) => s.id === currentPreselectedSubjectId)
+    : null;
+
+  let successCount = 0;
+  const total = files.length;
+
+  for (let i = 0; i < total; i++) {
+    const file = files[i];
+    const pct = Math.round((i / total) * 100);
+    if (pFill) pFill.style.width = `${pct}%`;
+    if (spinnerText) {
+      spinnerText.textContent = targetSub
+        ? `🦉 Verarbeite Dokumente für ${targetSub.name}...`
+        : "🦉 Verarbeite Dokumente...";
+    }
+    if (pStat) {
+      pStat.textContent = `Datei ${i + 1} von ${total}: ${file.name}`;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (currentPreselectedSubjectId) {
+        formData.append("subject_id", currentPreselectedSubjectId);
+      }
+
+      const preRes = await fetch("/api/v1/materials/pre-analyze", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!preRes.ok) {
+        console.error(`Fehler bei der Voranalyse von ${file.name}`);
+        continue;
+      }
+
+      const preData = await preRes.json();
+      const payload = {
+        upload_token: preData.upload_token,
+        subject_id: currentPreselectedSubjectId || preData.predicted_subject_id,
+        topic_id: preData.predicted_topic_id || null,
+        title: preData.predicted_title || file.name,
+        kind: preData.predicted_kind || "Arbeitsblatt",
+        summary: null
+      };
+
+      const confRes = await fetch("/api/v1/materials/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (confRes.ok) {
+        successCount++;
+      } else {
+        console.error(`Fehler beim Speichern von ${file.name}`);
+      }
+    } catch (e) {
+      console.error(`Upload-Fehler bei ${file.name}:`, e);
+    }
+  }
+
+  if (pFill) pFill.style.width = "100%";
+  if (spinnerText) {
+    spinnerText.textContent = `✅ ${successCount} von ${total} Dokumenten erfolgreich hochgeladen!`;
+  }
+  if (pStat) {
+    pStat.textContent = targetSub
+      ? `Alle Dokumente wurden zu ${targetSub.name} hinzugefügt.`
+      : "Alle Dokumente wurden erfolgreich verarbeitet.";
+  }
+
+  setTimeout(async () => {
+    if (modalMaterial) modalMaterial.style.display = "none";
+    resetMaterialModal();
+    await loadMaterials();
+    await loadUploadsHistory();
+    if (currentDetailSubjectId) await loadSubjectMaterials(currentDetailSubjectId);
+  }, 1200);
+}
+
 function resetMaterialModal() {
   currentUploadToken = null;
   currentPreselectedSubjectId = null;
@@ -1445,11 +1567,45 @@ function resetMaterialModal() {
   if (matUploadSpinner) matUploadSpinner.style.display = "none";
   if (matStepUpload) matStepUpload.style.display = "block";
   if (matStepConfirm) matStepConfirm.style.display = "none";
+
+  const pBar = document.getElementById("mat-batch-progress-bar");
+  if (pBar) pBar.style.display = "none";
+  const pFill = document.getElementById("mat-batch-progress-fill");
+  if (pFill) pFill.style.width = "0%";
+  const pStat = document.getElementById("mat-batch-status");
+  if (pStat) pStat.textContent = "";
+  const spinnerText = document.getElementById("mat-spinner-text");
+  if (spinnerText) spinnerText.textContent = "🦉 Analysiere Dokument & Schlagwörter...";
+
+  const fixedBadge = document.getElementById("mat-fixed-subject-badge");
+  if (fixedBadge) fixedBadge.style.display = "none";
+  if (matConfirmSubject) matConfirmSubject.disabled = false;
 }
 
 function openMaterialUploadModal(preselectedSubjectId = null) {
-  currentPreselectedSubjectId = preselectedSubjectId;
   resetMaterialModal();
+  currentPreselectedSubjectId = preselectedSubjectId;
+
+  const titleEl = document.getElementById("modal-material-title");
+  const subEl = document.getElementById("mat-modal-subtitle");
+  const dzText = document.getElementById("mat-dropzone-text");
+  const dzSub = document.getElementById("mat-dropzone-sub");
+  const targetSub = currentPreselectedSubjectId
+    ? currentSubjects.find((s) => s.id === currentPreselectedSubjectId)
+    : null;
+
+  if (targetSub) {
+    if (titleEl) titleEl.textContent = `📄 Neues Dokument für ${targetSub.name} hochladen`;
+    if (subEl) subEl.textContent = `Dokumente werden automatisch dem Fach ${targetSub.name} zugeordnet (Mehrfachauswahl möglich).`;
+    if (dzText) dzText.textContent = `Dateien für ${targetSub.name} hierher ziehen oder auswählen`;
+    if (dzSub) dzSub.textContent = "PDF oder Foto (Mehrfachauswahl möglich)";
+  } else {
+    if (titleEl) titleEl.textContent = "📄 Dokument hinzufügen";
+    if (subEl) subEl.textContent = "Lade ein Schulbuch, ein Arbeitsblatt, eine Hefterseite oder eine Klassenarbeit hoch.";
+    if (dzText) dzText.textContent = "Datei hierher ziehen oder tippen";
+    if (dzSub) dzSub.textContent = "PDF oder Foto (Mehrfachauswahl möglich)";
+  }
+
   if (modalMaterial) modalMaterial.style.display = "flex";
 }
 
@@ -1505,7 +1661,7 @@ if (matDropzone && matFileInput) {
     e.preventDefault();
     matDropzone.classList.remove("drag-over");
     if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files[0]);
+      handleFilesUpload(Array.from(e.dataTransfer.files));
     }
   });
 }
@@ -1513,7 +1669,7 @@ if (matDropzone && matFileInput) {
 if (matFileInput) {
   matFileInput.addEventListener("change", (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      handleFileUpload(e.target.files[0]);
+      handleFilesUpload(Array.from(e.target.files));
     }
   });
 }
@@ -1536,9 +1692,10 @@ if (btnSubmitMaterial) {
       return;
     }
 
+    const chosenSubId = currentPreselectedSubjectId || matConfirmSubject.value;
     const payload = {
       upload_token: currentUploadToken,
-      subject_id: matConfirmSubject.value,
+      subject_id: chosenSubId,
       topic_id: matConfirmTopic.value || null,
       title: titleVal,
       kind: matConfirmKind.value,

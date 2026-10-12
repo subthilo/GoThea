@@ -1,6 +1,6 @@
 from typing import List, Optional
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Response
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -58,6 +58,7 @@ def _to_material_read(mat: Material, db: Session) -> MaterialRead:
 @router.post("/pre-analyze", response_model=PreAnalysisResponse, status_code=status.HTTP_200_OK)
 async def pre_analyze_material(
     file: UploadFile = File(...),
+    subject_id: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -78,7 +79,7 @@ async def pre_analyze_material(
 
     mime = file.content_type or "application/octet-stream"
     try:
-        response = pre_analyze_upload(db, file.filename, content, mime)
+        response = pre_analyze_upload(db, file.filename, content, mime, subject_id_hint=subject_id)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler bei der Vorabanalyse: {str(e)}")

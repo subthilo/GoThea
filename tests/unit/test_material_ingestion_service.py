@@ -39,3 +39,24 @@ def test_chunk_text_and_classification():
 
     assert chunks[2]["chunk_type"] == "vocabulary"
     assert "Cell" in chunks[2]["content"]
+
+def test_pre_analyze_upload_with_subject_hint(db_session):
+    from backend.app.services.material_ingestion import pre_analyze_upload
+    from backend.app.models.taxonomy import Subject, Topic
+
+    sub_bio = db_session.query(Subject).filter(Subject.name.ilike("%biologie%")).first()
+    assert sub_bio is not None
+
+    # Filename suggests math, but subject_id_hint forces Biology
+    res = pre_analyze_upload(
+        db=db_session,
+        filename="mathe_dreiecke_uebung.pdf",
+        file_bytes=b"Zellaufbau und Mikroskopieren",
+        content_type="application/pdf",
+        subject_id_hint=sub_bio.id
+    )
+    assert res.predicted_subject_id == sub_bio.id
+    # Topic should be one from Biology if matched
+    if res.predicted_topic_id:
+        topic = db_session.query(Topic).filter_by(id=res.predicted_topic_id).first()
+        assert topic.subject_id == sub_bio.id
