@@ -229,6 +229,11 @@ Format der JSON-Antwort:
   "solution_hint": "Didaktischer Lösungs-Tipp für Thea (wird erst bei Klick auf 'Tipp' aufgedeckt)",
   "tutor_speech": "Gesprochene Begrüßung/Einführung der Aufgabe für Thea (1-2 Sätze, natürliches Deutsch/Englisch, ABSOLUT KEIN LaTeX!)"
 }
+
+WICHTIGE REGEL FÜR UNTERRICHTSMATERIALIEN / TEXTE:
+- Wenn ein Arbeitsblatt oder Textauszug übergeben wird, nutze diesen Text DIREKT als Grundlage!
+- Bei Englisch-Materialien (z. B. Texte mit bestimmten Zeitformen wie Simple Past, Past Progressive, Present Perfect):
+  Nimm die Sätze oder Absätze aus dem Text und forme gezielte Lücken um genau diese Verbformen und Zeitformen, sodass Thea exakt an ihrem Unterrichtstext übt!
 """
 
 def generate_board_exercise(
@@ -275,9 +280,12 @@ def generate_board_exercise(
 
             if material_context:
                 user_prompt += (
-                    f"\nAKTUELL AUF DER TAFEL BEARBEITETES MATERIAL:\n"
+                    f"\nHOCHGELADENES UNTERRICHTSMATERIAL / ARBEITSBLATT:\n"
                     f"- Titel: {material_context.get('title')}\n"
-                    f"- Textauszug: {material_context.get('text_snippet', '')[:1500]}\n"
+                    f"- Thema: {material_context.get('topic') or 'Passend zum Fach'}\n"
+                    f"- Zusammenfassung: {material_context.get('summary', '')}\n"
+                    f"- Textauszug:\n\"\"\"\n{material_context.get('text_snippet', '')[:2500]}\n\"\"\"\n"
+                    f"-> ANWEISUNG: Baue die Aufgabe direkt auf diesem konkreten Textauszug und seinen Grammatikstrukturen/Zeitformen auf!\n"
                 )
 
             user_prompt += "\nErstelle jetzt die passende Aufgabe im JSON-Format gemäß System-Prompt."

@@ -297,7 +297,9 @@ def generate_exercise_for_session(
                 "id": mat.id,
                 "title": mat.title,
                 "kind": mat.kind,
-                "text_snippet": (mat.extracted_text or "")[:2000]
+                "topic": mat.topic.name if mat.topic else None,
+                "summary": mat.summary,
+                "text_snippet": (mat.extracted_text or "")[:2500]
             }
 
     # 1. Sofortiger Vorratsspeicher-Check (0 ms Latenz): Falls vorab generiert und kein Freitext-Wunsch vorliegt
