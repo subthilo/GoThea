@@ -65,7 +65,8 @@ def test_cloze_generate_fallback_api(client):
         "content_json": json.dumps(mock_cloze),
         "tutor_speech": "Viel Erfolg!"
     }
-    with patch("backend.app.routers.exercises.generate_board_exercise", return_value=mock_res):
+    with patch("backend.app.routers.exercises.cloze_pool_manager.get_exercise_from_pool", return_value=None), \
+         patch("backend.app.routers.exercises.generate_board_exercise", return_value=mock_res):
         res = client.post("/api/v1/exercises/cloze/generate", json=payload)
         assert res.status_code == 200
         data = res.json()
@@ -73,6 +74,25 @@ def test_cloze_generate_fallback_api(client):
         assert "content" in data
         assert len(data["content"]["blanks"]) == 1
         assert len(data["content"]["sentences"]) == 1
+
+def test_cloze_generate_uses_pool_when_available(client):
+    mock_pooled = {
+        "status": "success",
+        "exercise_type": "fill_in_the_blank",
+        "title": "Gepoolte Übung",
+        "topic": "Kreislehre",
+        "instructions": "Setze die Begriffe ein.",
+        "content": {"blanks": [{"id": 1, "expected_answer": "Radius"}], "sentences": []},
+        "tutor_speech": "Los gehts"
+    }
+    with patch("backend.app.routers.exercises.cloze_pool_manager.get_exercise_from_pool", return_value=mock_pooled), \
+         patch("backend.app.routers.exercises.cloze_pool_manager.trigger_background_replenish") as mock_replenish:
+        res = client.post("/api/v1/exercises/cloze/generate", json={"subject_id": "sub_math"})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["title"] == "Gepoolte Übung"
+        assert mock_replenish.called
+
 
 def test_cloze_generate_english_subject_fallback(client):
     payload = {
