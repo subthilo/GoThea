@@ -667,21 +667,25 @@ def evaluate_cloze_blanks_targeted(
             client = OpenAI(api_key=OPENAI_API_KEY)
 
             system_instruction = (
-                "Du bist eine empathische, didaktisch exakte Gymnasial-Tutorin für Thea (Klasse 7 Gymnasium).\n"
-                "Deine Aufgabe: Bewerte handgeschriebene Lücken-Ausschnitte gegen den jeweiligen Erwartungswert.\n"
-                "Schriftliche Toleranz: Berücksichtige kindliche Handschrift und typische Schreibvarianten (z. B. Groß-/Kleinschreibung, ß/ss).\n"
+                "Du bist eine didaktisch exakte Gymnasial-Tutorin für Thea (Klasse 7 Gymnasium).\n"
+                "Deine Aufgabe: Lies das handgeschriebene Wort im Lückenausschnitt (OCR) und bewerte es STRENG gegen den erwarteten Begriff.\n"
+                "WICHTIGE BEWERTUNGSREGELN:\n"
+                "1. 'recognized_text': Das Wort, das Thea tatsächlich aufgeschrieben hat.\n"
+                "2. 'is_correct': Setze dies NUR auf TRUE, wenn Theas geschriebenes Wort exakt oder als sehr nahe Variante (z. B. 1 Tippfehler) dem erwarteten Begriff oder den Alternativen entspricht.\n"
+                "3. STRENG: Wenn Thea ein völlig anderes Wort geschrieben hat (z. B. ein anderes Wort aus dem Text oder Wortspeicher wie 'left' statt 'rebuild'), MUSS 'is_correct' STRIKT FALSE sein!\n"
+                "4. Wenn die Lücke leer, ein Strich oder unleserlich ist, setze 'is_correct': false.\n"
                 "Antworte STRIKT als JSON mit folgendem Format:\n"
                 "{\n"
                 '  "evaluations": [\n'
                 '    {\n'
                 '      "blank_id": 1,\n'
                 '      "recognized_text": "erkanntes Wort",\n'
-                '      "is_correct": true,\n'
-                '      "feedback": "Kurzes motivierendes Feedback",\n'
+                '      "is_correct": false,\n'
+                '      "feedback": "Kurzes Feedback",\n'
                 '      "hint": null\n'
                 '    }\n'
                 '  ],\n'
-                '  "tutor_speech": "Kurzer gesprochener Zuspruch (1-2 kurze Sätze, warmherzig, kein LaTeX)."\n'
+                '  "tutor_speech": "Kurzer Zuspruch."\n'
                 "}"
             )
 
@@ -691,7 +695,7 @@ def evaluate_cloze_blanks_targeted(
             user_content = [
                 {
                     "type": "text",
-                    "text": f"Aufgabe: {exercise_title}\nBitte bewerte folgende Lückenausschnitte:"
+                    "text": f"Aufgabe: {exercise_title}\nBitte bewerte folgende Lückenausschnitte STRENG gegen die Erwartungswerte:"
                 }
             ]
 
@@ -703,7 +707,7 @@ def evaluate_cloze_blanks_targeted(
                 if "," in raw_b64:
                     raw_b64 = raw_b64.split(",", 1)[1]
 
-                # Handschrift für OCR aufbereiten: Transparenz eliminieren & satten Kontrast (dunkle Tinte auf weißem Papier) erzeugen
+                # Handschrift für OCR aufbereiten: Transparenz eliminieren & satten Kontrast erzeugen
                 processed_b64 = raw_b64
                 try:
                     raw_bytes = base64.b64decode(raw_b64)
@@ -711,7 +715,7 @@ def evaluate_cloze_blanks_targeted(
                     if pil_img.mode == "RGBA":
                         alpha = pil_img.split()[3]
                         solid_bg = Image.new("RGB", pil_img.size, (255, 255, 255))
-                        ink_layer = Image.new("RGB", pil_img.size, (15, 23, 42)) # Tiefes Dunkelblau/Schwarz für maximale Lesbarkeit
+                        ink_layer = Image.new("RGB", pil_img.size, (15, 23, 42))
                         solid_bg.paste(ink_layer, mask=alpha)
                         final_img = solid_bg
                     else:
@@ -751,6 +755,7 @@ def evaluate_cloze_blanks_targeted(
             tutor_speech = parsed.get("tutor_speech", "").strip()
 
             evals_by_id = {e.get("blank_id"): e for e in evals if "blank_id" in e}
+            from difflib import SequenceMatcher
             for itm in items_to_evaluate:
                 bid = itm["blank_id"]
                 exp = itm["expected"]
@@ -764,10 +769,24 @@ def evaluate_cloze_blanks_targeted(
                     clean_exp = re.sub(r"[^\w\s-]", "", str(exp)).strip().lower()
                     clean_alts = [re.sub(r"[^\w\s-]", "", str(a)).strip().lower() for a in itm.get("alternatives", [])]
 
+                    # 1. Exakter Treffer oder akzeptierte Alternative
                     if clean_rec and (clean_rec == clean_exp or clean_rec in clean_alts):
                         is_correct = True
+                    elif clean_rec:
+                        # 2. Prüfe auf leichte Tippfehler (z. B. 1 Buchstabe verdreht/fehlend bei Wörtern ab 4 Zeichen)
+                        all_targets = [clean_exp] + clean_alts
+                        is_typo_match = any(
+                            len(target) >= 4 and SequenceMatcher(None, clean_rec, target).ratio() >= 0.82
+                            for target in all_targets
+                        )
+                        # Nur wenn Tippfehler-Ähnlichkeit hoch ist UND das Modell zustimmt
+                        if is_typo_match and model_is_correct:
+                            is_correct = True
+                        else:
+                            # Komplett anderes Wort (z. B. 'left' statt 'rebuild') ist STRIKT FALSCH!
+                            is_correct = False
                     else:
-                        is_correct = model_is_correct
+                        is_correct = False
 
                     logger.info(f"[Lücke {bid}] Handschrift erkannt: '{rec_text}' (Erwartet: '{exp}', Alternativen: {clean_alts}) -> is_correct={is_correct}")
 

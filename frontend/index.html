@@ -1311,6 +1311,18 @@
               <span>Schreiben</span>
             </button>
           </div>
+
+          <!-- Schwierigkeitsgrad: Mit Wörtern vs. Ohne Wörter -->
+          <div class="cloze-difficulty-toggle" id="cloze-difficulty-toggle" title="Hilfestellung: Wortspeicher anzeigen oder ausblenden">
+            <button type="button" class="cloze-diff-btn active" data-diff="with_words" id="btn-diff-with-words" title="Wortspeicher anzeigen (Einfacher)">
+              <span>💡</span>
+              <span>Mit Wörtern</span>
+            </button>
+            <button type="button" class="cloze-diff-btn" data-diff="without_words" id="btn-diff-without-words" title="Freies Schreiben ohne Wortspeicher (Schwerer)">
+              <span>🎯</span>
+              <span>Ohne Wörter</span>
+            </button>
+          </div>
           <button class="modal-close" id="btn-close-cloze-modal">&times;</button>
         </div>
       </div>
@@ -1372,6 +1384,6 @@
 
   <script src="/static/app.js?v=4.6"></script>
   <script src="/static/whiteboard.js?v=4.6"></script>
-  <script src="/static/cloze_trainer.js?v=1.2"></script>
+  <script src="/static/cloze_trainer.js?v=1.3"></script>
 </body>
 </html>

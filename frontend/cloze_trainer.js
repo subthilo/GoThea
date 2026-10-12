@@ -16,13 +16,14 @@
   // State
   let currentExercise = null;
   let currentMode = 'drag'; // 'drag' | 'handwrite'
+  let currentDifficulty = 'with_words'; // 'with_words' | 'without_words'
   let currentSubjectId = null;
   let currentSubjectName = 'Allgemein';
   let currentMaterialId = null;
   let activeAudio = null;
 
   // Blanks & Evaluation state
-  // blankState[blankId] = { value: '', canvas: null, ctx: null, lastDraw: 0, timer: null, evalResult: null, dirty: false }
+  // blankState[blankId] = { value: '', canvas: null, ctx: null, lastDraw: 0, timer: null, evalResult: null, dirty: false, attempts: 0, isAutoRevealed: false }
   const blankState = {};
   let isReviewing = false;
   let reviewSentenceIndex = 0;
@@ -48,6 +49,9 @@
   const btnClose = document.getElementById('btn-close-cloze-modal');
   const btnModeDrag = document.getElementById('btn-mode-drag');
   const btnModeHandwrite = document.getElementById('btn-mode-handwrite');
+  const difficultyToggle = document.getElementById('cloze-difficulty-toggle');
+  const btnDiffWithWords = document.getElementById('btn-diff-with-words');
+  const btnDiffWithoutWords = document.getElementById('btn-diff-without-words');
   const btnClear = document.getElementById('btn-cloze-clear');
   const btnReview = document.getElementById('btn-cloze-review');
   const reviewBtnIcon = document.getElementById('cloze-review-btn-icon');
@@ -111,6 +115,14 @@
     }
     if (btnModeHandwrite) {
       btnModeHandwrite.addEventListener('click', () => setMode('handwrite'));
+    }
+
+    // Difficulty Toggle (Wortspeicher beim Schreiben anzeigen oder ausblenden)
+    if (btnDiffWithWords) {
+      btnDiffWithWords.addEventListener('click', () => setDifficulty('with_words'));
+    }
+    if (btnDiffWithoutWords) {
+      btnDiffWithoutWords.addEventListener('click', () => setDifficulty('without_words'));
     }
 
     // Actions
@@ -180,22 +192,58 @@
     if (mode === 'drag') {
       btnModeDrag.classList.add('active');
       btnModeHandwrite.classList.remove('active');
-      wordbankContainer.style.display = 'block';
-      if (clozeTrainerBody) {
-        clozeTrainerBody.classList.add('mode-drag');
-        clozeTrainerBody.classList.remove('mode-handwrite');
-      }
+      if (difficultyToggle) difficultyToggle.style.display = 'none';
     } else {
       btnModeHandwrite.classList.add('active');
       btnModeDrag.classList.remove('active');
-      wordbankContainer.style.display = 'none';
-      if (clozeTrainerBody) {
-        clozeTrainerBody.classList.add('mode-handwrite');
-        clozeTrainerBody.classList.remove('mode-drag');
-      }
+      if (difficultyToggle) difficultyToggle.style.display = 'flex';
     }
     setFocusedBlank(null);
+    updateLayoutModeAndDifficulty();
     renderExerciseContent();
+  }
+
+  function setDifficulty(diff) {
+    currentDifficulty = diff;
+    if (btnDiffWithWords && btnDiffWithoutWords) {
+      if (diff === 'with_words') {
+        btnDiffWithWords.classList.add('active');
+        btnDiffWithoutWords.classList.remove('active');
+      } else {
+        btnDiffWithoutWords.classList.add('active');
+        btnDiffWithWords.classList.remove('active');
+      }
+    }
+    updateLayoutModeAndDifficulty();
+  }
+
+  function updateLayoutModeAndDifficulty() {
+    if (!clozeTrainerBody) return;
+    if (currentMode === 'drag') {
+      clozeTrainerBody.classList.add('mode-drag');
+      clozeTrainerBody.classList.remove('mode-handwrite', 'show-wordbank');
+      if (wordbankContainer) {
+        wordbankContainer.style.display = 'block';
+        const header = wordbankContainer.querySelector('.cloze-wordbank-header span');
+        if (header) header.textContent = '📦 Wortspeicher (Wort antippen oder in die Lücke ziehen):';
+      }
+    } else {
+      clozeTrainerBody.classList.add('mode-handwrite');
+      clozeTrainerBody.classList.remove('mode-drag');
+      if (currentDifficulty === 'with_words') {
+        clozeTrainerBody.classList.add('show-wordbank');
+        if (wordbankContainer) {
+          wordbankContainer.style.display = 'block';
+          const header = wordbankContainer.querySelector('.cloze-wordbank-header span');
+          if (header) header.textContent = '💡 Wortspeicher zur Orientierung:';
+        }
+      } else {
+        clozeTrainerBody.classList.remove('show-wordbank');
+        if (wordbankContainer) {
+          wordbankContainer.style.display = 'none';
+        }
+      }
+    }
   }
 
   /**
@@ -243,6 +291,8 @@
           timer: null,
           evalResult: null,
           dirty: false,
+          attempts: 0,
+          isAutoRevealed: false,
           def: b
         };
       });
@@ -541,6 +591,7 @@
     if (!blankState[blankId]) return;
     blankState[blankId].value = word;
     blankState[blankId].evalResult = null; // Zurücksetzen
+    blankState[blankId].isAutoRevealed = false;
 
     if (focusedBlankId === blankId) {
       setFocusedBlank(null);
@@ -551,16 +602,58 @@
       if (word) {
         el.textContent = word;
         el.classList.add('is-filled');
-        el.classList.remove('is-wrong', 'is-correct');
+        el.classList.remove('is-wrong', 'is-correct', 'is-auto-revealed');
       } else {
         el.textContent = '______';
-        el.classList.remove('is-filled', 'is-wrong', 'is-correct');
+        el.classList.remove('is-filled', 'is-wrong', 'is-correct', 'is-auto-revealed');
       }
     }
 
     // Aktualisiere Wortspeicher Chips
     if (currentExercise && currentExercise.content) {
       renderWordBank(currentExercise.content.word_bank || []);
+    }
+    updateProgress();
+  }
+
+  /**
+   * Trägt die richtige Lösung nach 3 Fehlversuchen automatisch ein
+   */
+  function revealSolutionForBlank(blankId) {
+    const b = blankState[blankId];
+    if (!b) return;
+    const solutionWord = (b.def && (b.def.expected_answer || b.def.correct_answer)) || '';
+    b.value = solutionWord;
+    b.evalResult = { is_correct: true, recognized_text: solutionWord };
+    b.isAutoRevealed = true;
+
+    if (currentMode === 'drag') {
+      fillBlankWithValue(blankId, solutionWord);
+      b.isAutoRevealed = true;
+      const el = document.getElementById(`cloze-blank-slot-${blankId}`);
+      if (el) {
+        el.classList.add('is-correct', 'is-auto-revealed');
+        el.title = 'Automatisch nach 3 Versuchen eingetragen';
+      }
+    } else {
+      if (b.canvas) {
+        clearBlankCanvas(blankId);
+        b.value = solutionWord;
+        b.evalResult = { is_correct: true, recognized_text: solutionWord };
+        b.isAutoRevealed = true;
+        const wrap = b.canvas.closest('.cloze-blank-canvas-wrap');
+        if (wrap) {
+          wrap.classList.add('is-correct', 'is-auto-revealed');
+          let overlay = wrap.querySelector('.cloze-solution-overlay');
+          if (!overlay) {
+            overlay = document.createElement('span');
+            overlay.className = 'cloze-solution-overlay';
+            wrap.appendChild(overlay);
+          }
+          overlay.textContent = solutionWord;
+          overlay.style.display = 'flex';
+        }
+      }
     }
     updateProgress();
   }
@@ -690,13 +783,19 @@
     b.ctx.clearRect(0, 0, b.canvas.width / dpr, b.canvas.height / dpr);
     b.dirty = false;
     b.evalResult = null;
+    b.value = '';
+    b.isAutoRevealed = false;
     if (b.timer) {
       clearTimeout(b.timer);
       b.timer = null;
     }
 
     const wrap = b.canvas.closest('.cloze-blank-canvas-wrap');
-    if (wrap) wrap.classList.remove('is-correct', 'is-wrong');
+    if (wrap) {
+      wrap.classList.remove('is-correct', 'is-wrong', 'is-auto-revealed');
+      const overlay = wrap.querySelector('.cloze-solution-overlay');
+      if (overlay) overlay.remove();
+    }
 
     const badge = document.getElementById(`cloze-status-${blankId}`);
     if (badge) badge.textContent = '';
@@ -855,7 +954,7 @@
   }
 
   /**
-   * Spielt die Sätze nacheinander ab und stoppt bei Fehlern
+   * Spielt die Sätze nacheinander ab und stoppt bei Fehlern (ohne das Lösungswort zu verraten!)
    */
   async function playSentenceLoop() {
     if (!isReviewing) return;
@@ -886,32 +985,70 @@
       }
     }
 
-    // 2. Spiele Satz-Audio ab (falls vorhanden)
-    if (currentSentence.audio_base64) {
-      setLunaSpeaking(true);
-      await playAudioFromBase64(currentSentence.audio_base64);
-      setLunaSpeaking(false);
-    } else {
-      // Fallback Pause
-      await sleep(1800);
-    }
-
-    if (!isReviewing) return;
-
-    // 3. Wenn ein Fehler aufgetreten ist -> ANHALTEN!
+    // WICHTIG: Wenn ein Fehler vorliegt, darf Luna das Lösungs-Audio NICHT abspielen,
+    // da sonst das gesuchte Lösungswort vorgelesen und verraten wird!
     if (sentenceHasError) {
       hasPendingError = true;
       highlightSentence(reviewSentenceIndex, 'error');
       updateReviewButtonState('error');
 
-      // Sofortige Audio-Interjektion aus Phrasen-Pool abspielen (0 ms Latency!)
-      await playInstantPhrase('error_interjections');
+      // Fehlversuch für fehlerhafte Lücken dieses Satzes hochzählen
+      let maxAttemptsForSentence = 0;
+      for (const bId of blankIds) {
+        if (!evaluateBlankCorrectness(bId)) {
+          const bState = blankState[bId];
+          bState.attempts = (bState.attempts || 0) + 1;
+          if (bState.attempts > maxAttemptsForSentence) {
+            maxAttemptsForSentence = bState.attempts;
+          }
 
-      // Hinweis in Banner einblenden
+          // Nach 3 falschen Versuchen: Lösung automatisch eintragen!
+          if (bState.attempts >= 3) {
+            revealSolutionForBlank(bId);
+          }
+        }
+      }
+
+      // Prüfen, ob durch automatisches Eintragen jetzt alle Lücken gelöst sind
+      const nowAllFixed = blankIds.every(bId => evaluateBlankCorrectness(bId));
+      if (nowAllFixed) {
+        hasPendingError = false;
+        highlightSentence(reviewSentenceIndex, 'reading');
+        updateReviewButtonState('playing');
+        setLunaBanner('Lösung nach 3 Versuchen eingetragen! Ich lese dir den Satz jetzt komplett vor...', 'speaking');
+
+        // Satz JETZT von vorne vorlesen:
+        if (currentSentence.audio_base64) {
+          setLunaSpeaking(true);
+          await playAudioFromBase64(currentSentence.audio_base64);
+          setLunaSpeaking(false);
+        } else {
+          await sleep(1500);
+        }
+
+        if (!isReviewing) return;
+        reviewSentenceIndex++;
+        playSentenceLoop();
+        return;
+      }
+
+      // Noch nicht gelöst (< 3 Versuche): Anhalten & interaktive Korrektur ermöglichen
+      await playInstantPhrase('error_interjections');
       const hint = failingBlankDef && failingBlankDef.hint ? `Tipp: ${failingBlankDef.hint}` : 'Schau dir diesen Satz noch einmal an!';
-      setLunaBanner(`Ups, nicht ganz! ${hint}`, 'error');
-      return; // Vorlesen hält hier an!
+      setLunaBanner(`Ups, nicht ganz! (Versuch ${maxAttemptsForSentence}/3) ${hint}`, 'error');
+      return; // Vorlesen hält hier an! Lösungswort wurde NICHT verraten.
     }
+
+    // 2. Keine Fehler in diesem Satz -> JETZT Satz-Audio vollständig abspielen
+    if (currentSentence.audio_base64) {
+      setLunaSpeaking(true);
+      await playAudioFromBase64(currentSentence.audio_base64);
+      setLunaSpeaking(false);
+    } else {
+      await sleep(1500);
+    }
+
+    if (!isReviewing) return;
 
     // Nächster Satz
     reviewSentenceIndex++;
@@ -921,6 +1058,7 @@
   function evaluateBlankCorrectness(blankId) {
     const b = blankState[blankId];
     if (!b) return false;
+    if (b.isAutoRevealed) return true;
 
     if (currentMode === 'drag') {
       const userVal = (b.value || '').trim().toLowerCase();
@@ -973,30 +1111,56 @@
       }
     }
 
-    // Prüfen
+    // Prüfen & Fehlversuche hochzählen falls noch falsch
     let allFixed = true;
+    let maxAttempts = 0;
     for (const bId of blankIds) {
       const ok = evaluateBlankCorrectness(bId);
       markBlankVisual(bId, ok);
-      if (!ok) allFixed = false;
+      if (!ok) {
+        allFixed = false;
+        const bState = blankState[bId];
+        bState.attempts = (bState.attempts || 0) + 1;
+        if (bState.attempts > maxAttempts) maxAttempts = bState.attempts;
+        if (bState.attempts >= 3) {
+          revealSolutionForBlank(bId);
+        }
+      }
     }
 
-    if (allFixed) {
+    // Nochmal prüfen, ob durch Auto-Reveal jetzt alle erledigt sind
+    const nowAllFixed = blankIds.every(bId => evaluateBlankCorrectness(bId));
+
+    if (nowAllFixed) {
       hasPendingError = false;
       highlightSentence(reviewSentenceIndex, 'reading');
       updateReviewButtonState('playing');
 
-      // Erfolgs-Interjektion aus Phrasen-Pool ("Perfekt korrigiert!")
-      await playInstantPhrase('correction_success');
-      setLunaBanner('Perfekt korrigiert! Weiter geht\'s...', 'speaking');
+      if (allFixed) {
+        await playInstantPhrase('correction_success');
+        setLunaBanner('Perfekt korrigiert! Ich lese dir den Satz jetzt nochmal von vorne vor...', 'speaking');
+      } else {
+        setLunaBanner('Lösung eingetragen! Ich lese dir den Satz jetzt komplett von vorne vor...', 'speaking');
+      }
 
-      // Satz wiederholen & weitermachen
+      // WICHTIG: Den korrigierten Satz JETZT NOCHMAL VON VORNE VORLESEN!
+      if (currentSentence.audio_base64) {
+        setLunaSpeaking(true);
+        await playAudioFromBase64(currentSentence.audio_base64);
+        setLunaSpeaking(false);
+      } else {
+        await sleep(1500);
+      }
+
+      if (!isReviewing) return;
+
+      // Danach zum nächsten Satz
       reviewSentenceIndex++;
       playSentenceLoop();
     } else {
-      // Immer noch Fehler
+      // Immer noch Fehler (< 3 Versuche)
       await playInstantPhrase('error_interjections');
-      setLunaBanner('Noch nicht ganz. Versuch es noch einmal!', 'error');
+      setLunaBanner(`Noch nicht ganz. Versuch es noch einmal! (${maxAttempts}/3)`, 'error');
     }
   }
 

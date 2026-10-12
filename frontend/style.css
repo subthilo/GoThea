@@ -4928,6 +4928,36 @@ body.wb-fullscreen-mode .wb-container {
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
 }
 
+/* Schwierigkeitsgrad-Umschalter: Mit Wörtern vs. Ohne Wörter */
+.cloze-difficulty-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cloze-diff-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  padding: 6px 12px;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.cloze-diff-btn.active {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
 /* Luna Banner */
 .cloze-luna-banner {
   padding: 10px 24px;
@@ -4991,16 +5021,18 @@ body.wb-fullscreen-mode .wb-container {
   transition: zoom 0.15s ease;
 }
 
-/* 2-Spalten-Layout auf Tablets & Desktop im Ziehen-Modus: Text links, Wortspeicher rechts! */
+/* 2-Spalten-Layout auf Tablets & Desktop: Text links, Wortspeicher rechts! */
 @media (min-width: 820px) {
-  .cloze-trainer-body.mode-drag .cloze-exercise-content {
+  .cloze-trainer-body.mode-drag .cloze-exercise-content,
+  .cloze-trainer-body.mode-handwrite.show-wordbank .cloze-exercise-content {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 300px;
     gap: 20px;
     align-items: start;
   }
 
-  .cloze-trainer-body.mode-drag .cloze-wordbank-container {
+  .cloze-trainer-body.mode-drag .cloze-wordbank-container,
+  .cloze-trainer-body.mode-handwrite.show-wordbank .cloze-wordbank-container {
     position: sticky;
     top: 0;
     max-height: calc(88vh - 200px);
@@ -5107,6 +5139,13 @@ body.wb-fullscreen-mode .wb-container {
   color: #34d399 !important;
 }
 
+.cloze-blank-drop.is-auto-revealed {
+  border: 2px dashed #10b981 !important;
+  background: rgba(6, 78, 59, 0.45) !important;
+  color: #a7f3d0 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+}
+
 .cloze-blank-drop.is-wrong {
   border-color: #ef4444 !important;
   background: rgba(239, 68, 68, 0.25) !important;
@@ -5151,6 +5190,29 @@ body.wb-fullscreen-mode .wb-container {
   border-style: solid;
   border-color: #10b981;
   background: rgba(16, 185, 129, 0.1);
+}
+
+.cloze-blank-canvas-wrap.is-auto-revealed {
+  border: 2px dashed #10b981;
+  background: rgba(6, 78, 59, 0.3);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.cloze-solution-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(6, 78, 59, 0.85);
+  border-radius: 8px;
+  z-index: 5;
+  pointer-events: none;
+  animation: fadeIn 0.3s ease;
 }
 
 .cloze-blank-canvas-wrap.is-wrong {
