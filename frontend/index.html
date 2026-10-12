@@ -1320,20 +1320,24 @@
     </div>
   </div>
 
-  <!-- Modal: Dedizierter Lückentext-Trainer -->
-  <div id="modal-cloze-trainer" class="modal-backdrop" style="display: none;">
-    <div class="modal-box modal-box-large cloze-trainer-box">
-      <div class="modal-header cloze-trainer-header">
+  <!-- Dedizierte Vollbild-Ansicht für Übungen (kein Overlay, voller Fokus) -->
+  <div id="modal-cloze-trainer" class="exercise-fullscreen-arena" style="display: none;">
+    <div class="exercise-arena-container">
+      <div class="exercise-arena-header cloze-trainer-header">
         <div style="display: flex; align-items: center; gap: 14px;">
+          <button type="button" class="btn-back-to-subject" id="btn-exercise-back-to-subject" title="Zurück zur Fach-Übersicht (nicht ausgefüllte Teile werden nicht gewertet)">
+            <span>← Zurück zu</span>
+            <strong id="cloze-back-subject-name">Mathematik</strong>
+          </button>
           <div class="cloze-luna-avatar" id="cloze-luna-avatar">🦉</div>
           <div>
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <h3 id="cloze-modal-title" style="margin: 0; font-size: 1.25rem;">Lückentext-Übung</h3>
+              <h3 id="cloze-modal-title" style="margin: 0; font-size: 1.15rem;">Lückentext-Übung</h3>
               <span class="badge-grade" id="cloze-modal-subject">Mathematik</span>
               <span class="badge-source-doc" id="cloze-modal-doc-source" style="display: none;"></span>
               <span class="badge-adaptive-level" id="cloze-adaptive-level-badge" title="Aktuelle adaptive Schwierigkeitsstufe">🎯 Stufe 2 (Mittel)</span>
             </div>
-            <p id="cloze-modal-topic" class="subtitle" style="margin: 2px 0 0; font-size: 0.85rem;">Thema & Kontext</p>
+            <p id="cloze-modal-topic" class="subtitle" style="margin: 2px 0 0; font-size: 0.82rem;">Thema & Kontext</p>
           </div>
         </div>
 
@@ -1368,19 +1372,19 @@
               <span>Ohne Wörter</span>
             </button>
           </div>
-          <button class="modal-close" id="btn-close-cloze-modal">&times;</button>
+          <button class="modal-close" id="btn-close-cloze-modal" title="Schließen" style="display: none;">&times;</button>
         </div>
       </div>
 
       <!-- Luna Banner / Feedback Alert -->
-      <div class="cloze-luna-banner" id="cloze-luna-banner">
+      <div class="exercise-arena-banner cloze-luna-banner" id="cloze-luna-banner">
         <div class="cloze-luna-pulse-dot" id="cloze-luna-pulse-dot"></div>
         <span class="cloze-luna-banner-icon">💬</span>
         <span class="cloze-luna-banner-text" id="cloze-luna-banner-text">Fülle die Lücken aus. Klicke danach auf "Gemeinsam durchgehen", dann lese ich dir den Text vor!</span>
       </div>
 
       <!-- Main Body -->
-      <div class="modal-body cloze-trainer-body" id="cloze-trainer-body">
+      <div class="exercise-arena-body cloze-trainer-body" id="cloze-trainer-body">
         <!-- Loading State -->
         <div class="cloze-loading-state" id="cloze-loading-state" style="display: none;">
           <div class="cloze-spinner-owl">🦉</div>
@@ -1408,7 +1412,7 @@
       </div>
 
       <!-- Footer Actions -->
-      <div class="cloze-trainer-footer">
+      <div class="exercise-arena-footer cloze-trainer-footer">
         <div class="cloze-footer-stats">
           <span id="cloze-progress-badge" class="badge-minutes">0 / 0 ausgefüllt</span>
           <span id="cloze-status-hint" style="font-size: 0.82rem; color: var(--text-secondary); margin-left: 8px;"></span>
@@ -1421,6 +1425,10 @@
           <button type="button" class="btn-primary btn-cloze-review" id="btn-cloze-review">
             <span id="cloze-review-btn-icon">🚀</span>
             <span id="cloze-review-btn-label">Gemeinsam durchgehen</span>
+          </button>
+          <button type="button" class="btn-primary btn-cloze-next" id="btn-cloze-next" style="display: none;" title="Direkt die nächste Übung starten">
+            <span>➡️</span>
+            <span>Nächste Übung</span>
           </button>
         </div>
       </div>

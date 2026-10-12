@@ -50,6 +50,9 @@
   const progressBadge = document.getElementById('cloze-progress-badge');
   const statusHint = document.getElementById('cloze-status-hint');
   const btnClose = document.getElementById('btn-close-cloze-modal');
+  const btnBackSubject = document.getElementById('btn-exercise-back-to-subject');
+  const backSubjectName = document.getElementById('cloze-back-subject-name');
+  const btnNext = document.getElementById('btn-cloze-next');
   const btnModeDrag = document.getElementById('btn-mode-drag');
   const btnModeHandwrite = document.getElementById('btn-mode-handwrite');
   const difficultyToggle = document.getElementById('cloze-difficulty-toggle');
@@ -107,9 +110,17 @@
       btnZoomOut.addEventListener('click', () => applyZoom(currentZoomIndex - 1));
     }
 
-    // Modal Close
+    // Modal Close / Back to Subject
     if (btnClose) {
       btnClose.addEventListener('click', closeClozeTrainer);
+    }
+    if (btnBackSubject) {
+      btnBackSubject.addEventListener('click', closeClozeTrainer);
+    }
+
+    // Nächste Übung Button
+    if (btnNext) {
+      btnNext.addEventListener('click', onNextExerciseClick);
     }
 
     // Mode Toggle
@@ -163,7 +174,10 @@
 
     setMode('drag');
     resetState();
+    document.body.classList.add('exercise-fullscreen-mode');
     modal.style.display = 'flex';
+    if (backSubjectName) backSubjectName.textContent = currentSubjectName;
+    if (btnNext) btnNext.style.display = 'none';
 
     // Aktuelle adaptive Schwierigkeitsstufe ermitteln
     try {
@@ -187,8 +201,20 @@
 
   function closeClozeTrainer() {
     stopCurrentAudio();
+    document.body.classList.remove('exercise-fullscreen-mode');
     modal.style.display = 'none';
+    if (btnNext) btnNext.style.display = 'none';
     resetState();
+    if (typeof window.openSubjectDetail === 'function' && currentSubjectId) {
+      window.openSubjectDetail(currentSubjectId);
+    }
+  }
+
+  async function onNextExerciseClick() {
+    if (btnNext) btnNext.style.display = 'none';
+    stopCurrentAudio();
+    resetState();
+    await fetchOrGenerateExercise();
   }
 
   function resetState() {
@@ -593,10 +619,10 @@
       const BLEED_X = 26; // Überhang links & rechts über die gestrichelte Kante
       const BLEED_Y = 16; // Überhang oben & unten
       const canvasW = boxWidth + BLEED_X * 2;
-      const canvasH = 58 + BLEED_Y * 2;
+      const canvasH = 62 + BLEED_Y * 2;
 
       canvasWrap.style.width = `${boxWidth}px`;
-      canvasWrap.style.height = '58px';
+      canvasWrap.style.height = '62px';
 
       canvas.style.width = `${canvasW}px`;
       canvas.style.height = `${canvasH}px`;
@@ -1300,6 +1326,7 @@
         }
         const msg = scoreData.feedback_message || `Klasse! Du hast ${correctItems} von ${totalItems} Lücken gelöst.`;
         setLunaBanner(`🎉 ${msg} (Erfolgsquote: ${scoreData.accuracy_percent}%)`, 'info');
+        if (btnNext) btnNext.style.display = 'inline-flex';
         window.dispatchEvent(new CustomEvent('gothea:exercise-completed', { detail: scoreData }));
         return;
       }
@@ -1308,6 +1335,7 @@
     }
 
     setLunaBanner('🎉 Fantastisch gelöst! Du hast alle Lücken meisterhaft ausgefüllt.', 'info');
+    if (btnNext) btnNext.style.display = 'inline-flex';
   }
 
   /**

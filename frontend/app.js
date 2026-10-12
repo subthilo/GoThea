@@ -179,6 +179,7 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   window.currentDetailSubjectId = subjectId;
   window.currentSubject = s;
   window.cachedSubjects = cachedSubjects;
+  window.openSubjectDetail = openSubjectDetail;
 
   const breadcrumb = document.getElementById("subject-detail-breadcrumb");
   const sourceName = sourceTab === "timetable" ? "Stundenplan" : "Übersicht";
