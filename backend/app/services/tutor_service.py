@@ -685,13 +685,14 @@ def evaluate_cloze_blanks_targeted(
             client = OpenAI(api_key=OPENAI_API_KEY)
 
             system_instruction = (
-                "Du bist eine didaktisch exakte Gymnasial-Tutorin für Thea (Klasse 7 Gymnasium).\n"
-                "Deine Aufgabe: Lies das handgeschriebene Wort im Lückenausschnitt (OCR) und bewerte es STRENG gegen den erwarteten Begriff.\n"
+                "Du bist eine didaktisch exakte und wohlwollende Gymnasial-Tutorin für Thea (Klasse 7 Gymnasium).\n"
+                "Deine Aufgabe: Lies das handgeschriebene Wort im Lückenausschnitt (OCR) und bewerte es gegen den erwarteten Begriff.\n"
                 "WICHTIGE BEWERTUNGSREGELN:\n"
-                "1. 'recognized_text': Das Wort, das Thea tatsächlich aufgeschrieben hat.\n"
-                "2. 'is_correct': Setze dies NUR auf TRUE, wenn Theas geschriebenes Wort exakt oder als sehr nahe Variante (z. B. 1 Tippfehler) dem erwarteten Begriff oder den Alternativen entspricht.\n"
-                "3. STRENG: Wenn Thea ein völlig anderes Wort geschrieben hat (z. B. ein anderes Wort aus dem Text oder Wortspeicher wie 'left' statt 'rebuild'), MUSS 'is_correct' STRIKT FALSE sein!\n"
-                "4. Wenn die Lücke leer, ein Strich oder unleserlich ist, setze 'is_correct': false.\n"
+                "1. 'recognized_text': Das Wort, das Thea tatsächlich aufgeschrieben hat (oder '?', falls unleserlich).\n"
+                "2. 'is_correct': Setze dies auf TRUE, wenn das Wort exakt dem erwarteten Begriff oder den Alternativen entspricht (großzügig bei leichten Schrifttoleranzen oder 1 Tippfehler bei Wörtern ab 4 Zeichen).\n"
+                "3. 'unclear_handwriting': Setze dies auf TRUE, wenn das Wort verwackelt, schwer zu entziffern, unleserlich oder unvollständig ist, sodass du nicht sicher bist, was dort steht!\n"
+                "   -> Wenn 'unclear_handwriting' TRUE ist: MUSS 'is_correct' FALSE sein und 'feedback' MUSS lauten: 'Ich konnte deine Handschrift leider nicht ganz entziffern. Bitte schreibe das Wort noch einmal etwas deutlicher!'\n"
+                "4. Wenn Thea leserlich ein völlig falsches Wort geschrieben hat (z. B. 'apple' statt 'cat', oder 'left' statt 'rebuild'), ist 'unclear_handwriting' FALSE und 'is_correct' FALSE.\n"
                 "Antworte STRIKT als JSON mit folgendem Format:\n"
                 "{\n"
                 '  "evaluations": [\n'
@@ -699,11 +700,12 @@ def evaluate_cloze_blanks_targeted(
                 '      "blank_id": 1,\n'
                 '      "recognized_text": "erkanntes Wort",\n'
                 '      "is_correct": false,\n'
+                '      "unclear_handwriting": false,\n'
                 '      "feedback": "Kurzes Feedback",\n'
                 '      "hint": null\n'
                 '    }\n'
                 '  ],\n'
-                '  "tutor_speech": "Kurzer Zuspruch."\n'
+                '  "tutor_speech": "Gesprochene Rückmeldung für Thea. Wenn eine Handschrift unleserlich war, bitte Thea darin freundlich, es noch einmal sauber aufzuschreiben!"\n'
                 "}"
             )
 
@@ -781,6 +783,7 @@ def evaluate_cloze_blanks_targeted(
                 if ev:
                     rec_text = (ev.get("recognized_text") or "").strip()
                     model_is_correct = bool(ev.get("is_correct"))
+                    is_unclear = bool(ev.get("unclear_handwriting")) or (rec_text in ("?", "unleserlich", "illegible", "unklar", ""))
 
                     # Robuster deterministischer Abgleich (tolerant gegen Satzzeichen & Groß-/Kleinschreibung)
                     clean_rec = re.sub(r"[^\w\s-]", "", rec_text).strip().lower()
@@ -790,29 +793,42 @@ def evaluate_cloze_blanks_targeted(
                     # 1. Exakter Treffer oder akzeptierte Alternative
                     if clean_rec and (clean_rec == clean_exp or clean_rec in clean_alts):
                         is_correct = True
-                    elif clean_rec:
+                        is_unclear = False
+                        feedback = ev.get("feedback") or "Richtig!"
+                    elif is_unclear or not clean_rec or rec_text == "?":
+                        is_correct = False
+                        is_unclear = True
+                        feedback = "Ich konnte deine Handschrift leider nicht ganz entziffern. Bitte schreibe das Wort noch einmal etwas deutlicher!"
+                    else:
                         # 2. Prüfe auf leichte Tippfehler (z. B. 1 Buchstabe verdreht/fehlend bei Wörtern ab 4 Zeichen)
                         all_targets = [clean_exp] + clean_alts
                         is_typo_match = any(
                             len(target) >= 4 and SequenceMatcher(None, clean_rec, target).ratio() >= 0.82
                             for target in all_targets
                         )
-                        # Nur wenn Tippfehler-Ähnlichkeit hoch ist UND das Modell zustimmt
                         if is_typo_match and model_is_correct:
                             is_correct = True
+                            is_unclear = False
+                            feedback = ev.get("feedback") or "Richtig!"
+                        elif is_typo_match and not model_is_correct:
+                            # Handschrift ähnelte dem Zielwort, war aber nicht ganz sicher lesbar
+                            is_correct = False
+                            is_unclear = True
+                            feedback = "Das sieht schon fast wie das richtige Wort aus, war aber nicht ganz eindeutig zu lesen. Bitte schreibe es noch einmal etwas deutlicher!"
                         else:
                             # Komplett anderes Wort (z. B. 'left' statt 'rebuild') ist STRIKT FALSCH!
                             is_correct = False
-                    else:
-                        is_correct = False
+                            is_unclear = False
+                            feedback = ev.get("feedback") or "Noch nicht ganz richtig."
 
-                    logger.info(f"[Lücke {bid}] Handschrift erkannt: '{rec_text}' (Erwartet: '{exp}', Alternativen: {clean_alts}) -> is_correct={is_correct}")
+                    logger.info(f"[Lücke {bid}] Handschrift erkannt: '{rec_text}' (Erwartet: '{exp}', Alternativen: {clean_alts}) -> is_correct={is_correct}, unclear={is_unclear}")
 
                     results.append({
                         "blank_id": bid,
-                        "recognized_text": rec_text,
+                        "recognized_text": rec_text if not is_unclear else (rec_text or "?"),
                         "is_correct": is_correct,
-                        "feedback": ev.get("feedback") or ("Richtig!" if is_correct else "Noch nicht ganz richtig."),
+                        "unclear_handwriting": is_unclear,
+                        "feedback": feedback,
                         "hint": ev.get("hint") or itm["hint"]
                     })
                 else:
@@ -820,7 +836,8 @@ def evaluate_cloze_blanks_targeted(
                         "blank_id": bid,
                         "recognized_text": None,
                         "is_correct": False,
-                        "feedback": "Konnte nicht eindeutig erkannt werden.",
+                        "unclear_handwriting": True,
+                        "feedback": "Konnte nicht eindeutig erkannt werden. Bitte schreibe das Wort noch einmal.",
                         "hint": itm["hint"]
                     })
 
@@ -831,6 +848,7 @@ def evaluate_cloze_blanks_targeted(
                     "blank_id": itm["blank_id"],
                     "recognized_text": None,
                     "is_correct": False,
+                    "unclear_handwriting": True,
                     "feedback": "Prüfung fehlgeschlagen, bitte wiederholen.",
                     "hint": itm["hint"]
                 })
@@ -841,6 +859,7 @@ def evaluate_cloze_blanks_targeted(
                 "blank_id": itm["blank_id"],
                 "recognized_text": itm["expected"],
                 "is_correct": True,
+                "unclear_handwriting": False,
                 "feedback": f"Super! '{itm['expected']}' ist richtig.",
                 "hint": None
             })
@@ -848,8 +867,11 @@ def evaluate_cloze_blanks_targeted(
 
     # TTS für gesprochene Antwort erzeugen falls gewünscht
     if not tutor_speech:
+        has_unclear = any(r.get("unclear_handwriting") for r in results)
         correct_count = sum(1 for r in results if r.get("is_correct"))
-        if correct_count == len(blanks_definition) and correct_count > 0:
+        if has_unclear:
+            tutor_speech = "Ich konnte deine Handschrift bei einer Lücke leider nicht ganz entziffern. Schreibst du mir das Wort bitte noch einmal etwas deutlicher auf?"
+        elif correct_count == len(blanks_definition) and correct_count > 0:
             tutor_speech = "Perfekt, Thea! Du hast alle Lücken fehlerfrei gelöst."
         elif correct_count > 0:
             tutor_speech = f"Guter Fortschritt! Du hast bereits {correct_count} Lücken richtig."

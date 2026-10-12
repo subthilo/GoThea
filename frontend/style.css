@@ -2135,6 +2135,13 @@ body.wb-fullscreen-mode .wb-container {
   background: rgba(244, 63, 94, 0.15);
 }
 
+.wb-blank-token.status-unclear {
+  border-color: #f59e0b;
+  border-style: dashed;
+  background: rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
 @keyframes wb-blank-pulse {
   0% { transform: scale(1); opacity: 0.9; }
   50% { transform: scale(1.02); opacity: 1; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
@@ -5220,6 +5227,13 @@ body.wb-fullscreen-mode .wb-container {
   border-style: solid;
   border-color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
+}
+
+.cloze-blank-canvas-wrap.is-unclear {
+  border-style: solid;
+  border-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35) !important;
 }
 
 .cloze-blank-canvas {

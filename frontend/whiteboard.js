@@ -2063,11 +2063,16 @@
             el.classList.remove("status-pending");
             if (r.is_correct) {
               correctCount++;
-              el.classList.remove("status-incorrect");
+              el.classList.remove("status-incorrect", "status-unclear");
               el.classList.add("status-correct");
               if (badge) badge.textContent = "✓";
+            } else if (r.unclear_handwriting) {
+              el.classList.remove("status-correct", "status-incorrect");
+              el.classList.add("status-unclear");
+              if (badge) badge.textContent = "✍️";
+              if (r.hint) el.title = r.hint;
             } else {
-              el.classList.remove("status-correct");
+              el.classList.remove("status-correct", "status-unclear");
               el.classList.add("status-incorrect");
               if (badge) badge.textContent = r.recognized_text ? `?` : "? leer";
               if (r.hint) el.title = r.hint;

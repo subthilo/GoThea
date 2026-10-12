@@ -871,8 +871,16 @@
 
       // Dezentes Feedback
       if (badge) {
-        badge.textContent = '✓';
-        badge.title = `Erkannt: "${data.recognized_text || ''}"`;
+        if (data.is_correct) {
+          badge.textContent = '✓';
+          badge.title = `Erkannt: "${data.recognized_text || ''}"`;
+        } else if (data.unclear_handwriting) {
+          badge.textContent = '✍️';
+          badge.title = 'Schrift schwer lesbar – bitte deutlicher schreiben';
+        } else {
+          badge.textContent = '●';
+          badge.title = `Erkannt: "${data.recognized_text || ''}"`;
+        }
       }
     } catch (err) {
       console.warn(`Lautloser Check für Lücke ${blankId} fehlgeschlagen:`, err);
@@ -991,27 +999,47 @@
     // 1. Prüfe, ob die Lücken in diesem Satz korrekt sind
     const blankIds = currentSentence.blank_ids || [];
     let sentenceHasError = false;
+    let sentenceHasUnclear = false;
     let failingBlankDef = null;
 
     for (const bId of blankIds) {
+      const bState = blankState[bId];
+      const isUnclear = currentMode === 'handwrite' && bState && bState.evalResult && !!bState.evalResult.unclear_handwriting;
       const isCorrect = evaluateBlankCorrectness(bId);
-      if (!isCorrect) {
-        sentenceHasError = true;
-        failingBlankDef = blankState[bId] ? blankState[bId].def : null;
-        markBlankVisual(bId, false);
-      } else {
+
+      if (isCorrect) {
         markBlankVisual(bId, true);
+      } else if (isUnclear) {
+        sentenceHasError = true;
+        sentenceHasUnclear = true;
+        failingBlankDef = bState ? bState.def : null;
+        markBlankVisual(bId, 'unclear');
+      } else {
+        sentenceHasError = true;
+        failingBlankDef = bState ? bState.def : null;
+        markBlankVisual(bId, false);
       }
     }
 
-    // WICHTIG: Wenn ein Fehler vorliegt, darf Luna das Lösungs-Audio NICHT abspielen,
-    // da sonst das gesuchte Lösungswort vorgelesen und verraten wird!
+    // WICHTIG: Wenn ein Fehler oder unklare Schrift vorliegt, darf Luna das Lösungs-Audio NICHT abspielen!
     if (sentenceHasError) {
       hasPendingError = true;
       highlightSentence(reviewSentenceIndex, 'error');
       updateReviewButtonState('error');
 
-      // Fehlversuch für fehlerhafte Lücken dieses Satzes hochzählen
+      // Falls die Schrift unklar/unleserlich war, KEINEN Fehlversuch werten!
+      if (sentenceHasUnclear) {
+        setLunaSpeaking(true);
+        const speechPrompt = (currentExercise && currentExercise.title && currentExercise.title.toLowerCase().includes("engl"))
+          ? "I couldn't quite read your handwriting. Could you please write the word again a bit more clearly?"
+          : "Ich konnte deine Handschrift leider nicht ganz entziffern. Schreibst du mir das Wort bitte noch einmal etwas deutlicher auf?";
+        await speakTextFallback(speechPrompt);
+        setLunaSpeaking(false);
+        setLunaBanner("✍️ Handschrift nicht eindeutig lesbar. Bitte schreibe das Wort noch einmal etwas deutlicher!", 'warning');
+        return; // Hält hier an, ohne Versuch zu verbrennen!
+      }
+
+      // Echtes inhaltlich falsches Wort:
       let maxAttemptsForSentence = 0;
       for (const bId of blankIds) {
         if (!evaluateBlankCorrectness(bId)) {
@@ -1095,20 +1123,26 @@
     }
   }
 
-  function markBlankVisual(blankId, isCorrect) {
+  function markBlankVisual(blankId, status) {
     if (currentMode === 'drag') {
       const el = document.getElementById(`cloze-blank-slot-${blankId}`);
       if (el) {
         el.classList.remove('is-correct', 'is-wrong');
-        el.classList.add(isCorrect ? 'is-correct' : 'is-wrong');
+        el.classList.add(status === true ? 'is-correct' : 'is-wrong');
       }
     } else {
       const b = blankState[blankId];
       if (b && b.canvas) {
         const wrap = b.canvas.closest('.cloze-blank-canvas-wrap');
         if (wrap) {
-          wrap.classList.remove('is-correct', 'is-wrong');
-          wrap.classList.add(isCorrect ? 'is-correct' : 'is-wrong');
+          wrap.classList.remove('is-correct', 'is-wrong', 'is-unclear');
+          if (status === true) {
+            wrap.classList.add('is-correct');
+          } else if (status === 'unclear') {
+            wrap.classList.add('is-unclear');
+          } else {
+            wrap.classList.add('is-wrong');
+          }
         }
       }
     }

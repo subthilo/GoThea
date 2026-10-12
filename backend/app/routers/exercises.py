@@ -51,6 +51,7 @@ class CheckSingleBlankResponse(BaseModel):
     blank_id: int
     recognized_text: Optional[str] = None
     is_correct: bool
+    unclear_handwriting: bool = False
     feedback: str
     hint: Optional[str] = None
 
