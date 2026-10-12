@@ -146,6 +146,13 @@
     if (btnReview) {
       btnReview.addEventListener('click', onReviewButtonClick);
     }
+
+    // Notfall-Taste ESC zum Verlassen der Übung
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.body.classList.contains('exercise-fullscreen-mode')) {
+        closeClozeTrainer();
+      }
+    });
   }
 
   /**

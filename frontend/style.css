@@ -5656,19 +5656,28 @@ body.exercise-fullscreen-mode .staging-banner {
 }
 
 .exercise-fullscreen-arena {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 99999 !important;
-  background: #090d16 !important;
-  color: var(--text-primary) !important;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background: #090d16;
+  color: var(--text-primary);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body.exercise-fullscreen-mode .exercise-fullscreen-arena,
+.exercise-fullscreen-arena.is-active {
   display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-  margin: 0 !important;
-  padding: 0 !important;
+}
+
+.exercise-fullscreen-arena[style*="display: none"] {
+  display: none !important;
 }
 
 .exercise-arena-container {
