@@ -1788,14 +1788,16 @@
           if (matchNum) bid = parseInt(matchNum[0], 10);
         }
         const bDef = blanksMap[bid] || {};
-        const widthPx = bDef.width_px || 150;
+        const expAns = bDef.expected_answer || bDef.correct_answer || (p2 || "").trim();
+        const widthPx = Math.max(180, Math.min(520, Math.max(bDef.width_px || 0, 180 + Math.max(0, expAns.length - 5) * 24)));
         return `<span class="wb-blank-token wb-blank-zone" id="wb-blank-${ex.id}-${bid}" data-exercise-id="${ex.id}" data-blank-id="${bid}" style="min-width: ${widthPx}px;"><span class="wb-blank-num">(${bid})</span><span class="wb-blank-badge" id="wb-blank-badge-${ex.id}-${bid}"></span></span>`;
       });
       if (!rawText.includes("[[")) {
         renderedText = rawText.replace(/_{3,}/g, () => {
           blankCount++;
           const bDef = blanksMap[blankCount] || {};
-          const widthPx = bDef.width_px || 150;
+          const expAns = bDef.expected_answer || bDef.correct_answer || "";
+          const widthPx = Math.max(180, Math.min(520, Math.max(bDef.width_px || 0, 180 + Math.max(0, expAns.length - 5) * 24)));
           return `<span class="wb-blank-token wb-blank-zone" id="wb-blank-${ex.id}-${blankCount}" data-exercise-id="${ex.id}" data-blank-id="${blankCount}" style="min-width: ${widthPx}px;"><span class="wb-blank-num">(${blankCount})</span><span class="wb-blank-badge" id="wb-blank-badge-${ex.id}-${blankCount}"></span></span>`;
         });
       }

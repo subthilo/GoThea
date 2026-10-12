@@ -514,7 +514,7 @@
       dropEl.dataset.blankId = bId;
 
       const expWord = (blankDef.expected_answer || blankDef.correct_answer || '');
-      const dynWidth = Math.max(180, Math.min(320, expWord.length * 16 + 50));
+      const dynWidth = Math.max(180, Math.min(600, 180 + Math.max(0, expWord.length - 5) * 26));
       dropEl.style.minWidth = `${dynWidth}px`;
 
       if (bState.value) {
@@ -569,9 +569,20 @@
       canvas.dataset.blankId = bId;
 
       const expWord = (blankDef.expected_answer || blankDef.correct_answer || '');
-      const dynWidth = Math.max(220, Math.min(360, expWord.length * 18 + 70));
-      canvas.style.width = `${dynWidth}px`;
-      canvas.style.height = '58px';
+      // Basisgröße: 220px (für kurze Wörter). Für längere Wörter deutlich breiter skaliert.
+      const boxWidth = Math.max(220, Math.min(680, 220 + Math.max(0, expWord.length - 5) * 28));
+      const BLEED_X = 26; // Überhang links & rechts über die gestrichelte Kante
+      const BLEED_Y = 16; // Überhang oben & unten
+      const canvasW = boxWidth + BLEED_X * 2;
+      const canvasH = 58 + BLEED_Y * 2;
+
+      canvasWrap.style.width = `${boxWidth}px`;
+      canvasWrap.style.height = '58px';
+
+      canvas.style.width = `${canvasW}px`;
+      canvas.style.height = `${canvasH}px`;
+      canvas.style.left = `-${BLEED_X}px`;
+      canvas.style.top = `-${BLEED_Y}px`;
 
       const clearBtn = document.createElement('button');
       clearBtn.type = 'button';
@@ -767,7 +778,6 @@
     canvas.addEventListener('pointermove', draw);
     canvas.addEventListener('pointerup', stopDraw);
     canvas.addEventListener('pointercancel', stopDraw);
-    canvas.addEventListener('pointerleave', stopDraw);
 
     // iOS Safari Anti-Callout ('Teilen...') & Geste-Blockierung
     const blockNative = (e) => {

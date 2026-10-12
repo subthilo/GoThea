@@ -5159,18 +5159,19 @@ body.wb-fullscreen-mode .wb-container {
   75% { transform: translateX(4px); }
 }
 
-/* Handschrift-Lücke (Schreib-Modus) - Großzügiges Zeichenfeld */
+/* Handschrift-Lücke (Schreib-Modus) - Großzügiges Zeichenfeld mit Überhang-Schreibfläche */
 .cloze-blank-write-container {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   vertical-align: middle;
-  margin: 3px 8px;
+  margin: 4px 14px;
   position: relative;
 }
 
 .cloze-blank-canvas-wrap {
   position: relative;
+  overflow: visible !important;
   border: 2px dashed rgba(255, 255, 255, 0.32);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
@@ -5222,18 +5223,21 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .cloze-blank-canvas {
-  width: 230px;
-  height: 58px;
+  position: absolute;
   display: block;
   touch-action: none !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
   user-select: none !important;
   cursor: crosshair;
-  border-radius: 10px;
+  border-radius: 14px;
+  background: transparent;
+  z-index: 3;
 }
 
 .cloze-blank-clear-btn {
+  position: relative;
+  z-index: 5;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
@@ -5250,6 +5254,8 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .cloze-blank-status-badge {
+  position: relative;
+  z-index: 5;
   font-size: 0.8rem;
   display: inline-flex;
   align-items: center;
