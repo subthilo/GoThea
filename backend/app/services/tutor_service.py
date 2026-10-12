@@ -173,7 +173,8 @@ def analyze_whiteboard_and_speak(
                     model="tts-1",
                     voice="nova",
                     input=tutor_speech,
-                    response_format="mp3"
+                    response_format="mp3",
+                    speed=0.90
                 )
                 audio_b64 = base64.b64encode(tts_res.content).decode("utf-8")
             except Exception as e:
@@ -453,7 +454,8 @@ def generate_board_exercise(
                 model="tts-1",
                 voice="nova",
                 input=tutor_speech,
-                response_format="mp3"
+                response_format="mp3",
+                speed=0.90
             )
             audio_b64 = base64.b64encode(tts_res.content).decode("utf-8")
         except Exception as e:
@@ -602,33 +604,40 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
     content["word_bank"] = cleaned_wb
 
     # Sätze für die Vorlese- und Review-Schleife aufbereiten
-    sentences = extract_cloze_sentences(text, blanks)
+    existing_sentences = content.get("sentences")
+    if existing_sentences and isinstance(existing_sentences, list) and len(existing_sentences) > 0:
+        sentences = existing_sentences
+    else:
+        sentences = extract_cloze_sentences(text, blanks)
 
     if generate_sentence_audio and OPENAI_API_KEY:
-        try:
-            from concurrent.futures import ThreadPoolExecutor
-            from openai import OpenAI
-            client = OpenAI(api_key=OPENAI_API_KEY)
+        sentences_to_synth = [s for s in sentences if not s.get("audio_base64")]
+        if sentences_to_synth:
+            try:
+                from concurrent.futures import ThreadPoolExecutor
+                from openai import OpenAI
+                client = OpenAI(api_key=OPENAI_API_KEY)
 
-            def _synthesize_sentence(s):
-                target_text = s.get("full_text_solved")
-                if not target_text:
-                    return
-                try:
-                    tts_res = client.audio.speech.create(
-                        model="tts-1",
-                        voice="nova",
-                        input=target_text,
-                        response_format="mp3"
-                    )
-                    s["audio_base64"] = base64.b64encode(tts_res.content).decode("utf-8")
-                except Exception as ex:
-                    logger.warning(f"Fehler bei TTS für Satz '{target_text[:30]}...': {ex}")
+                def _synthesize_sentence(s):
+                    target_text = s.get("full_text_solved")
+                    if not target_text:
+                        return
+                    try:
+                        tts_res = client.audio.speech.create(
+                            model="tts-1",
+                            voice="nova",
+                            input=target_text,
+                            response_format="mp3",
+                            speed=0.90
+                        )
+                        s["audio_base64"] = base64.b64encode(tts_res.content).decode("utf-8")
+                    except Exception as ex:
+                        logger.warning(f"Fehler bei TTS für Satz '{target_text[:30]}...': {ex}")
 
-            with ThreadPoolExecutor(max_workers=min(max(len(sentences), 1), 6)) as pool:
-                list(pool.map(_synthesize_sentence, sentences))
-        except Exception as e:
-            logger.warning(f"Fehler bei Satz-Audio-Generierung: {e}")
+                with ThreadPoolExecutor(max_workers=min(max(len(sentences_to_synth), 1), 6)) as pool:
+                    list(pool.map(_synthesize_sentence, sentences_to_synth))
+            except Exception as e:
+                logger.warning(f"Fehler bei Satz-Audio-Generierung: {e}")
 
     content["sentences"] = sentences
     return content
@@ -886,7 +895,8 @@ def evaluate_cloze_blanks_targeted(
                 model="tts-1",
                 voice="nova",
                 input=tutor_speech,
-                response_format="mp3"
+                response_format="mp3",
+                speed=0.90
             )
             audio_b64 = base64.b64encode(tts_res.content).decode("utf-8")
         except Exception as e:

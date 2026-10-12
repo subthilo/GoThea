@@ -1109,10 +1109,24 @@
       // Falls die Schrift unklar/unleserlich war, KEINEN Fehlversuch werten!
       if (sentenceHasUnclear) {
         setLunaSpeaking(true);
-        const speechPrompt = (currentExercise && currentExercise.title && currentExercise.title.toLowerCase().includes("engl"))
-          ? "I couldn't quite read your handwriting. Could you please write the word again a bit more clearly?"
-          : "Ich konnte deine Handschrift leider nicht ganz entziffern. Schreibst du mir das Wort bitte noch einmal etwas deutlicher auf?";
-        await speakTextFallback(speechPrompt);
+        let played = false;
+        try {
+          const phraseRes = await fetch('/api/v1/exercises/phrases/unclear_handwriting');
+          if (phraseRes.ok) {
+            const pData = await phraseRes.json();
+            if (pData.audio_base64) {
+              await playAudioFromBase64(pData.audio_base64);
+              played = true;
+            }
+          }
+        } catch (e) {}
+
+        if (!played) {
+          const speechPrompt = (currentExercise && currentExercise.title && currentExercise.title.toLowerCase().includes("engl"))
+            ? "I couldn't quite read your handwriting. Could you please write the word again a bit more clearly?"
+            : "Ich konnte deine Handschrift leider nicht ganz entziffern. Schreibst du mir das Wort bitte noch einmal etwas deutlicher auf?";
+          await speakLuna(speechPrompt);
+        }
         setLunaSpeaking(false);
         setLunaBanner("✍️ Handschrift nicht eindeutig lesbar. Bitte schreibe das Wort noch einmal etwas deutlicher!", 'warning');
         return; // Hält hier an, ohne Versuch zu verbrennen!
@@ -1172,7 +1186,7 @@
       setLunaSpeaking(false);
     } else {
       setLunaSpeaking(true);
-      await speakTextFallback(currentSentence.full_text_solved || currentSentence.text);
+      await speakLuna(currentSentence.full_text_solved || currentSentence.text);
       setLunaSpeaking(false);
     }
 
@@ -1283,7 +1297,7 @@
         setLunaSpeaking(false);
       } else {
         setLunaSpeaking(true);
-        await speakTextFallback(currentSentence.full_text_solved || currentSentence.text);
+        await speakLuna(currentSentence.full_text_solved || currentSentence.text);
         setLunaSpeaking(false);
       }
 
@@ -1449,6 +1463,7 @@
       stopCurrentAudio();
       try {
         const audio = new Audio(`data:audio/mp3;base64,${base64Data}`);
+        audio.playbackRate = 0.90; // Angenehme, ruhigere Sprechgeschwindigkeit
         activeAudio = audio;
         audio.onended = () => {
           activeAudio = null;
@@ -1465,10 +1480,33 @@
     });
   }
 
-  function speakTextFallback(text) {
+  async function speakLuna(text) {
+    if (!text) return;
+    stopCurrentAudio();
+
+    // 1. Primär: Authentische OpenAI Nova Stimme via Backend on-demand anfordern (speed=0.90)
+    try {
+      const res = await fetch('/api/v1/exercises/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text, speed: 0.90 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.audio_base64) {
+          setLunaSpeaking(true);
+          await playAudioFromBase64(data.audio_base64);
+          setLunaSpeaking(false);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Backend TTS nicht verfügbar, nutze Browser-Fallback:', e);
+    }
+
+    // 2. Notfall-Fallback bei Offline-Zustand: Browser SpeechSynthesis mit verlangsamter Rate
     return new Promise((resolve) => {
-      stopCurrentAudio();
-      if (!('speechSynthesis' in window) || !text) {
+      if (!('speechSynthesis' in window)) {
         setTimeout(resolve, 1200);
         return;
       }
@@ -1478,7 +1516,7 @@
         const isEnglish = (currentSubjectName && currentSubjectName.toLowerCase().includes('eng')) ||
                           (currentExercise && currentExercise.title && currentExercise.title.toLowerCase().includes('eng'));
         utt.lang = isEnglish ? 'en-US' : 'de-DE';
-        utt.rate = 0.95;
+        utt.rate = 0.82; // Ruhiger und verständlicher
         utt.onend = () => resolve();
         utt.onerror = () => resolve();
         window.speechSynthesis.speak(utt);

@@ -1,11 +1,13 @@
 from datetime import datetime
 import json
+import base64
 import logging
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
+from backend.app.config import OPENAI_API_KEY
 from backend.app.database import get_db
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.material import Material
@@ -83,14 +85,44 @@ def get_cloze_exercise_pool_status():
     }
 
 
+class QuickTTSRequest(BaseModel):
+    text: str
+    speed: Optional[float] = 0.90
+
+
+@router.post("/tts")
+def synthesize_quick_speech(payload: QuickTTSRequest):
+    """
+    On-Demand Sprachausgabe mit Luna's authentischer OpenAI Nova-Stimme
+    mit ruhigerer Sprechgeschwindigkeit (speed=0.90).
+    """
+    if not OPENAI_API_KEY or not payload.text:
+        return {"status": "skipped", "audio_base64": None}
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        tts_res = client.audio.speech.create(
+            model="tts-1",
+            voice="nova",
+            input=payload.text,
+            response_format="mp3",
+            speed=payload.speed or 0.90
+        )
+        b64 = base64.b64encode(tts_res.content).decode("utf-8")
+        return {"status": "success", "audio_base64": b64}
+    except Exception as e:
+        logger.warning(f"Fehler bei Quick-TTS: {e}")
+        return {"status": "error", "error": str(e), "audio_base64": None}
+
+
 @router.get("/phrases/{category}", response_model=PhraseResponse)
 def get_instant_audio_phrase(category: str):
     """
     Liefert sofort (0 ms) eine Audio-Phrase aus dem Phrasen-Pool
-    (z. B. 'error_interjections', 'correction_success', 'praise').
+    (z. B. 'error_interjections', 'correction_success', 'praise', 'unclear_handwriting').
     Verhindert Wiederholungen über Shuffle-/LRU-Puffer.
     """
-    valid_categories = ["error_interjections", "correction_success", "praise"]
+    valid_categories = ["error_interjections", "correction_success", "praise", "unclear_handwriting"]
     if category not in valid_categories:
         category = "error_interjections"
 
@@ -114,8 +146,6 @@ def generate_cloze_trainer_exercise(
         if cached_exercise:
             # Im Hintergrund Nachschub produzieren
             cloze_pool_manager.trigger_background_replenish(payload.subject_id)
-            if "content" in cached_exercise and isinstance(cached_exercise["content"], dict):
-                cached_exercise["content"] = normalize_cloze_content(cached_exercise["content"], generate_sentence_audio=False)
             return cached_exercise
 
     subject_name = "Englisch" if "english" in (payload.subject_id or "").lower() else "Mathematik"

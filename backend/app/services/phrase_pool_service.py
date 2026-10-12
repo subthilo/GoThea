@@ -31,6 +31,11 @@ DEFAULT_PHRASES = {
         "Klasse!",
         "Spitze!",
         "Hervorragend gelöst!"
+    ],
+    "unclear_handwriting": [
+        "Ich konnte deine Handschrift leider nicht ganz entziffern. Schreibst du mir das Wort bitte noch einmal etwas deutlicher auf?",
+        "Das konnte ich leider nicht genau lesen. Bitte schreibe es noch einmal etwas sauberer in die Lücke.",
+        "Huch, das ist etwas verwischt. Schreib das Wort bitte nochmal deutlicher auf."
     ]
 }
 
@@ -65,15 +70,31 @@ class PhrasePoolManager:
             json.dump(catalog, f, ensure_ascii=False, indent=2)
 
     def _load_catalog(self) -> Dict[str, List[Dict[str, Any]]]:
-        if not self.catalog_file.exists():
-            self._init_catalog()
-        try:
-            with open(self.catalog_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            self._init_catalog()
-            with open(self.catalog_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+        catalog = {}
+        if self.catalog_file.exists():
+            try:
+                with open(self.catalog_file, "r", encoding="utf-8") as f:
+                    catalog = json.load(f)
+            except Exception:
+                catalog = {}
+
+        # Sicherstellen, dass alle Kategorien existieren
+        dirty = False
+        for cat, phrases in DEFAULT_PHRASES.items():
+            if cat not in catalog or not catalog[cat]:
+                dirty = True
+                catalog[cat] = []
+                for text in phrases:
+                    pid = hashlib.md5(text.encode("utf-8")).hexdigest()[:10]
+                    catalog[cat].append({
+                        "id": pid,
+                        "text": text,
+                        "audio_filename": f"{pid}.mp3",
+                        "use_count": 0
+                    })
+        if dirty or not self.catalog_file.exists():
+            self._save_catalog(catalog)
+        return catalog
 
     def _save_catalog(self, catalog: Dict[str, List[Dict[str, Any]]]):
         try:
@@ -100,7 +121,8 @@ class PhrasePoolManager:
                     model="tts-1",
                     voice="nova",
                     input=phrase_item["text"],
-                    response_format="mp3"
+                    response_format="mp3",
+                    speed=0.90
                 )
                 with open(audio_path, "wb") as f:
                     f.write(tts_res.content)
@@ -121,7 +143,7 @@ class PhrasePoolManager:
             # Fallback
             default_list = DEFAULT_PHRASES.get(category, ["Sehr gut!"])
             text = random.choice(default_list)
-            return {"id": "fb_1", "text": text, "audio_base64": None}
+            return {"id": "fb_1", "category": category, "text": text, "audio_base64": None}
 
         recent = self.recent_used.get(category, [])
         # Filtere Phrasen, die nicht in recent liegen

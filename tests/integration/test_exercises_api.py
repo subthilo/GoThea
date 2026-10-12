@@ -17,6 +17,19 @@ def test_phrase_pool_api(client):
     assert data2["category"] == "praise"
     assert len(data2["text"]) > 0
 
+    res3 = client.get("/api/v1/exercises/phrases/unclear_handwriting")
+    assert res3.status_code == 200
+    data3 = res3.json()
+    assert data3["category"] == "unclear_handwriting"
+    assert len(data3["text"]) > 0
+
+
+def test_quick_tts_api(client):
+    res = client.post("/api/v1/exercises/tts", json={"text": "Test text", "speed": 0.90})
+    assert res.status_code == 200
+    data = res.json()
+    assert "status" in data
+
 def test_check_single_blank_api(client):
     payload = {
         "blank_id": 1,
