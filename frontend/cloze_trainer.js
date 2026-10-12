@@ -422,6 +422,9 @@
       wordBank = blanks.map(b => b.expected_answer || b.correct_answer || '').filter(Boolean);
     }
 
+    wordBank = ensureCompleteWordBank(wordBank, blanks);
+    content.word_bank = wordBank;
+
     // 1. Sätze rendern
     sentencesContainer.innerHTML = '';
     sentences.forEach((s, sIdx) => {
@@ -479,16 +482,81 @@
     }
   }
 
+  /**
+   * Stellt sicher, dass der Wortspeicher jedes Lösungswort mindestens so oft enthält,
+   * wie es in den Lücken des Übungstextes vorkommt (z. B. wenn ein Wort in 2 Lücken gebraucht wird).
+   */
+  function ensureCompleteWordBank(rawBank, blanksList) {
+    const bank = Array.isArray(rawBank) ? [...rawBank] : [];
+    const blanks = blanksList || (currentExercise && currentExercise.content && currentExercise.content.blanks) || [];
+
+    const genericPlaceholders = ['fachbegriff', 'begriff', 'wort', 'lücke', 'luecke', 'lösung', 'loesung'];
+
+    const required = {};
+    blanks.forEach(b => {
+      const ans = (b.expected_answer || b.correct_answer || '').trim();
+      if (ans && !genericPlaceholders.includes(ans.toLowerCase())) {
+        const lower = ans.toLowerCase();
+        if (!required[lower]) {
+          required[lower] = { count: 0, text: ans };
+        }
+        required[lower].count += 1;
+      }
+    });
+
+    const inBank = {};
+    bank.forEach(w => {
+      const lower = String(w).trim().toLowerCase();
+      inBank[lower] = (inBank[lower] || 0) + 1;
+    });
+
+    Object.entries(required).forEach(([lower, info]) => {
+      const currentCount = inBank[lower] || 0;
+      if (currentCount < info.count) {
+        for (let i = 0; i < (info.count - currentCount); i++) {
+          bank.push(info.text);
+          inBank[lower] = (inBank[lower] || 0) + 1;
+        }
+      }
+    });
+
+    return bank;
+  }
+
   function renderWordBank(wordBank) {
     wordbankChips.innerHTML = '';
-    wordBank.forEach(word => {
+    const safeBank = ensureCompleteWordBank(wordBank || []);
+    if (currentExercise && currentExercise.content) {
+      currentExercise.content.word_bank = safeBank;
+    }
+
+    // Zähle, wie oft jedes Wort aktuell in den Lücken eingetragen ist
+    const wordUsageInBlanks = {};
+    Object.values(blankState).forEach(b => {
+      const val = (b.value || '').trim().toLowerCase();
+      if (val) {
+        wordUsageInBlanks[val] = (wordUsageInBlanks[val] || 0) + 1;
+      }
+    });
+
+    // Zähle, das wievielte Mal dieses Wort im Wortspeicher auftaucht
+    const occurrenceTracker = {};
+
+    safeBank.forEach((word, chipIdx) => {
       const chip = document.createElement('div');
       chip.className = 'cloze-word-chip';
       chip.textContent = word;
       chip.dataset.word = word;
+      chip.dataset.chipIndex = chipIdx;
 
-      // Prüfe, ob das Wort bereits in einer Lücke genutzt wird
-      const isUsed = Object.values(blankState).some(b => b.value === word);
+      const lower = String(word).trim().toLowerCase();
+      const currentOccurrence = (occurrenceTracker[lower] || 0) + 1;
+      occurrenceTracker[lower] = currentOccurrence;
+
+      const timesUsed = wordUsageInBlanks[lower] || 0;
+      // Dieser Chip gilt nur dann als verwendet, wenn das Wort mindestens so oft
+      // in Lücken eingetragen wurde, wie diese Chip-Instanz repräsentiert!
+      const isUsed = timesUsed >= currentOccurrence;
       if (isUsed) chip.classList.add('used');
 
       // 1. HTML5 Drag für Desktop-Maus

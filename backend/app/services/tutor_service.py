@@ -206,7 +206,7 @@ Unterstützte Aufgabentypen (exercise_type):
    - Bei Naturwissenschaften, Deutsch & Mathematik: Fachbegriffe, Rechenregeln, Gesetze oder Definitionen.
    - Kennzeichnung jeder Lücke im Text: Ausschließlich im Format [[1: RichtigeLösung]], [[2: RichtigeLösung]] etc. mit fortlaufender Nummer und der TATSÄCHLICHEN richtigen Lösung hinter dem Doppelpunkt (z. B. "Yesterday, they [[1: watched]] a movie." oder "Der Zähler steht beim Bruch [[1: oben]].").
    - STRIKT VERBOTEN: Schreibe NIEMALS Platzhalter wie "Fachbegriff", "Begriff", "Wort" oder "Lücke" als Lösung in die eckigen Klammern! Dort muss IMMER das exakte Lösungswort stehen!
-   - Definiere im Feld "content" das Array "blanks": [{"id": 1, "expected_answer": "...", "hint": "..."}] und "word_bank": ["Lösung1", "Lösung2", "Distraktor1", ...].
+   - Definiere im Feld "content" das Array "blanks": [{"id": 1, "expected_answer": "...", "hint": "..."}] und "word_bank": ["Lösung1", "Lösung2", "Distraktor1", ...]. WICHTIG: Wenn ein Begriff in MEHREREN Lücken vorkommt, MUSS er auch MEHRFACH in "word_bank" aufgeführt werden, damit für jede Lücke ein Wort im Wortspeicher vorhanden ist!
 2. "math_problem": Eine typische Rechenaufgabe für Klasse 7 (z. B. Gleichungen, Prozentrechnung, Rationale Zahlen, Bruchterme). Gegeben/Gesucht klar gegliedert, mit Zeilen zum Rechnen.
 3. "math_example": Ein anschaulich vorgerechnetes Musterbeispiel ("So geht's Schritt für Schritt"), gefolgt von einer eigenen Übungsaufgabe ("Jetzt du!").
 4. "physics_diagram": Physikalischer Zusammenhang (z. B. s-t-Diagramm, v-t-Diagramm, Federkraft F-s, Hebelgesetz mit Hebelarmen). Ein sauberes, valides, inline darstellbares SVG-Diagramm (viewBox='0 0 360 220', mit Koordinatenachsen, Beschriftungen t in s, s in m etc., feinem Gitter und eingetragenem Kurvenverlauf oder Kraftpfeilen) MUSS im Feld diagram_svg enthalten sein! Dazu 1-2 gezielte Ablese- oder Berechnungsfragen.
@@ -591,7 +591,8 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
 
     content["blanks"] = blanks
 
-    # Word Bank bereinigen
+    # Word Bank bereinigen und sicherstellen, dass mehrfach genutzte Wörter
+    # auch mindestens so oft im Wortspeicher vorkommen, wie sie in Lücken benötigt werden
     raw_wb = content.get("word_bank")
     if isinstance(raw_wb, list):
         cleaned_wb = [str(w).strip() for w in raw_wb if str(w).strip().lower() not in GENERIC_PLACEHOLDERS]
@@ -599,7 +600,32 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
         cleaned_wb = []
 
     if not cleaned_wb:
-        cleaned_wb = [b["expected_answer"] for b in blanks if "expected_answer" in b]
+        cleaned_wb = [str(b.get("expected_answer") or b.get("correct_answer") or "").strip() for b in blanks if (b.get("expected_answer") or b.get("correct_answer"))]
+
+    # Zähle, wie oft jede erwartete Lösung in den Blanks benötigt wird
+    expected_counts: Dict[str, Dict[str, Any]] = {}
+    for b in blanks:
+        ans = str(b.get("expected_answer") or b.get("correct_answer") or "").strip()
+        if ans and ans.lower() not in GENERIC_PLACEHOLDERS:
+            ans_lower = ans.lower()
+            if ans_lower not in expected_counts:
+                expected_counts[ans_lower] = {"count": 0, "text": ans}
+            expected_counts[ans_lower]["count"] += 1
+
+    # Zähle das aktuelle Vorkommen in cleaned_wb
+    wb_counts: Dict[str, int] = {}
+    for w in cleaned_wb:
+        w_lower = w.lower()
+        wb_counts[w_lower] = wb_counts.get(w_lower, 0) + 1
+
+    # Fehlende Vorkommen auffüllen (mindestens so oft wie in Blanks gefordert)
+    for exp_lower, info in expected_counts.items():
+        current_cnt = wb_counts.get(exp_lower, 0)
+        needed_cnt = info["count"]
+        if current_cnt < needed_cnt:
+            for _ in range(needed_cnt - current_cnt):
+                cleaned_wb.append(info["text"])
+                wb_counts[exp_lower] = wb_counts.get(exp_lower, 0) + 1
 
     content["word_bank"] = cleaned_wb
 
