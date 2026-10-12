@@ -37,10 +37,6 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_database(db)
-        from backend.app.routers.timetable import seed_timetable_slots_if_empty
-        seed_timetable_slots_if_empty(db, "usr_thea")
-        from backend.app.services.book_seeder import seed_textbooks_if_empty
-        seed_textbooks_if_empty(db, "usr_thea")
     finally:
         db.close()
 
