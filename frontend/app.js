@@ -124,39 +124,30 @@ function renderDashboardSubjects(subjects, topicsMap) {
   dashboardSubjectsGrid.innerHTML = "";
 
   subjects.forEach((s) => {
-    const topics = topicsMap[s.id] || [];
     const card = document.createElement("div");
     card.className = "subject-card";
     card.style.borderLeft = `5px solid ${s.color_code}`;
     card.style.cursor = "pointer";
     card.dataset.subjectId = s.id;
-
-    const topicPreview = topics.slice(0, 2).map((t) => t.name).join(", ");
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("title", `${s.name} öffnen`);
 
     card.innerHTML = `
-      <div>
-        <div class="subject-header">
-          <div class="subject-badge-icon" style="background: ${s.color_code}18; border: 1px solid ${s.color_code}35;">${s.icon}</div>
-          <div class="subject-name">${escapeHtml(s.name)}</div>
-        </div>
-        <div class="subject-topics-summary">
-          ${topics.length > 0 ? escapeHtml(topicPreview) : "Materialien & Hefter öffnen"}
-        </div>
-      </div>
-      <div>
-        <div class="subject-footer">
-          <span>${topics.length} Themen</span>
-          <span style="color: ${s.color_code}; font-weight: 600;">Klasse ${s.min_grade}–${s.max_grade}</span>
-        </div>
-        <div class="subject-card-action-hint">
-          <span>Mediathek öffnen</span>
-          <span>➔</span>
-        </div>
-      </div>
+      <div class="subject-badge-icon" style="background: ${s.color_code}18; border: 1px solid ${s.color_code}35;">${s.icon}</div>
+      <div class="subject-name">${escapeHtml(s.name)}</div>
     `;
 
-    card.addEventListener("click", () => {
+    const handleOpen = () => {
       openSubjectDetail(s.id);
+    };
+
+    card.addEventListener("click", handleOpen);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleOpen();
+      }
     });
 
     dashboardSubjectsGrid.appendChild(card);
