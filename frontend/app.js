@@ -3937,7 +3937,7 @@ function renderBookCatalog(filterTerm = "") {
 
   if (chapters.length === 0) {
     container.innerHTML = `
-      <div style="grid-column: 1 / -1; padding: 36px; text-align: center; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color);">
+      <div style="padding: 36px; text-align: center; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); width: 100%;">
         <p style="margin-bottom: 16px;">${filterTerm ? `Keine Lerneinheiten für "${escapeHtml(filterTerm)}" gefunden.` : "Für dieses Lehrwerk wurden noch keine separaten Lerneinheiten aufgeteilt."}</p>
         <button type="button" class="btn-primary" id="btn-open-full-book-fallback" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px;">
           <span>📖</span>
@@ -3965,28 +3965,32 @@ function renderBookCatalog(filterTerm = "") {
   }
 
   chapters.forEach((ch) => {
-    const card = document.createElement("div");
-    card.className = "catalog-chapter-card";
-    card.dataset.chapterId = ch.id;
+    const item = document.createElement("div");
+    item.className = "book-toc-item";
+    item.dataset.chapterId = ch.id;
 
     const isSingleFullBook = ch.id === activeBookDetail.id;
+    const numDisplay = isSingleFullBook
+      ? "★"
+      : (ch.chapter_number === 0 ? "00" : String(ch.chapter_number).padStart(2, "0"));
     const unitLabel = isSingleFullBook
       ? "Gesamtbuch"
-      : (ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`);
+      : (ch.chapter_number === 0 ? "Titelei & Inhaltsverzeichnis" : `Einheit ${ch.chapter_number}`);
 
     let sectionsHtml = "";
     if (ch.sections && ch.sections.length > 0) {
+      const hasSecMatch = Boolean(term && ch.sections.some(s => s.title.toLowerCase().includes(term) || String(s.book_page).includes(term)));
       sectionsHtml = `
-        <details class="catalog-sections-details" onclick="event.stopPropagation()">
-          <summary class="catalog-sections-summary">
-            <span class="sections-summary-label">📑 ${ch.sections.length} Unterthemen & Abschnitte</span>
-            <span class="sections-summary-chevron">▾</span>
+        <details class="toc-subsections-accordion" ${hasSecMatch ? "open" : ""} onclick="event.stopPropagation()">
+          <summary class="toc-summary">
+            <span class="toc-summary-label">📑 ${ch.sections.length} Unterthemen & Abschnitte</span>
+            <span class="toc-chevron">▾</span>
           </summary>
-          <div class="catalog-sections-pills">
+          <div class="toc-subsections-grid">
             ${ch.sections.map(sec => `
-              <button type="button" class="catalog-section-pill" data-target-page="${sec.relative_page}" title="Direkt aufschlagen: ${escapeHtml(sec.title)} (Buchseite ${sec.book_page})">
-                <span class="sec-pill-title">${escapeHtml(sec.title)}</span>
-                <span class="sec-pill-page">S. ${sec.book_page}</span>
+              <button type="button" class="toc-sub-pill" data-target-page="${sec.relative_page}" title="Direkt aufschlagen: ${escapeHtml(sec.title)} (Buchseite ${sec.book_page})">
+                <span class="toc-sub-title">${escapeHtml(sec.title)}</span>
+                <span class="toc-sub-page">S. ${sec.book_page}</span>
               </button>
             `).join("")}
           </div>
@@ -3994,27 +3998,34 @@ function renderBookCatalog(filterTerm = "") {
       `;
     }
 
-    card.innerHTML = `
-      <div class="catalog-card-header">
-        <span class="catalog-badge">${unitLabel}</span>
-        <span class="catalog-pages">S. ${ch.start_page}–${ch.end_page} (${ch.page_count} S.)</span>
+    item.innerHTML = `
+      <div class="toc-num-badge" title="${unitLabel}">
+        ${numDisplay}
       </div>
-      <div class="catalog-card-title">${escapeHtml(ch.title)}</div>
-      ${ch.topic_name ? `<div class="catalog-card-topic"><span>📐</span> ${escapeHtml(ch.topic_name)}</div>` : ""}
-      ${sectionsHtml}
-      <div class="catalog-card-footer">
-        <button type="button" class="btn-open-chapter">
-          <span>${isSingleFullBook ? "Gesamtes Buch aufschlagen" : "Kapitel aufschlagen"}</span>
-          <span>📖 →</span>
+      <div class="toc-item-main">
+        <div class="toc-title-row">
+          <div class="toc-item-title">${escapeHtml(ch.title)}</div>
+        </div>
+        <div class="toc-meta-row">
+          <span class="toc-badge-pages">📄 S. ${ch.start_page}–${ch.end_page} (${ch.page_count} S.)</span>
+          ${ch.topic_name ? `<span class="toc-badge-topic">📐 ${escapeHtml(ch.topic_name)}</span>` : ""}
+          ${isSingleFullBook ? `<span class="toc-badge-topic">⭐ Vollständige Ausgabe</span>` : ""}
+        </div>
+        ${sectionsHtml}
+      </div>
+      <div class="toc-item-action">
+        <button type="button" class="btn-toc-open">
+          <span>${isSingleFullBook ? "Gesamtbuch öffnen" : "Aufschlagen"}</span>
+          <span>→</span>
         </button>
       </div>
     `;
 
-    // Klicken auf die Karte öffnet das Kapitel ab Seite 1
-    card.addEventListener("click", () => openChapter(ch, 1));
+    // Klicken auf die Zeile öffnet das Kapitel ab Seite 1
+    item.addEventListener("click", () => openChapter(ch, 1));
 
     // Klicken auf einzelne Unterseiten springt direkt zu dieser Seite
-    card.querySelectorAll(".catalog-section-pill").forEach(pill => {
+    item.querySelectorAll(".toc-sub-pill").forEach(pill => {
       pill.addEventListener("click", (e) => {
         e.stopPropagation();
         const p = parseInt(pill.dataset.targetPage, 10) || 1;
@@ -4022,7 +4033,7 @@ function renderBookCatalog(filterTerm = "") {
       });
     });
 
-    container.appendChild(card);
+    container.appendChild(item);
   });
 }
 

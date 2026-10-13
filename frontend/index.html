@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=6.4">
+  <link rel="stylesheet" href="/static/style.css?v=6.5">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -262,10 +262,10 @@
             </div>
           </div>
 
-          <!-- Ansicht 1: Übersicht aller Lerneinheiten (Kapitel-Katalog) -->
+          <!-- Ansicht 1: Übersicht aller Lerneinheiten (Kapitel-Katalog / Inhaltsverzeichnis) -->
           <div class="book-catalog-view" id="book-catalog-view">
-            <div class="book-catalog-grid" id="book-catalog-grid">
-              <!-- Dynamisch gerenderte Kacheln für alle Lerneinheiten -->
+            <div class="book-catalog-grid book-toc-list" id="book-catalog-grid">
+              <!-- Dynamisch gerenderte Liste für alle Lerneinheiten (Vorschlag A) -->
             </div>
           </div>
 
@@ -1649,7 +1649,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=6.6"></script>
+  <script src="/static/app.js?v=6.7"></script>
   <script src="/static/whiteboard.js?v=5.1"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>
