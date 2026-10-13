@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=6.5">
+  <link rel="stylesheet" href="/static/style.css?v=6.6">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -269,125 +269,99 @@
             </div>
           </div>
 
-          <!-- Ansicht 2: Vollbreiter Dokument-Reader (Keine Seitenleiste daneben) -->
+          <!-- Ansicht 2: Vollbreiter Dokument-Reader (Zen-Modus nach Vorschlag 1) -->
           <div class="book-reader-view" id="book-reader-view" style="display: none;">
-            <!-- Kopfzeile mit Zurück-Button, Drawer-Trigger & Aktionen -->
-            <div class="book-reader-header">
-              <div class="reader-nav-left">
-                <button id="btn-back-to-catalog" class="btn-back-catalog" title="Zurück zur Kapitelübersicht">
-                  <span>←</span> <span>Alle Kapitel</span>
+            <!-- Ultraschlanke 1-zeilige Reader-Kopfzeile (GoodNotes / Apple Books Stil) -->
+            <header class="reader-slim-topbar" id="reader-slim-topbar">
+              <div class="topbar-left">
+                <button type="button" id="btn-back-to-catalog" class="btn-reader-icon-text" title="Zurück zur Kapitelübersicht">
+                  <span class="btn-icon">←</span>
+                  <span class="btn-label">Kapitel</span>
                 </button>
-                <button id="btn-open-toc-drawer" class="btn-toc-drawer-toggle" title="Schnellwechsel zu einem anderen Kapitel">
-                  <span>☰</span> <span>Kapitel wechseln</span>
-                </button>
-                <div class="book-breadcrumb" id="book-reader-breadcrumb">
-                  <span id="bc-book-name">Mathematik 7</span> &rsaquo; 
-                  <span id="bc-chapter-name" class="active">Lerneinheit 1</span>
-                </div>
               </div>
 
-              <div class="book-reader-actions">
-                <a id="btn-book-download-pdf" class="btn-action-secondary" href="#" target="_blank" download>
-                  💾 Kapitel PDF
+              <div class="topbar-center" id="reader-page-info-wrap" title="Aktuelle Lerneinheit & Seite">
+                <span class="reader-chapter-title-slim" id="reader-chapter-title-slim">Lerneinheit</span>
+                <span class="reader-page-counter-slim" id="reader-page-counter-slim">Seite 1</span>
+              </div>
+
+              <div class="topbar-right">
+                <!-- Zeichentools ein-/ausklappen -->
+                <button type="button" class="btn-reader-action-icon" id="btn-toggle-ink-toolbar" title="Zeichenwerkzeuge ein-/ausblenden">
+                  <span class="btn-icon">✏️</span>
+                </button>
+
+                <!-- Inhaltsverzeichnis / Kapitel wechseln Drawer -->
+                <button type="button" class="btn-reader-action-icon" id="btn-open-toc-drawer" title="Inhaltsverzeichnis & Themen">
+                  <span class="btn-icon">📑</span>
+                </button>
+
+                <!-- PDF Download -->
+                <a id="btn-book-download-pdf" class="btn-reader-action-icon" href="#" target="_blank" download title="Kapitel als PDF herunterladen">
+                  <span class="btn-icon">💾</span>
                 </a>
               </div>
+            </header>
+
+            <!-- Schwebende, ein-/ausklappbare Stift-Palette (Standard: eingeklappt!) -->
+            <div class="reader-floating-ink-palette" id="reader-floating-ink-palette" style="display: none;">
+              <div class="ink-tool-group">
+                <button type="button" class="btn-ink-tool active" id="btn-book-pen-only" title="Nur Apple Pencil zeichnet (Handballenschutz aktiviert)">
+                  <span class="ink-tool-label">✏️ Nur Stift</span>
+                </button>
+                <button type="button" class="btn-ink-tool active" data-tool="pen" title="Kugelschreiber">
+                  <span class="ink-tool-label">Stift</span>
+                </button>
+                <button type="button" class="btn-ink-tool" data-tool="highlighter" title="Textmarker">
+                  <span class="ink-tool-label">Marker</span>
+                </button>
+                <button type="button" class="btn-ink-tool" data-tool="eraser" title="Radierer">
+                  <span class="ink-tool-label">Radierer</span>
+                </button>
+              </div>
+
+              <div class="ink-color-group" id="book-ink-colors">
+                <button type="button" class="ink-color-dot active" data-color="#2563eb" style="background-color: #2563eb;" title="Blau"></button>
+                <button type="button" class="ink-color-dot" data-color="#0f172a" style="background-color: #0f172a;" title="Schwarz"></button>
+                <button type="button" class="ink-color-dot" data-color="#dc2626" style="background-color: #dc2626;" title="Rot"></button>
+                <button type="button" class="ink-color-dot" data-color="#16a34a" style="background-color: #16a34a;" title="Grün"></button>
+                <button type="button" class="ink-color-dot" data-color="#facc15" style="background-color: #facc15;" title="Gelb"></button>
+              </div>
+
+              <div class="ink-action-group">
+                <button type="button" class="btn-ink-action" id="btn-book-ink-undo" title="Letzten Strich rückgängig machen">↩</button>
+                <button type="button" class="btn-ink-action" id="btn-book-ink-clear" title="Alle Notizen auf dieser Seite löschen">🗑️</button>
+                <span id="book-ink-save-status" class="ink-save-status" title="Autosave-Status">✓ Gespeichert</span>
+              </div>
+
+              <div class="page-zoom-controls">
+                <button type="button" id="btn-book-zoom-width" class="btn-zoom-mode active" title="Auf Dokumentbreite anpassen">↔ Breite</button>
+                <button type="button" id="btn-book-zoom-fit" class="btn-zoom-mode" title="Ganze Seite einpassen">⛶ Einpassen</button>
+              </div>
+
+              <button type="button" class="btn-close-palette" id="btn-close-ink-palette" title="Palette schließen">✕</button>
             </div>
 
-            <!-- Kapitel-Info-Banner mit Schnellwechsel zu Vorherigem / Nächstem Kapitel -->
-            <div class="book-chapter-info-card" id="book-chapter-info-card">
-              <div class="chapter-info-main">
-                <div class="chapter-badge-title-wrap">
-                  <span class="chapter-badge" id="reader-chapter-badge">Einheit 1</span>
-                  <h3 id="reader-chapter-title">Lerneinheit 1: Zahlen und Rechenoperationen</h3>
-                </div>
-                <div class="chapter-tags">
-                  <span class="tag-topic" id="reader-chapter-topic">📐 Rationale Zahlen</span>
-                  <span class="tag-pages" id="reader-chapter-pages">S. 10 – 21 (12 Seiten)</span>
-                </div>
-                <p class="chapter-focus-text" id="reader-chapter-focus">
-                  Rationale Zahlen ordnen, Rechenoperationen mit Vorzeichen, Potenzen...
-                </p>
+            <!-- Der Hauptbereich: Vollbild-Seitenanzeige mit dezenten Schwebepfeilen -->
+            <div class="book-page-canvas-wrapper" id="book-page-canvas-wrapper">
+              <!-- Subtile Schwebepfeile zum Blättern (links & rechts) -->
+              <button type="button" class="reader-floating-nav-btn nav-prev" id="btn-floating-prev" title="Vorherige Seite (oder mit 2 Fingern nach rechts wischen)">‹</button>
+              <button type="button" class="reader-floating-nav-btn nav-next" id="btn-floating-next" title="Nächste Seite (oder mit 2 Fingern nach links wischen)">›</button>
+
+              <div class="book-page-loading" id="book-page-loading" style="display: none;">
+                <div class="spinner"></div>
+                <span>Lade Buchseite in Retina-Auflösung...</span>
               </div>
-              <div class="chapter-quick-nav">
-                <button id="btn-reader-prev-chapter" class="btn-chapter-quick" title="Vorherige Lerneinheit">◀ Vorh. Einheit</button>
-                <button id="btn-reader-next-chapter" class="btn-chapter-quick" title="Nächste Lerneinheit">Nächste Einheit ▶</button>
+              <div class="book-page-stage" id="book-page-stage">
+                <img id="book-page-img" class="book-page-img mode-width" src="" alt="Buchseite" />
+                <canvas id="book-annotation-canvas" class="book-annotation-canvas"></canvas>
               </div>
             </div>
 
-            <!-- Interaktiver Seiten-Viewer in voller Dokumentbreite -->
-            <div class="book-page-viewer-card full-width-viewer">
-              <!-- Paginierungs- & Stift-Steuerung oben -->
-              <div class="book-viewer-controls">
-                <div class="page-nav-btns">
-                  <button id="btn-book-prev-page" class="btn-page-nav" title="Vorherige Seite">◀ Vorherige Seite</button>
-                  <span class="book-page-counter" id="book-page-counter">Seite 1 von 12 <small id="book-page-absolute">(Buchseite 10)</small></span>
-                  <button id="btn-book-next-page" class="btn-page-nav" title="Nächste Seite">Nächste Seite ▶</button>
-                </div>
-
-                <!-- Direkt-Sprung zu Unterabschnitten / Inhaltsverzeichnis-Eintrag -->
-                <div class="book-section-picker-wrap" id="book-section-picker-wrap" style="display: none;">
-                  <span class="book-section-picker-icon">📑</span>
-                  <select id="book-section-select" class="book-section-dropdown" title="Direkt zu einem Unterabschnitt oder Thema springen">
-                    <option value="">Abschnitt wählen...</option>
-                  </select>
-                </div>
-
-                <!-- Handschrift- & Notizen-Toolbar (Apple Pencil / Touch) -->
-                <div class="book-ink-toolbar" id="book-ink-toolbar">
-                  <div class="ink-tool-group">
-                    <button type="button" class="btn-ink-tool active" id="btn-book-pen-only" title="Nur Apple Pencil zeichnet (Handballenschutz aktiviert)">
-                      <span class="ink-tool-label">✏️ Nur Stift</span>
-                    </button>
-                    <button type="button" class="btn-ink-tool active" data-tool="pen" title="Kugelschreiber / Apple Pencil">
-                      <span class="ink-tool-label">Stift</span>
-                    </button>
-                    <button type="button" class="btn-ink-tool" data-tool="highlighter" title="Textmarker (Halbtransparent)">
-                      <span class="ink-tool-label">Marker</span>
-                    </button>
-                    <button type="button" class="btn-ink-tool" data-tool="eraser" title="Radierer (Striche entfernen)">
-                      <span class="ink-tool-label">Radierer</span>
-                    </button>
-                  </div>
-
-                  <div class="ink-color-group" id="book-ink-colors">
-                    <button type="button" class="ink-color-dot active" data-color="#2563eb" style="background-color: #2563eb;" title="Blau"></button>
-                    <button type="button" class="ink-color-dot" data-color="#0f172a" style="background-color: #0f172a;" title="Schwarz"></button>
-                    <button type="button" class="ink-color-dot" data-color="#dc2626" style="background-color: #dc2626;" title="Rot"></button>
-                    <button type="button" class="ink-color-dot" data-color="#16a34a" style="background-color: #16a34a;" title="Grün"></button>
-                    <button type="button" class="ink-color-dot" data-color="#facc15" style="background-color: #facc15;" title="Gelb"></button>
-                  </div>
-
-                  <div class="ink-action-group">
-                    <button type="button" class="btn-ink-action" id="btn-book-ink-undo" title="Letzten Strich rückgängig machen">↩</button>
-                    <button type="button" class="btn-ink-action" id="btn-book-ink-clear" title="Alle Notizen auf dieser Seite löschen">🗑️</button>
-                    <span id="book-ink-save-status" class="ink-save-status" title="Autosave-Status">✓ Gespeichert</span>
-                  </div>
-                </div>
-
-                <div class="page-zoom-controls">
-                  <button id="btn-book-zoom-width" class="btn-zoom-mode active" title="Auf volle Dokumentbreite anpassen (Standard)">↔ Volle Breite</button>
-                  <button id="btn-book-zoom-fit" class="btn-zoom-mode" title="Ganze Seite vertikal einpassen">⛶ Ganze Seite</button>
-                </div>
-              </div>
-
-              <!-- Vorschau-Fläche mit 100% Breite & scharfem Retina-PNG & Inking Canvas -->
-              <div class="book-page-canvas-wrapper" id="book-page-canvas-wrapper">
-                <div class="book-page-loading" id="book-page-loading" style="display: none;">
-                  <div class="spinner"></div>
-                  <span>Lade Buchseite in Retina-Auflösung...</span>
-                </div>
-                <div class="book-page-stage" id="book-page-stage">
-                  <img id="book-page-img" class="book-page-img mode-width" src="" alt="Buchseite" />
-                  <canvas id="book-annotation-canvas" class="book-annotation-canvas"></canvas>
-                </div>
-              </div>
-
-              <!-- Schnelle Mini-Pill-Leiste unten -->
-              <div class="book-page-strip-container">
-                <div class="book-strip-label">Schnellauswahl Seite:</div>
-                <div class="book-page-strip" id="book-page-strip">
-                  <!-- Dynamische Seiten-Pills -->
-                </div>
+            <!-- Dezent schlanke Seitenleiste unten (Pills zum Antippen & Anzeige) -->
+            <div class="reader-bottom-strip-wrap" id="reader-bottom-strip-wrap">
+              <div class="book-page-strip" id="book-page-strip">
+                <!-- Dynamische Seiten-Pills -->
               </div>
             </div>
           </div>
@@ -1649,7 +1623,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=6.7"></script>
+  <script src="/static/app.js?v=6.8"></script>
   <script src="/static/whiteboard.js?v=5.1"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>

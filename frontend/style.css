@@ -3790,54 +3790,313 @@ body.reader-zen-mode .book-reader-view {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
-/* Schlanke, schwebende Reader-Steuerleiste */
-body.reader-zen-mode .book-reader-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(11, 15, 25, 0.88);
+/* 1. Ultraschlanke, 1-zeilige Reader-Kopfzeile (GoodNotes / Apple Books Stil) */
+.reader-slim-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  background: rgba(11, 15, 25, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
-  padding: 8px 16px;
+  z-index: 100;
+  flex-shrink: 0;
 }
 
-/* Info-Card im Zen-Modus ausblenden für maximalen Leseplatz */
-body.reader-zen-mode .book-chapter-info-card {
-  display: none !important;
+.btn-reader-icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-/* Buch-Viewer füllt den Rest der 100dvh */
-body.reader-zen-mode .book-page-viewer-card {
-  flex: 1;
+.btn-reader-icon-text:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.topbar-center {
   display: flex;
-  flex-direction: column;
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
-  margin: 0;
-  padding: 6px 14px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
 }
 
-body.reader-zen-mode .book-page-canvas-wrapper {
-  flex: 1;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+.reader-chapter-title-slim {
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 2. Vollbreiter Reader View (Keine Seitenleiste daneben) */
-.book-reader-view {
+.reader-page-counter-slim {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-light);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.topbar-right {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
+  align-items: center;
+  gap: 8px;
 }
 
-.book-reader-header {
+.btn-reader-action-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-reader-action-icon:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-reader-action-icon.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 12px var(--theme-glow);
+}
+
+/* 2. Schwebende, ein-/ausklappbare Stift-Palette (Vorschlag 1) */
+.reader-floating-ink-palette {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(18, 22, 34, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 30px;
+  padding: 6px 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.2);
+  max-width: 95vw;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.reader-floating-ink-palette::-webkit-scrollbar {
+  display: none;
+}
+
+.btn-close-palette {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-close-palette:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+/* 3. Subtile Schwebepfeile zum Blättern (links & rechts am Displayrand) */
+.reader-floating-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 72px;
+  background: rgba(15, 20, 30, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  user-select: none;
+  border-radius: 10px;
+}
+
+.reader-floating-nav-btn.nav-prev {
+  left: 12px;
+}
+
+.reader-floating-nav-btn.nav-next {
+  right: 12px;
+}
+
+.reader-floating-nav-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.75);
+  color: #fff;
+  border-color: var(--accent);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.reader-floating-nav-btn:disabled {
+  opacity: 0.12;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  .reader-floating-nav-btn {
+    width: 32px;
+    height: 52px;
+    font-size: 1.5rem;
+  }
+  .reader-floating-nav-btn.nav-prev { left: 4px; }
+  .reader-floating-nav-btn.nav-next { right: 4px; }
+}
+
+/* 4. Hauptanzeige: Vollbild-Seitenanzeige ohne Abschneiden */
+body.reader-zen-mode .book-page-canvas-wrapper {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #080a0f;
+  padding: 6px 0;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+}
+
+body.reader-zen-mode .book-page-stage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Modus Volle Breite: Flüssiges vertikales Scrollen */
+body.reader-zen-mode .book-page-img.mode-width {
+  width: 100% !important;
+  max-width: 1050px;
+  height: auto !important;
+  display: block;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+
+/* Modus Ganze Seite einpassen: 100% Sichtbar ohne Scrollen & ohne Abschneiden */
+body.reader-zen-mode .book-page-img.mode-fit {
+  max-height: calc(100dvh - 90px);
+  width: auto !important;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+
+/* 5. Schlanke Seitenleiste unten */
+.reader-bottom-strip-wrap {
+  flex-shrink: 0;
+  height: 38px;
+  background: rgba(11, 15, 25, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  overflow-x: auto;
+}
+
+.reader-bottom-strip-wrap .book-page-strip {
+  display: flex;
+  gap: 6px;
+  padding: 2px 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.reader-bottom-strip-wrap .book-page-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.reader-bottom-strip-wrap .book-page-pill {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.reader-bottom-strip-wrap .book-page-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.reader-bottom-strip-wrap .book-page-pill.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 10px var(--theme-glow);
+}
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 14px;

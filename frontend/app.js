@@ -4050,31 +4050,24 @@ function openChapter(ch, targetPage = 1) {
   if (readerView) readerView.style.display = "flex";
   document.body.classList.add("reader-zen-mode");
 
-  // Breadcrumbs & Header
-  const bcBook = document.getElementById("bc-book-name");
-  const bcChap = document.getElementById("bc-chapter-name");
-  if (bcBook && activeBookDetail) bcBook.textContent = activeBookDetail.title;
-  if (bcChap) bcChap.textContent = ch.title;
-
-  const badgeEl = document.getElementById("reader-chapter-badge");
-  const titleEl = document.getElementById("reader-chapter-title");
-  const topicEl = document.getElementById("reader-chapter-topic");
-  const pagesEl = document.getElementById("reader-chapter-pages");
-  const focusEl = document.getElementById("reader-chapter-focus");
+  // Ultraschlanke Kopfzeile (Vorschlag 1)
+  const titleSlim = document.getElementById("reader-chapter-title-slim");
+  const counterSlim = document.getElementById("reader-page-counter-slim");
   const downloadBtn = document.getElementById("btn-book-download-pdf");
 
-  if (badgeEl) badgeEl.textContent = ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`;
-  if (titleEl) titleEl.textContent = ch.title;
-  if (topicEl) topicEl.textContent = `📐 ${ch.topic_name || "Mathematik 7"}`;
-  if (pagesEl) pagesEl.textContent = `S. ${ch.start_page} – ${ch.end_page} (${ch.page_count} Seiten)`;
-  if (focusEl) focusEl.textContent = ch.focus || "Lerneinheit aus dem Schulbuch.";
+  if (titleSlim) {
+    const unitLabel = ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`;
+    titleSlim.textContent = `${unitLabel}: ${ch.title}`;
+    titleSlim.title = `${unitLabel}: ${ch.title}`;
+  }
+  if (counterSlim) {
+    const absPage = ch.start_page + currentChapterPage - 1;
+    counterSlim.textContent = `Seite ${currentChapterPage} von ${ch.page_count} (S. ${absPage})`;
+  }
   if (downloadBtn) {
     downloadBtn.href = ch.file_url;
     downloadBtn.setAttribute("download", ch.filename);
   }
-
-  // Vorh. / Nächste Einheit Buttons aktualisieren
-  updateChapterNavButtons();
 
   // Drawer aktiv markieren
   updateDrawerActiveState();
@@ -4087,6 +4080,8 @@ function openChapter(ch, targetPage = 1) {
   renderChapterPage();
 
   // Nach oben scrollen für optimales Leseerlebnis
+  const canvasWrap = document.getElementById("book-page-canvas-wrapper");
+  if (canvasWrap) canvasWrap.scrollTop = 0;
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -4122,6 +4117,16 @@ function navigateChapter(delta) {
   const targetIdx = idx + delta;
   if (targetIdx >= 0 && targetIdx < chaps.length) {
     openChapter(chaps[targetIdx], 1);
+  }
+}
+
+// Schnelles Blättern im Kapitel (per 2-Finger-Swipe, Schwebepfeile oder Tastatur)
+function flipBookPage(delta) {
+  if (!activeChapter) return;
+  const targetPage = currentChapterPage + delta;
+  if (targetPage >= 1 && targetPage <= activeChapter.page_count) {
+    currentChapterPage = targetPage;
+    renderChapterPage();
   }
 }
 
@@ -4282,18 +4287,26 @@ async function renderChapterPage() {
   }
 
   const counterEl = document.getElementById("book-page-counter");
+  const counterSlim = document.getElementById("reader-page-counter-slim");
   const prevBtn = document.getElementById("btn-book-prev-page");
   const nextBtn = document.getElementById("btn-book-next-page");
+  const floatPrev = document.getElementById("btn-floating-prev");
+  const floatNext = document.getElementById("btn-floating-next");
   const imgEl = document.getElementById("book-page-img");
   const loadingEl = document.getElementById("book-page-loading");
 
   const absPage = activeChapter.start_page + currentChapterPage - 1;
+  if (counterSlim) {
+    counterSlim.textContent = `Seite ${currentChapterPage} von ${activeChapter.page_count} (S. ${absPage})`;
+  }
   if (counterEl) {
     counterEl.innerHTML = `Seite ${currentChapterPage} von ${activeChapter.page_count} <small id="book-page-absolute">(Buchseite ${absPage})</small>`;
   }
 
   if (prevBtn) prevBtn.disabled = currentChapterPage <= 1;
   if (nextBtn) nextBtn.disabled = currentChapterPage >= activeChapter.page_count;
+  if (floatPrev) floatPrev.disabled = currentChapterPage <= 1;
+  if (floatNext) floatNext.disabled = currentChapterPage >= activeChapter.page_count;
 
   // Schnell-Sprung-Dropdown für Unterthemen / Inhaltsverzeichnis-Einträge synchronisieren
   const sectionWrap = document.getElementById("book-section-picker-wrap");
@@ -4450,27 +4463,65 @@ function setupBookBrowserEvents() {
     nextChapBtn.addEventListener("click", () => navigateChapter(1));
   }
 
-  // Seiten-Navigation Buttons
+  // Seiten-Navigation: Schwebepfeile links & rechts
+  const floatPrev = document.getElementById("btn-floating-prev");
+  const floatNext = document.getElementById("btn-floating-next");
+  if (floatPrev) {
+    floatPrev.addEventListener("click", (e) => {
+      e.stopPropagation();
+      flipBookPage(-1);
+    });
+  }
+  if (floatNext) {
+    floatNext.addEventListener("click", (e) => {
+      e.stopPropagation();
+      flipBookPage(1);
+    });
+  }
+
+  // Seiten-Navigation Buttons (Fallback falls vorhanden)
   const prevBtn = document.getElementById("btn-book-prev-page");
   const nextBtn = document.getElementById("btn-book-next-page");
 
   if (prevBtn) {
-    prevBtn.addEventListener("click", () => {
-      if (activeChapter && currentChapterPage > 1) {
-        currentChapterPage--;
-        renderChapterPage();
-      }
-    });
+    prevBtn.addEventListener("click", () => flipBookPage(-1));
   }
 
   if (nextBtn) {
-    nextBtn.addEventListener("click", () => {
-      if (activeChapter && currentChapterPage < activeChapter.page_count) {
-        currentChapterPage++;
-        renderChapterPage();
-      }
+    nextBtn.addEventListener("click", () => flipBookPage(1));
+  }
+
+  // Schwebende Stift-Palette Ein-/Ausklappen (Vorschlag 1)
+  const btnToggleInk = document.getElementById("btn-toggle-ink-toolbar");
+  const inkPalette = document.getElementById("reader-floating-ink-palette");
+  const btnClosePalette = document.getElementById("btn-close-ink-palette");
+
+  if (btnToggleInk && inkPalette) {
+    btnToggleInk.addEventListener("click", () => {
+      const isHidden = inkPalette.style.display === "none";
+      inkPalette.style.display = isHidden ? "flex" : "none";
+      btnToggleInk.classList.toggle("active", isHidden);
     });
   }
+
+  if (btnClosePalette && inkPalette) {
+    btnClosePalette.addEventListener("click", () => {
+      inkPalette.style.display = "none";
+      if (btnToggleInk) btnToggleInk.classList.remove("active");
+    });
+  }
+
+  // Tastatur-Navigation (Links / Rechts Pfeiltasten zum Blättern)
+  window.addEventListener("keydown", (e) => {
+    const readerView = document.getElementById("book-reader-view");
+    if (readerView && readerView.style.display !== "none") {
+      if (e.key === "ArrowLeft") {
+        flipBookPage(-1);
+      } else if (e.key === "ArrowRight") {
+        flipBookPage(1);
+      }
+    }
+  });
 
   // Zoom Fit / Width Umschalter
   const zoomFitBtn = document.getElementById("btn-book-zoom-fit");
@@ -4599,42 +4650,68 @@ function initBookInking() {
   bookAnnotationCanvas.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false, capture: true });
   bookAnnotationCanvas.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false, capture: true });
 
-  // 1:1 Handballenschutz wie Whiteboard: Nur genau 2 Finger scrollen, 1 Finger/Handballen tut NICHTS!
+  // 1:1 Handballenschutz: 2 Finger wischen horizontal -> Blättern! 2 Finger vertikal -> Scrollen!
+  let twoFingerTouchStartX = null;
   let twoFingerTouchStartY = null;
   let twoFingerScrollStartTop = 0;
+  let twoFingerPageFlipped = false;
 
   const handleTwoFingerTouchStart = (e) => {
-    e.preventDefault();
     if (e.touches.length === 2) {
+      e.preventDefault();
       if (isBookDrawing) {
         cancelCurrentBookStroke();
       }
+      twoFingerTouchStartX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      twoFingerTouchStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      twoFingerPageFlipped = false;
       const wrap = document.getElementById("book-page-canvas-wrapper");
       if (wrap) {
-        twoFingerTouchStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
         twoFingerScrollStartTop = wrap.scrollTop;
       }
     } else {
+      twoFingerTouchStartX = null;
       twoFingerTouchStartY = null;
+      twoFingerPageFlipped = false;
     }
   };
 
   const handleTwoFingerTouchMove = (e) => {
-    e.preventDefault();
-    if (e.touches.length === 2 && twoFingerTouchStartY !== null) {
-      const wrap = document.getElementById("book-page-canvas-wrapper");
-      if (wrap) {
-        const currentMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        const dy = currentMidY - twoFingerTouchStartY;
-        wrap.scrollTop = twoFingerScrollStartTop - dy;
+    if (e.touches.length === 2 && twoFingerTouchStartX !== null && twoFingerTouchStartY !== null) {
+      e.preventDefault();
+      const currentMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const currentMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const dx = currentMidX - twoFingerTouchStartX;
+      const dy = currentMidY - twoFingerTouchStartY;
+
+      // 2-Finger Horizontaler Wischgesten-Trigger zum Blättern
+      if (!twoFingerPageFlipped && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        twoFingerPageFlipped = true;
+        if (dx < -50) {
+          // 2 Finger nach links gewischt -> Nächste Seite
+          flipBookPage(1);
+        } else if (dx > 50) {
+          // 2 Finger nach rechts gewischt -> Vorherige Seite
+          flipBookPage(-1);
+        }
+        return;
+      }
+
+      // 2-Finger Vertikales Scrollen falls nicht geblättert wurde
+      if (!twoFingerPageFlipped) {
+        const wrap = document.getElementById("book-page-canvas-wrapper");
+        if (wrap) {
+          wrap.scrollTop = twoFingerScrollStartTop - dy;
+        }
       }
     }
   };
 
   const handleTwoFingerTouchEnd = (e) => {
-    e.preventDefault();
     if (e.touches.length < 2) {
+      twoFingerTouchStartX = null;
       twoFingerTouchStartY = null;
+      twoFingerPageFlipped = false;
     }
   };
 
