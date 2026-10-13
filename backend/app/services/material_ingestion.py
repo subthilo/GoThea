@@ -157,6 +157,8 @@ def pre_analyze_upload(
 
     predicted_title = clean_title_from_filename(filename)
     predicted_kind = detect_kind_from_filename_and_text(filename, extracted_text)
+    if is_pdf and page_count >= 20 and predicted_kind in ("Arbeitsblatt", "Hefterseite", "Buchauszug"):
+        predicted_kind = "Buch"
     if not subject_id_hint:
         from backend.app.services.timetable_analyzer import is_timetable_document, get_or_create_organisation_subject
         if predicted_kind == "Stundenplan" or is_timetable_document(filename, extracted_text):
@@ -362,6 +364,14 @@ def confirm_and_save_material(
     except Exception:
         pass
 
+    # Automatische Buchsegmentierung im Hintergrund anstoßen (falls Schulbuch)
+    try:
+        from backend.app.services.book_segmentation import is_candidate_book, trigger_background_book_segmentation
+        if is_candidate_book(material):
+            trigger_background_book_segmentation(material.id)
+    except Exception:
+        pass
+
     return material
 
 def render_material_page_as_image(
@@ -430,7 +440,41 @@ def update_material(db: Session, material_id: str, request: MaterialUpdateReques
         material.title = request.title.strip()
 
     if request.kind is not None and request.kind.strip():
-        material.kind = request.kind.strip()
+        old_kind = material.kind
+        new_kind = request.kind.strip()
+        material.kind = new_kind
+
+        is_book = (
+            new_kind.lower() in ("buch", "lehrbuch")
+            or (new_kind == "Buchauszug" and (material.page_count or 0) >= 20)
+        )
+        if is_book:
+            material.kind = "Buch"
+            # Dossier auf lehrbuch anpassen oder anlegen
+            if material.dossier_id:
+                from backend.app.models.dossier import Dossier
+                dossier = db.query(Dossier).filter_by(id=material.dossier_id).first()
+                if dossier:
+                    dossier.kind = "lehrbuch"
+                    if not (dossier.title or "").startswith("Lehrbuch:"):
+                        dossier.title = f"Lehrbuch: {material.title}"
+            else:
+                from backend.app.services.inbox_service import find_or_create_dossier
+                dossier = find_or_create_dossier(
+                    db,
+                    user_id=material.user_id,
+                    subject_id=material.subject_id,
+                    topic_id=material.topic_id,
+                    dossier_title=f"Lehrbuch: {material.title}",
+                    kind="lehrbuch"
+                )
+                material.dossier_id = dossier.id
+
+            # Sofort Segmentierung anstoßen, falls noch unsegmentiert
+            children_count = db.query(Material).filter_by(parent_id=material.id).count()
+            if children_count == 0:
+                from backend.app.services.book_segmentation import trigger_background_book_segmentation
+                trigger_background_book_segmentation(material.id)
 
     if request.summary is not None:
         material.summary = request.summary.strip() or None

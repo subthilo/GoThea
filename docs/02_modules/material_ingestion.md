@@ -59,20 +59,40 @@ Statt externer Browser-Tabs (die auf iPadOS Safari oft von Pop-Up-Blockern unter
 
 ---
 
-## 5. High-Performance Rendering Engine (Dual-Engine Architektur)
+## 5. Intelligenter Seiten-Rendering- & Caching-Dienst (`page_renderer.py`)
 
-Um Dokumente auch auf ressourcenschonender Edge-Hardware (Raspberry Pi 4, 32-Bit ARM `armv7l`) ohne Speicherengpässe oder lange Ladezeiten bereitzustellen:
+Um sämtliche Dokumente (Arbeitsblätter, Hefterseiten, Tests und Buchauszüge) auf dem Raspberry Pi blitzschnell und ohne Speicherengpässe bereitzustellen, betreibt GoThea den `PageRenderingService` ([`backend/app/services/page_renderer.py`](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/backend/app/services/page_renderer.py)) als zentralen Hintergrund-Dienst:
 
-* **Primäre Engine (Linux & Raspberry Pi): System-natives Poppler `pdftoppm`**
-  * Verwendet `/usr/bin/pdftoppm` mit den Parametern `-png -r 150 -f {page} -l {page} -singlefile`.
-  * Ausführung in nativer C-Performance (< 50 ms pro Seite), extrem geringer RAM-Footprint.
-  * Keine C++ Kompilierung beim `pip install`-Schritt (verhindert Build-Timeouts auf 32-Bit ARM).
-* **Fallback Engine (macOS & Entwicklung): PyMuPDF (`fitz`)**
-  * Wird automatisch genutzt, falls `pdftoppm` nicht im Pfad gefunden wird (z. B. auf lokalen Entwickler-Macs).
-* **Bild-Direktauslieferung:**
-  * Hochgeladene Fotos (PNG/JPEG) von Heftern werden ohne Umwandlung direkt mit entsprechendem MIME-Type ausgeliefert.
-* **Optimierte Abhängigkeiten:**
-  * `pymupdf` wurde aus `requirements.txt` entfernt, sodass der Raspberry Pi schlank und ohne schwere Toolchains deployt werden kann.
+### 1. 3-stufige Prioritäts-Warteschlange (`PriorityQueue`)
+Der Renderer unterscheidet drei strikte Prioritätsstufen:
+
+| Stufe | Priorität | Auslöser | Verhalten |
+|---|---|---|---|
+| **1 (LIVE)** | Höchste | Direkter Seitenabruf im Browser (`GET /preview`) | Fast-Path: Sofortige Auslieferung aus Cache (< 5 ms) oder direktes Rendern mit 100% CPU. Pausiert Hintergrund-Jobs sofort. |
+| **2 (PREFETCH)** | Hoch | Blättern zu Seite $P$ | Stößt $P-1$, $P+1$ und $P+2$ mit Priorität 2 an. Seiten sind beim Weiterblättern bereits geladen. |
+| **3 (BACKGROUND)** | Niedrig | Neuer Upload / App-Start | Durchläuft im Leerlauf alle noch ungerenderten Seiten aller Dokumente. |
+
+### 2. In-Flight Synchronisation (Doppel-Render-Schutz)
+* Wenn mehrere Browser-Clients (z. B. Lehrer und Schülerin) zeitgleich dieselbe Seite anfordern, synchronisiert ein thread-sicheres `threading.Event`-Dictionary (`_in_flight_renders`) die Anfragen.
+* Die erste Anfrage rendert das Bild; alle parallelen Anfragen warten auf dasselbe Event und lesen die fertige Datei direkt aus dem Cache, statt die CPU doppelt zu belasten.
+
+### 3. CPU-Schonung auf dem Raspberry Pi
+* Sobald eine Live-Anfrage eintrifft (`_live_in_progress_count > 0`), setzt der Hintergrund-Worker sofort aus.
+* Zwischen Hintergrund-Jobs werden Mikropausen (40 ms) eingelegt, um die Systemtemperatur des Raspberry Pi niedrig zu halten und andere Prozesse nicht zu blockieren.
+
+### 4. Persistenter Mtime-Disk-Cache
+* Cache-Dateien werden unter `data/<env>/cache/pages/{material_id}_p{page}_{mtime}.jpg` gespeichert.
+* Rendern erfolgt via `pdftoppm -jpeg -r 120 -f {page} -l {page}` in gestochen scharfer 120 DPI Retina-Auflösung.
+* Bei Dokumentänderungen (z. B. Seiten-Reorder) werden veraltete Cache-Dateien sofort invalidiert.
+
+---
+
+## 5.1 Automatische Schulbuch-Erkennung & Ingestion-Routing
+
+Beim Upload und bei der Inbox-Verarbeitung greift eine intelligente Heuristik zur Erkennung von Büchern:
+1. **Die $\ge 20$-Seiten Regel**: Jedes PDF mit 20 oder mehr Seiten wird in `pre_analyze_upload` und `process_single_inbox_file` automatisch als `kind="Buch"` klassifiziert.
+2. **Automatischer Segmentierungs-Trigger**: Erfüllt ein Dokument die Kriterien eines Schulbuchs (`is_candidate_book`), stößt das System sofort nach dem Speichern asynchron die Hintergrund-Segmentierung an (`trigger_background_book_segmentation`).
+3. **Nachträgliche Segmentierung**: Ändern Eltern den Dokumenttyp im Bearbeiten-Modal (`PATCH /api/v1/materials/{id}`) auf `Buch`, wird die Hintergrund-Segmentierung sofort nachträglich gestartet.
 
 ---
 

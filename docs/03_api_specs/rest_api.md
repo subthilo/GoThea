@@ -604,4 +604,154 @@
 * **Beschreibung:** Liefert Detaildaten einer einzelnen Lerneinheit eines Schulbuchs.
 * **Status:** `200 OK` (oder `404 Not Found`).
 
+### `POST /api/v1/books/seed`
+* **Beschreibung:** Manueller Re-Import des vorinstallierten Mathematik-7 Lehrbuchs (geschützt durch Eltern-PIN).
+* **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "book_id": "mat_book_math_7"
+}
+```
+
+---
+
+## 8. Elternmodus & PIN-Authentifizierung (`/api/v1/auth/parent`)
+
+### `GET /api/v1/auth/parent/status`
+* **Beschreibung:** Prüft, ob die Eltern-Session aktuell aktiv ist und liefert Lockout-Informationen bei Fehlversuchen.
+* **Response (200 OK):**
+```json
+{
+  "is_unlocked": true,
+  "is_locked_out": false,
+  "failed_attempts": 0,
+  "remaining_lockout_seconds": 0
+}
+```
+
+### `POST /api/v1/auth/parent/unlock`
+* **Beschreibung:** Authentifiziert Eltern via 4-stelliger PIN und setzt ein signiertes `gothea_parent_session` Cookie (1h gültig).
+* **Request:**
+```json
+{
+  "pin": "1234"
+}
+```
+* **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Elternmodus erfolgreich freigeschaltet."
+}
+```
+* **Fehlercodes:**
+  * `401 Unauthorized`: Falsche PIN eingegeben.
+  * `429 Too Many Requests`: Gesperrt nach 5 Fehlversuchen (Lockout aktiv für 5 Minuten).
+
+### `POST /api/v1/auth/parent/lock`
+* **Beschreibung:** Sperrt den Elternmodus sofort und löscht das Session-Cookie.
+* **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Elternmodus gesperrt."
+}
+```
+
+---
+
+## 9. Übungs-Arena, Sprachausgabe & Didaktik-Scores (`/api/v1/exercises`)
+
+### `POST /api/v1/exercises/generate`
+* **Beschreibung:** Ruft eine Übung ab. Liefert bevorzugt Übungen aus dem vorgerenderten Hintergrund-Pool (`< 10 ms`), sonst On-Demand Generierung.
+* **Request:**
+```json
+{
+  "exercise_type": "fill_in_the_blank",
+  "subject_id": "sub_english",
+  "topic_name": "Grammar & Tenses",
+  "difficulty": "mittel",
+  "audio_enabled": true
+}
+```
+
+### `POST /api/v1/exercises/{id}/check-blanks`
+* **Beschreibung:** Validiert alle Lücken einer Übung (Handschrift via Vision OCR oder getippt).
+* **Request:**
+```json
+{
+  "items": [
+    { "blank_id": 1, "crop_image_base64": "data:image/jpeg;base64,..." },
+    { "blank_id": 2, "user_text": "went" }
+  ],
+  "audio_enabled": false
+}
+```
+
+### `POST /api/v1/exercises/check-single-blank`
+* **Beschreibung:** Schnelle Einzelprüfung einer einzelnen Lücke für interaktives Sofort-Feedback.
+
+### `POST /api/v1/exercises/tts`
+* **Beschreibung:** Synthetisiert Sprache für Sätze und Erklärungen mit mathematisch-phonetischer Normalisierung (`clean_text_for_speech`).
+* **Request:**
+```json
+{
+  "text": "Berechne 1/2 * sqrt(16) + x^2.",
+  "lang": "de"
+}
+```
+* **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "audio_base64": "SUQzBAAAAAAAI1RTU0UAAA...",
+  "cleaned_text": "Berechne ein Halb mal Wurzel aus 16 plus x hoch 2."
+}
+```
+
+### `POST /api/v1/exercises/scores`
+* **Beschreibung:** Speichert das Ergebnis einer absolvierten Übung und berechnet XP, Sterne und Streaks.
+* **Request:**
+```json
+{
+  "subject_id": "sub_math",
+  "exercise_type": "cloze",
+  "difficulty_level": "mittel",
+  "total_items": 4,
+  "correct_items": 4,
+  "mistakes_count": 0,
+  "revealed_count": 0,
+  "accuracy_percent": 100.0,
+  "time_spent_seconds": 45
+}
+```
+
+### `GET /api/v1/exercises/scores/summary`
+* **Beschreibung:** Liefert globale und fächerspezifische Lernkennzahlen (Gesamt-XP, Level, Streak, Trefferquoten und adaptive Empfehlungen).
+
+---
+
+## 10. Handschriftliche Buch-Notizen (`/api/v1/materials/{id}/pages/{page}/annotations`)
+
+### `GET /api/v1/materials/{id}/pages/{page}/annotations`
+* **Beschreibung:** Ruft Vektor-Freihandstriche für eine Buchseite ab.
+* **Response (200 OK):**
+```json
+{
+  "material_id": "mat_book_math_7_ch1",
+  "page_number": 1,
+  "strokes_json": "[{\"tool\":\"pen\",\"color\":\"#0284c7\",\"width\":2.6,\"points\":[{\"x\":0.12,\"y\":0.34}]}]",
+  "updated_at": "2026-10-12T20:00:00Z"
+}
+```
+
+### `PUT /api/v1/materials/{id}/pages/{page}/annotations`
+* **Beschreibung:** Speichert Vektorstriche entprellt in normalisierten Koordinaten ($x, y \in [0, 1]$).
+* **Payload:** Unterstützt sowohl JSON-Objekt (`strokes: [...]`) als auch serialisierten String (`strokes_json: "..."`).
+
+### `DELETE /api/v1/materials/{id}/pages/{page}/annotations`
+* **Beschreibung:** Löscht sämtliche Notizen einer Buchseite.
+
+
 

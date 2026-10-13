@@ -198,10 +198,16 @@ def process_single_inbox_file(
 
     title = analysis.title
     kind = analysis.kind
-    subject_id = analysis.subject_id
-    topic_id = analysis.topic_id
     dossier_title = analysis.dossier_title
     dossier_kind = analysis.dossier_kind
+
+    if is_pdf and page_count >= 20 and kind in ("Arbeitsblatt", "Hefterseite", "Buchauszug"):
+        kind = "Buch"
+        dossier_title = f"Lehrbuch: {title}"
+        dossier_kind = "lehrbuch"
+
+    subject_id = analysis.subject_id
+    topic_id = analysis.topic_id
 
     subject = db.query(Subject).filter_by(id=subject_id).first()
     topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
@@ -266,6 +272,14 @@ def process_single_inbox_file(
     try:
         from backend.app.services.material_ingestion import pre_cache_material_pages
         pre_cache_material_pages(material.id, material.file_path, material.mime_type, max_pages=3)
+    except Exception:
+        pass
+
+    # Automatische Buchsegmentierung im Hintergrund anstoßen (falls Schulbuch)
+    try:
+        from backend.app.services.book_segmentation import is_candidate_book, trigger_background_book_segmentation
+        if is_candidate_book(material):
+            trigger_background_book_segmentation(material.id)
     except Exception:
         pass
 

@@ -22,7 +22,8 @@ from backend.app.services.tutor_service import (
 from backend.app.services.score_service import (
     record_exercise_result,
     get_subject_scores_summary,
-    get_adaptive_difficulty
+    get_adaptive_difficulty,
+    get_gamification_overview
 )
 
 logger = logging.getLogger(__name__)
@@ -353,4 +354,17 @@ def get_subject_adaptive_difficulty(
     Liefert die empfohlene adaptive Schwierigkeitsstufe für ein Fach.
     """
     return get_adaptive_difficulty(db=db, subject_id=subject_id, exercise_type=exercise_type)
+
+
+@router.get("/gamification/overview")
+def get_thea_gamification_overview(
+    user_id: str = "usr_thea",
+    db: Session = Depends(get_db)
+):
+    """
+    Liefert den aktuellen Gesamtstand von Thea:
+    Gesammelte Sterne, XP, Level-Status, Streak und freigeschaltete Abzeichen.
+    """
+    return get_gamification_overview(db=db, user_id=user_id)
+
 

@@ -39,3 +39,15 @@ def test_submit_exercise_result_and_scores_api(client):
     assert "difficulty" in ad_data
     assert "level_code" in ad_data
     assert "level_label" in ad_data
+
+    # 4. Gamification Overview abrufen
+    gam_res = client.get("/api/v1/exercises/gamification/overview")
+    assert gam_res.status_code == 200
+    gam_data = gam_res.json()
+    assert "total_xp" in gam_data
+    assert "total_stars" in gam_data
+    assert "level" in gam_data
+    assert "streak_days" in gam_data
+    assert "achievements" in gam_data
+    assert len(gam_data["achievements"]) >= 4
+

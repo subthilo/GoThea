@@ -19,11 +19,37 @@ Die Leitphilosophie von GoThea ist: **Keine fertigen Lösungen vorgeben, sondern
 
 * **OpenAI Text-to-Speech (`tts-1`):**
   * Stimmcharakter: `voice="nova"` – warmer, klar artikulierender und empathischer Tonfall für Schülerinnen und Schüler (Gymnasium Klassenstufe 7).
+  * Sprechtempo: Ruhig und verständlich auf **`speed = 0.90`** kalibriert, um Hektik zu vermeiden und Konzentration zu fördern.
   * Audioformat: Direkte MP3-Codierung, clientseitig über HTML5 `Audio()` und `data:audio/mp3;base64,...` latenzarm abgespielt.
-  * System-Prompt-Vorgabe: **Kein rohes LaTeX im gesprochenen Text** (z. B. „drei Viertel“ statt `\frac{3}{4}`, „mal“ statt `\cdot`), damit die Aussprache natürlich und flüssig klingt.
 * **Barge-In (Sofortige Unterbrechung):**
   * Setzt der Schüler den Apple Pencil oder die Maus auf dem Board an (`handlePointerDown`), wird `stopTutorSpeech()` sofort ausgelöst und die Wiedergabe bricht augenblicklich ab.
   * Zusätzliche manuelle Kontrolle: Stopp-Button (`✕`) direkt in der schwebenden Sprechblase (`#wb-tutor-bubble`) und globaler Stummschalt-Schalter (`#btn-wb-audio-toggle`: 🔊 / 🔇).
+
+---
+
+## 2.2 Phonetische Normalisierung mathematischer & naturwissenschaftlicher Sprache (`clean_text_for_speech`)
+
+Standard-Sprachmodelle (TTS) neigen dazu, mathematische Sonderzeichen, LaTeX-Fragmente oder physikalische Einheiten fehlerhaft oder unverständlich auszusprechen (z. B. *„Slash“* statt *„geteilt durch“*, *„Backslash frac“* oder *„Zirkumflex zwei“* statt *„hoch zwei“*).
+
+Die Funktion `clean_text_for_speech` in [`backend/app/services/tutor_service.py`](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/backend/app/services/tutor_service.py) bereinigt sämtliche Ausgabetexte vor der Übergabe an die OpenAI Audio-API:
+
+| Mathematischer Ausdruck | Raw-Text / LaTeX | Phonetische Aussprache (TTS) |
+|---|---|---|
+| **Echte Brüche** | `1/2`, `3/4`, `1/3` | *„ein Halb“*, *„drei Viertel“*, *„ein Drittel“* |
+| **Allgemeine Division** | `a / b`, `12 : 3` | *„a durch b“*, *„12 geteilt durch 3“* |
+| **Potenzen & Exponenten** | `x^2`, `y^3`, `a^n` | *„x hoch 2“*, *„y hoch 3“*, *„a hoch n“* |
+| **Quadratwurzeln** | `\sqrt{x}`, `sqrt(16)` | *„Wurzel aus x“*, *„Wurzel aus 16“* |
+| **Vergleichsoperatoren** | `!=`, `<=`, `>=` | *„ist ungleich“*, *„kleiner gleich“*, *„größer gleich“* |
+| **Rechenoperatoren** | `*`, `\cdot`, `\pm` | *„mal“*, *„mal“*, *„plus minus“* |
+| **Flächen & Volumen** | `cm^2`, `m^2`, `m^3` | *„Quadratzentimeter“*, *„Quadratmeter“*, *„Kubikmeter“* |
+| **Geschwindigkeit & Masse** | `km/h`, `kg`, `mg` | *„Kilometer pro Stunde“*, *„Kilogramm“*, *„Milligramm“* |
+| **Griechische Symbole** | `\alpha`, `\beta`, `\pi` | *„Alpha“*, *„Beta“*, *„Pi“* |
+
+### On-Demand Sprachausgabe-Endpunkt (`POST /api/v1/exercises/tts`)
+Für Lückentexte, Übungshinweise und Regelerklärungen stellt das Backend einen dedizierten, gecachten Audiogenerierungs-Endpunkt bereit:
+* Nimmt beliebigen deutschen oder englischen Text entgegen (`payload.text`, `payload.lang`).
+* Bereinigt Formeln phonetisch über `clean_text_for_speech`.
+* Liefert Base64-codiertes MP3 zur direkten Wiedergabe im Browser.
 
 ---
 

@@ -43,11 +43,15 @@ Im Initialbetrieb fungiert der Raspberry Pi als lokaler Application-, API- und S
 │  │ Python Backend (FastAPI / Uvicorn ASGI)                          │  │
 │  │ - Lernplan- & Prüfungs-Engine (Alters- & Stufenadaptiv)          │  │
 │  │ - Ingestion Worker (Auto-Tagging, OCR, Chunker, RAG-Pipeline)    │  │
+│  │ - PageRenderingService (3-Tier Priority Queue, Retina-Cache)     │  │
+│  │ - ExercisePoolManager (Zero-Wait Continuous Pool mit Audio-TTS)  │  │
+│  │ - BookSegmentationService (3-Stufen TOC & Outline Slicing)       │  │
+│  │ - ScoreService (Adaptives Lernen, Gamification & Streaks)        │  │
+│  │ - ParentAuth & PIN-Security (Brute-Force Lockout, Session-Cookie)│  │
+│  │ - Whiteboard-State-Management, Inking & Stroke-Aggregator        │  │
+│  │ - PhoneticSpeechNormalizer & Multimodal Audio Gateway            │  │
 │  │ - IServ Sync-Worker (CalDAV, WebDAV & Session Crawler)           │  │
-│  │ - Whiteboard-State-Management & Stroke-Aggregator                │  │
-│  │ - Multimodal Session Gateway & Prompt Governor                   │  │
 │  │ - RAG-Retrieval (Lokales SQLite + sqlite-vec Index)              │  │
-│  │ - OER / RLP Online Connector (Brandenburg Curricula)             │  │
 │  └──────────────┬──────────────────────────────────┬────────────────┘  │
 │                 │                                  │                   │
 │                 ▼                                  ▼                   │

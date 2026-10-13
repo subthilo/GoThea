@@ -38,6 +38,7 @@ def ensure_schema_migrations(target_engine):
                 ("parent_id", "TEXT REFERENCES materials(id) ON DELETE CASCADE"),
                 ("start_page", "INTEGER"),
                 ("end_page", "INTEGER"),
+                ("toc_json", "TEXT"),
             ]
             for col_name, col_def in new_cols:
                 if col_name not in existing_cols:

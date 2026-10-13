@@ -24,6 +24,605 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+// ============================================================================
+// Eltern-Modus & Rechte-Verwaltung (Thea-Modus vs. Eltern-Modus)
+// ============================================================================
+const PARENT_TOKEN_STORAGE_KEY = "gothea_parent_token";
+const PARENT_EXPIRES_STORAGE_KEY = "gothea_parent_expires_at";
+
+let isParentActive = false;
+let isDefaultParentPin = false;
+
+function getParentToken() {
+  const token = sessionStorage.getItem(PARENT_TOKEN_STORAGE_KEY);
+  const exp = parseInt(sessionStorage.getItem(PARENT_EXPIRES_STORAGE_KEY) || "0", 10);
+  if (!token) return null;
+  if (exp && exp < Math.floor(Date.now() / 1000)) {
+    clearParentToken();
+    return null;
+  }
+  return token;
+}
+
+function setParentToken(token, expiresAt) {
+  if (token) {
+    sessionStorage.setItem(PARENT_TOKEN_STORAGE_KEY, token);
+    if (expiresAt) {
+      sessionStorage.setItem(PARENT_EXPIRES_STORAGE_KEY, String(expiresAt));
+    }
+  } else {
+    clearParentToken();
+  }
+}
+
+function clearParentToken() {
+  sessionStorage.removeItem(PARENT_TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(PARENT_EXPIRES_STORAGE_KEY);
+}
+
+// Globaler Fetch-Interceptor für automatische Token-Übermittlung & 403-Handling
+const nativeFetch = window.fetch.bind(window);
+window.fetch = async function (url, options = {}) {
+  const token = getParentToken();
+  if (token) {
+    options = options || {};
+    if (options.headers instanceof Headers) {
+      if (!options.headers.has("X-Parent-Token")) {
+        options.headers.set("X-Parent-Token", token);
+      }
+    } else if (Array.isArray(options.headers)) {
+      options.headers.push(["X-Parent-Token", token]);
+    } else {
+      options.headers = Object.assign({}, options.headers, { "X-Parent-Token": token });
+    }
+  }
+
+  const response = await nativeFetch(url, options);
+
+  if (response.status === 403) {
+    try {
+      const clone = response.clone();
+      const data = await clone.json();
+      if (data && data.detail && typeof data.detail === "string" && data.detail.includes("Eltern-Modus")) {
+        openParentPinModal("Für diese Aktion ist der Eltern-Modus erforderlich.");
+      }
+    } catch (_) {}
+  }
+
+  return response;
+};
+
+// UI-Synchronisation
+function updateParentModeUI(active, isDefault = isDefaultParentPin) {
+  isParentActive = Boolean(active);
+  isDefaultParentPin = Boolean(isDefault);
+
+  // Body classes
+  document.body.classList.toggle("parent-mode-active", isParentActive);
+  document.body.classList.toggle("thea-mode-active", !isParentActive);
+
+  // Header Pill
+  const pillBtn = document.getElementById("btn-parent-toggle");
+  const pillIcon = document.getElementById("parent-pill-icon");
+  const pillText = document.getElementById("parent-pill-text");
+
+  if (pillBtn && pillIcon && pillText) {
+    if (isParentActive) {
+      pillBtn.classList.add("is-parent-active");
+      pillIcon.textContent = "🛡️";
+      pillText.textContent = "Eltern-Modus (Aktiv)";
+      pillBtn.title = "Klicken, um den Eltern-Modus zu sperren (zurück zu Thea)";
+    } else {
+      pillBtn.classList.remove("is-parent-active");
+      pillIcon.textContent = "👧";
+      pillText.textContent = "Thea-Modus";
+      pillBtn.title = "Klicken, um Eltern-PIN einzugeben (Einstellungen & Prüfungen freischalten)";
+    }
+  }
+
+  // Profile Card
+  const profBadge = document.getElementById("prof-parent-badge");
+  const secLocked = document.getElementById("parent-security-locked");
+  const secUnlocked = document.getElementById("parent-security-unlocked");
+  const defPinWarn = document.getElementById("parent-default-pin-warn");
+  const defPinHint = document.getElementById("parent-pin-default-hint");
+
+  if (profBadge) {
+    profBadge.textContent = isParentActive ? "✅ Eltern-Modus aktiv" : "Thea-Modus aktiv";
+  }
+  if (secLocked) secLocked.style.display = isParentActive ? "none" : "block";
+  if (secUnlocked) secUnlocked.style.display = isParentActive ? "block" : "none";
+  if (defPinWarn) defPinWarn.style.display = (isParentActive && isDefaultParentPin) ? "block" : "none";
+  if (defPinHint) defPinHint.style.display = isDefaultParentPin ? "block" : "none";
+
+  // Formular-Sperre im Profil für Thea
+  const profInputs = document.querySelectorAll("#tab-profile input, #tab-profile select");
+  profInputs.forEach((el) => {
+    if (el.id.startsWith("input-current-pin") || el.id.startsWith("input-new-pin")) return;
+    el.disabled = !isParentActive;
+  });
+
+  if (currentDetailSubjectId) {
+    loadSubjectScores(currentDetailSubjectId);
+  }
+}
+
+async function checkParentAuthStatus() {
+  try {
+    const res = await nativeFetch("/api/v1/auth/parent/status", {
+      headers: getParentToken() ? { "X-Parent-Token": getParentToken() } : {}
+    });
+    if (res.ok) {
+      const data = await res.json();
+      updateParentModeUI(data.is_parent, data.is_default_pin);
+    }
+  } catch (err) {
+    console.warn("Konnte Eltern-Status nicht abrufen:", err);
+  }
+}
+
+// PIN Modal Öffnen / Schließen
+function openParentPinModal(customHint = "") {
+  const modal = document.getElementById("modal-parent-pin");
+  const pinInput = document.getElementById("input-parent-pin");
+  const errorBox = document.getElementById("parent-pin-error");
+  if (!modal) return;
+
+  if (errorBox) {
+    if (customHint) {
+      errorBox.textContent = customHint;
+      errorBox.style.display = "block";
+      errorBox.style.background = "rgba(99, 102, 241, 0.12)";
+      errorBox.style.color = "var(--accent-light)";
+      errorBox.style.borderColor = "rgba(99, 102, 241, 0.35)";
+    } else {
+      errorBox.style.display = "none";
+    }
+  }
+
+  if (pinInput) {
+    pinInput.value = "";
+    pinInput.type = "password";
+  }
+
+  modal.style.display = "flex";
+  setTimeout(() => pinInput && pinInput.focus(), 80);
+}
+
+function closeParentPinModal() {
+  const modal = document.getElementById("modal-parent-pin");
+  if (modal) modal.style.display = "none";
+}
+
+// Entsperren via PIN
+async function submitParentPin() {
+  const pinInput = document.getElementById("input-parent-pin");
+  const errorBox = document.getElementById("parent-pin-error");
+  const pin = (pinInput ? pinInput.value : "").trim();
+
+  if (!pin) {
+    if (errorBox) {
+      errorBox.textContent = "Bitte gib eine PIN ein.";
+      errorBox.style.display = "block";
+      errorBox.style.background = "rgba(239, 68, 68, 0.12)";
+      errorBox.style.color = "#f87171";
+      errorBox.style.borderColor = "rgba(239, 68, 68, 0.35)";
+    }
+    return;
+  }
+
+  try {
+    const res = await nativeFetch("/api/v1/auth/parent/unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setParentToken(data.token, data.expires_at);
+      updateParentModeUI(true, data.is_default_pin);
+      closeParentPinModal();
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      const msg = errData.detail || "Falsche PIN. Bitte erneut versuchen.";
+      if (errorBox) {
+        errorBox.textContent = msg;
+        errorBox.style.display = "block";
+        errorBox.style.background = "rgba(239, 68, 68, 0.12)";
+        errorBox.style.color = "#f87171";
+        errorBox.style.borderColor = "rgba(239, 68, 68, 0.35)";
+      }
+      if (pinInput) {
+        pinInput.value = "";
+        pinInput.focus();
+      }
+    }
+  } catch (err) {
+    if (errorBox) {
+      errorBox.textContent = "Netzwerkfehler beim Entsperren.";
+      errorBox.style.display = "block";
+    }
+  }
+}
+
+// Sofort sperren
+function lockParentMode() {
+  clearParentToken();
+  updateParentModeUI(false);
+}
+
+// PIN ändern
+async function handleParentPinChange() {
+  const curInput = document.getElementById("input-current-pin");
+  const newInput = document.getElementById("input-new-pin");
+  const confInput = document.getElementById("input-new-pin-confirm");
+  const msgBox = document.getElementById("parent-pin-change-msg");
+
+  const currentPin = (curInput ? curInput.value : "").trim();
+  const newPin = (newInput ? newInput.value : "").trim();
+  const confirmPin = (confInput ? confInput.value : "").trim();
+
+  if (!currentPin || !newPin) {
+    if (msgBox) {
+      msgBox.textContent = "❌ Bitte alle Felder ausfüllen.";
+      msgBox.style.color = "var(--warning)";
+    }
+    return;
+  }
+
+  if (newPin !== confirmPin) {
+    if (msgBox) {
+      msgBox.textContent = "❌ Die neue PIN stimmt nicht mit der Bestätigung überein.";
+      msgBox.style.color = "var(--warning)";
+    }
+    return;
+  }
+
+  if (!/^\d{4,8}$/.test(newPin)) {
+    if (msgBox) {
+      msgBox.textContent = "❌ Die PIN muss aus 4 bis 8 Ziffern bestehen.";
+      msgBox.style.color = "var(--warning)";
+    }
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/v1/auth/parent/change-pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current_pin: currentPin, new_pin: newPin })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setParentToken(data.token, data.expires_at);
+      updateParentModeUI(true, false);
+      if (curInput) curInput.value = "";
+      if (newInput) newInput.value = "";
+      if (confInput) confInput.value = "";
+      if (msgBox) {
+        msgBox.textContent = "✅ PIN erfolgreich geändert! Die neue PIN ist ab sofort aktiv.";
+        msgBox.style.color = "var(--success)";
+        setTimeout(() => { if (msgBox) msgBox.textContent = ""; }, 4000);
+      }
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      if (msgBox) {
+        msgBox.textContent = `❌ ${errData.detail || "Fehler beim Ändern der PIN."}`;
+        msgBox.style.color = "var(--warning)";
+      }
+    }
+  } catch (err) {
+    if (msgBox) {
+      msgBox.textContent = "❌ Netzwerkfehler.";
+      msgBox.style.color = "var(--warning)";
+    }
+  }
+}
+
+// Event Listeners registrieren
+function setupParentModeEvents() {
+  const toggleBtn = document.getElementById("btn-parent-toggle");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      if (isParentActive) {
+        lockParentMode();
+      } else {
+        openParentPinModal();
+      }
+    });
+  }
+
+  const profUnlockBtn = document.getElementById("btn-prof-unlock-parent");
+  if (profUnlockBtn) {
+    profUnlockBtn.addEventListener("click", () => openParentPinModal());
+  }
+
+  const profLockBtn = document.getElementById("btn-prof-lock-parent");
+  if (profLockBtn) {
+    profLockBtn.addEventListener("click", () => lockParentMode());
+  }
+
+  const closeBtn = document.getElementById("btn-close-parent-pin-modal");
+  if (closeBtn) closeBtn.addEventListener("click", closeParentPinModal);
+
+  const cancelBtn = document.getElementById("btn-cancel-parent-pin");
+  if (cancelBtn) cancelBtn.addEventListener("click", closeParentPinModal);
+
+  const submitBtn = document.getElementById("btn-submit-parent-pin");
+  if (submitBtn) submitBtn.addEventListener("click", submitParentPin);
+
+  const pinInput = document.getElementById("input-parent-pin");
+  if (pinInput) {
+    pinInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitParentPin();
+      }
+    });
+  }
+
+  const eyeBtn = document.getElementById("btn-toggle-pin-visibility");
+  if (eyeBtn && pinInput) {
+    eyeBtn.addEventListener("click", () => {
+      const isPassword = pinInput.type === "password";
+      pinInput.type = isPassword ? "text" : "password";
+      eyeBtn.textContent = isPassword ? "🙈" : "👁️";
+    });
+  }
+
+  const changeBtn = document.getElementById("btn-change-parent-pin");
+  if (changeBtn) changeBtn.addEventListener("click", handleParentPinChange);
+}
+
+// ============================================================================
+// Theme Manager (Farbschemata & Personalisierung)
+// ============================================================================
+const THEMES = {
+  space: { name: "Weltall", icon: "🚀" },
+  sunset: { name: "Sonnenuntergang", icon: "🌅" },
+  nature: { name: "Zauberwald", icon: "🌲" },
+  candy: { name: "Zauberwelt", icon: "🦄" }
+};
+
+let currentAppTheme = "space";
+
+function applyTheme(themeKey) {
+  if (!THEMES[themeKey]) themeKey = "space";
+  currentAppTheme = themeKey;
+  try {
+    localStorage.setItem("gothea_theme", themeKey);
+  } catch (e) {}
+
+  document.body.setAttribute("data-theme", themeKey);
+  document.documentElement.setAttribute("data-theme", themeKey);
+
+  // Header pill aktualisieren
+  const pillIcon = document.getElementById("theme-pill-icon");
+  const pillText = document.getElementById("theme-pill-text");
+  if (pillIcon) pillIcon.textContent = THEMES[themeKey].icon;
+  if (pillText) pillText.textContent = THEMES[themeKey].name;
+
+  // Active state in Dropdown & Profil
+  document.querySelectorAll(".theme-opt-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.theme === themeKey);
+  });
+  document.querySelectorAll(".theme-card-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.theme === themeKey);
+  });
+}
+
+function initThemeManager() {
+  let saved = "space";
+  try {
+    saved = localStorage.getItem("gothea_theme") || "space";
+  } catch (e) {}
+  applyTheme(saved);
+
+  const toggleBtn = document.getElementById("btn-theme-toggle");
+  const dropdown = document.getElementById("theme-dropdown-menu");
+
+  if (toggleBtn && dropdown) {
+    toggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isVisible = dropdown.style.display === "flex";
+      dropdown.style.display = isVisible ? "none" : "flex";
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!toggleBtn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = "none";
+      }
+    });
+  }
+
+  // Clicks in Header Dropdown
+  document.querySelectorAll(".theme-opt-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const th = btn.dataset.theme;
+      if (th) {
+        applyTheme(th);
+        if (dropdown) dropdown.style.display = "none";
+      }
+    });
+  });
+
+  // Clicks in Profile Tab Cards
+  document.querySelectorAll(".theme-card-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const th = btn.dataset.theme;
+      if (th) applyTheme(th);
+    });
+  });
+}
+
+// ============================================================================
+// Confetti Celebration (Erfolgs-Animation)
+// ============================================================================
+let confettiAnimId = null;
+
+function fireCelebrationConfetti(durationMs = 2600) {
+  const canvas = document.getElementById("confetti-canvas");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = "block";
+
+  if (confettiAnimId) {
+    cancelAnimationFrame(confettiAnimId);
+    confettiAnimId = null;
+  }
+
+  const colors = ["#6366f1", "#f43f5e", "#10b981", "#f59e0b", "#a855f7", "#ec4899", "#38bdf8", "#fbbf24"];
+  const particles = [];
+  const particleCount = 110;
+
+  for (let i = 0; i < particleCount; i++) {
+    particles.push({
+      x: canvas.width * 0.5 + (Math.random() - 0.5) * 260,
+      y: canvas.height * 0.45 + (Math.random() - 0.5) * 120,
+      vx: (Math.random() - 0.5) * 14,
+      vy: -(Math.random() * 12 + 6),
+      size: Math.random() * 7 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      vRot: (Math.random() - 0.5) * 10,
+      gravity: 0.38 + Math.random() * 0.15,
+      shape: Math.random() > 0.35 ? "rect" : "star",
+      opacity: 1
+    });
+  }
+
+  const startTime = performance.now();
+
+  function render(now) {
+    const elapsed = now - startTime;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let anyAlive = false;
+    const progress = elapsed / durationMs;
+
+    for (let p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.vx *= 0.99;
+      p.rotation += p.vRot;
+
+      if (progress > 0.7) {
+        p.opacity = Math.max(0, 1 - (progress - 0.7) / 0.3);
+      }
+
+      if (p.y < canvas.height && p.opacity > 0) {
+        anyAlive = true;
+        ctx.save();
+        ctx.globalAlpha = p.opacity;
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+
+        if (p.shape === "rect") {
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.5);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
+    if (elapsed < durationMs && anyAlive) {
+      confettiAnimId = requestAnimationFrame(render);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.display = "none";
+      confettiAnimId = null;
+    }
+  }
+
+  confettiAnimId = requestAnimationFrame(render);
+}
+
+window.fireCelebrationConfetti = fireCelebrationConfetti;
+
+// ============================================================================
+// Gamification Manager (Theas Fortschritte & Positives Scoring)
+// ============================================================================
+async function loadGamificationOverview() {
+  try {
+    const res = await fetch("/api/v1/exercises/gamification/overview");
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // Dashboard Chips
+    const levelNumEl = document.getElementById("game-level-num");
+    const levelTitleEl = document.getElementById("game-level-title");
+    const levelIconEl = document.getElementById("game-level-icon");
+    const streakDaysEl = document.getElementById("game-streak-days");
+    const totalStarsEl = document.getElementById("game-total-stars");
+    const totalXpEl = document.getElementById("game-total-xp");
+    const todayCountEl = document.getElementById("stat-today-exercises");
+
+    if (levelNumEl) levelNumEl.textContent = data.level?.level || 1;
+    if (levelTitleEl) levelTitleEl.textContent = data.level?.title || "Wissens-Entdeckerin";
+    if (levelIconEl) levelIconEl.textContent = data.level?.icon || "🌱";
+
+    if (streakDaysEl) streakDaysEl.textContent = data.streak_days || 0;
+    if (totalStarsEl) totalStarsEl.textContent = data.total_stars || 0;
+    if (totalXpEl) totalXpEl.textContent = data.total_xp || 0;
+    if (todayCountEl) todayCountEl.textContent = data.today?.completed_count || 0;
+
+    // Progress Bar
+    const barTitleEl = document.getElementById("game-level-bar-title");
+    const barXpEl = document.getElementById("game-level-bar-xp-text");
+    const barFillEl = document.getElementById("game-level-bar-fill");
+
+    if (data.level) {
+      const lvl = data.level;
+      if (barTitleEl) {
+        barTitleEl.textContent = `${lvl.icon} Level ${lvl.level}: ${lvl.title}`;
+      }
+      if (barXpEl) {
+        if (lvl.max_xp === null) {
+          barXpEl.textContent = `Maximales Level erreicht! 🦉✨ (${data.total_xp} XP)`;
+        } else {
+          barXpEl.textContent = `${lvl.current_level_xp} / ${lvl.needed_level_xp} XP bis Level ${lvl.level + 1}`;
+        }
+      }
+      if (barFillEl) {
+        barFillEl.style.width = `${Math.min(100, Math.max(0, lvl.progress_percent))}%`;
+      }
+    }
+
+    // Profile Tab Trophies
+    const profBadgeEl = document.getElementById("prof-level-badge");
+    if (profBadgeEl && data.level) {
+      profBadgeEl.textContent = `Level ${data.level.level} ${data.level.icon}`;
+    }
+
+    const gridEl = document.getElementById("prof-achievements-grid");
+    if (gridEl && Array.isArray(data.achievements)) {
+      gridEl.innerHTML = data.achievements.map((ach) => `
+        <div class="achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}" title="${escapeHtml(ach.description)}">
+          <span class="achievement-icon">${ach.icon}</span>
+          <div class="achievement-content">
+            <strong>${escapeHtml(ach.title)}</strong>
+            <p>${escapeHtml(ach.description)}</p>
+          </div>
+        </div>
+      `).join("");
+    }
+  } catch (err) {
+    console.warn("Fehler beim Laden des Gamification-Status:", err);
+  }
+}
+
 function switchToTab(tabName) {
   const btn = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
   if (btn) btn.click();
@@ -303,11 +902,13 @@ function initSubjectScoresVisibility() {
   }
 }
 
-// Bei Abschluss einer Übung im Hintergrund Fach-Scores neu laden
+// Bei Abschluss einer Übung im Hintergrund Fach-Scores neu laden & Gamification aktualisieren
 window.addEventListener("gothea:exercise-completed", (e) => {
   if (currentDetailSubjectId) {
     loadSubjectScores(currentDetailSubjectId);
   }
+  loadGamificationOverview();
+  fireCelebrationConfetti();
 });
 
 async function loadSubjectScores(subjectId) {
@@ -327,17 +928,27 @@ async function loadSubjectScores(subjectId) {
     const data = await res.json();
 
     if (badgeEl) {
-      badgeEl.textContent = data.difficulty_label || "Stufe 2 (Mittel) 🎯";
-      badgeEl.className = `badge-adaptive-level level-${data.difficulty_level_code || 2}`;
+      if (isParentActive) {
+        badgeEl.textContent = data.difficulty_label || "Stufe 2 (Mittel) 🎯";
+        badgeEl.className = `badge-adaptive-level level-${data.difficulty_level_code || 2}`;
+      } else {
+        const badgeTitle = data.positive_summary?.badge || "Gymnasial-Profi 🎯";
+        badgeEl.textContent = `${badgeTitle} (${data.subject_stars || 0} ⭐)`;
+        badgeEl.className = `badge-adaptive-level level-2`;
+      }
     }
 
     if (hintTextEl) {
-      if (data.difficulty_level_code === 1) {
-        hintTextEl.textContent = "Sanfter Aufbau-Modus aktiv: Luna wählt leichtere Aufgaben, damit Thea die Grundlagen festigt und fast alles richtig hat.";
-      } else if (data.difficulty_level_code === 3) {
-        hintTextEl.textContent = "Spitzen-Modus aktiv: Thea löst Übungen mit Bravour! Luna stellt anspruchsvolle Vertiefungsaufgaben bereit.";
+      if (isParentActive) {
+        if (data.difficulty_level_code === 1) {
+          hintTextEl.textContent = "Sanfter Aufbau-Modus aktiv: Luna wählt leichtere Aufgaben, damit Thea die Grundlagen festigt und fast alles richtig hat.";
+        } else if (data.difficulty_level_code === 3) {
+          hintTextEl.textContent = "Spitzen-Modus aktiv: Thea löst Übungen mit Bravour! Luna stellt anspruchsvolle Vertiefungsaufgaben bereit.";
+        } else {
+          hintTextEl.textContent = "Ausgewogenes Gymnasial-Niveau: Luna passt den Schwierigkeitsgrad nach jeder Übung an Theas Fortschritt an.";
+        }
       } else {
-        hintTextEl.textContent = "Ausgewogenes Gymnasial-Niveau: Luna passt den Schwierigkeitsgrad nach jeder Übung an Theas Fortschritt an.";
+        hintTextEl.textContent = data.positive_summary?.encouragement || "Toller Lernfortschritt! Mit jeder Übung sammelst du wertvolle Wissens-Sterne und XP.";
       }
     }
 
@@ -358,6 +969,42 @@ async function loadSubjectScores(subjectId) {
       const hasData = m.completed_count > 0;
       const scorePct = hasData ? Math.round(m.average_score) : 0;
       const levelCode = m.difficulty_level_code || 2;
+
+      if (!isParentActive) {
+        // THEA-MODUS: Positives Gamified Scoring, niemals Fehlerprozente oder rote Warnfarben
+        const starsCount = hasData ? Math.min(3, Math.max(1, Math.round((scorePct / 100) * 3))) : 0;
+        const starsDisplay = hasData ? "⭐".repeat(starsCount) : "Noch keine Sterne";
+        return `
+          <div class="method-score-card">
+            <div class="method-score-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="method-score-icon">${m.icon || "📝"}</span>
+                <strong class="method-score-name">${escapeHtml(m.name)}</strong>
+              </div>
+              <span class="method-difficulty-pill" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35);">
+                ${hasData ? starsDisplay : "Bereit zum Üben 🌱"}
+              </span>
+            </div>
+
+            <div class="method-score-metrics">
+              <div class="method-score-main">
+                <span class="method-score-percent" style="color: #facc15;">${hasData ? `+${m.completed_count * 10} XP` : "–"}</span>
+                <span class="method-score-sublabel">${hasData ? "Punkte gesammelt" : "Neu"}</span>
+              </div>
+              <div class="method-score-details">
+                <div><strong>${m.completed_count}</strong> Übung${m.completed_count === 1 ? "" : "en"} gemeistert</div>
+                <div>${hasData ? "Toller Einsatz! Weiter so 👍" : "Starte deine erste Runde!"}</div>
+              </div>
+            </div>
+
+            <div class="method-score-bar-wrap">
+              <div class="method-score-bar bar-high" style="width: ${hasData ? Math.max(40, scorePct) : 0}%; background: linear-gradient(90deg, #10b981, #facc15);"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      // ELTERN-MODUS: Analytische Detailübersicht mit Quoten
       return `
         <div class="method-score-card">
           <div class="method-score-header">
@@ -377,7 +1024,7 @@ async function loadSubjectScores(subjectId) {
             </div>
             <div class="method-score-details">
               <div><strong>${m.completed_count}</strong> Übung${m.completed_count === 1 ? "" : "en"} absolviert</div>
-              ${m.recent_score !== null && m.recent_score !== undefined ? `<div>Zuletzt: <strong>${Math.round(m.recent_score)}%</strong></div>` : `<div>Starte die erste Übung!</div>`}
+              ${m.recent_score !== null && m.recent_score !== undefined ? `<div>Zuletzt: <strong>${Math.round(m.recent_score)}%</strong></div>` : `<div>Noch keine Daten</div>`}
             </div>
           </div>
 
@@ -687,7 +1334,7 @@ async function loadPlan() {
           <div class="test-note">${t.note || "Keine Notiz hinterlegt"}</div>
           <div class="test-card-footer">
             <span>📅 ${t.date}</span>
-            <button class="btn-del-test" data-id="${t.id}">Löschen</button>
+            <button class="btn-del-test parent-only" data-id="${t.id}">Löschen</button>
           </div>
         `;
 
@@ -1142,15 +1789,15 @@ function buildMaterialCard(m, onDeleted) {
       <button class="btn-mat-action btn-mat-cloze" title="Lückentext-Übung direkt aus diesem Dokument erstellen">
         🧩 Üben
       </button>
-      <button class="btn-mat-action btn-mat-edit" title="Dokument anpassen (Fach, Thema, Titel)">
+      <button class="btn-mat-action btn-mat-edit parent-only" title="Dokument anpassen (Fach, Thema, Titel)">
         ✏️ Ändern
       </button>
       ${(m.page_count > 1 || (m.mime_type || "").includes("pdf")) ? `
-        <button class="btn-mat-action btn-mat-reorder" title="Seitenreihenfolge ändern & verwalten">
+        <button class="btn-mat-action btn-mat-reorder parent-only" title="Seitenreihenfolge ändern & verwalten">
           📑 Seiten
         </button>
       ` : ""}
-      <button class="btn-mat-action btn-mat-del" data-id="${m.id}" title="Material löschen">
+      <button class="btn-mat-action btn-mat-del parent-only" data-id="${m.id}" title="Material löschen">
         🗑️
       </button>
     </div>
@@ -2114,6 +2761,9 @@ if (btnSaveEditMaterial) {
       if (res.ok) {
         closeEditMaterialModal();
         await refreshAllMaterialViews();
+        if (kind === "Buch" || kind === "Buchauszug") {
+          await loadBooks();
+        }
       } else {
         const err = await res.json().catch(() => ({}));
         alert(`Fehler beim Aktualisieren: ${err.detail || "Unbekannter Fehler"}`);
@@ -3124,7 +3774,23 @@ let bookZoomMode = "width"; // Standard: Volle Dokumentbreite (100% Breite)
 async function loadBooks() {
   try {
     const res = await fetch("/api/v1/books");
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.error("HTTP error loading books:", res.status);
+      const grid = document.getElementById("book-catalog-grid");
+      if (grid && currentBooks.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 16px; margin: 20px 0;">
+            <div style="font-size: 2.5rem; margin-bottom: 12px;">⚠️</div>
+            <h3 style="margin-bottom: 6px; color: #ef4444;">Lehrbücher konnten nicht geladen werden</h3>
+            <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
+              Beim Abrufen der Bücher ist ein Serverfehler aufgetreten (${res.status}).
+            </p>
+            <button onclick="loadBooks()" class="btn-primary-sm">🔄 Erneut versuchen</button>
+          </div>
+        `;
+      }
+      return;
+    }
     currentBooks = await res.json();
     renderBooksShelf();
 
@@ -3254,15 +3920,45 @@ function renderBookCatalog(filterTerm = "") {
   const term = (filterTerm || "").toLowerCase().trim();
   const chapters = (activeBookDetail.chapters || []).filter((ch) => {
     if (!term) return true;
+    const hasSectionMatch = (ch.sections || []).some(
+      (s) =>
+        s.title.toLowerCase().includes(term) ||
+        String(s.book_page).includes(term)
+    );
     return (
       ch.title.toLowerCase().includes(term) ||
       (ch.topic_name && ch.topic_name.toLowerCase().includes(term)) ||
-      (ch.focus && ch.focus.toLowerCase().includes(term))
+      (ch.focus && ch.focus.toLowerCase().includes(term)) ||
+      hasSectionMatch
     );
   });
 
   if (chapters.length === 0) {
-    container.innerHTML = `<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color);">Keine Lerneinheiten für "${escapeHtml(filterTerm)}" gefunden.</div>`;
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 36px; text-align: center; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color);">
+        <p style="margin-bottom: 16px;">${filterTerm ? `Keine Lerneinheiten für "${escapeHtml(filterTerm)}" gefunden.` : "Für dieses Lehrwerk wurden noch keine separaten Lerneinheiten aufgeteilt."}</p>
+        <button type="button" class="btn-primary" id="btn-open-full-book-fallback" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px;">
+          <span>📖</span>
+          <span>Gesamtes Buch aufschlagen (${activeBookDetail.total_pages} Seiten)</span>
+        </button>
+      </div>
+    `;
+    const openBtn = document.getElementById("btn-open-full-book-fallback");
+    if (openBtn) {
+      openBtn.addEventListener("click", () => {
+        openChapter({
+          id: activeBookDetail.id,
+          chapter_number: 0,
+          title: activeBookDetail.title,
+          start_page: 1,
+          end_page: activeBookDetail.total_pages,
+          page_count: activeBookDetail.total_pages,
+          focus: activeBookDetail.summary || "Gesamtes Lehrwerk",
+          file_url: `/api/v1/materials/${activeBookDetail.id}/file`,
+          filename: `${activeBookDetail.title}.pdf`
+        }, 1);
+      });
+    }
     return;
   }
 
@@ -3271,7 +3967,28 @@ function renderBookCatalog(filterTerm = "") {
     card.className = "catalog-chapter-card";
     card.dataset.chapterId = ch.id;
 
-    const unitLabel = ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`;
+    const isSingleFullBook = ch.id === activeBookDetail.id;
+    const unitLabel = isSingleFullBook
+      ? "Gesamtbuch"
+      : (ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`);
+
+    let sectionsHtml = "";
+    if (ch.sections && ch.sections.length > 0) {
+      sectionsHtml = `
+        <div class="catalog-sections-wrap">
+          <div class="catalog-sections-label"><span>📑</span> <span>Inhaltsverzeichnis & Unterthemen:</span></div>
+          <div class="catalog-sections-pills">
+            ${ch.sections.map(sec => `
+              <button type="button" class="catalog-section-pill" data-target-page="${sec.relative_page}" title="Direkt aufschlagen: ${escapeHtml(sec.title)} (Buchseite ${sec.book_page})">
+                <span class="sec-pill-title">${escapeHtml(sec.title)}</span>
+                <span class="sec-pill-page">S. ${sec.book_page}</span>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
     card.innerHTML = `
       <div class="catalog-card-header">
         <span class="catalog-badge">${unitLabel}</span>
@@ -3280,20 +3997,33 @@ function renderBookCatalog(filterTerm = "") {
       <div class="catalog-card-title">${escapeHtml(ch.title)}</div>
       ${ch.topic_name ? `<div class="catalog-card-topic"><span>📐</span> ${escapeHtml(ch.topic_name)}</div>` : ""}
       <div class="catalog-card-focus">${escapeHtml(ch.focus || "Lerneinheit aus dem Schulbuch.")}</div>
+      ${sectionsHtml}
       <div class="catalog-card-footer">
-        <span>Kapitel aufschlagen</span> <span>📖 ➔</span>
+        <span>${isSingleFullBook ? "Gesamtes Buch aufschlagen" : "Kapitel aufschlagen"}</span> <span>📖 ➔</span>
       </div>
     `;
-    card.addEventListener("click", () => openChapter(ch));
+
+    // Klicken auf die Karte öffnet das Kapitel ab Seite 1
+    card.addEventListener("click", () => openChapter(ch, 1));
+
+    // Klicken auf einzelne Unterseiten springt direkt zu dieser Seite
+    card.querySelectorAll(".catalog-section-pill").forEach(pill => {
+      pill.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const p = parseInt(pill.dataset.targetPage, 10) || 1;
+        openChapter(ch, p);
+      });
+    });
+
     container.appendChild(card);
   });
 }
 
 // Ansicht 2: Vollbreiten-Reader für ein gewähltes Kapitel öffnen
-function openChapter(ch) {
+function openChapter(ch, targetPage = 1) {
   if (!ch) return;
   activeChapter = ch;
-  currentChapterPage = 1;
+  currentChapterPage = Math.max(1, Math.min(ch.page_count, targetPage || 1));
 
   // Umschalten auf Reader-Ansicht
   const catalogView = document.getElementById("book-catalog-view");
@@ -3333,7 +4063,7 @@ function openChapter(ch) {
   // Drawer schließen falls offen
   closeTOCDrawer();
 
-  // Seiten-Pills & erste Seite anzeigen
+  // Seiten-Pills & gewählte Seite anzeigen
   renderBookPageStrip();
   renderChapterPage();
 
@@ -3371,7 +4101,7 @@ function navigateChapter(delta) {
   const idx = chaps.findIndex(c => c.id === activeChapter.id);
   const targetIdx = idx + delta;
   if (targetIdx >= 0 && targetIdx < chaps.length) {
-    openChapter(chaps[targetIdx]);
+    openChapter(chaps[targetIdx], 1);
   }
 }
 
@@ -3398,9 +4128,15 @@ function renderDrawerTOC(filterTerm = "") {
   const term = (filterTerm || "").toLowerCase().trim();
   const chapters = (activeBookDetail.chapters || []).filter((ch) => {
     if (!term) return true;
+    const hasSectionMatch = (ch.sections || []).some(
+      (s) =>
+        s.title.toLowerCase().includes(term) ||
+        String(s.book_page).includes(term)
+    );
     return (
       ch.title.toLowerCase().includes(term) ||
-      (ch.topic_name && ch.topic_name.toLowerCase().includes(term))
+      (ch.topic_name && ch.topic_name.toLowerCase().includes(term)) ||
+      hasSectionMatch
     );
   });
 
@@ -3416,22 +4152,83 @@ function renderDrawerTOC(filterTerm = "") {
     item.dataset.chapterId = ch.id;
 
     const unitLabel = ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`;
+
+    let sectionsHtml = "";
+    if (ch.sections && ch.sections.length > 0) {
+      const visibleSections = term
+        ? ch.sections.filter(
+            (s) =>
+              s.title.toLowerCase().includes(term) ||
+              String(s.book_page).includes(term) ||
+              ch.title.toLowerCase().includes(term)
+          )
+        : ch.sections;
+
+      if (visibleSections.length > 0) {
+        sectionsHtml = `
+          <div class="drawer-sections-list">
+            ${visibleSections
+              .map((sec) => {
+                const isSecActive = isActive && currentChapterPage >= sec.relative_page;
+                return `
+                  <div class="drawer-section-item ${isSecActive ? "active" : ""}" data-target-page="${sec.relative_page}" title="Direkt aufschlagen: ${escapeHtml(sec.title)} (Buchseite ${sec.book_page})">
+                    <span class="drawer-sec-bullet">↳</span>
+                    <span class="drawer-sec-title">${escapeHtml(sec.title)}</span>
+                    <span class="drawer-sec-page">S. ${sec.book_page}</span>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        `;
+      }
+    }
+
     item.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span class="catalog-badge">${unitLabel}</span>
-        <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">S. ${ch.start_page}–${ch.end_page}</span>
+      <div class="drawer-chapter-header" title="Kapitel ab Seite 1 aufschlagen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="catalog-badge">${unitLabel}</span>
+          <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">S. ${ch.start_page}–${ch.end_page}</span>
+        </div>
+        <div style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">${escapeHtml(ch.title)}</div>
+        ${ch.topic_name ? `<div style="font-size: 0.76rem; color: #94a3b8;">📐 ${escapeHtml(ch.topic_name)}</div>` : ""}
       </div>
-      <div style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary);">${escapeHtml(ch.title)}</div>
-      ${ch.topic_name ? `<div style="font-size: 0.76rem; color: #94a3b8;">📐 ${escapeHtml(ch.topic_name)}</div>` : ""}
+      ${sectionsHtml}
     `;
-    item.addEventListener("click", () => openChapter(ch));
+
+    const chapHeader = item.querySelector(".drawer-chapter-header");
+    if (chapHeader) {
+      chapHeader.addEventListener("click", () => openChapter(ch, 1));
+    }
+
+    item.querySelectorAll(".drawer-section-item").forEach((secEl) => {
+      secEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const p = parseInt(secEl.dataset.targetPage, 10) || 1;
+        openChapter(ch, p);
+      });
+    });
+
     container.appendChild(item);
   });
 }
 
 function updateDrawerActiveState() {
   document.querySelectorAll(".drawer-chapter-item").forEach((it) => {
-    it.classList.toggle("active", activeChapter && it.dataset.chapterId === activeChapter.id);
+    const isChapActive = activeChapter && it.dataset.chapterId === activeChapter.id;
+    it.classList.toggle("active", isChapActive);
+    if (isChapActive && activeChapter && activeChapter.sections && activeChapter.sections.length > 0) {
+      let currentActiveRel = 1;
+      activeChapter.sections.forEach((s) => {
+        if (s.relative_page <= currentChapterPage && s.relative_page >= currentActiveRel) {
+          currentActiveRel = s.relative_page;
+        }
+      });
+      it.querySelectorAll(".drawer-section-item").forEach((sEl) => {
+        const p = parseInt(sEl.dataset.targetPage, 10);
+        sEl.classList.toggle("active", p === currentActiveRel);
+      });
+    }
   });
 }
 
@@ -3478,6 +4275,44 @@ async function renderChapterPage() {
   if (prevBtn) prevBtn.disabled = currentChapterPage <= 1;
   if (nextBtn) nextBtn.disabled = currentChapterPage >= activeChapter.page_count;
 
+  // Schnell-Sprung-Dropdown für Unterthemen / Inhaltsverzeichnis-Einträge synchronisieren
+  const sectionWrap = document.getElementById("book-section-picker-wrap");
+  const sectionSelect = document.getElementById("book-section-select");
+  if (sectionWrap && sectionSelect) {
+    const sections = activeChapter.sections || [];
+    if (sections.length > 0) {
+      sectionWrap.style.display = "inline-flex";
+      sectionSelect.innerHTML = sections
+        .map(
+          (s) =>
+            `<option value="${s.relative_page}">${escapeHtml(s.title)} (S. ${s.book_page})</option>`
+        )
+        .join("");
+
+      // Bestimme den Abschnitt, in dem Thea sich gerade befindet
+      let currentActiveRel = sections[0].relative_page;
+      sections.forEach((s) => {
+        if (s.relative_page <= currentChapterPage) {
+          currentActiveRel = s.relative_page;
+        }
+      });
+      sectionSelect.value = String(currentActiveRel);
+
+      if (!sectionSelect.dataset.wired) {
+        sectionSelect.dataset.wired = "true";
+        sectionSelect.addEventListener("change", (e) => {
+          const targetPage = parseInt(e.target.value, 10);
+          if (targetPage && targetPage >= 1 && activeChapter && targetPage <= activeChapter.page_count) {
+            currentChapterPage = targetPage;
+            renderChapterPage();
+          }
+        });
+      }
+    } else {
+      sectionWrap.style.display = "none";
+    }
+  }
+
   // Aktive Pill markieren und ins Sichtfeld scrollen (nur wenn Bücher-Tab aktiv ist)
   document.querySelectorAll(".book-page-pill").forEach((pill) => {
     const isAct = parseInt(pill.dataset.page, 10) === currentChapterPage;
@@ -3493,6 +4328,9 @@ async function renderChapterPage() {
       }
     }
   });
+
+  // Drawer-Aktualisierung (aktive Sektion hervorheben)
+  updateDrawerActiveState();
 
   // Bild in voller Breite laden
   if (imgEl) {
@@ -4271,7 +5109,11 @@ async function initApp() {
     }
   };
 
+  safeRun(setupParentModeEvents, "setupParentModeEvents");
+  safeRun(initThemeManager, "initThemeManager");
+  await safeRun(checkParentAuthStatus, "checkParentAuthStatus");
   await safeRun(checkEnvironment, "checkEnvironment");
+  await safeRun(loadGamificationOverview, "loadGamificationOverview");
   await safeRun(loadProfile, "loadProfile");
   await safeRun(loadTaxonomy, "loadTaxonomy");
   await safeRun(loadPlan, "loadPlan");
@@ -4287,3 +5129,4 @@ async function initApp() {
 }
 
 initApp();
+

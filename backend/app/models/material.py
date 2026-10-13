@@ -25,6 +25,7 @@ class Material(Base):
     end_page = Column(Integer, nullable=True)    # Buch-Seitennummer Ende
     extracted_text = Column(Text, nullable=True)
     summary = Column(Text, nullable=True)
+    toc_json = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     subject = relationship("Subject")

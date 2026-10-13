@@ -39,6 +39,24 @@ def db_session(engine):
 
 @pytest.fixture(scope="function")
 def client(db_session):
+    """Test-Client im Eltern-Modus (Rechteprüfung wird überbrückt)."""
+    from backend.app.services.parent_auth import require_parent
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[require_parent] = lambda: True
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+@pytest.fixture(scope="function")
+def strict_client(db_session):
+    """Test-Client ohne Eltern-Rechte (echte Rechteprüfung aktiv, z. B. Thea-Modus)."""
     def override_get_db():
         try:
             yield db_session
@@ -49,6 +67,16 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+@pytest.fixture(autouse=True)
+def isolated_parent_auth(tmp_path, monkeypatch):
+    """Jeder Test bekommt eine eigene PIN-Datei (Standard-PIN 1234) und frische Fehlversuchs-Zähler."""
+    from backend.app.services import parent_auth
+    monkeypatch.setattr(parent_auth, "AUTH_FILE", tmp_path / "parent_auth.json")
+    monkeypatch.setattr(parent_auth, "DEFAULT_PIN", "1234")
+    parent_auth.reset_lockout_state()
+    yield
+    parent_auth.reset_lockout_state()
 
 @pytest.fixture(autouse=True)
 def disable_openai_in_tests(monkeypatch):

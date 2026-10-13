@@ -38,6 +38,8 @@ def test_get_book_detail_api(client):
     assert ch1["page_count"] == 12
     assert "file" in ch1["file_url"]
     assert "preview" in ch1["preview_url"]
+    assert "sections" in ch1
+    assert isinstance(ch1["sections"], list)
 
     # Kapitel 8 (Pythagoras) prüfen
     ch8 = next((c for c in data["chapters"] if "Pythagoras" in c["title"] or "Metrische Beziehungen" in c["title"]), None)
@@ -46,6 +48,7 @@ def test_get_book_detail_api(client):
     assert ch8["end_page"] == 173
     assert ch8["page_count"] == 22
     assert "Satz des Pythagoras" in ch8["focus"]
+    assert "sections" in ch8
 
 def test_get_book_chapter_api(client):
     res = client.get("/api/v1/books/mat_book_math_7/chapters/mat_book_math_7_ch8")
@@ -56,6 +59,8 @@ def test_get_book_chapter_api(client):
     assert data["end_page"] == 173
     assert data["page_count"] == 22
     assert "Pythagoras" in data["title"] or "Metrische Beziehungen" in data["title"]
+    assert "sections" in data
+    assert isinstance(data["sections"], list)
 
 def test_get_book_not_found(client):
     res = client.get("/api/v1/books/non_existent_book_id")
@@ -66,3 +71,32 @@ def test_get_book_chapter_not_found(client):
     res = client.get("/api/v1/books/mat_book_math_7/chapters/non_existent_chap_id")
     assert res.status_code == 404
     assert "nicht gefunden" in res.json()["detail"]
+
+
+def test_unsegmented_book_fallback_api(client, db_session):
+    from backend.app.models.material import Material
+    single_book = Material(
+        id="mat_test_single_book",
+        user_id="usr_thea",
+        subject_id="sub_math",
+        title="Ein einzelnes Buch ohne Kapitel",
+        kind="Buch",
+        filename="single_book.pdf",
+        file_path="/tmp/single_book.pdf",
+        file_size=1024,
+        mime_type="application/pdf",
+        page_count=50,
+        start_page=1,
+        end_page=50
+    )
+    db_session.add(single_book)
+    db_session.commit()
+
+    res = client.get("/api/v1/books/mat_test_single_book")
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data["chapters"]) == 1
+    assert data["chapters"][0]["id"] == "mat_test_single_book"
+    assert data["chapters"][0]["page_count"] == 50
+    assert data["chapters_count"] == 1
+

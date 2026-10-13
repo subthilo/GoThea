@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from backend.app.config import APP_ENV, IS_STAGING, DB_PATH
 from backend.app.database import get_db, Base, engine
 from backend.app.services.seeder import seed_database
+from backend.app.services.parent_auth import require_parent
 
 router = APIRouter(prefix="/api/v1", tags=["Environment"])
 
@@ -15,7 +16,7 @@ def get_environment_info():
         "env_label": "STAGING (Testdaten)" if IS_STAGING else "PRODUKTION"
     }
 
-@router.post("/staging/reset")
+@router.post("/staging/reset", dependencies=[Depends(require_parent)])
 def reset_staging_database(db: Session = Depends(get_db)):
     if not IS_STAGING:
         raise HTTPException(

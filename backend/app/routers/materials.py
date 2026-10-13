@@ -24,6 +24,7 @@ from backend.app.services.material_ingestion import (
     merge_materials,
     reorder_material_pages,
 )
+from backend.app.services.parent_auth import require_parent
 
 router = APIRouter(prefix="/api/v1/materials", tags=["materials"])
 
@@ -304,7 +305,7 @@ def prefetch_material_pages(
     page_renderer.prefetch_adjacent_pages(mat.id, mat.file_path, mat.mime_type, page)
     return {"status": "ok", "prefetched_around_page": page}
 
-@router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_parent)])
 def delete_material(
     material_id: str,
     db: Session = Depends(get_db)
@@ -328,7 +329,7 @@ def delete_material(
     db.commit()
     return None
 
-@router.patch("/{material_id}", response_model=MaterialRead)
+@router.patch("/{material_id}", response_model=MaterialRead, dependencies=[Depends(require_parent)])
 def update_material_endpoint(
     material_id: str,
     request: MaterialUpdateRequest,
@@ -346,7 +347,7 @@ def update_material_endpoint(
 
     return _to_material_read(mat, db)
 
-@router.post("/merge", response_model=MaterialRead, status_code=status.HTTP_201_CREATED)
+@router.post("/merge", response_model=MaterialRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_parent)])
 def merge_materials_endpoint(
     request: MaterialMergeRequest,
     db: Session = Depends(get_db)
@@ -365,7 +366,7 @@ def merge_materials_endpoint(
 
     return _to_material_read(mat, db)
 
-@router.post("/{material_id}/reorder-pages", response_model=MaterialRead)
+@router.post("/{material_id}/reorder-pages", response_model=MaterialRead, dependencies=[Depends(require_parent)])
 def reorder_material_pages_endpoint(
     material_id: str,
     request: MaterialReorderPagesRequest,

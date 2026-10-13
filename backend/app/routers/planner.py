@@ -18,6 +18,7 @@ from backend.app.schemas.planner import (
     PlanOverviewResponse
 )
 from backend.app.services.planner import compute_plan_overview
+from backend.app.services.parent_auth import require_parent
 
 router = APIRouter(prefix="/api/v1", tags=["Planner & Tests"])
 
@@ -44,7 +45,7 @@ def list_tests(db: Session = Depends(get_db)):
         ))
     return results
 
-@router.post("/tests", response_model=TestRead, status_code=201)
+@router.post("/tests", response_model=TestRead, status_code=201, dependencies=[Depends(require_parent)])
 def create_test(test_in: TestCreate, db: Session = Depends(get_db)):
     subject = db.query(Subject).filter(Subject.id == test_in.subject_id).first()
     if not subject:
@@ -70,7 +71,7 @@ def create_test(test_in: TestCreate, db: Session = Depends(get_db)):
         subject_color=subject.color_code
     )
 
-@router.delete("/tests/{test_id}")
+@router.delete("/tests/{test_id}", dependencies=[Depends(require_parent)])
 def delete_test(test_id: str, db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.id == test_id).first()
     if not test:
@@ -97,7 +98,7 @@ def list_study_blocks(db: Session = Depends(get_db)):
         ))
     return results
 
-@router.post("/plan/block", response_model=StudyBlockRead, status_code=201)
+@router.post("/plan/block", response_model=StudyBlockRead, status_code=201, dependencies=[Depends(require_parent)])
 def create_study_block(block_in: StudyBlockCreate, db: Session = Depends(get_db)):
     # Prüfen, ob bereits gesperrt
     existing = db.query(StudyBlock).filter(
@@ -121,7 +122,7 @@ def create_study_block(block_in: StudyBlockCreate, db: Session = Depends(get_db)
         subject_name=block.subject.name if block.subject else "Alle Fächer"
     )
 
-@router.delete("/plan/block/{block_id}")
+@router.delete("/plan/block/{block_id}", dependencies=[Depends(require_parent)])
 def delete_study_block(block_id: str, db: Session = Depends(get_db)):
     block = db.query(StudyBlock).filter(StudyBlock.id == block_id).first()
     if not block:
@@ -162,7 +163,7 @@ def toggle_task_completion(req: TaskToggleRequest, db: Session = Depends(get_db)
 
 # --- 4. Staging Dummy Seeder (Nur im Staging-Modus) ---
 
-@router.post("/staging/seed-dummy-tests")
+@router.post("/staging/seed-dummy-tests", dependencies=[Depends(require_parent)])
 def seed_dummy_tests(db: Session = Depends(get_db)):
     if not IS_STAGING:
         raise HTTPException(status_code=403, detail="Dummy-Tests sind nur in der Staging-Umgebung erlaubt!")

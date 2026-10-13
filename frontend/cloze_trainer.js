@@ -1468,8 +1468,18 @@
             modalAdaptiveBadge.className = `badge-adaptive-level level-${scoreData.adaptive_level_code || 2}`;
           }
         }
-        const msg = scoreData.feedback_message || `Klasse! Du hast ${correctItems} von ${totalItems} Lücken gelöst.`;
-        setLunaBanner(`🎉 ${msg} (Erfolgsquote: ${scoreData.accuracy_percent}%)`, 'info');
+        const msg = scoreData.feedback_message || `Klasse! Du hast ${correctItems} von ${totalItems} Lücken gemeistert.`;
+        let bannerText = `🎉 ${msg}`;
+        if (scoreData.xp_earned) {
+          bannerText += ` • +${scoreData.xp_earned} XP`;
+        }
+        if (scoreData.stars_earned) {
+          bannerText += ` • ${'⭐'.repeat(scoreData.stars_earned)}`;
+        }
+        if (scoreData.leveled_up && scoreData.level) {
+          bannerText = `🚀 LEVEL-UP! Du hast ${scoreData.level.title} erreicht! • +${scoreData.xp_earned} XP`;
+        }
+        setLunaBanner(bannerText, 'info');
         if (btnNext) btnNext.style.display = 'inline-flex';
         window.dispatchEvent(new CustomEvent('gothea:exercise-completed', { detail: scoreData }));
         return;

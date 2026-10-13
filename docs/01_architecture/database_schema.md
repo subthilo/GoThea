@@ -190,4 +190,56 @@
 * `subject_id` referenziert `subjects(id)` (optional `ON DELETE SET NULL`)
 * Filterungen primär nach `(user_id, day_of_week, week_type)`
 
+---
+
+### 12. `page_annotations` (Handschriftliche Vektornotizen auf Buchseiten)
+| Feld | Typ | Constraints | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `id` | TEXT | PRIMARY KEY | ID der Notiz (`ann_...`) |
+| `material_id` | TEXT | FK -> materials(id), CASCADE | Zugehöriges Buch oder Dokument |
+| `page_number` | INTEGER | NOT NULL | Seitennummer im Dokument |
+| `strokes_json` | TEXT | NOT NULL | Vektorstriche (normalisierte Relativkoordinaten $x, y \in [0, 1]$) |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Erstellungszeitpunkt |
+| `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Letzte Aktualisierung |
+
+*Constraint:* `UNIQUE(material_id, page_number)`
+
+---
+
+### 13. `exercise_scores` (Übungsergebnisse, Scores & Gamification)
+| Feld | Typ | Constraints | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `id` | TEXT | PRIMARY KEY | Score-ID (`scr_...`) |
+| `user_id` | TEXT | FK -> users(id), NOT NULL | Schüler-Zuordnung (`usr_thea`) |
+| `subject_id` | TEXT | FK -> subjects(id), NOT NULL | Schulfach |
+| `exercise_type` | TEXT | NOT NULL | Aufgabentyp (`cloze`, `math_problem`, `physics_diagram`, etc.) |
+| `difficulty_level` | TEXT | DEFAULT 'mittel' | Stufe (`leicht`, `mittel`, `schwer`) |
+| `total_items` | INTEGER | NOT NULL | Gesamtanzahl Lücken/Aufgaben |
+| `correct_items` | INTEGER | NOT NULL | Auf Anhieb richtig gelöste Aufgaben |
+| `mistakes_count` | INTEGER | DEFAULT 0 | Fehlversuche |
+| `revealed_count` | INTEGER | DEFAULT 0 | Aufgedeckte Lücken nach 3 Fehlern |
+| `accuracy_percent` | FLOAT | NOT NULL | Trefferquote ($0.0 - 100.0$) |
+| `xp_earned` | INTEGER | DEFAULT 0 | Erhaltene Erfahrungspunkte |
+| `stars_earned` | INTEGER | DEFAULT 1 | Sterne (1, 2 oder 3) |
+| `time_spent_seconds` | INTEGER | DEFAULT 0 | Bearbeitungsdauer in Sekunden |
+| `completed_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Abschlusszeitpunkt (indiziert) |
+
+---
+
+### 14. `board_exercises` (Aufgaben-Kacheln auf dem Whiteboard)
+| Feld | Typ | Constraints | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `id` | TEXT | PRIMARY KEY | Aufgaben-ID (`ex_...`) |
+| `session_id` | TEXT | FK -> tutor_sessions(id), CASCADE | Zugehörige Whiteboard-Sitzung |
+| `exercise_type` | TEXT | NOT NULL | Typ (`math_problem`, `physics_diagram`, `fill_in_the_blank`) |
+| `pos_x` | INTEGER | DEFAULT 100 | X-Position auf der Tafel |
+| `pos_y` | INTEGER | DEFAULT 150 | Y-Position auf der Tafel |
+| `width` | INTEGER | DEFAULT 400 | Kachelbreite |
+| `height` | INTEGER | DEFAULT 300 | Kachelhöhe |
+| `content_json` | TEXT | NOT NULL | Aufgaben-Inhalte & Lösungsdaten |
+| `tutor_speech` | TEXT | NULLABLE | Zu Beginn vorgelesener Impuls |
+| `is_solved` | BOOLEAN | DEFAULT FALSE | Status gelöst / ungelöst |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Erstellungszeitpunkt |
+
+
 

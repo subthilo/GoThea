@@ -43,6 +43,53 @@ Jedes Kind-Material speichert:
 
 ---
 
+## 2.1 Vollautomatische Buch-Segmentierungs-Pipeline (`book_segmentation.py`)
+
+Sobald ein Schulbuch hochgeladen wird oder über die Inbox eintrifft, zerlegt der Dienst [`backend/app/services/book_segmentation.py`](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/backend/app/services/book_segmentation.py) das Gesamt-PDF vollautomatisch in seine einzelnen Lerneinheiten:
+
+```mermaid
+flowchart TD
+    A["Neues PDF-Material empfangen"] --> B{"Buch-Kandidat?<br/>(is_candidate_book)"}
+    B -- Nein --> C["Normales Einzelmaterial speichern"]
+    B -- Ja --> D["Master-Dokument speichern & Antwort an Client"]
+    D --> E["trigger_background_book_segmentation (Daemon-Thread)"]
+    E --> F{"1. Vorlagen-Register?<br/>(z.B. Fundamente der Mathematik 7)"}
+    F -- Treffer --> J["pypdf PDF-Slicing & Child-Materialien erzeugen"]
+    F -- Kein Treffer --> G{"2. Digitale PDF-Bookmarks?<br/>(extract_chapters_from_pdf_outline)"}
+    G -- Treffer --> J
+    G -- Kein Treffer --> H{"3. KI TOC-Erkennung?<br/>(extract_chapters_with_ai)"}
+    H -- Treffer --> J
+    H -- Kein Treffer --> K["Sicherheits-Fallback:<br/>Gesamtbuch bleibt als Einheit lesbar"]
+    J --> L["Lerneinheiten im Bücher-Browser bereitgestellt"]
+```
+
+### Die 3 Erkennungsstufen der Pipeline:
+1. **Stufe 1 – Vorlagen-Register (`FUNDAMENTE_MATHE_7_CHAPTERS`)**:
+   * Für bekannte Schulbücher der 7. Klasse greift ein verifiziertes, hochpräzises Kapitelmapping mit Seitengrenzen, Lehrplanthemen und Kompetenzen.
+2. **Stufe 2 – Digitale PDF-Bookmarks (`extract_chapters_from_pdf_outline`)**:
+   * Bei digitalen Verlagsausgaben (Cornelsen, Klett, Westermann) parst `pypdf` die eingebettete Dokument-Outline (`reader.outline`).
+   * Funktioniert deterministisch in **unter 0,1 Sekunden**, völlig offline und ohne jegliche KI-Token-Kosten.
+3. **Stufe 3 – Multimodale KI-Inhaltsverzeichnis-Analyse (`extract_chapters_with_ai`)**:
+   * Bei gescannten Schulbüchern ohne digitale Lesezeichen extrahiert das System Text von den Seiten 1–8.
+   * Fehlt digitaler Text, rendert das System die Seiten 2–5 als Bilder und übergibt sie an OpenAI Vision (`gpt-4o-mini`). Die KI liest das Inhaltsverzeichnis, gleicht den Seitennummern-Offset ab und liefert eine strukturierte JSON-Kapitelliste zurück.
+
+### Asynchroner Hintergrund-Betrieb & Entkopplung:
+* Das physische Slicing von 300-Seiten-PDFs in 11 Kapitel-PDFs dauert auf dem Raspberry Pi ca. 2–3 Sekunden.
+* Durch `trigger_background_book_segmentation` antwortet der Web-Upload und der Inbox-Scanner **sofort**. Das Slicing und Verknüpfen der Child-Materialien läuft vollständig im Hintergrund.
+
+### Sicherheits-Fallback (Nie wieder Sackgassen):
+* Falls ein hochgeladenes Buch keine erkennbaren Kapitel hat (z. B. eine durchgehende Schullektüre), blendet der Bücher-Browser automatisch die Option **„📖 Gesamtes Buch aufschlagen (Alle Seiten durchblättern)“** ein. Das Master-Buch kann von Seite 1 bis Ende nahtlos gelesen und auf die Tafel übernommen werden.
+
+### Nachträgliche Klassifizierung & Typänderung auf „Buch“:
+* Wird ein bestehendes Material nachträglich über das Bearbeiten-Modal auf **„Schulbuch / Lehrbuch (Gesamtwerk)“** (`kind = "Buch"`) umgestellt (oder als `Buchauszug` mit $\ge 20$ Seiten gespeichert), führt [`update_material`](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/backend/app/services/material_ingestion.py) folgende Aktionen automatisch aus:
+  1. Setzt den kanonischen Typ `material.kind = "Buch"`.
+  2. Aktualisiert oder erstellt das zugehörige Dossier als `kind = "lehrbuch"` mit Titel-Präfix `Lehrbuch: <Titel>`.
+  3. Startet die Segmentierungs-Pipeline im Hintergrund (`trigger_background_book_segmentation`), falls noch keine Kapitel existieren.
+  4. Nimmt das Werk sofort in die Bücherliste (`GET /api/v1/books`) auf.
+  5. Aktualisiert das Frontend-Bücherregal unmittelbar per `loadBooks()`.
+
+---
+
 ## 3. UI-Komponenten & Interaktion
 
 ### 1. Bücher-Regal (`#books-shelf-selector`)

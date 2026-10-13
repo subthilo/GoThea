@@ -8,6 +8,7 @@ from backend.app.database import get_db
 from backend.app.models.timetable import TimetableSlot
 from backend.app.models.taxonomy import Subject
 from backend.app.models.material import Material
+from backend.app.services.parent_auth import require_parent
 from backend.app.schemas.timetable import (
     TimetableOverviewResponse,
     TimetableSlotRead,
@@ -265,7 +266,7 @@ def get_today_timetable(
     }
 
 
-@router.post("/reset")
+@router.post("/reset", dependencies=[Depends(require_parent)])
 def reset_timetable_to_default(
     user_id: str = "usr_thea",
     db: Session = Depends(get_db)
@@ -277,7 +278,7 @@ def reset_timetable_to_default(
     return {"status": "success", "message": "Stundenplan erfolgreich auf Werkseinstellungen (Klasse 7D) zurückgesetzt."}
 
 
-@router.post("/slot", response_model=TimetableSlotRead, status_code=201)
+@router.post("/slot", response_model=TimetableSlotRead, status_code=201, dependencies=[Depends(require_parent)])
 def create_timetable_slot(
     slot_in: TimetableSlotCreateUpdate,
     user_id: str = "usr_thea",
@@ -330,7 +331,7 @@ def create_timetable_slot(
     )
 
 
-@router.put("/slot/{slot_id}", response_model=TimetableSlotRead)
+@router.put("/slot/{slot_id}", response_model=TimetableSlotRead, dependencies=[Depends(require_parent)])
 def update_timetable_slot(
     slot_id: str,
     slot_in: TimetableSlotCreateUpdate,
@@ -385,7 +386,7 @@ def update_timetable_slot(
     )
 
 
-@router.delete("/slot/{slot_id}", status_code=204)
+@router.delete("/slot/{slot_id}", status_code=204, dependencies=[Depends(require_parent)])
 def delete_timetable_slot(
     slot_id: str,
     user_id: str = "usr_thea",

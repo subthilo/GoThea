@@ -199,4 +199,18 @@ def seed_database(db: Session):
                 if orga_dossier:
                     mat.dossier_id = orga_dossier.id
 
+    # 4. Nicht segmentierte Lehrbücher automatisch segmentieren
+    try:
+        from backend.app.services.book_segmentation import auto_detect_and_segment_book
+        unsegmented_books = db.query(Material).filter(
+            Material.kind == "Buch",
+            Material.parent_id == None
+        ).all()
+        for b in unsegmented_books:
+            children_count = db.query(Material).filter_by(parent_id=b.id).count()
+            if children_count == 0:
+                auto_detect_and_segment_book(db, b)
+    except Exception as e:
+        logger.warning(f"Konnte Lehrbücher nicht automatisch segmentieren: {e}")
+
     db.commit()

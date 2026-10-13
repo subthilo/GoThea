@@ -24,6 +24,7 @@ from backend.app.routers.inbox import router as inbox_router
 from backend.app.routers.timetable import router as timetable_router
 from backend.app.routers.books import router as books_router
 from backend.app.routers.exercises import router as exercises_router
+from backend.app.routers.auth import router as auth_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -69,6 +70,7 @@ app.include_router(inbox_router)
 app.include_router(timetable_router)
 app.include_router(books_router)
 app.include_router(exercises_router)
+app.include_router(auth_router)
 
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():
@@ -77,7 +79,14 @@ if FRONTEND_DIR.exists():
 @app.api_route("/", methods=["GET", "HEAD"])
 async def get_index():
     index_file = FRONTEND_DIR / "index.html"
-    return FileResponse(index_file)
+    return FileResponse(
+        index_file,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 @app.get("/favicon.ico")
 @app.get("/apple-touch-icon.png")

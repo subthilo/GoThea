@@ -60,3 +60,41 @@ def test_pre_analyze_upload_with_subject_hint(db_session):
     if res.predicted_topic_id:
         topic = db_session.query(Topic).filter_by(id=res.predicted_topic_id).first()
         assert topic.subject_id == sub_bio.id
+
+def test_update_material_to_book_promotes_and_triggers_segmentation(db_session, monkeypatch):
+    from backend.app.models.material import Material
+    from backend.app.models.dossier import Dossier
+    from backend.app.schemas.material import MaterialUpdateRequest
+    from backend.app.services.material_ingestion import update_material
+
+    # Mock background trigger to avoid spawning external thread
+    triggered = []
+    monkeypatch.setattr(
+        "backend.app.services.book_segmentation.trigger_background_book_segmentation",
+        lambda mat_id: triggered.append(mat_id)
+    )
+
+    dossier = Dossier(id="dos_test_update", user_id="usr_thea", subject_id="sub_math", title="Thema Zuordnungen", kind="arbeitsblaetter")
+    db_session.add(dossier)
+    mat = Material(
+        id="mat_update_test_1",
+        user_id="usr_thea",
+        subject_id="sub_math",
+        dossier_id=dossier.id,
+        title="Franzvorkurs Arbeitsbuch",
+        kind="Arbeitsblatt",
+        filename="vorkurs.pdf",
+        file_path="/tmp/vorkurs.pdf",
+        file_size=1234,
+        page_count=28
+    )
+    db_session.add(mat)
+    db_session.commit()
+
+    # Update to Buch
+    req = MaterialUpdateRequest(kind="Buch")
+    updated = update_material(db_session, mat.id, req)
+    assert updated.kind == "Buch"
+    assert dossier.kind == "lehrbuch"
+    assert "mat_update_test_1" in triggered
+

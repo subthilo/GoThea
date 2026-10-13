@@ -1,6 +1,14 @@
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
+class BookSectionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    title: str
+    book_page: int
+    relative_page: int = 1
+    level: int = 2
+
 class BookChapterRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -18,6 +26,7 @@ class BookChapterRead(BaseModel):
     file_size: int = 0
     file_url: str
     preview_url: str
+    sections: List[BookSectionRead] = []
 
 class BookOverviewRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)

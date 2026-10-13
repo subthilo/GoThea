@@ -1,0 +1,1067 @@
+import json
+import logging
+import os
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+import pypdf
+from sqlalchemy.orm import Session
+
+from backend.app.config import MATERIALS_DIR
+from backend.app.models.material import Material
+from backend.app.models.taxonomy import Topic
+
+logger = logging.getLogger(__name__)
+
+# Bekannte Kapiteldefinitionen für "Fundamente der Mathematik, Ausgabe B, Gymnasium, Klasse 7"
+# Basierend auf der Vision-Analyse des Original-Inhaltsverzeichnisses
+FUNDAMENTE_MATHE_7_CHAPTERS = [
+    {
+        "unit_number": 0,
+        "title": "Titelei & Vorbereitung zur Lernausgangslage",
+        "start_pdf_page": 1,
+        "end_pdf_page": 14,
+        "book_start_page": 1,
+        "book_end_page": 10,
+        "kind": "Buchauszug",
+        "topic_name": "Fundamente der Mathematik",
+        "focus": "Titelei, Inhaltsverzeichnis und diagnostische Vorbereitung zur Lernausgangslage Klasse 7.",
+        "sections": [
+            {"title": "Deine Grundlagen aus der Grundschulzeit", "book_page": 6, "relative_page": 6, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 1,
+        "title": "Kapitel 1: Zuordnungen und Proportionalität",
+        "start_pdf_page": 15,
+        "end_pdf_page": 46,
+        "book_start_page": 11,
+        "book_end_page": 42,
+        "kind": "Buchauszug",
+        "topic_name": "Dreisatz und proportionale Zuordnungen",
+        "focus": "Zuordnungen, grafische Darstellung, proportionale und antiproportionale Zuordnungen, Dreisatz.",
+        "sections": [
+            {"title": "Dein Fundament (Wiederholung)", "book_page": 12, "relative_page": 2, "level": 2},
+            {"title": "1.1 Zuordnungen", "book_page": 14, "relative_page": 4, "level": 2},
+            {"title": "1.2 Grafische Darstellung", "book_page": 18, "relative_page": 8, "level": 2},
+            {"title": "1.3 Proportionale Zuordnungen", "book_page": 22, "relative_page": 12, "level": 2},
+            {"title": "1.4 Dreisatz für proportionale Zuordnungen", "book_page": 26, "relative_page": 16, "level": 2},
+            {"title": "1.5 Antiproportionale Zuordnungen", "book_page": 30, "relative_page": 20, "level": 2},
+            {"title": "1.6 Dreisatz für antiproportionale Zuordnungen", "book_page": 34, "relative_page": 24, "level": 2},
+            {"title": "1.7 Vermischte Aufgaben", "book_page": 37, "relative_page": 27, "level": 2},
+            {"title": "Prüfe dein neues Fundament", "book_page": 40, "relative_page": 30, "level": 2},
+            {"title": "Zusammenfassung", "book_page": 42, "relative_page": 32, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 2,
+        "title": "Kapitel 2: Prozent- und Zinsrechnung",
+        "start_pdf_page": 47,
+        "end_pdf_page": 78,
+        "book_start_page": 43,
+        "book_end_page": 74,
+        "kind": "Buchauszug",
+        "topic_name": "Prozent- und Zinsrechnung",
+        "focus": "Prozentschreibweise, Grundbegriffe, Prozentwert, Grundwert, prozentuale Veränderung und Zinsen.",
+        "sections": [
+            {"title": "Dein Fundament (Wiederholung)", "book_page": 44, "relative_page": 2, "level": 2},
+            {"title": "2.1 Prozentschreibweise", "book_page": 46, "relative_page": 4, "level": 2},
+            {"title": "2.2 Grundbegriffe der Prozentrechnung", "book_page": 50, "relative_page": 8, "level": 2},
+            {"title": "2.3 Prozentwert berechnen", "book_page": 52, "relative_page": 10, "level": 2},
+            {"title": "2.4 Prozentsatz berechnen", "book_page": 54, "relative_page": 12, "level": 2},
+            {"title": "2.5 Grundwert berechnen", "book_page": 56, "relative_page": 14, "level": 2},
+            {"title": "Streifzug: Promille", "book_page": 58, "relative_page": 16, "level": 2},
+            {"title": "2.6 Prozentuale Veränderung", "book_page": 60, "relative_page": 18, "level": 2},
+            {"title": "2.7 Zinsen", "book_page": 65, "relative_page": 23, "level": 2},
+            {"title": "Streifzug: Sparpläne und Tilgungspläne", "book_page": 68, "relative_page": 26, "level": 2},
+            {"title": "2.8 Vermischte Aufgaben", "book_page": 70, "relative_page": 28, "level": 2},
+            {"title": "Prüfe dein neues Fundament", "book_page": 72, "relative_page": 30, "level": 2},
+            {"title": "Zusammenfassung", "book_page": 74, "relative_page": 32, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 3,
+        "title": "Kapitel 3: Rationale Zahlen",
+        "start_pdf_page": 79,
+        "end_pdf_page": 114,
+        "book_start_page": 75,
+        "book_end_page": 110,
+        "kind": "Buchauszug",
+        "topic_name": "Rationale Zahlen",
+        "focus": "Ganze Zahlen, Zahlengerade, Koordinatensystem, Addition, Subtraktion, Multiplikation und Division rationaler Zahlen.",
+        "sections": [
+            {"title": "Dein Fundament (Wiederholung)", "book_page": 76, "relative_page": 2, "level": 2},
+            {"title": "3.1 Ganze Zahlen und Zahlengerade", "book_page": 78, "relative_page": 4, "level": 2},
+            {"title": "3.2 Erweiterung des Koordinatensystems", "book_page": 80, "relative_page": 6, "level": 2},
+            {"title": "3.3 Ganze Zahlen vergleichen und ordnen", "book_page": 82, "relative_page": 8, "level": 2},
+            {"title": "3.4 Zustandsänderungen", "book_page": 84, "relative_page": 10, "level": 2},
+            {"title": "3.5 Rationale Zahlen", "book_page": 87, "relative_page": 13, "level": 2},
+            {"title": "3.6 Rationale Zahlen addieren und subtrahieren", "book_page": 89, "relative_page": 15, "level": 2},
+            {"title": "3.7 Rationale Zahlen multiplizieren und dividieren", "book_page": 95, "relative_page": 21, "level": 2},
+            {"title": "Streifzug: Rechenspiele", "book_page": 99, "relative_page": 25, "level": 2},
+            {"title": "3.8 Rechnen mit allen Grundrechenarten", "book_page": 100, "relative_page": 26, "level": 2},
+            {"title": "Streifzug: Den Taschenrechner kennenlernen", "book_page": 102, "relative_page": 28, "level": 2},
+            {"title": "3.9 Ausmultiplizieren und Ausklammern", "book_page": 104, "relative_page": 30, "level": 2},
+            {"title": "3.10 Vermischte Aufgaben", "book_page": 107, "relative_page": 33, "level": 2},
+            {"title": "Prüfe dein neues Fundament", "book_page": 108, "relative_page": 34, "level": 2},
+            {"title": "Zusammenfassung", "book_page": 110, "relative_page": 36, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 4,
+        "title": "Kapitel 4: Geometrische Konstruktionen",
+        "start_pdf_page": 115,
+        "end_pdf_page": 160,
+        "book_start_page": 111,
+        "book_end_page": 156,
+        "kind": "Buchauszug",
+        "topic_name": "Geometrie & Winkelbeziehungen",
+        "focus": "Kreis, Senkrechte und Parallele, Dreiecke, Winkelsumme, Kongruenzsätze, Mittelsenkrechte, Umkreis und Inkreis.",
+        "sections": [
+            {"title": "Dein Fundament (Wiederholung)", "book_page": 112, "relative_page": 2, "level": 2},
+            {"title": "4.1 Kreis", "book_page": 114, "relative_page": 4, "level": 2},
+            {"title": "4.2 Senkrecht und parallel", "book_page": 117, "relative_page": 7, "level": 2},
+            {"title": "4.3 Dreiecke", "book_page": 120, "relative_page": 10, "level": 2},
+            {"title": "4.4 Winkelsumme im Dreieck", "book_page": 124, "relative_page": 14, "level": 2},
+            {"title": "4.5 Dynamische Geometrie-Software", "book_page": 128, "relative_page": 18, "level": 2},
+            {"title": "4.6 Kongruenzsätze", "book_page": 131, "relative_page": 21, "level": 2},
+            {"title": "4.7 Probleme lösen mit Dreieckskonstruktionen", "book_page": 137, "relative_page": 27, "level": 2},
+            {"title": "4.8 Mittelsenkrechte und Winkelhalbierende", "book_page": 140, "relative_page": 30, "level": 2},
+            {"title": "4.9 Umkreis und Inkreis beim Dreieck", "book_page": 143, "relative_page": 33, "level": 2},
+            {"title": "4.10 Höhe und Seitenhalbierende im Dreieck", "book_page": 147, "relative_page": 37, "level": 2},
+            {"title": "4.11 Vermischte Aufgaben", "book_page": 151, "relative_page": 41, "level": 2},
+            {"title": "Prüfe dein neues Fundament", "book_page": 154, "relative_page": 44, "level": 2},
+            {"title": "Zusammenfassung", "book_page": 156, "relative_page": 46, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 5,
+        "title": "Kapitel 5: Terme und Gleichungen",
+        "start_pdf_page": 161,
+        "end_pdf_page": 198,
+        "book_start_page": 157,
+        "book_end_page": 194,
+        "kind": "Buchauszug",
+        "topic_name": "Terme und lineare Gleichungen",
+        "focus": "Variablen, Terme vereinfachen, lineare Gleichungen lösen, Äquivalenzumformungen und Modellieren.",
+        "sections": [
+            {"title": "Dein Fundament (Wiederholung)", "book_page": 158, "relative_page": 2, "level": 2},
+            {"title": "5.1 Variablen und Terme", "book_page": 160, "relative_page": 4, "level": 2},
+            {"title": "5.2 Terme vereinfachen", "book_page": 164, "relative_page": 8, "level": 2},
+            {"title": "5.3 Gleichungen", "book_page": 167, "relative_page": 11, "level": 2},
+            {"title": "Streifzug: Sprache in der Mathematik", "book_page": 170, "relative_page": 14, "level": 2},
+            {"title": "5.4 Äquivalenzumformungen", "book_page": 172, "relative_page": 16, "level": 2},
+            {"title": "5.5 Sonderfälle beim Lösen von Gleichungen", "book_page": 176, "relative_page": 20, "level": 2},
+            {"title": "5.6 Mit Gleichungen modellieren", "book_page": 178, "relative_page": 22, "level": 2},
+            {"title": "Streifzug: Gleichungen mit einem CAS lösen", "book_page": 182, "relative_page": 26, "level": 2},
+            {"title": "5.7 Verhältnisgleichungen und Bruchgleichungen", "book_page": 184, "relative_page": 28, "level": 2},
+            {"title": "5.8 Ungleichungen", "book_page": 187, "relative_page": 31, "level": 2},
+            {"title": "5.9 Vermischte Aufgaben", "book_page": 189, "relative_page": 33, "level": 2},
+            {"title": "Prüfe dein neues Fundament", "book_page": 192, "relative_page": 36, "level": 2},
+            {"title": "Zusammenfassung", "book_page": 194, "relative_page": 38, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 6,
+        "title": "Kapitel 6: Flächen",
+        "start_pdf_page": 199,
+        "end_pdf_page": 222,
+        "book_start_page": 195,
+        "book_end_page": 218,
+        "kind": "Buchauszug",
+        "topic_name": "Geometrie & Winkelbeziehungen",
+        "focus": "Flächeninhalt von Dreiecken, Parallelogrammen, Trapezen, Drachenvierecken und zusammengesetzten Figuren.",
+        "sections": [
+            {"title": "Dein Fundament (Wiederholung)", "book_page": 196, "relative_page": 2, "level": 2},
+            {"title": "6.1 Flächeninhalt eines Dreiecks", "book_page": 198, "relative_page": 4, "level": 2},
+            {"title": "6.2 Winkelsumme im Viereck", "book_page": 202, "relative_page": 8, "level": 2},
+            {"title": "6.3 Flächeninhalt eines Parallelogramms", "book_page": 204, "relative_page": 10, "level": 2},
+            {"title": "6.4 Flächeninhalt von Trapez und Drachenviereck", "book_page": 208, "relative_page": 14, "level": 2},
+            {"title": "Streifzug: Flächeninhalt beliebiger Figuren", "book_page": 212, "relative_page": 18, "level": 2},
+            {"title": "6.5 Vermischte Aufgaben", "book_page": 215, "relative_page": 21, "level": 2},
+            {"title": "Prüfe dein neues Fundament", "book_page": 216, "relative_page": 22, "level": 2},
+            {"title": "Zusammenfassung", "book_page": 218, "relative_page": 24, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 7,
+        "title": "Kapitel 7: Daten",
+        "start_pdf_page": 223,
+        "end_pdf_page": 258,
+        "book_start_page": 219,
+        "book_end_page": 254,
+        "kind": "Buchauszug",
+        "topic_name": "Absolute und relative Häufigkeiten",
+        "focus": "Absolute und relative Häufigkeiten, Diagramme, Histogramme, statistische Kennwerte und Boxplots.",
+        "sections": [
+            {"title": "Dein Fundament (Wiederholung)", "book_page": 220, "relative_page": 2, "level": 2},
+            {"title": "7.1 Absolute und relative Häufigkeit", "book_page": 222, "relative_page": 4, "level": 2},
+            {"title": "7.2 Diagramme", "book_page": 226, "relative_page": 8, "level": 2},
+            {"title": "7.3 Klasseneinteilung und Histogramme", "book_page": 230, "relative_page": 12, "level": 2},
+            {"title": "7.4 Kennwerte", "book_page": 234, "relative_page": 16, "level": 2},
+            {"title": "7.5 Tabellenkalkulation", "book_page": 238, "relative_page": 20, "level": 2},
+            {"title": "7.6 Boxplots", "book_page": 242, "relative_page": 24, "level": 2},
+            {"title": "7.7 Statistische Erhebungen", "book_page": 246, "relative_page": 28, "level": 2},
+            {"title": "7.8 Vermischte Aufgaben", "book_page": 249, "relative_page": 31, "level": 2},
+            {"title": "Prüfe dein neues Fundament", "book_page": 252, "relative_page": 34, "level": 2},
+            {"title": "Zusammenfassung", "book_page": 254, "relative_page": 36, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 8,
+        "title": "Kapitel 8: Ähnlichkeit",
+        "start_pdf_page": 259,
+        "end_pdf_page": 278,
+        "book_start_page": 255,
+        "book_end_page": 274,
+        "kind": "Buchauszug",
+        "topic_name": "Geometrie & Winkelbeziehungen",
+        "focus": "Kongruente und ähnliche Figuren, Kongruenzabbildungen, Maßstäbe, Umfang und Flächeninhalt ähnlicher Figuren.",
+        "sections": [
+            {"title": "Dein Fundament (Wiederholung)", "book_page": 256, "relative_page": 2, "level": 2},
+            {"title": "8.1 Kongruente Figuren", "book_page": 258, "relative_page": 4, "level": 2},
+            {"title": "8.2 Kongruenzabbildungen", "book_page": 261, "relative_page": 7, "level": 2},
+            {"title": "8.3 Ähnliche Figuren", "book_page": 265, "relative_page": 11, "level": 2},
+            {"title": "8.4 Umfang und Flächeninhalt ähnlicher Figuren", "book_page": 268, "relative_page": 14, "level": 2},
+            {"title": "Streifzug: CAS-Einsatz bei Ähnlichkeit", "book_page": 270, "relative_page": 16, "level": 2},
+            {"title": "8.5 Vermischte Aufgaben", "book_page": 271, "relative_page": 17, "level": 2},
+            {"title": "Prüfe dein neues Fundament", "book_page": 272, "relative_page": 18, "level": 2},
+            {"title": "Zusammenfassung", "book_page": 274, "relative_page": 20, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 9,
+        "title": "Kapitel 9: Methodenkarten",
+        "start_pdf_page": 279,
+        "end_pdf_page": 282,
+        "book_start_page": 275,
+        "book_end_page": 278,
+        "kind": "Buchauszug",
+        "topic_name": "Fundamente der Mathematik",
+        "focus": "Methodenkarten und Strategien zum strukturierten mathematischen Arbeiten und Problemlösen.",
+        "sections": [
+            {"title": "Methodenkarten & Lösungsstrategien", "book_page": 276, "relative_page": 2, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 10,
+        "title": "Kapitel 10: Anhang & Lösungen",
+        "start_pdf_page": 283,
+        "end_pdf_page": 304,
+        "book_start_page": 279,
+        "book_end_page": 300,
+        "kind": "Lösungsheft",
+        "topic_name": "Fundamente der Mathematik",
+        "focus": "Vollständige Lösungen und Kontrollhilfen für alle Aufgaben des Lehrbuchs.",
+        "sections": [
+            {"title": "Lösungen aller Aufgaben", "book_page": 280, "relative_page": 2, "level": 2}
+        ]
+    }
+]
+
+FRANZ_VORKURS_SECTIONS = [
+    {"title": "1. Begrüßen und verabschieden (Bonjour ! Au revoir !)", "book_page": 4, "relative_page": 4, "level": 2},
+    {"title": "2. Sagen, wie es einem geht (Ça va ?)", "book_page": 6, "relative_page": 6, "level": 2},
+    {"title": "3. Sagen, wie man heißt (Comment tu t'appelles ?)", "book_page": 8, "relative_page": 8, "level": 2},
+    {"title": "4. Sagen, wie alt man ist (Tu as quel âge ?)", "book_page": 10, "relative_page": 10, "level": 2},
+    {"title": "5. Sagen, wo man wohnt (Où tu habites ?)", "book_page": 14, "relative_page": 14, "level": 2},
+    {"title": "6. Sagen, was man mag (J'aime les jeux vidéo et le chocolat)", "book_page": 18, "relative_page": 18, "level": 2},
+    {"title": "7. Sagen, was man nicht mag (Je n'aime pas...)", "book_page": 22, "relative_page": 22, "level": 2},
+    {"title": "Abschluss & Lernziele", "book_page": 26, "relative_page": 26, "level": 2}
+]
+
+PHYSIK_PLUS_7_CHAPTERS = [
+    {
+        "unit_number": 1,
+        "title": "Mechanik",
+        "book_start_page": 5,
+        "book_end_page": 34,
+        "sections": [
+            {"title": "1.1 Kraft & Wirkungen von Kräften", "book_page": 6, "relative_page": 2, "level": 2},
+            {"title": "1.2 Federkraftmesser & Darstellung", "book_page": 8, "relative_page": 4, "level": 2},
+            {"title": "1.3 Gewichtskraft & Gravitation", "book_page": 11, "relative_page": 7, "level": 2},
+            {"title": "1.4 Wechselwirkung von Kräften", "book_page": 13, "relative_page": 9, "level": 2},
+            {"title": "Streifzug: In der Schwerelosigkeit", "book_page": 14, "relative_page": 10, "level": 2},
+            {"title": "Aufgaben & Zusammenfassung: Kraft", "book_page": 15, "relative_page": 11, "level": 2},
+            {"title": "1.5 Reibung & Reibungskräfte", "book_page": 16, "relative_page": 12, "level": 2},
+            {"title": "1.6 Haft-, Gleit- und Rollreibung", "book_page": 17, "relative_page": 13, "level": 2},
+            {"title": "Projekt: Sicheres Radfahren", "book_page": 21, "relative_page": 17, "level": 2},
+            {"title": "1.7 Rollen & Flaschenzüge", "book_page": 22, "relative_page": 18, "level": 2},
+            {"title": "1.8 Mechanische Arbeit", "book_page": 24, "relative_page": 20, "level": 2},
+            {"title": "1.9 Geneigte Ebene & Hebel", "book_page": 26, "relative_page": 22, "level": 2},
+            {"title": "1.10 Mechanische Leistung", "book_page": 28, "relative_page": 24, "level": 2},
+            {"title": "Projekt: Hebel am Fahrrad", "book_page": 34, "relative_page": 30, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 2,
+        "title": "Energie in Natur und Technik",
+        "book_start_page": 35,
+        "book_end_page": 50,
+        "sections": [
+            {"title": "2.1 Physikalische Bedeutung der Energie", "book_page": 36, "relative_page": 2, "level": 2},
+            {"title": "2.2 Energieformen & Speicherung", "book_page": 37, "relative_page": 3, "level": 2},
+            {"title": "2.3 Umwandlung & Übertragung von Energie", "book_page": 39, "relative_page": 5, "level": 2},
+            {"title": "2.4 Energie für Lebensprozesse", "book_page": 40, "relative_page": 6, "level": 2},
+            {"title": "2.5 Energie auf dem Weg zum Verbraucher", "book_page": 41, "relative_page": 7, "level": 2},
+            {"title": "2.6 Kraftwerke & Umweltbelastung", "book_page": 43, "relative_page": 9, "level": 2},
+            {"title": "2.7 Energieerhaltungssatz", "book_page": 46, "relative_page": 12, "level": 2},
+            {"title": "Projekt: Wind als alternative Energie", "book_page": 46, "relative_page": 12, "level": 2},
+            {"title": "2.8 Rationelle Nutzung von Energie", "book_page": 48, "relative_page": 14, "level": 2},
+            {"title": "Aufgaben & Zusammenfassung: Energie", "book_page": 50, "relative_page": 16, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 3,
+        "title": "Wärmelehre",
+        "book_start_page": 51,
+        "book_end_page": 65,
+        "sections": [
+            {"title": "3.1 Aufbau der Stoffe aus Teilchen", "book_page": 52, "relative_page": 2, "level": 2},
+            {"title": "3.2 Feste Körper, Flüssigkeiten und Gase", "book_page": 53, "relative_page": 3, "level": 2},
+            {"title": "3.3 Brown’sche Bewegung", "book_page": 54, "relative_page": 4, "level": 2},
+            {"title": "Aufgaben: Teilchenmodell", "book_page": 55, "relative_page": 5, "level": 2},
+            {"title": "3.4 Temperaturmessung & Thermometer", "book_page": 56, "relative_page": 6, "level": 2},
+            {"title": "3.5 Die Kelvin-Skala der Temperatur", "book_page": 57, "relative_page": 7, "level": 2},
+            {"title": "3.6 Temperatur & kinetische Energie", "book_page": 58, "relative_page": 8, "level": 2},
+            {"title": "3.7 Thermische Energie & Wärme berechnen", "book_page": 60, "relative_page": 10, "level": 2},
+            {"title": "Streifzug: Gefühlte Temperatur", "book_page": 64, "relative_page": 14, "level": 2},
+            {"title": "Aufgaben & Zusammenfassung: Wärmelehre", "book_page": 65, "relative_page": 15, "level": 2}
+        ]
+    }
+]
+
+APLUS_1_CHAPTERS = [
+    {
+        "unit_number": 0,
+        "title": "C'est parti ! (Einstieg)",
+        "start_pdf_page": 10,
+        "end_pdf_page": 17,
+        "book_start_page": 8,
+        "book_end_page": 15,
+        "kind": "Buchauszug",
+        "topic_name": "Französisch Grundlagen",
+        "focus": "Erste Kontakte, Begrüßung, Alphabet, Zahlen und Vorlieben auf Französisch.",
+        "sections": [
+            {"title": "1. Bonjour ! (Begrüßung & Vorstellung)", "book_page": 8, "relative_page": 1, "level": 2},
+            {"title": "2. Tu as quel âge ? (Zahlen 1-12 & Alter)", "book_page": 10, "relative_page": 3, "level": 2},
+            {"title": "3. Dans la classe (Gegenstände im Klassenzimmer)", "book_page": 11, "relative_page": 4, "level": 2},
+            {"title": "4. J'aime les jeux vidéo et le chocolat (Vorlieben)", "book_page": 12, "relative_page": 5, "level": 2},
+            {"title": "5. Les animaux et les couleurs (Tiere & Farben)", "book_page": 14, "relative_page": 7, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 1,
+        "title": "Unité 1: Bienvenue à Paris !",
+        "start_pdf_page": 18,
+        "end_pdf_page": 39,
+        "book_start_page": 16,
+        "book_end_page": 37,
+        "kind": "Buchauszug",
+        "topic_name": "Sich und seinen Wohnort vorstellen",
+        "focus": "Paris entdecken, sich und Freunde vorstellen, Wegbeschreibungen und Sehenswürdigkeiten.",
+        "sections": [
+            {"title": "Vocabulaire thématique: La ville de Paris", "book_page": 16, "relative_page": 1, "level": 2},
+            {"title": "Volet 1: Les amis de Gabin", "book_page": 18, "relative_page": 3, "level": 2},
+            {"title": "Volet 2: Coucou, c'est nous !", "book_page": 23, "relative_page": 8, "level": 2},
+            {"title": "Volet 3: Qu'est-ce qu'il y a à Paris ?", "book_page": 28, "relative_page": 13, "level": 2},
+            {"title": "Atelier: Notre quartier", "book_page": 32, "relative_page": 17, "level": 2},
+            {"title": "Bilan & Auto-contrôle", "book_page": 34, "relative_page": 19, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 2,
+        "title": "Unité 2: Ma famille",
+        "start_pdf_page": 40,
+        "end_pdf_page": 63,
+        "book_start_page": 38,
+        "book_end_page": 61,
+        "kind": "Buchauszug",
+        "topic_name": "Seine Familie vorstellen",
+        "focus": "Familienmitglieder, Verwandtschaftsverhältnisse, Tagesabläufe und Freizeitaktivitäten.",
+        "sections": [
+            {"title": "Vocabulaire thématique: La famille", "book_page": 38, "relative_page": 1, "level": 2},
+            {"title": "Volet 1: Tu as des frères et sœurs ?", "book_page": 40, "relative_page": 3, "level": 2},
+            {"title": "Volet 2: Qu'est-ce que tu fais avec ta famille ?", "book_page": 47, "relative_page": 10, "level": 2},
+            {"title": "Lecture: Le journal de Jeanne", "book_page": 50, "relative_page": 13, "level": 2},
+            {"title": "Atelier: Mon arbre généalogique", "book_page": 54, "relative_page": 17, "level": 2},
+            {"title": "Bilan & Auto-contrôle", "book_page": 58, "relative_page": 21, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 3,
+        "title": "Unité 3: Ma chambre et moi",
+        "start_pdf_page": 64,
+        "end_pdf_page": 87,
+        "book_start_page": 62,
+        "book_end_page": 85,
+        "kind": "Buchauszug",
+        "topic_name": "Sein Zimmer vorstellen",
+        "focus": "Möbel, Präpositionen des Ortes, Alltagsgegenstände und die eigene Umgebung beschreiben.",
+        "sections": [
+            {"title": "Vocabulaire thématique: La chambre et la maison", "book_page": 62, "relative_page": 1, "level": 2},
+            {"title": "Volet 1: Chez Noé", "book_page": 64, "relative_page": 3, "level": 2},
+            {"title": "Volet 2: Qu'est-ce que vous faites ?", "book_page": 70, "relative_page": 9, "level": 2},
+            {"title": "Volet 3: Ma chambre raconte ma vie !", "book_page": 73, "relative_page": 12, "level": 2},
+            {"title": "Atelier: Mon lieu préféré", "book_page": 78, "relative_page": 17, "level": 2},
+            {"title": "Bilan & Auto-contrôle", "book_page": 82, "relative_page": 21, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 4,
+        "title": "Unité 4: Au collège",
+        "start_pdf_page": 88,
+        "end_pdf_page": 109,
+        "book_start_page": 86,
+        "book_end_page": 107,
+        "kind": "Buchauszug",
+        "topic_name": "Schule und Stundenplan",
+        "focus": "Schulalltag in Frankreich, Fächer, Stundenplan, Uhrzeiten und Schulleben.",
+        "sections": [
+            {"title": "Vocabulaire thématique: L'école et les matières", "book_page": 86, "relative_page": 1, "level": 2},
+            {"title": "Volet 1: La vie au collège", "book_page": 88, "relative_page": 3, "level": 2},
+            {"title": "Volet 2: Leur emploi du temps est super !", "book_page": 93, "relative_page": 8, "level": 2},
+            {"title": "Volet 3: Notre collège et nous", "book_page": 98, "relative_page": 13, "level": 2},
+            {"title": "Atelier: Notre école de rêve", "book_page": 102, "relative_page": 17, "level": 2},
+            {"title": "Bilan & Auto-contrôle", "book_page": 106, "relative_page": 21, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 5,
+        "title": "Unité 5: Un pique-nique à Paris",
+        "start_pdf_page": 110,
+        "end_pdf_page": 135,
+        "book_start_page": 108,
+        "book_end_page": 133,
+        "kind": "Buchauszug",
+        "topic_name": "Essen, Einkaufen & Verabredungen",
+        "focus": "Lebensmittel, Einkaufsdialoge auf dem Markt, Mengenangaben und Rezepte.",
+        "sections": [
+            {"title": "Vocabulaire thématique: La nourriture et les courses", "book_page": 108, "relative_page": 1, "level": 2},
+            {"title": "Volet 1: On se retrouve à La Villette !", "book_page": 110, "relative_page": 3, "level": 2},
+            {"title": "Volet 2: On fait les courses ensemble !", "book_page": 115, "relative_page": 8, "level": 2},
+            {"title": "Volet 3: Le secret des madeleines", "book_page": 120, "relative_page": 13, "level": 2},
+            {"title": "Atelier: Recette de cuisine", "book_page": 126, "relative_page": 19, "level": 2},
+            {"title": "Bilan & Auto-contrôle", "book_page": 130, "relative_page": 23, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 6,
+        "title": "Module 6: Une carte postale",
+        "start_pdf_page": 136,
+        "end_pdf_page": 139,
+        "book_start_page": 134,
+        "book_end_page": 137,
+        "kind": "Buchauszug",
+        "topic_name": "Postkarten & Ferien",
+        "focus": "Über Ferien und Wetter berichten, Postkarten schreiben.",
+        "sections": [
+            {"title": "Volet: Une carte postale de vacances", "book_page": 134, "relative_page": 1, "level": 2},
+            {"title": "Atelier d'écriture: Écrire une carte postale", "book_page": 136, "relative_page": 3, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 7,
+        "title": "Anhang: Grammatik & Vokabular",
+        "start_pdf_page": 140,
+        "end_pdf_page": 226,
+        "book_start_page": 138,
+        "book_end_page": 224,
+        "kind": "Buchauszug",
+        "topic_name": "Grammatik, Verbtabellen & Wörterbuch",
+        "focus": "Systematische Grammatikübersicht, Konjugationstabellen und Französisch-Deutsches Vokabular.",
+        "sections": [
+            {"title": "Grammaire: Systematische Grammatikübersicht", "book_page": 138, "relative_page": 1, "level": 2},
+            {"title": "Tableaux de conjugaison (Verbtabellen)", "book_page": 164, "relative_page": 27, "level": 2},
+            {"title": "Vocabulaire par unité (Lernwortschatz)", "book_page": 168, "relative_page": 31, "level": 2},
+            {"title": "Dictionnaire français-allemand", "book_page": 200, "relative_page": 63, "level": 2}
+        ]
+    }
+]
+
+
+def segment_book_material(
+    db: Session,
+    book: Material,
+    chapters_spec: List[Dict[str, Any]],
+    target_dir: Optional[Path] = None
+) -> List[Material]:
+    """
+    Teilt ein Schulbuch-Material anhand einer Kapitelspezifikation in
+    einzelne Kapitel-PDFs und Child-Material-Einträge auf.
+    """
+    if not book.file_path or not os.path.exists(book.file_path):
+        raise FileNotFoundError(f"PDF-Datei für Buch {book.id} nicht gefunden: {book.file_path}")
+
+    dest_folder = target_dir or Path(book.file_path).parent
+    dest_folder.mkdir(parents=True, exist_ok=True)
+
+    reader = pypdf.PdfReader(book.file_path)
+    total_pages = len(reader.pages)
+
+    if book.kind != "Buch":
+        book.kind = "Buch"
+
+    # Vorhandene Topics des Fachs cachen
+    topics_by_name = {
+        t.name.lower(): t for t in db.query(Topic).filter_by(subject_id=book.subject_id).all()
+    }
+
+    # Bereits existierende Kapitel für dieses Buch prüfen
+    existing_children = {
+        m.dossier_order: m for m in db.query(Material).filter_by(parent_id=book.id).all()
+    }
+
+    created_or_updated: List[Material] = []
+
+    for idx, spec in enumerate(chapters_spec):
+        unit_num = spec.get("unit_number", idx)
+        start_pdf = max(1, spec.get("start_pdf_page", spec.get("book_start_page", 1)))
+        end_pdf = min(total_pages, spec.get("end_pdf_page", spec.get("book_end_page", total_pages)))
+
+        if start_pdf > total_pages:
+            continue
+
+        page_count = end_pdf - start_pdf + 1
+        chap_id = f"{book.id}_ch{unit_num:02d}"
+        chap_filename = f"{book.id}_Kapitel_{unit_num:02d}.pdf"
+        chap_path = dest_folder / chap_filename
+
+        # 1. Kapitel-PDF via pypdf extrahieren
+        if not chap_path.exists() or chap_path.stat().st_size == 0:
+            writer = pypdf.PdfWriter()
+            for p_idx in range(start_pdf - 1, end_pdf):
+                writer.add_page(reader.pages[p_idx])
+            with open(chap_path, "wb") as f_out:
+                writer.write(f_out)
+            logger.info(f"📄 Kapitel {unit_num} extrahiert: {chap_path.name} ({page_count} Seiten)")
+
+        file_size = chap_path.stat().st_size if chap_path.exists() else 0
+
+        # 2. Topic verknüpfen
+        topic_name = spec.get("topic_name")
+        matched_topic = topics_by_name.get(topic_name.lower()) if topic_name else None
+        if not matched_topic and topic_name:
+            target_topic_id = f"top_{book.subject_id}_{unit_num:02d}"
+            existing_top_by_id = db.query(Topic).filter_by(id=target_topic_id).first()
+            if existing_top_by_id:
+                matched_topic = existing_top_by_id
+            else:
+                import uuid
+                matched_topic = Topic(
+                    id=f"top_{book.subject_id}_{unit_num:02d}_{uuid.uuid4().hex[:6]}",
+                    subject_id=book.subject_id,
+                    name=topic_name,
+                    grade_level=7,
+                    rlp_level_code="E"
+                )
+                db.add(matched_topic)
+                try:
+                    db.flush()
+                except Exception:
+                    db.rollback()
+                    matched_topic = None
+            if matched_topic:
+                topics_by_name[topic_name.lower()] = matched_topic
+
+        # 3. Material-Eintrag erstellen oder aktualisieren
+        order = unit_num + 2  # Master ist meist Order 1
+        child = existing_children.get(order)
+        if not child:
+            child = db.query(Material).filter_by(id=chap_id).first()
+
+        sec_list = spec.get("sections", [])
+        sec_json = json.dumps(sec_list, ensure_ascii=False) if sec_list else None
+
+        if not child:
+            child = Material(
+                id=chap_id,
+                user_id=book.user_id,
+                subject_id=book.subject_id,
+                topic_id=matched_topic.id if matched_topic else None,
+                dossier_id=book.dossier_id,
+                dossier_order=order,
+                parent_id=book.id,
+                title=spec.get("title", f"Kapitel {unit_num}"),
+                kind=spec.get("kind", "Buchauszug"),
+                filename=chap_filename,
+                file_path=str(chap_path),
+                file_size=file_size,
+                mime_type="application/pdf",
+                page_count=page_count,
+                start_page=spec.get("book_start_page", start_pdf),
+                end_page=spec.get("book_end_page", end_pdf),
+                summary=spec.get("focus"),
+                toc_json=sec_json,
+            )
+            db.add(child)
+        else:
+            child.title = spec.get("title", child.title)
+            child.parent_id = book.id
+            child.topic_id = matched_topic.id if matched_topic else child.topic_id
+            child.file_path = str(chap_path)
+            child.file_size = file_size
+            child.page_count = page_count
+            child.start_page = spec.get("book_start_page", start_pdf)
+            child.end_page = spec.get("book_end_page", end_pdf)
+            child.summary = spec.get("focus")
+            if sec_json:
+                child.toc_json = sec_json
+
+        created_or_updated.append(child)
+
+    try:
+        if book.kind != "Buch":
+            book.kind = "Buch"
+        db.commit()
+        logger.info(f"✅ Schulbuch {book.title} ({book.id}) erfolgreich in {len(created_or_updated)} Kapitel segmentiert.")
+        return created_or_updated
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Fehler bei der Buchsegmentierung für {book.id}: {e}", exc_info=True)
+        raise
+
+
+def is_candidate_book(material: Material) -> bool:
+    """
+    Prüft, ob ein Material ein Schulbuch ist, das in Kapitel segmentiert werden sollte.
+    """
+    if material.parent_id is not None:
+        return False
+    if material.mime_type != "application/pdf":
+        return False
+
+    kind_lower = (material.kind or "").lower()
+    if kind_lower in ("buch", "lehrbuch"):
+        return True
+
+    title_lower = (material.title or "").lower()
+    book_keywords = [
+        "buch", "lehrbuch", "schulbuch", "arbeitsbuch", "arbeitsheft", "workbook", "vorkurs",
+        "fundamente", "cornelsen", "klett", "duden", "westermann",
+        "mathematik", "englisch", "französisch", "franzoesisch", "biologie", "physik", "klasse 7"
+    ]
+    if material.page_count and material.page_count >= 20:
+        if any(kw in title_lower for kw in book_keywords):
+            return True
+        if material.page_count >= 25:
+            return True
+
+    return False
+
+
+def extract_chapters_from_pdf_outline(pdf_path: Path, total_pages: int) -> List[Dict[str, Any]]:
+    """
+    Extrahiert Kapitelgrenzen und Unterabschnitte aus den PDF-Lesezeichen (Document Outline),
+    falls vorhanden. Sehr schnell und 100 % präzise für digitale Schulbuch-PDFs.
+    """
+    if not pdf_path.exists():
+        return []
+
+    try:
+        reader = pypdf.PdfReader(str(pdf_path))
+        raw_outline = reader.outline
+        if not raw_outline:
+            return []
+
+        def _flatten_outline(items, level=1) -> List[tuple]:
+            res = []
+            for item in items:
+                if isinstance(item, list):
+                    res.extend(_flatten_outline(item, level=level + 1))
+                else:
+                    try:
+                        title = str(getattr(item, "title", item)).strip()
+                        page_num = reader.get_destination_page_number(item)
+                        if page_num is not None and 0 <= page_num < total_pages:
+                            res.append((title, page_num + 1, level))
+                    except Exception:
+                        pass
+            return res
+
+        extracted = _flatten_outline(raw_outline)
+        if len(extracted) < 2:
+            return []
+
+        # Sortieren nach Startseite
+        extracted.sort(key=lambda x: x[1])
+
+        # Prüfen, ob Level-1-Einträge existieren
+        level1_items = [x for x in extracted if x[2] == 1]
+        if len(level1_items) >= 2:
+            chapter_entries = level1_items
+            sub_entries = [x for x in extracted if x[2] > 1]
+        else:
+            unique_items = []
+            for title, p_num, lvl in extracted:
+                if not unique_items or p_num > unique_items[-1][1]:
+                    unique_items.append((title, p_num, lvl))
+            chapter_entries = unique_items
+            sub_entries = []
+
+        if len(chapter_entries) < 2:
+            return []
+
+        chapters: List[Dict[str, Any]] = []
+        for idx, (title, start_p, lvl) in enumerate(chapter_entries):
+            end_p = chapter_entries[idx + 1][1] - 1 if idx + 1 < len(chapter_entries) else total_pages
+            if end_p < start_p:
+                end_p = start_p
+
+            chapter_sections = []
+            for sub_title, sub_p, sub_lvl in sub_entries:
+                if start_p <= sub_p <= end_p:
+                    chapter_sections.append({
+                        "title": sub_title,
+                        "book_page": sub_p,
+                        "relative_page": max(1, sub_p - start_p + 1),
+                        "level": sub_lvl
+                    })
+
+            chapters.append({
+                "unit_number": idx + 1,
+                "title": title,
+                "start_pdf_page": start_p,
+                "end_pdf_page": end_p,
+                "book_start_page": start_p,
+                "book_end_page": end_p,
+                "kind": "Buchauszug",
+                "topic_name": title,
+                "focus": f"Kapitel: {title}",
+                "sections": chapter_sections
+            })
+        logger.info(f"📑 {len(chapters)} Kapitel mit Unterabschnitten direkt aus PDF-Bookmarks erkannt.")
+        return chapters
+    except Exception as e:
+        logger.warning(f"Konnte PDF-Outline nicht parsen: {e}")
+        return []
+
+
+def extract_chapters_with_ai(file_path: Path, total_pages: int, title_hint: str = "") -> List[Dict[str, Any]]:
+    """
+    Analysiert die ersten Seiten eines Schulbuchs (Inhaltsverzeichnis) via OpenAI.
+    Unterstützt sowohl digitale Texte als auch eingescannte Bildseiten (Vision).
+    """
+    from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
+    if not OPENAI_API_KEY or not file_path.exists():
+        return []
+
+    try:
+        import json
+        from openai import OpenAI
+        from backend.app.services.material_ingestion import render_material_page_as_image, prepare_image_base64_for_vision
+
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        effective_model = OPENAI_MODEL if "gpt-4o" in (OPENAI_MODEL or "") else "gpt-4o-mini"
+
+        reader = pypdf.PdfReader(str(file_path))
+        toc_text = ""
+        max_scan_pages = min(8, len(reader.pages))
+        for p_idx in range(max_scan_pages):
+            t = (reader.pages[p_idx].extract_text() or "").strip()
+            if t:
+                toc_text += f"\n--- Seite {p_idx + 1} ---\n" + t
+
+        system_instruction = """Du bist ein Experte für deutsche Schulbücher (Gymnasium 7. Klasse).
+Deine Aufgabe: Extrahiere das Inhaltsverzeichnis inklusive aller Hauptkapitel und deren Unterabschnitte / Unterthemen aus den übergebenen Buchseiten.
+Antworte AUSSCHLIESSLICH im JSON-Format mit dem Schlüssel 'chapters':
+{
+  "chapters": [
+    {
+      "unit_number": 1,
+      "title": "Kapitel 1: Zuordnungen und Proportionalität",
+      "start_pdf_page": 15,
+      "end_pdf_page": 46,
+      "book_start_page": 11,
+      "book_end_page": 42,
+      "topic_name": "Dreisatz und proportionale Zuordnungen",
+      "focus": "1 Satz Zusammenfassung der Inhalte",
+      "sections": [
+        {
+          "title": "1.1 Zuordnungen",
+          "book_page": 14,
+          "relative_page": 4,
+          "level": 2
+        }
+      ]
+    }
+  ]
+}
+WICHTIG:
+- 'start_pdf_page' und 'end_pdf_page' müssen die tatsächlichen Seitenzahlen im PDF-Dokument (1-basiert) sein.
+- 'book_page' ist die im Buch gedruckte Seitenzahl. 'relative_page' ist die Seitennummer innerhalb des Kapitels (1-basiert).
+- Erfasse alle nummerierten oder thematischen Unterabschnitte in 'sections'.
+"""
+
+        # Wenn digitaler Text vorhanden ist:
+        if len(toc_text.strip()) > 150 and any(k in toc_text.lower() for k in ["inhalt", "kapitel", "unit", "inhaltsverzeichnis"]):
+            messages = [
+                {"role": "system", "content": system_instruction},
+                {
+                    "role": "user",
+                    "content": f"Buchtitel: {title_hint}\nGesamtseitenzahl: {total_pages}\n\nInhaltsverzeichnis-Text:\n{toc_text[:4000]}"
+                }
+            ]
+        else:
+            # Gescannte PDF: Seiten 2 bis 4 als Bilder rendern und an Vision übergeben
+            user_content: List[Dict[str, Any]] = [
+                {
+                    "type": "text",
+                    "text": f"Buchtitel: {title_hint}\nGesamtseiten: {total_pages}\nHier sind die Inhaltsverzeichnis-Seiten des gescannten Buchs. Bitte extrahiere die Hauptkapitel."
+                }
+            ]
+            for p_num in range(2, min(12, total_pages + 1)):
+                try:
+                    img_bytes, mime = render_material_page_as_image(str(file_path), "application/pdf", page_num=p_num)
+                    b64 = prepare_image_base64_for_vision(img_bytes, mime)
+                    user_content.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}
+                    })
+                except Exception:
+                    pass
+
+            if len(user_content) <= 1:
+                return []
+
+            messages = [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": user_content}
+            ]
+
+        response = client.chat.completions.create(
+            model=effective_model,
+            messages=messages,
+            response_format={"type": "json_object"},
+            temperature=0.1
+        )
+
+        content = response.choices[0].message.content or "{}"
+        data = json.loads(content)
+        raw_chaps = data.get("chapters", [])
+        if not isinstance(raw_chaps, list) or len(raw_chaps) < 1:
+            return []
+
+        valid_chaps = []
+        for c in raw_chaps:
+            sp = int(c.get("start_pdf_page", 1))
+            ep = int(c.get("end_pdf_page", sp))
+            b_sp = int(c.get("book_start_page", sp))
+            if 1 <= sp <= total_pages:
+                ep = min(total_pages, max(sp, ep))
+                sections = []
+                for s in c.get("sections", []):
+                    if isinstance(s, dict) and "title" in s:
+                        bp = int(s.get("book_page", b_sp))
+                        rp = int(s.get("relative_page", max(1, bp - b_sp + 1)))
+                        sections.append({
+                            "title": str(s.get("title")),
+                            "book_page": bp,
+                            "relative_page": rp,
+                            "level": int(s.get("level", 2))
+                        })
+
+                valid_chaps.append({
+                    "unit_number": int(c.get("unit_number", len(valid_chaps) + 1)),
+                    "title": str(c.get("title", f"Kapitel {len(valid_chaps) + 1}")),
+                    "start_pdf_page": sp,
+                    "end_pdf_page": ep,
+                    "book_start_page": b_sp,
+                    "book_end_page": int(c.get("book_end_page", ep)),
+                    "kind": "Buchauszug",
+                    "topic_name": str(c.get("topic_name") or c.get("title")),
+                    "focus": str(c.get("focus") or ""),
+                    "sections": sections
+                })
+
+        logger.info(f"🤖 {len(valid_chaps)} Kapitel via OpenAI Inhaltsanalyse extrahiert.")
+        return valid_chaps
+    except Exception as e:
+        logger.warning(f"Konnte Kapitel nicht via KI extrahieren: {e}")
+        return []
+
+
+def auto_segment_if_known(db: Session, book: Material) -> Optional[List[Material]]:
+    """
+    Prüft, ob für das gegebene Buch eine bekannte Kapiteltabelle vorliegt
+    (z. B. Fundamente der Mathematik, À plus! 1, Physik Plus), und segmentiert es automatisch.
+    """
+    title_lower = (book.title or "").lower()
+    if "fundamente" in title_lower and "mathematik" in title_lower:
+        return segment_book_material(db, book, FUNDAMENTE_MATHE_7_CHAPTERS)
+    if any(k in title_lower for k in ["aplus", "a plus", "à plus"]):
+        return segment_book_material(db, book, APLUS_1_CHAPTERS)
+    if "physik" in title_lower and "plus" in title_lower:
+        return segment_book_material(db, book, PHYSIK_PLUS_7_CHAPTERS)
+    return None
+
+
+def auto_detect_and_segment_book(db: Session, book: Material) -> Optional[List[Material]]:
+    """
+    Vollautomatische Pipeline zur Erkennung und Segmentierung von Schulbüchern:
+    1. Prüft, ob bereits Kapitel existieren.
+    2. Prüft bekannte Lehrbücher (Fundamente der Mathematik etc.).
+    3. Liest PDF-Outline / Bookmarks aus (für digitale Lehrbücher).
+    4. Nutzt OpenAI Inhaltsverzeichnis-Analyse (Text oder Vision für Scans).
+    """
+    if not book.file_path or not os.path.exists(book.file_path):
+        return None
+
+    # Bereits segmentiert?
+    existing_children = db.query(Material).filter_by(parent_id=book.id).count()
+    if existing_children > 0:
+        return db.query(Material).filter_by(parent_id=book.id).order_by(Material.dossier_order).all()
+
+    # 1. Bekannte Vorlagen prüfen
+    known = auto_segment_if_known(db, book)
+    if known:
+        return known
+
+    pdf_path = Path(book.file_path)
+
+    # 2. PDF Outline / Lesezeichen prüfen
+    outline_chapters = extract_chapters_from_pdf_outline(pdf_path, book.page_count)
+    if outline_chapters:
+        return segment_book_material(db, book, outline_chapters)
+
+    # 3. KI Inhaltsverzeichnis-Erkennung (Vision/Text)
+    ai_chapters = extract_chapters_with_ai(pdf_path, book.page_count, title_hint=book.title)
+    if ai_chapters:
+        return segment_book_material(db, book, ai_chapters)
+
+    return None
+
+
+def trigger_background_book_segmentation(material_id: str):
+    """
+    Startet die automatische Buchsegmentierung asynchron in einem Hintergrund-Thread,
+    damit Web-Uploads und Inbox-Verarbeitung blitzschnell antworten.
+    """
+    import threading
+
+    def _worker():
+        from backend.app.database import SessionLocal
+        db = SessionLocal()
+        try:
+            book = db.query(Material).filter_by(id=material_id).first()
+            if not book:
+                return
+            logger.info(f"📚 Hintergrund-Segmentierung für Buch '{book.title}' ({book.id}) gestartet...")
+            result = auto_detect_and_segment_book(db, book)
+            if result:
+                logger.info(f"✅ Hintergrund-Segmentierung für Buch '{book.title}' erfolgreich abgeschlossen: {len(result)} Kapitel.")
+            else:
+                logger.info(f"ℹ️ Für Buch '{book.title}' wurden keine separaten Kapitel extrahiert (bleibt Gesamtbuch).")
+        except Exception as e:
+            logger.error(f"❌ Fehler bei Hintergrund-Segmentierung für {material_id}: {e}", exc_info=True)
+        finally:
+            db.close()
+
+    thread = threading.Thread(target=_worker, daemon=True, name=f"BookSegmenter-{material_id}")
+    thread.start()
+
+
+def get_chapter_sections(material: Material, parent_book: Optional[Material] = None) -> List[Dict[str, Any]]:
+    """
+    Liefert die Unterabschnitte (Inhaltsverzeichnis-Einträge) für ein Kapitel-Material.
+    Priorität:
+    1. Gespeicherter `material.toc_json` im Material.
+    2. Fallback für bekannte Bücher (z. B. Fundamente der Mathematik 7 nach Kapitelnummer / Titel).
+    3. Leere Liste, falls keine Unterabschnitte bekannt sind.
+    """
+    if material.toc_json:
+        try:
+            parsed = json.loads(material.toc_json)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                return parsed
+        except Exception:
+            pass
+
+    # Fallback-Ermittlung anhand Titel oder Kapitelnummer
+    title_search = f"{(parent_book.title if parent_book else '')} {material.title or ''} {material.filename or ''}".lower()
+
+    if "fundamente" in title_search or "mathematik 7" in title_search or "mathe7" in title_search or "lehrbuch" in title_search:
+        # Finde unit_number aus material.title oder dossier_order oder id
+        for spec in FUNDAMENTE_MATHE_7_CHAPTERS:
+            unit_num = spec.get("unit_number")
+            matches = False
+            if f"kapitel {unit_num}:" in (material.title or "").lower() or f"kapitel {unit_num} " in (material.title or "").lower():
+                matches = True
+            elif unit_num == 0 and ("titelei" in (material.title or "").lower() or "lernausgangslage" in (material.title or "").lower()):
+                matches = True
+            elif f"_ch{unit_num:02d}" in (material.id or "") or f"kapitel_{unit_num:02d}" in (material.filename or "").lower():
+                matches = True
+            elif material.dossier_order is not None and material.dossier_order == unit_num + 2:
+                matches = True
+            elif material.start_page == spec.get("book_start_page"):
+                matches = True
+
+            if matches:
+                return spec.get("sections", [])
+
+    if "à plus" in title_search or "vorkurs" in title_search or "franz" in title_search:
+        return FRANZ_VORKURS_SECTIONS
+
+    if "physik" in title_search:
+        for p_chap in PHYSIK_PLUS_7_CHAPTERS:
+            if (p_chap["title"].lower() in (material.title or "").lower()) or \
+               (material.dossier_order is not None and material.dossier_order == p_chap["unit_number"] + 2) or \
+               (material.start_page == p_chap["book_start_page"]):
+                return p_chap.get("sections", [])
+
+    return []
+
+
+def get_all_book_sections(book: Material) -> List[Dict[str, Any]]:
+    """
+    Liefert alle Abschnitte für ein gesamtes Buch (z. B. wenn das Buch nicht segmentiert ist
+    oder als Gesamtwerk geöffnet wird), bezogen auf die absoluten PDF-Seiten des Gesamtbuchs.
+    """
+    title_lower = f"{(book.title or '')} {(book.filename or '')}".lower()
+    all_sections: List[Dict[str, Any]] = []
+
+    if "fundamente" in title_lower or "mathematik" in title_lower or "mathe7" in title_lower:
+        for chap in FUNDAMENTE_MATHE_7_CHAPTERS:
+            chap_title = chap.get("title", "")
+            chap_start_pdf = chap.get("start_pdf_page", 1)
+            chap_book_start = chap.get("book_start_page", chap_start_pdf)
+
+            all_sections.append({
+                "title": chap_title,
+                "book_page": chap_book_start,
+                "relative_page": chap_start_pdf,
+                "level": 1
+            })
+
+            for sec in chap.get("sections", []):
+                rel_p = sec.get("relative_page", 1)
+                all_sections.append({
+                    "title": sec.get("title", ""),
+                    "book_page": sec.get("book_page", chap_book_start),
+                    "relative_page": chap_start_pdf + rel_p - 1,
+                    "level": sec.get("level", 2)
+                })
+        return all_sections
+
+    if "à plus" in title_lower or "vorkurs" in title_lower or "franz" in title_lower:
+        return FRANZ_VORKURS_SECTIONS
+
+    if "physik" in title_lower:
+        for p_chap in PHYSIK_PLUS_7_CHAPTERS:
+            all_sections.append({
+                "title": p_chap["title"],
+                "book_page": p_chap["book_start_page"],
+                "relative_page": p_chap["book_start_page"],
+                "level": 1
+            })
+            for sec in p_chap.get("sections", []):
+                all_sections.append({
+                    "title": sec.get("title", ""),
+                    "book_page": sec.get("book_page", p_chap["book_start_page"]),
+                    "relative_page": sec.get("book_page", p_chap["book_start_page"]),
+                    "level": sec.get("level", 2)
+                })
+        return all_sections
+
+    return []
+
+

@@ -13,6 +13,7 @@ from backend.app.schemas.taxonomy import (
     TimetableImportResponse
 )
 from backend.app.services.timetable_analyzer import process_and_import_timetable
+from backend.app.services.parent_auth import require_parent
 
 router = APIRouter(prefix="/api/v1/taxonomy", tags=["Taxonomy"])
 
@@ -31,7 +32,7 @@ def list_subjects(
         query = query.filter(Subject.min_grade <= grade_level, Subject.max_grade >= grade_level)
     return query.order_by(Subject.name).all()
 
-@router.post("/subjects", response_model=SubjectRead, status_code=201)
+@router.post("/subjects", response_model=SubjectRead, status_code=201, dependencies=[Depends(require_parent)])
 def create_subject(subject_in: SubjectCreate, db: Session = Depends(get_db)):
     existing = db.query(Subject).filter(Subject.name == subject_in.name).first()
     if existing:
@@ -42,7 +43,7 @@ def create_subject(subject_in: SubjectCreate, db: Session = Depends(get_db)):
     db.refresh(subject)
     return subject
 
-@router.post("/import-timetable", response_model=TimetableImportResponse, status_code=200)
+@router.post("/import-timetable", response_model=TimetableImportResponse, status_code=200, dependencies=[Depends(require_parent)])
 async def import_timetable_endpoint(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
@@ -111,7 +112,7 @@ def list_topics(
         query = query.filter(Topic.grade_level == grade_level)
     return query.order_by(Topic.name).all()
 
-@router.post("/topics", response_model=TopicRead, status_code=201)
+@router.post("/topics", response_model=TopicRead, status_code=201, dependencies=[Depends(require_parent)])
 def create_topic(topic_in: TopicCreate, db: Session = Depends(get_db)):
     subject = db.query(Subject).filter(Subject.id == topic_in.subject_id).first()
     if not subject:

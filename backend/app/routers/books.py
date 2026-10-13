@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -7,6 +8,16 @@ from backend.app.models.material import Material
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.schemas.book import BookOverviewRead, BookDetailRead, BookChapterRead
 from backend.app.services.book_seeder import seed_textbooks_if_empty
+from backend.app.services.book_segmentation import (
+    auto_detect_and_segment_book,
+    auto_segment_if_known,
+    segment_book_material,
+    get_chapter_sections,
+    get_all_book_sections,
+)
+from backend.app.services.parent_auth import require_parent
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/books", tags=["Schulbücher"])
 
@@ -19,7 +30,8 @@ def list_books(
     Liefert alle verfügbaren Schulbücher der Schülerin.
     """
     books = db.query(Material).filter(
-        Material.kind == "Buch",
+        Material.kind.in_(["Buch", "Lehrbuch"]),
+        Material.parent_id.is_(None),
         Material.user_id == user_id
     ).all()
 
@@ -29,22 +41,36 @@ def list_books(
     for book in books:
         sub = subjects_map.get(book.subject_id)
         children = db.query(Material).filter_by(parent_id=book.id).order_by(Material.dossier_order).all()
-        first_chap = children[0] if children else None
+        if not children:
+            # Falls noch unsegmentiert, automatische Erkennung versuchen
+            try:
+                auto_detect_and_segment_book(db, book)
+                children = db.query(Material).filter_by(parent_id=book.id).order_by(Material.dossier_order).all()
+            except Exception as e:
+                db.rollback()
+                logger.warning(f"Automatische Segmentierung für {book.id} fehlgeschlagen: {e}")
 
+        first_chap = children[0] if children else None
         cover_preview = f"/api/v1/materials/{first_chap.id}/preview?page=1" if first_chap else f"/api/v1/materials/{book.id}/preview?page=1"
+
+        author = "Cornelsen Verlag"
+        if "Mathematik – Lehrbuch" in (book.title or ""):
+            author = "Mihaela Singer, Sorin Borodi et al."
+        elif "plus" in (book.title or "").lower() or "franz" in (book.title or "").lower():
+            author = "Cornelsen Verlag (À plus!)"
 
         result.append(
             BookOverviewRead(
                 id=book.id,
                 title=book.title,
-                authors="Mihaela Singer, Sorin Borodi et al." if "Mathematik" in book.title else None,
+                authors=author,
                 grade_level=7,
                 subject_id=book.subject_id,
                 subject_name=sub.name if sub else "Mathematik",
                 subject_icon=sub.icon if sub else "📐",
                 subject_color=sub.color_code if sub else "#0284c7",
                 total_pages=book.page_count,
-                chapters_count=len(children),
+                chapters_count=len(children) if children else 1,
                 summary=book.summary,
                 cover_preview_url=cover_preview
             )
@@ -60,7 +86,7 @@ def get_book_detail(
 ):
     """
     Liefert die Detailansicht eines Schulbuchs inklusive aller extrahierten
-    Kapitel, Seitenzahlen, Themen und Lerninhalte für den Bücher-Browser.
+    Kapitel, Unterabschnitte, Seitenzahlen, Themen und Lerninhalte für den Bücher-Browser.
     """
     book = db.query(Material).filter_by(id=book_id, user_id=user_id).first()
     if not book:
@@ -76,42 +102,85 @@ def get_book_detail(
         .all()
     )
 
+    if not children:
+        # Automatische Segmentierung versuchen
+        try:
+            auto_detect_and_segment_book(db, book)
+            children = (
+                db.query(Material)
+                .filter_by(parent_id=book.id, user_id=user_id)
+                .order_by(Material.dossier_order, Material.start_page)
+                .all()
+            )
+        except Exception as e:
+            db.rollback()
+            logger.warning(f"Automatische Segmentierung für {book.id} in get_book_detail fehlgeschlagen: {e}")
+
     chapters_out: List[BookChapterRead] = []
-    for idx, chap in enumerate(children):
-        t_name = topics_map.get(chap.topic_id) if chap.topic_id else None
+    if children:
+        for idx, chap in enumerate(children):
+            t_name = topics_map.get(chap.topic_id) if chap.topic_id else None
+            sec_list = get_chapter_sections(chap, parent_book=book)
+            chapters_out.append(
+                BookChapterRead(
+                    id=chap.id,
+                    chapter_number=idx,
+                    title=chap.title,
+                    kind=chap.kind,
+                    topic_id=chap.topic_id,
+                    topic_name=t_name,
+                    start_page=chap.start_page or 1,
+                    end_page=chap.end_page or (chap.start_page or 1) + chap.page_count - 1,
+                    page_count=chap.page_count,
+                    focus=chap.summary,
+                    filename=chap.filename,
+                    file_size=chap.file_size,
+                    file_url=f"/api/v1/materials/{chap.id}/file",
+                    preview_url=f"/api/v1/materials/{chap.id}/preview",
+                    sections=sec_list
+                )
+            )
+    else:
+        # Fallback: Das gesamte Buch als eine Einheit anbieten, damit Thea es sofort öffnen kann!
+        sec_list = get_all_book_sections(book)
         chapters_out.append(
             BookChapterRead(
-                id=chap.id,
-                chapter_number=idx,
-                title=chap.title,
-                kind=chap.kind,
-                topic_id=chap.topic_id,
-                topic_name=t_name,
-                start_page=chap.start_page or 1,
-                end_page=chap.end_page or (chap.start_page or 1) + chap.page_count - 1,
-                page_count=chap.page_count,
-                focus=chap.summary,
-                filename=chap.filename,
-                file_size=chap.file_size,
-                file_url=f"/api/v1/materials/{chap.id}/file",
-                preview_url=f"/api/v1/materials/{chap.id}/preview"
+                id=book.id,
+                chapter_number=0,
+                title="Gesamtlehrbuch (Vollständige Ausgabe)",
+                kind="Buch",
+                topic_id=None,
+                topic_name=None,
+                start_page=1,
+                end_page=book.page_count,
+                page_count=book.page_count,
+                focus=book.summary or "Vollständiges Schulbuch",
+                filename=book.filename,
+                file_size=book.file_size,
+                file_url=f"/api/v1/materials/{book.id}/file",
+                preview_url=f"/api/v1/materials/{book.id}/preview",
+                sections=sec_list
             )
         )
 
     first_chap = children[0] if children else None
     cover_preview = f"/api/v1/materials/{first_chap.id}/preview?page=1" if first_chap else f"/api/v1/materials/{book.id}/preview?page=1"
 
+    author = "Cornelsen Verlag"
+    if "Mathematik – Lehrbuch" in (book.title or ""):
+        author = "Mihaela Singer, Sorin Borodi et al."
+
     return BookDetailRead(
         id=book.id,
         title=book.title,
-        authors="Mihaela Singer, Sorin Borodi et al." if "Mathematik" in book.title else None,
+        authors=author,
         grade_level=7,
         subject_id=book.subject_id,
         subject_name=sub.name if sub else "Mathematik",
         subject_icon=sub.icon if sub else "📐",
         subject_color=sub.color_code if sub else "#0284c7",
         total_pages=book.page_count,
-        chapters_count=len(children),
+        chapters_count=len(children) if children else 1,
         summary=book.summary,
         cover_preview_url=cover_preview,
         dossier_id=book.dossier_id,
@@ -126,16 +195,18 @@ def get_book_chapter(
     db: Session = Depends(get_db)
 ):
     """
-    Liefert ein einzelnes Kapitel eines Buches mit Metadaten.
+    Liefert ein einzelnes Kapitel eines Buches mit Metadaten und Unterabschnitten.
     """
     chap = db.query(Material).filter_by(id=chapter_id, parent_id=book_id, user_id=user_id).first()
     if not chap:
         raise HTTPException(status_code=404, detail="Kapitel im angegebenen Buch nicht gefunden.")
 
+    book = db.query(Material).filter_by(id=book_id, user_id=user_id).first()
     topic = db.query(Topic).filter_by(id=chap.topic_id).first() if chap.topic_id else None
 
     # Kapitelnummer anhand von dossier_order ermitteln
     num = max(0, chap.dossier_order - 2) if chap.dossier_order else 0
+    sec_list = get_chapter_sections(chap, parent_book=book)
 
     return BookChapterRead(
         id=chap.id,
@@ -151,10 +222,11 @@ def get_book_chapter(
         filename=chap.filename,
         file_size=chap.file_size,
         file_url=f"/api/v1/materials/{chap.id}/file",
-        preview_url=f"/api/v1/materials/{chap.id}/preview"
+        preview_url=f"/api/v1/materials/{chap.id}/preview",
+        sections=sec_list
     )
 
-@router.post("/seed")
+@router.post("/seed", dependencies=[Depends(require_parent)])
 def seed_default_textbook(
     user_id: str = "usr_thea",
     db: Session = Depends(get_db)
