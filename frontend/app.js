@@ -1989,7 +1989,7 @@ function setupUploadsPageEvents() {
       dropzone.classList.remove("drag-over");
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         openMaterialUploadModal();
-        handleFileUpload(e.dataTransfer.files[0]);
+        handleFilesUpload(Array.from(e.dataTransfer.files));
       }
     });
   }
@@ -1997,9 +1997,9 @@ function setupUploadsPageEvents() {
   if (fileInput) {
     fileInput.addEventListener("change", (e) => {
       if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
+        const files = Array.from(e.target.files);
         openMaterialUploadModal();
-        handleFileUpload(file);
+        handleFilesUpload(files);
       }
     });
   }

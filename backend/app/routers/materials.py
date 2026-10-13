@@ -74,9 +74,10 @@ async def pre_analyze_material(
     if len(content) == 0:
         raise HTTPException(status_code=400, detail="Die hochgeladene Datei ist leer.")
 
-    # Max 50 MB
-    if len(content) > 50 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Dateigröße überschreitet das Limit von 50 MB.")
+    # Max 300 MB (für vollständige Schulbücher, Lehrwerke und Bildbände)
+    MAX_FILE_SIZE = 300 * 1024 * 1024
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="Dateigröße überschreitet das Limit von 300 MB.")
 
     mime = file.content_type or "application/octet-stream"
     try:

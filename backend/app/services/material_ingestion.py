@@ -43,14 +43,23 @@ def prepare_image_base64_for_vision(image_bytes: bytes, mime_type: str = "image/
 
 
 SUBJECT_KEYWORDS: Dict[str, List[str]] = {
-    "sub_math": ["mathe", "mathematik", "bruch", "brüche", "rational", "zahlen", "gleichung", "geometrie", "dreieck", "rechnen", "term"],
-    "sub_bio": ["bio", "biologie", "zelle", "mikroskop", "pflanze", "tier", "organell", "ökosystem", "chloroplast", "vakuole"],
-    "sub_de": ["deutsch", "gedicht", "lyrik", "grammatik", "aufsatz", "inhaltsangabe", "satzbau", "ballade", "rechtschreibung"],
-    "sub_en": ["englisch", "english", "vocabulary", "grammar", "tense", "present", "past", "words", "unit"],
-    "sub_geo": ["geografie", "erdkunde", "karte", "kontinent", "klima", "ozean", "vulkan", "erde", "landschaft"],
-    "sub_hist": ["geschichte", "antike", "mittelalter", "rom", "griechenland", "ägypten", "ritter", "kaiser", "quelle"],
-    "sub_phys": ["physik", "kraft", "optik", "licht", "spiegel", "geschwindigkeit", "energie", "magnet"],
-    "sub_orga": ["stundenplan", "wochenplan", "timetable", "organisation", "termine", "schulwoche"],
+    "sub_math": ["mathe", "mathematik", "bruch", "brüche", "rational", "zahlen", "gleichung", "geometrie", "dreieck", "rechnen", "term", "dreisatz", "proportional", "prozent"],
+    "sub_bio": ["bio", "biologie", "zelle", "mikroskop", "pflanze", "tier", "organell", "ökosystem", "chloroplast", "vakuole", "fotosynthese", "blattaufbau"],
+    "sub_german": ["deutsch", "gedicht", "lyrik", "grammatik", "aufsatz", "inhaltsangabe", "satzbau", "ballade", "rechtschreibung", "kommasetzung", "erörterung"],
+    "sub_english": ["englisch", "english", "vocabulary", "grammar", "tense", "present", "past", "words", "unit", "text", "reading", "simple past", "progressive"],
+    "sub_geo": ["geografie", "geographie", "erdkunde", "karte", "kontinent", "klima", "ozean", "vulkan", "erde", "landschaft", "tektonik"],
+    "sub_history": ["geschichte", "antike", "mittelalter", "rom", "griechenland", "ägypten", "ritter", "kaiser", "quelle", "neuzeit", "feudalismus"],
+    "sub_physics": ["physik", "kraft", "optik", "licht", "spiegel", "geschwindigkeit", "energie", "magnet", "hebel", "akustik", "wärme"],
+    "sub_chemie": ["chemie", "stoff", "reaktion", "atom", "molekül", "säure", "lauge", "teilchenmodell", "dichte", "aggregatzustand"],
+    "sub_informatik": ["informatik", "computer", "algorithmus", "programmieren", "scratch", "python", "daten", "binär"],
+    "sub_pb": ["politische bildung", "politik", "demokratie", "grundgesetz", "wahlen", "gesellschaft", "bundestag"],
+    "sub_kunst": ["kunst", "zeichnen", "malen", "perspektive", "farben", "künstler", "skizze"],
+    "sub_musik": ["musik", "noten", "tonleiter", "instrument", "komponist", "rhythmus", "orchester"],
+    "sub_sport": ["sport", "bewegung", "regeln", "leichtathletik", "turnen", "training"],
+    "sub_wat": ["wat", "wirtschaft", "arbeit", "technik", "beruf", "werkstoff", "holz", "metall"],
+    "sub_ler": ["ler", "ethik", "religion", "philosophie", "werte", "glaube"],
+    "sub_franzoesisch": ["französisch", "franzoesisch", "vocabulaire", "grammaire", "français"],
+    "sub_orga": ["stundenplan", "wochenplan", "timetable", "organisation", "termine", "schulwoche", "ferien"],
 }
 
 def clean_title_from_filename(filename: str) -> str:
@@ -125,7 +134,38 @@ def pre_analyze_upload(
 
     corpus = f"{filename} {extracted_text}".lower()
     predicted_subject_id: Optional[str] = None
+    predicted_topic_id: Optional[str] = None
+    predicted_title: str = clean_title_from_filename(filename)
+    predicted_kind: str = detect_kind_from_filename_and_text(filename, extracted_text)
 
+    # 1. Intelligente KI-Analyse (falls OpenAI konfiguriert und kein Fach-Hint fixiert)
+    if not subject_id_hint:
+        from backend.app.config import OPENAI_API_KEY
+        if OPENAI_API_KEY:
+            try:
+                from backend.app.services.document_analyzer import analyze_document_content
+                ai_res = analyze_document_content(
+                    db, temp_path, extracted_text, content_type, original_filename=filename
+                )
+                if ai_res and ai_res.subject_id:
+                    preview_snippet = ai_res.summary or ((extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None))
+                    return PreAnalysisResponse(
+                        upload_token=upload_token,
+                        filename=filename,
+                        file_size=len(file_bytes),
+                        mime_type=content_type,
+                        page_count=page_count,
+                        predicted_subject_id=ai_res.subject_id,
+                        predicted_topic_id=ai_res.topic_id,
+                        predicted_title=ai_res.title,
+                        predicted_kind=ai_res.kind,
+                        preview_snippet=preview_snippet,
+                        extracted_text=extracted_text or None
+                    )
+            except Exception as e:
+                logger.warning(f"KI-Vorabanalyse im Web-Upload fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
+
+    # 2. Heuristik-Fallback (Offline oder mit festem Fach-Hint)
     if subject_id_hint and db.query(Subject).filter_by(id=subject_id_hint).first():
         predicted_subject_id = subject_id_hint
     else:
@@ -144,7 +184,6 @@ def pre_analyze_upload(
         if not predicted_subject_id and all_subjects:
             predicted_subject_id = all_subjects[0].id
 
-    predicted_topic_id: Optional[str] = None
     if predicted_subject_id:
         topics = db.query(Topic).filter_by(subject_id=predicted_subject_id).all()
         best_t_score = 0
@@ -155,8 +194,6 @@ def pre_analyze_upload(
                 best_t_score = t_score
                 predicted_topic_id = top.id
 
-    predicted_title = clean_title_from_filename(filename)
-    predicted_kind = detect_kind_from_filename_and_text(filename, extracted_text)
     if is_pdf and page_count >= 20 and predicted_kind in ("Arbeitsblatt", "Hefterseite", "Buchauszug"):
         predicted_kind = "Buch"
     if not subject_id_hint:
@@ -170,6 +207,7 @@ def pre_analyze_upload(
                 predicted_title = f"Stundenplan: {predicted_title}"
 
     preview_snippet = (extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None)
+
 
     return PreAnalysisResponse(
         upload_token=upload_token,

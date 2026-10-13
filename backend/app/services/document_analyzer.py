@@ -141,59 +141,53 @@ def prepare_image_base64_for_vision(image_bytes: bytes, mime_type: str = "image/
         return base64.b64encode(image_bytes).decode("utf-8")
 
 
+from backend.app.prompts.document_analysis import (
+    DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
+    build_analysis_user_prompt,
+)
+
+
 def query_openai_analyzer(
     file_path: Path,
     extracted_text: str,
     mime_type: str,
     api_key: str,
-    model_name: str
+    model_name: str,
+    original_filename: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
     """Fragt OpenAI nach Fach, Thema, Dokumentart, Titel und Zusammenfassung."""
     try:
         from openai import OpenAI
         client = OpenAI(api_key=api_key)
 
-        prompt_instruction = """Analysiere diesen Schul-Scan oder dieses Unterrichtsdokument einer 7.-Klässlerin (Gymnasium Brandenburg).
-Lies den Inhalt, handschriftliche Notizen, Arbeitsblatt-Aufgaben, Buchseiten oder Stundenpläne und antworte AUSSCHLIESSLICH im JSON-Format mit folgenden Schlüsseln:
-{
-  "fach": "Mathematik | Physik | Chemie | Biologie | Informatik | Astronomie | Deutsch | Englisch | Französisch | Spanisch | Latein | Russisch | Geschichte | Geografie | Politische Bildung | WAT | LER | Kunst | Musik | Sport | Organisation",
-  "oberthema": "Konkretes Schulthema (z. B. Rationale Zahlen, Christianisierung, Akustik, Grammatik, Zellenlehre...)",
-  "dokumentart": "Arbeitsblatt | Hefterseite | Test | Klassenarbeit | Buchauszug | Buch | Stundenplan",
-  "inhaltlicher_titel": "Präziser inhaltlicher deutscher Titel (z. B. Dreisatz: Muffinrezept, Stundenplan Klasse 7a)",
-  "normierter_dateiname": "Dateiname nach Schema: [Fach]_[Oberthema]_[Dokumentart]_[Titel].pdf (ASCII-kompatibel, keine Umlaute)",
-  "zusammenfassung": "1-2 prägnante Sätze über den Inhalt und die Aufgaben",
-  "erkannte_faecher": ["Mathematik", "Deutsch", "Chemie", "Physik", ...]
-}
-HINWEIS FÜR STUNDENPLÄNE:
-Falls das Dokument ein Stundenplan ist (Tabelle mit Wochentagen Montag-Freitag und Unterrichtsstunden):
-- Setze 'dokumentart' auf 'Stundenplan'.
-- Setze 'fach' auf 'Organisation'.
-- Beachte Wechselwochen (A-Woche / B-Woche) und handschriftliche Vermerke: nimm Fächer beider Wochen auf.
-- Nenne 'Bildende Kunst' oder 'Ku' IMMER schlicht 'Kunst'.
-- Gib in 'erkannte_faecher' alle im Stundenplan vorkommenden Fächer als vollständige deutsche Namen an (z. B. D/Ma/En -> Deutsch, Mathematik, Englisch; Ch -> Chemie; WAT -> WAT / Wirtschaft; Ku -> Kunst; *Sp -> Sport; PB -> Politische Bildung; LER -> LER / Ethik; Rel -> Religion; Fr -> Französisch; Bio -> Biologie; Ph -> Physik; Ge -> Geschichte; Geo -> Geografie; Mu -> Musik; etc.).
-- Pausen (*Mittag, *GT-Mittag) sind KEINE Schulfächer!
-"""
+        effective_name = original_filename or file_path.name
+        clean_text = (extracted_text or "").strip()
+        word_count = len(clean_text.split())
 
-        # Wenn ausreichend digitaler Text vorhanden ist: Text-Prompt (extrem schnell & kostengünstig)
-        if extracted_text and len(extracted_text.strip()) >= 80:
-            user_content = (
-                f"Ursprünglicher Dateiname: {file_path.name}\n\n"
-                f"Dokumententext (Auszug):\n{extracted_text[:3500]}"
-            )
+        # Wenn substanzieller digitaler Text vorhanden ist (>= 200 Zeichen UND >= 25 Wörter):
+        # Text-Prompt nutzen. Andernfalls immer Vision (Seite 1 gerendert), um nicht an
+        # kurzen Impressumszeilen oder Seitenzahlen hängenzubleiben.
+        if clean_text and len(clean_text) >= 200 and word_count >= 25:
             messages = [
-                {"role": "system", "content": prompt_instruction},
-                {"role": "user", "content": user_content}
+                {"role": "system", "content": DOCUMENT_ANALYSIS_SYSTEM_PROMPT},
+                {"role": "user", "content": build_analysis_user_prompt(effective_name, clean_text)}
             ]
         else:
-            # Reiner Scan / Bild: Seite 1 als Bild an Vision-Modell senden
+            # Reiner Scan oder unvollständiger Text: Seite 1 als Bild an Vision-Modell senden
             img_bytes, img_mime = render_material_page_as_image(str(file_path), mime_type, page_num=1)
             b64_img = prepare_image_base64_for_vision(img_bytes, img_mime)
             messages = [
-                {"role": "system", "content": prompt_instruction},
+                {"role": "system", "content": DOCUMENT_ANALYSIS_SYSTEM_PROMPT},
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": f"Ursprünglicher Dateiname: {file_path.name}\nBitte analysiere diese gescannte Seite."},
+                        {
+                            "type": "text",
+                            "text": (
+                                f"Ursprünglicher Dateiname: {effective_name}\n"
+                                f"Bitte analysiere diese gescannte Seite und ordne sie dem passenden Fach und Thema der 7. Klasse Brandenburg zu."
+                            ),
+                        },
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}", "detail": "high"}}
                     ]
                 }
@@ -215,17 +209,20 @@ Falls das Dokument ein Stundenplan ist (Tabelle mit Wochentagen Montag-Freitag u
         return None
 
 
+
 def analyze_document_content(
     db: Session,
     file_path: Path,
     extracted_text: str = "",
-    mime_type: str = "application/pdf"
+    mime_type: str = "application/pdf",
+    original_filename: Optional[str] = None
 ) -> DocumentAnalysisResult:
     """
     Zentrale Analysefunktion für Dokumente aus der Inbox oder dem Upload.
     Verwendet KI-Inhaltsanalyse falls OPENAI_API_KEY konfiguriert ist,
     sonst robusten Heuristik-Fallback.
     """
+    effective_name = original_filename or file_path.name
     raw_ai_data = None
     if OPENAI_API_KEY:
         raw_ai_data = query_openai_analyzer(
@@ -233,15 +230,16 @@ def analyze_document_content(
             extracted_text=extracted_text,
             mime_type=mime_type,
             api_key=OPENAI_API_KEY,
-            model_name=OPENAI_MODEL
+            model_name=OPENAI_MODEL,
+            original_filename=effective_name
         )
 
     if raw_ai_data and isinstance(raw_ai_data, dict):
         # 0. Zuerst prüfen, ob es sich um einen Stundenplan handelt
-        if is_timetable_document(file_path.name, extracted_text, raw_ai_data):
+        if is_timetable_document(effective_name, extracted_text, raw_ai_data):
             orga_sub = get_or_create_organisation_subject(db)
             kind = "Stundenplan"
-            title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(file_path.name)
+            title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(effective_name)
             if "stundenplan" not in title.lower():
                 title = f"Stundenplan: {title}"
 
@@ -270,6 +268,7 @@ def analyze_document_content(
                 summary=summary
             )
 
+
         # 1. Fach zuordnen
         fach_str = (raw_ai_data.get("fach") or "").strip().lower()
         subject = None
@@ -289,7 +288,7 @@ def analyze_document_content(
                 subject = db.query(Subject).filter_by(id=subject_id).first()
         if not subject:
             # Fallback über Vorhersage
-            pred_sub_id, _ = predict_subject_and_topic(db, file_path.name, extracted_text)
+            pred_sub_id, _ = predict_subject_and_topic(db, effective_name, extracted_text)
             subject = db.query(Subject).filter_by(id=pred_sub_id).first()
         if not subject:
             subject = db.query(Subject).first()
@@ -325,7 +324,7 @@ def analyze_document_content(
         # 3. Dokumentart
         kind = raw_ai_data.get("dokumentart") or "Arbeitsblatt"
         if kind not in ("Arbeitsblatt", "Hefterseite", "Buchauszug", "Buch", "Klassenarbeit", "Test", "Stundenplan"):
-            if "stundenplan" in file_path.name.lower():
+            if "stundenplan" in effective_name.lower():
                 kind = "Stundenplan"
             else:
                 kind = "Arbeitsblatt"
@@ -337,10 +336,10 @@ def analyze_document_content(
                 sync_subjects_to_database(db, erkannte)
 
         # 4. Titel & normierter Dateiname
-        title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(file_path.name)
+        title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(effective_name)
         norm_name = raw_ai_data.get("normierter_dateiname") or ""
         if not norm_name or not norm_name.endswith(".pdf"):
-            ext = file_path.suffix.lower() or ".pdf"
+            ext = Path(effective_name).suffix.lower() or file_path.suffix.lower() or ".pdf"
             safe_fach = sanitize_filename_part(subject.name if subject else "Fach")
             safe_thema = sanitize_filename_part(topic_name or "Allgemein")
             safe_kind = sanitize_filename_part(kind)
@@ -380,17 +379,17 @@ def analyze_document_content(
         )
 
     # Heuristik-Fallback wenn keine KI verfügbar ist
-    if is_timetable_document(file_path.name, extracted_text):
+    if is_timetable_document(effective_name, extracted_text):
         kind = "Stundenplan"
         tt_info = heuristic_timetable_analyzer(file_path, extracted_text)
         if tt_info.get("erkannte_faecher"):
             sync_subjects_to_database(db, tt_info["erkannte_faecher"])
-        title = tt_info.get("titel") or clean_title_from_filename(file_path.name)
+        title = tt_info.get("titel") or clean_title_from_filename(effective_name)
         if "stundenplan" not in title.lower():
             title = f"Stundenplan: {title}"
         orga_sub = get_or_create_organisation_subject(db)
         safe_title = sanitize_filename_part(title)
-        ext = file_path.suffix.lower() or ".pdf"
+        ext = Path(effective_name).suffix.lower() or file_path.suffix.lower() or ".pdf"
         norm_name = f"Organisation_Stundenplan_{safe_title}{ext}"
         return DocumentAnalysisResult(
             subject_id=orga_sub.id,
@@ -405,16 +404,17 @@ def analyze_document_content(
             summary=f"Stundenplan mit {len(tt_info.get('erkannte_faecher', []))} erkannten Schulfächern."
         )
     else:
-        subject_id, topic_id = predict_subject_and_topic(db, file_path.name, extracted_text)
+        subject_id, topic_id = predict_subject_and_topic(db, effective_name, extracted_text)
         subject = db.query(Subject).filter_by(id=subject_id).first()
         topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
 
-        kind = detect_kind_from_filename_and_text(file_path.name, extracted_text)
-        title = clean_title_from_filename(file_path.name)
+        kind = detect_kind_from_filename_and_text(effective_name, extracted_text)
+        title = clean_title_from_filename(effective_name)
 
         safe_fach = sanitize_filename_part(subject.name if subject else "Fach")
         safe_title = sanitize_filename_part(title)
-        norm_name = f"{safe_fach}_{safe_title}{file_path.suffix.lower()}"
+        ext = Path(effective_name).suffix.lower() or file_path.suffix.lower() or ".pdf"
+        norm_name = f"{safe_fach}_{safe_title}{ext}"
 
         if kind in ("Buch", "Buchauszug"):
             dossier_title = f"Lehrbuch: {title}"
