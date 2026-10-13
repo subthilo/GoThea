@@ -86,12 +86,18 @@ input, textarea, [contenteditable="true"] {
   user-select: auto !important;
 }
 
+html {
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
-  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  overscroll-behavior: none;
   user-select: none !important;
   -webkit-user-select: none !important;
   -webkit-touch-callout: none !important;
@@ -3317,141 +3323,77 @@ body.wb-fullscreen-mode .wb-container {
 .books-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
   max-width: 1540px;
   margin: 0 auto;
-}
-
-.books-shelf-header {
-  background: linear-gradient(135deg, rgba(24, 28, 38, 0.95), rgba(15, 23, 42, 0.9));
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 22px 28px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.shelf-title-row {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.shelf-icon {
-  font-size: 2.4rem;
-  background: rgba(2, 132, 199, 0.15);
-  border: 1px solid rgba(2, 132, 199, 0.3);
-  border-radius: 14px;
-  padding: 10px 14px;
-  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.2);
-}
-
-.books-shelf-selector {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-top: 18px;
-}
-
-.shelf-book-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.shelf-book-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(2, 132, 199, 0.4);
-  transform: translateY(-2px);
-}
-
-.shelf-book-card.active {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.22), rgba(14, 165, 233, 0.12));
-  border-color: #0284c7;
-  box-shadow: 0 0 20px rgba(2, 132, 199, 0.35);
-}
-
-.shelf-book-icon {
-  font-size: 1.8rem;
-}
-
-.shelf-book-meta {
-  display: flex;
-  flex-direction: column;
-}
-
-.shelf-book-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--text-primary);
-}
-
-.shelf-book-sub {
-  font-size: 0.76rem;
-  color: var(--text-muted);
-}
-
-/* ==========================================================================
-   📖 BÜCHER-BROWSER (Katalog & Vollbreiter Dokument-Reader)
-   ========================================================================== */
-
-/* 1. Katalog-Ansicht (Übersicht aller Lerneinheiten) */
-.book-catalog-view {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
   width: 100%;
 }
 
-.book-catalog-toolbar {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 16px 22px;
+/* Schlanke Bücher-Kopfleiste (Buchauswahl & Suche auf einen Blick) */
+.books-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  padding: 6px 0 14px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.catalog-book-info {
+.books-shelf-selector {
   display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
 }
 
-.catalog-book-icon {
-  font-size: 1.8rem;
-  background: rgba(2, 132, 199, 0.15);
-  border: 1px solid rgba(2, 132, 199, 0.3);
-  padding: 8px 12px;
+.shelf-book-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.catalog-book-info h3 {
-  font-size: 1.15rem;
+.shelf-book-pill:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-1px);
+}
+
+.shelf-book-pill.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(129, 140, 248, 0.1));
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--theme-glow);
+}
+
+.shelf-book-icon {
+  font-size: 1.3rem;
+}
+
+.shelf-book-title {
   font-weight: 700;
-  margin: 0;
   color: var(--text-primary);
 }
 
-.catalog-book-sub {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+.shelf-book-badge {
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
 }
 
 .book-catalog-search {
   flex: 1;
-  max-width: 380px;
+  max-width: 320px;
 }
 
 .book-catalog-search input {
@@ -3459,44 +3401,52 @@ body.wb-fullscreen-mode .wb-container {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .book-catalog-search input:focus {
-  border-color: #0284c7;
-  box-shadow: 0 0 12px rgba(2, 132, 199, 0.3);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--theme-glow);
+}
+
+/* 1. Katalog-Ansicht (Übersicht aller Lerneinheiten) */
+.book-catalog-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
 }
 
 .book-catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
   width: 100%;
 }
 
 .catalog-chapter-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px 22px;
+  border-radius: 14px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   position: relative;
 }
 
 .catalog-chapter-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: #0284c7;
-  transform: translateY(-3px);
-  box-shadow: 0 10px 28px rgba(2, 132, 199, 0.22);
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px var(--theme-glow);
 }
 
 .catalog-card-header {
@@ -3507,12 +3457,12 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .catalog-badge {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: rgba(2, 132, 199, 0.2);
-  color: #38bdf8;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.18);
+  color: var(--accent-light);
   letter-spacing: 0.02em;
 }
 
@@ -3523,70 +3473,73 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .catalog-card-title {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.35;
 }
 
 .catalog-card-topic {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.catalog-card-focus {
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
-  line-height: 1.45;
-  flex: 1;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 10px;
-}
-
-.catalog-card-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  color: #38bdf8;
-  font-size: 0.84rem;
+  gap: 5px;
+}
+
+/* Progressive Disclosure: Details-Akkordeon für Unterthemen */
+.catalog-sections-details {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.catalog-sections-details[open] {
+  background: rgba(0, 0, 0, 0.32);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.catalog-sections-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  font-size: 0.75rem;
   font-weight: 600;
-  gap: 6px;
-  margin-top: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
 }
 
-/* Inhaltsverzeichnis & Unterseiten im Katalog */
-.catalog-sections-wrap {
-  margin-top: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 10px 12px;
+.catalog-sections-summary::-webkit-details-marker {
+  display: none;
 }
 
-.catalog-sections-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.catalog-sections-summary:hover {
+  color: var(--text-primary);
+}
+
+.sections-summary-chevron {
+  font-size: 0.68rem;
+  transition: transform 0.2s ease;
+  color: var(--text-muted);
+}
+
+.catalog-sections-details[open] .sections-summary-chevron {
+  transform: rotate(180deg);
 }
 
 .catalog-sections-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  max-height: 130px;
+  gap: 5px;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  max-height: 140px;
   overflow-y: auto;
-  padding-right: 4px;
 }
 
 .catalog-sections-pills::-webkit-scrollbar {
@@ -3599,41 +3552,138 @@ body.wb-fullscreen-mode .wb-container {
 }
 
 .catalog-section-pill {
-  background: rgba(2, 132, 199, 0.12);
-  border: 1px solid rgba(2, 132, 199, 0.28);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 0.78rem;
-  color: #e0f2fe;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 0.74rem;
+  color: var(--text-primary);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   text-align: left;
-  line-height: 1.25;
 }
 
 .catalog-section-pill:hover {
-  background: rgba(2, 132, 199, 0.28);
-  border-color: #38bdf8;
+  background: rgba(99, 102, 241, 0.28);
+  border-color: var(--accent-light);
   transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.35);
-  color: #ffffff;
 }
 
 .sec-pill-title {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sec-pill-page {
-  background: rgba(255, 255, 255, 0.14);
-  padding: 1px 6px;
-  border-radius: 5px;
-  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.68rem;
   font-weight: 700;
-  color: #7dd3fc;
+  color: var(--accent-light);
   white-space: nowrap;
+}
+
+.catalog-card-footer {
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.btn-open-chapter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent-light);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.catalog-chapter-card:hover .btn-open-chapter {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ==========================================================================
+   🧘 ZEN-MODUS FÜR BUCH-READER & DOKUMENTE (100% iPad-Vollbild)
+   ========================================================================== */
+body.reader-zen-mode {
+  overflow: hidden;
+}
+
+body.reader-zen-mode .staging-banner,
+body.reader-zen-mode header.header {
+  display: none !important;
+}
+
+body.reader-zen-mode .app-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+  height: 100dvh;
+}
+
+body.reader-zen-mode .tab-pane {
+  padding: 0 !important;
+  height: 100dvh;
+}
+
+body.reader-zen-mode .books-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+  gap: 0 !important;
+  height: 100dvh;
+}
+
+body.reader-zen-mode .book-reader-view {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Schlanke, schwebende Reader-Steuerleiste */
+body.reader-zen-mode .book-reader-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(11, 15, 25, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px 16px;
+}
+
+/* Info-Card im Zen-Modus ausblenden für maximalen Leseplatz */
+body.reader-zen-mode .book-chapter-info-card {
+  display: none !important;
+}
+
+/* Buch-Viewer füllt den Rest der 100dvh */
+body.reader-zen-mode .book-page-viewer-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  margin: 0;
+  padding: 6px 14px;
+  overflow: hidden;
+}
+
+body.reader-zen-mode .book-page-canvas-wrapper {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 2. Vollbreiter Reader View (Keine Seitenleiste daneben) */

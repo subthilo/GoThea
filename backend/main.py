@@ -96,6 +96,11 @@ async def get_app_icon():
     svg_icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🦉</text></svg>'
     return Response(content=svg_icon, media_type="image/svg+xml")
 
+@app.get("/manifest.json")
+async def get_manifest():
+    manifest_file = FRONTEND_DIR / "manifest.json"
+    return FileResponse(manifest_file, media_type="application/manifest+json")
+
 @app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health_check():
     return {

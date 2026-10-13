@@ -9,8 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GoThea">
   <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=6.2">
+  <link rel="stylesheet" href="/static/style.css?v=6.4">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -250,37 +252,18 @@
       <!-- Tab: Bücher-Browser (Lehrwerke & Kapitel-Navigator) -->
       <section id="tab-books" class="tab-pane">
         <div class="books-container">
-          <!-- Bücher-Header & Shelf -->
-          <div class="books-shelf-header">
-            <div class="books-shelf-info">
-              <div class="shelf-title-row">
-                <span class="shelf-icon">📖</span>
-                <div>
-                  <h2>Schulbücher & Lehrwerke</h2>
-                  <p class="subtitle">Wähle ein Lehrbuch aus und navigiere interaktiv durch alle Sektionen, Lerneinheiten und Buchseiten.</p>
-                </div>
-              </div>
-            </div>
+          <!-- Schlanke Bücher-Kopfleiste (Buchauswahl & Suche auf einen Blick) -->
+          <div class="books-top-bar" id="books-top-bar">
             <div class="books-shelf-selector" id="books-shelf-selector">
-              <!-- Dynamisch gerenderte Buchauswahl-Karten -->
+              <!-- Dynamisch gerenderte Buchauswahl-Pills -->
+            </div>
+            <div class="book-catalog-search">
+              <input type="text" id="book-catalog-filter-input" placeholder="🔍 Kapitel oder Thema suchen..." />
             </div>
           </div>
 
           <!-- Ansicht 1: Übersicht aller Lerneinheiten (Kapitel-Katalog) -->
           <div class="book-catalog-view" id="book-catalog-view">
-            <div class="book-catalog-toolbar" id="book-catalog-toolbar" style="display: none;">
-              <div class="catalog-book-info">
-                <span class="catalog-book-icon" id="catalog-book-icon">📚</span>
-                <div>
-                  <h3 id="catalog-book-title">Schulbuch</h3>
-                  <span class="catalog-book-sub" id="catalog-book-subtitle">0 Lerneinheiten</span>
-                </div>
-              </div>
-              <div class="book-catalog-search">
-                <input type="text" id="book-catalog-filter-input" placeholder="🔍 Kapitel oder Thema suchen..." />
-              </div>
-            </div>
-
             <div class="book-catalog-grid" id="book-catalog-grid">
               <!-- Dynamisch gerenderte Kacheln für alle Lerneinheiten -->
             </div>
@@ -1666,7 +1649,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=6.5"></script>
+  <script src="/static/app.js?v=6.6"></script>
   <script src="/static/whiteboard.js?v=5.1"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>

@@ -638,8 +638,11 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
     const target = document.getElementById(`tab-${btn.dataset.tab}`);
     if (target) target.classList.add("active");
 
-    if (btn.dataset.tab !== "books" && bookSaveTimer) {
-      saveCurrentBookAnnotations();
+    if (btn.dataset.tab !== "books") {
+      document.body.classList.remove("reader-zen-mode");
+      if (bookSaveTimer) {
+        saveCurrentBookAnnotations();
+      }
     }
 
     if (btn.dataset.tab === "uploads") {
@@ -3858,18 +3861,17 @@ function renderBooksShelf() {
   container.innerHTML = "";
 
   currentBooks.forEach((book) => {
-    const card = document.createElement("div");
-    card.className = `shelf-book-card ${book.id === activeBookId ? "active" : ""}`;
-    card.dataset.bookId = book.id;
-    card.innerHTML = `
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = `shelf-book-pill ${book.id === activeBookId ? "active" : ""}`;
+    pill.dataset.bookId = book.id;
+    pill.innerHTML = `
       <span class="shelf-book-icon">${book.subject_icon || "📚"}</span>
-      <div class="shelf-book-meta">
-        <span class="shelf-book-title">${escapeHtml(book.title)}</span>
-        <span class="shelf-book-sub">${book.chapters_count} Lerneinheiten • ${book.total_pages} Seiten</span>
-      </div>
+      <span class="shelf-book-title">${escapeHtml(book.title)}</span>
+      <span class="shelf-book-badge">${book.chapters_count} Kap. • ${book.total_pages} S.</span>
     `;
-    card.addEventListener("click", () => selectBook(book.id));
-    container.appendChild(card);
+    pill.addEventListener("click", () => selectBook(book.id));
+    container.appendChild(pill);
   });
 }
 
@@ -3911,7 +3913,7 @@ async function selectBook(bookId) {
   }
 }
 
-// Ansicht 1: Übersicht aller Kapitel / Lerneinheiten als Kacheln
+// Ansicht 1: Übersicht aller Kapitel / Lerneinheiten als Kacheln (Progressive Disclosure)
 function renderBookCatalog(filterTerm = "") {
   const container = document.getElementById("book-catalog-grid");
   if (!container || !activeBookDetail) return;
@@ -3975,8 +3977,11 @@ function renderBookCatalog(filterTerm = "") {
     let sectionsHtml = "";
     if (ch.sections && ch.sections.length > 0) {
       sectionsHtml = `
-        <div class="catalog-sections-wrap">
-          <div class="catalog-sections-label"><span>📑</span> <span>Inhaltsverzeichnis & Unterthemen:</span></div>
+        <details class="catalog-sections-details" onclick="event.stopPropagation()">
+          <summary class="catalog-sections-summary">
+            <span class="sections-summary-label">📑 ${ch.sections.length} Unterthemen & Abschnitte</span>
+            <span class="sections-summary-chevron">▾</span>
+          </summary>
           <div class="catalog-sections-pills">
             ${ch.sections.map(sec => `
               <button type="button" class="catalog-section-pill" data-target-page="${sec.relative_page}" title="Direkt aufschlagen: ${escapeHtml(sec.title)} (Buchseite ${sec.book_page})">
@@ -3985,21 +3990,23 @@ function renderBookCatalog(filterTerm = "") {
               </button>
             `).join("")}
           </div>
-        </div>
+        </details>
       `;
     }
 
     card.innerHTML = `
       <div class="catalog-card-header">
         <span class="catalog-badge">${unitLabel}</span>
-        <span class="catalog-pages">S. ${ch.start_page}–${ch.end_page} (${ch.page_count} Seiten)</span>
+        <span class="catalog-pages">S. ${ch.start_page}–${ch.end_page} (${ch.page_count} S.)</span>
       </div>
       <div class="catalog-card-title">${escapeHtml(ch.title)}</div>
       ${ch.topic_name ? `<div class="catalog-card-topic"><span>📐</span> ${escapeHtml(ch.topic_name)}</div>` : ""}
-      <div class="catalog-card-focus">${escapeHtml(ch.focus || "Lerneinheit aus dem Schulbuch.")}</div>
       ${sectionsHtml}
       <div class="catalog-card-footer">
-        <span>${isSingleFullBook ? "Gesamtes Buch aufschlagen" : "Kapitel aufschlagen"}</span> <span>📖 ➔</span>
+        <button type="button" class="btn-open-chapter">
+          <span>${isSingleFullBook ? "Gesamtes Buch aufschlagen" : "Kapitel aufschlagen"}</span>
+          <span>📖 →</span>
+        </button>
       </div>
     `;
 
@@ -4025,11 +4032,12 @@ function openChapter(ch, targetPage = 1) {
   activeChapter = ch;
   currentChapterPage = Math.max(1, Math.min(ch.page_count, targetPage || 1));
 
-  // Umschalten auf Reader-Ansicht
+  // Umschalten auf Reader-Ansicht & Zen-Mode aktivieren (100% Bildschirm fürs Buch)
   const catalogView = document.getElementById("book-catalog-view");
   const readerView = document.getElementById("book-reader-view");
   if (catalogView) catalogView.style.display = "none";
   if (readerView) readerView.style.display = "flex";
+  document.body.classList.add("reader-zen-mode");
 
   // Breadcrumbs & Header
   const bcBook = document.getElementById("bc-book-name");
@@ -4079,6 +4087,7 @@ function closeReaderToCatalog() {
   const readerView = document.getElementById("book-reader-view");
   if (readerView) readerView.style.display = "none";
   if (catalogView) catalogView.style.display = "flex";
+  document.body.classList.remove("reader-zen-mode");
   closeTOCDrawer();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
