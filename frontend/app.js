@@ -4695,6 +4695,32 @@ function initBookInking() {
   const wrapper = document.getElementById("book-page-canvas-wrapper");
   if (wrapper) wrapper.addEventListener("contextmenu", blockNativeGesture, { capture: true });
 
+  bookAnnotationCanvas.addEventListener("selectstart", (e) => e.preventDefault(), { capture: true });
+  if (wrapper) wrapper.addEventListener("selectstart", (e) => e.preventDefault(), { capture: true });
+
+  // Globale Unterdrückung von iOS Safari Textselektion & '...Teilen' Callouts im Reader
+  document.addEventListener("selectstart", (e) => {
+    const readerView = document.getElementById("book-reader-view");
+    if (readerView && readerView.style.display !== "none") {
+      if (!e.target.closest("input, textarea, [contenteditable='true']")) {
+        e.preventDefault();
+      }
+    }
+  }, { capture: true });
+
+  document.addEventListener("selectionchange", () => {
+    const readerView = document.getElementById("book-reader-view");
+    if (readerView && readerView.style.display !== "none") {
+      const activeEl = document.activeElement;
+      if (!activeEl || (!activeEl.matches("input, textarea") && !activeEl.isContentEditable)) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          sel.removeAllRanges();
+        }
+      }
+    }
+  });
+
   bookAnnotationCanvas.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false, capture: true });
   bookAnnotationCanvas.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false, capture: true });
   bookAnnotationCanvas.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false, capture: true });
@@ -4706,8 +4732,9 @@ function initBookInking() {
   let twoFingerPageFlipped = false;
 
   const handleTwoFingerTouchStart = (e) => {
+    // IMMER e.preventDefault(), um WebKit Edit-Menu ('...Teilen') und Textselektion auf dem Glas zu blockieren!
+    e.preventDefault();
     if (e.touches.length === 2) {
-      e.preventDefault();
       if (isBookDrawing) {
         cancelCurrentBookStroke();
       }
@@ -4726,8 +4753,8 @@ function initBookInking() {
   };
 
   const handleTwoFingerTouchMove = (e) => {
+    e.preventDefault();
     if (e.touches.length === 2 && twoFingerTouchStartX !== null && twoFingerTouchStartY !== null) {
-      e.preventDefault();
       const currentMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       const currentMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const dx = currentMidX - twoFingerTouchStartX;
@@ -4757,6 +4784,7 @@ function initBookInking() {
   };
 
   const handleTwoFingerTouchEnd = (e) => {
+    e.preventDefault();
     if (e.touches.length < 2) {
       twoFingerTouchStartX = null;
       twoFingerTouchStartY = null;
@@ -4774,14 +4802,6 @@ function initBookInking() {
     wrapper.addEventListener("touchmove", handleTwoFingerTouchMove, { passive: false, capture: true });
     wrapper.addEventListener("touchend", handleTwoFingerTouchEnd, { passive: false, capture: true });
     wrapper.addEventListener("touchcancel", handleTwoFingerTouchEnd, { passive: false, capture: true });
-  }
-
-  const readerViewEl = document.getElementById("book-reader-view");
-  if (readerViewEl) {
-    readerViewEl.addEventListener("touchstart", handleTwoFingerTouchStart, { passive: false, capture: true });
-    readerViewEl.addEventListener("touchmove", handleTwoFingerTouchMove, { passive: false, capture: true });
-    readerViewEl.addEventListener("touchend", handleTwoFingerTouchEnd, { passive: false, capture: true });
-    readerViewEl.addEventListener("touchcancel", handleTwoFingerTouchEnd, { passive: false, capture: true });
   }
 
   // Pointer Events auf Canvas für Apple Pencil & Touch
@@ -5173,7 +5193,8 @@ function setBookSaveStatus(status) {
 
 function scheduleBookAnnotationSave() {
   clearTimeout(bookSaveTimer);
-  setBookSaveStatus("saving");
+  // Debounce: Nicht bei jedem kurzen Absetzen den DOM-Status aktualisieren,
+  // sondern erst wenn nach 600ms Ruhe wirklich der Netzwerk-Request startet
   bookSaveTimer = setTimeout(() => {
     saveCurrentBookAnnotations();
   }, 600);
@@ -5186,6 +5207,7 @@ async function saveCurrentBookAnnotations() {
 
   clearTimeout(bookSaveTimer);
   bookSaveTimer = null;
+  setBookSaveStatus("saving");
 
   try {
     const payload = {
