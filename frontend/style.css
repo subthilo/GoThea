@@ -3054,344 +3054,383 @@ body.wb-fullscreen-mode .wb-container {
   grid-column: 1 / -1;
 }
 
-/* Vollständiges Stundenplan Widget im Tab */
-.timetable-widget-container {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px 24px;
-  margin-top: 14px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+/* ==========================================================================
+   Stundenplan (iPadOS Vollbild-Ansicht - Keine Scrollbalken, Fit-to-Screen)
+   ========================================================================== */
+body.timetable-zen-mode {
+  overflow: hidden;
 }
 
-.tt-toolbar {
+body.timetable-zen-mode .app-container {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  height: 100dvh;
+  max-height: 100dvh;
+  box-sizing: border-box;
+}
+
+body.timetable-zen-mode .header {
+  padding-bottom: 10px;
+}
+
+body.timetable-zen-mode .content {
+  padding-top: 8px;
+  height: calc(100% - 60px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.tt-page-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Schlanke Kopfzeile (alles in einer Zeile) */
+.tt-compact-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+  gap: 12px;
+  height: 38px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
-.tt-week-switcher {
+.tt-topbar-title-group {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.tt-toolbar-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-right: 4px;
+.tt-topbar-icon {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
 }
 
-.tt-week-btn {
-  background: rgba(255, 255, 255, 0.06);
+.tt-topbar-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.tt-class-badge {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--accent-light);
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  padding: 2px 8px;
+  border-radius: 999px;
+  line-height: 1.3;
+}
+
+/* Turnus Segmented Control */
+.tt-segmented-control {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(18, 21, 28, 0.85);
   border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  padding: 6px 16px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+  border-radius: 12px;
+  padding: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.tt-week-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+.tt-seg-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tt-seg-btn:hover {
   color: var(--text-primary);
 }
 
-.tt-week-btn.active {
+.tt-seg-btn.active {
   background: var(--accent);
   color: #fff;
-  border-color: var(--accent);
-  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
 }
 
-.tt-auto-week-tag {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px 10px;
-  border-radius: 6px;
-  margin-left: 6px;
-}
-
-.tt-toolbar-info {
+.tt-topbar-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  padding: 6px 14px;
-  border-radius: 8px;
-  max-width: 600px;
 }
 
-.tt-info-icon {
-  font-size: 1rem;
+.btn-sm-svg {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(1);
+  vertical-align: -2px;
 }
 
-/* Das interaktive Stundenplan Raster */
+/* Das vollflächige Raster (100% Höhe & Breite, absolut ohne Scrollbalken) */
 .timetable-grid-wrapper {
-  overflow-x: auto;
-  border-radius: 12px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
   border: 1px solid var(--border-color);
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(18, 21, 28, 0.7);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
 }
 
 .timetable-grid {
   display: grid;
-  grid-template-columns: 110px repeat(5, minmax(180px, 1fr));
+  grid-template-columns: 52px repeat(5, minmax(0, 1fr));
+  grid-template-rows: 26px repeat(9, minmax(0, 1fr));
   width: 100%;
-  min-width: 980px;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Header-Zellen (Tage & Zeit) */
 .tt-grid-header {
-  padding: 14px 12px;
-  font-size: 0.9rem;
+  padding: 0 4px;
+  font-size: 0.82rem;
   font-weight: 700;
   text-align: center;
-  background: rgba(30, 41, 59, 0.9);
+  background: rgba(30, 41, 59, 0.95);
   color: var(--text-primary);
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tt-grid-header:last-child {
+  border-right: none;
+}
+
+.tt-corner-header {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .tt-grid-header.today {
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.25) 0%, rgba(30, 41, 59, 0.9) 100%);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.28) 0%, rgba(30, 41, 59, 0.95) 100%);
   color: var(--accent-light);
   border-bottom-color: var(--accent);
 }
 
 .tt-today-badge {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   background: var(--accent);
   color: #fff;
-  padding: 1px 8px;
-  border-radius: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 /* Zeit-Spalte (links) */
 .tt-time-cell {
-  background: rgba(20, 27, 45, 0.85);
+  background: rgba(20, 27, 45, 0.9);
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
-  padding: 10px 8px;
+  padding: 2px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.timetable-grid > div:nth-last-child(-n+6) {
+  border-bottom: none;
 }
 
 .tt-period-num {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-primary);
+  line-height: 1;
 }
 
 .tt-period-time {
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   color: var(--text-muted);
+  line-height: 1;
   margin-top: 2px;
 }
 
 /* Unterrichts-Zellen */
 .tt-slot-cell {
-  background: rgba(15, 23, 42, 0.3);
+  background: rgba(15, 23, 42, 0.25);
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
-  padding: 6px;
-  min-height: 78px;
+  padding: 2px 3px;
   position: relative;
-  transition: background 0.15s;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: 0;
+  min-width: 0;
 }
 
-.tt-slot-cell:hover {
-  background: rgba(255, 255, 255, 0.02);
+.tt-slot-cell:nth-child(6n) {
+  border-right: none;
 }
 
 .tt-slot-cell.today-col {
-  background: rgba(99, 102, 241, 0.03);
+  background: rgba(99, 102, 241, 0.04);
 }
 
 /* Slot Card (Einzelne Unterrichtsstunde) */
 .tt-lesson-card {
+  width: 100%;
   height: 100%;
-  border-radius: 8px;
-  padding: 8px 10px;
-  background: rgba(30, 41, 59, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 4px solid var(--accent);
+  border-radius: 7px;
+  padding: 3px 6px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 3px solid var(--accent);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  transition: all 0.15s ease;
   position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .tt-lesson-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+  background: rgba(40, 53, 76, 0.9);
   border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .tt-lesson-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: 5px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.tt-slot-svg {
+  width: 15px;
+  height: 15px;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .tt-lesson-name {
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.tt-lesson-code {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.06);
-  padding: 1px 6px;
-  border-radius: 4px;
+  line-height: 1.1;
 }
 
 .tt-lesson-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
+  gap: 4px;
+  overflow: hidden;
+  margin-top: 1px;
 }
 
 .tt-lesson-room {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 1px 4px;
   border-radius: 4px;
+  font-size: 0.67rem;
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .tt-lesson-teacher {
+  font-size: 0.67rem;
   color: var(--text-muted);
-}
-
-.btn-tt-slot-info {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-  font-size: 0.72rem;
-  padding: 1px 4px;
-  cursor: pointer;
-  color: var(--text-secondary);
-  line-height: 1;
-  transition: all 0.15s ease;
-}
-
-.btn-tt-slot-info:hover {
-  background: rgba(99, 102, 241, 0.3);
-  border-color: var(--accent);
-  color: #fff;
-  transform: scale(1.08);
-}
-
-.tt-lesson-card:hover .tt-lesson-name {
-  color: var(--accent-light);
-}
-
-.dash-tt-slot-card:hover .dash-tt-slot-subject {
-  color: var(--accent-light);
-}
-
-/* Kennzeichnung Doppelstunde & Turnus */
-.tt-tag-turnus {
-  font-size: 0.65rem;
-  font-weight: 700;
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--accent-light);
-  padding: 1px 5px;
-  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .tt-lesson-break {
-  background: rgba(30, 41, 59, 0.4);
-  border-left-color: #64748b;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-left: 1px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
+  gap: 5px;
   color: var(--text-muted);
-  font-size: 0.78rem;
+  padding: 2px;
+  cursor: default;
+}
+
+.tt-break-svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.55;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+}
+
+.tt-break-label {
+  font-size: 0.72rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tt-cell-empty {
   height: 100%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.12);
-  font-size: 0.85rem;
-}
-
-/* Footer & Legende */
-.tt-footer-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-color);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.tt-legend {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.tt-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.76rem;
-  color: var(--text-secondary);
-}
-
-.tt-legend-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.08);
+  font-size: 0.75rem;
 }
 
 /* Slot Detail Modal */

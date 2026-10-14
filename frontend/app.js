@@ -667,7 +667,10 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
       loadUploadsHistory();
     }
     if (btn.dataset.tab === "timetable") {
+      document.body.classList.add("timetable-zen-mode");
       loadTimetable();
+    } else {
+      document.body.classList.remove("timetable-zen-mode");
     }
     if (btn.dataset.tab === "books") {
       if (currentBooks.length === 0) {
@@ -3480,7 +3483,8 @@ async function loadTimetable(forcedWeek = null) {
     // Header aktualisieren
     const subtitleEl = document.getElementById("tt-view-subtitle");
     if (subtitleEl) {
-      subtitleEl.textContent = `${currentTimetableData.class_name} • ${currentTimetableData.school_name} • Schuljahr ${currentTimetableData.school_year}`;
+      subtitleEl.textContent = currentTimetableData.class_name || "Klasse 7D";
+      subtitleEl.title = `${currentTimetableData.school_name || ""} • Schuljahr ${currentTimetableData.school_year || ""}`.trim();
     }
 
     // A/B Buttons Status setzen
@@ -3524,8 +3528,8 @@ function renderTimetableGrid() {
 
   // 1. Header-Zeile: Zeit + 5 Wochentage
   const timeHeader = document.createElement("div");
-  timeHeader.className = "tt-grid-header";
-  timeHeader.innerHTML = `<span>Zeit / Std</span>`;
+  timeHeader.className = "tt-grid-header tt-corner-header";
+  timeHeader.innerHTML = `<span>Zeit</span>`;
   gridEl.appendChild(timeHeader);
 
   weekdays.forEach((day) => {
@@ -3539,7 +3543,7 @@ function renderTimetableGrid() {
     gridEl.appendChild(dayHeader);
   });
 
-  // 2. Zeilen für jede Unterrichtsstunde (1 bis 8)
+  // 2. Zeilen für jede Unterrichtsstunde (1 bis 9)
   const periods = currentTimetableData.periods || [];
   const slots = currentTimetableData.slots || [];
 
@@ -3548,8 +3552,8 @@ function renderTimetableGrid() {
     const timeCell = document.createElement("div");
     timeCell.className = "tt-time-cell";
     timeCell.innerHTML = `
-      <span class="tt-period-num">${period.label}</span>
-      <span class="tt-period-time">${period.start_time}–${period.end_time}</span>
+      <span class="tt-period-num">${period.period}</span>
+      <span class="tt-period-time">${period.start_time}</span>
     `;
     gridEl.appendChild(timeCell);
 
@@ -3573,15 +3577,17 @@ function renderTimetableGrid() {
           const isLunch = (matchingSlot.subject_name || "").toLowerCase().includes("mittag") || (matchingSlot.subject_name || "").toLowerCase().includes("mensa");
           const breakIcon = isLunch ? "/static/Icons/Mittagspause.svg" : "/static/Icons/Pause.svg";
           slotCell.innerHTML = `
-            <div class="tt-lesson-card tt-lesson-break">
+            <div class="tt-lesson-card tt-lesson-break" title="${escapeHtml(matchingSlot.subject_name || 'Pause')}">
               <img src="${breakIcon}" class="tt-break-svg" alt="">
-              <span>${escapeHtml(matchingSlot.subject_name || "Pause")}</span>
+              <span class="tt-break-label">${escapeHtml(matchingSlot.subject_name || "Pause")}</span>
             </div>
           `;
         } else {
           const card = document.createElement("div");
           card.className = "tt-lesson-card";
-          card.style.borderLeftColor = matchingSlot.subject_color || "var(--accent)";
+          if (matchingSlot.subject_color) {
+            card.style.borderLeftColor = matchingSlot.subject_color;
+          }
 
           let roomStr = matchingSlot.room || "";
           if (roomStr && !roomStr.toLowerCase().includes("halle") && !roomStr.startsWith("R")) {
@@ -3590,29 +3596,14 @@ function renderTimetableGrid() {
 
           card.innerHTML = `
             <div class="tt-lesson-top">
-              <div class="tt-lesson-name-group" title="Fachseite für ${escapeHtml(matchingSlot.subject_name)} öffnen">
-                <img src="${getSubjectIconUrl(matchingSlot.subject_name)}" class="tt-slot-svg" alt="">
-                <span class="tt-lesson-name">${escapeHtml(matchingSlot.subject_name)}</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 4px;">
-                ${matchingSlot.subject_code ? `<span class="tt-lesson-code">${escapeHtml(matchingSlot.subject_code)}</span>` : ""}
-                <button class="btn-tt-slot-info" title="Raum &amp; Lehrer Details anzeigen" type="button">ℹ️</button>
-              </div>
+              <img src="${getSubjectIconUrl(matchingSlot.subject_name)}" class="tt-slot-svg" alt="">
+              <span class="tt-lesson-name">${escapeHtml(matchingSlot.subject_name)}</span>
             </div>
             <div class="tt-lesson-meta">
               <span class="tt-lesson-room">${escapeHtml(roomStr)}</span>
               <span class="tt-lesson-teacher">${escapeHtml(matchingSlot.teacher || "")}</span>
-              ${matchingSlot.week_type !== "both" ? `<span class="tt-tag-turnus">${escapeHtml(matchingSlot.week_type)}-Woche</span>` : ""}
             </div>
           `;
-
-          const infoBtn = card.querySelector(".btn-tt-slot-info");
-          if (infoBtn) {
-            infoBtn.addEventListener("click", (e) => {
-              e.stopPropagation();
-              openTimetableSlotDetailModal(matchingSlot, period);
-            });
-          }
 
           card.addEventListener("click", () => {
             if (matchingSlot.subject_id) {
@@ -3649,7 +3640,9 @@ function openTimetableSlotDetailModal(slot, period) {
   const noteRow = document.getElementById("tt-slot-modal-note-row");
   const noteEl = document.getElementById("tt-slot-modal-note");
 
-  if (iconEl) iconEl.textContent = slot.subject_icon || "📚";
+  if (iconEl) {
+    iconEl.innerHTML = `<img src="${getSubjectIconUrl(slot.subject_name)}" style="width: 24px; height: 24px; filter: brightness(0) invert(1);" alt="">`;
+  }
   if (titleEl) titleEl.textContent = slot.subject_name;
   if (timeEl) {
     const pLabel = slot.period_label || (period ? period.label : `${slot.period}. Std`);

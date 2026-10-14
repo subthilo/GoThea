@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=9.5">
+  <link rel="stylesheet" href="/static/style.css?v=9.6">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -172,61 +172,41 @@
         </div>
       </section>
 
-      <!-- Tab: Stundenplan (Interaktives Wochen-Widget) -->
-      <section id="tab-timetable" class="tab-pane">
-        <div class="pane-header">
-          <div>
-            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
-              <h2>🗓️ Stundenplan – Klasse 7D</h2>
-              <span class="badge-grade">Humboldt-Gymnasium Eichwalde</span>
-            </div>
-            <p class="subtitle" id="tt-view-subtitle">Schuljahr 2026/2027 • Stundenraster 1. bis 8. Stunde (07:45 – 15:25)</p>
+      <!-- Tab: Stundenplan (iPadOS Vollbild-Ansicht ohne Scrollen) -->
+      <section id="tab-timetable" class="tab-pane tt-page-pane">
+        <!-- Schlanke Kopfzeile (alles in einer kompakten Zeile) -->
+        <div class="tt-compact-topbar">
+          <div class="tt-topbar-title-group">
+            <img src="/static/Icons/Stundenplan.svg" class="tt-topbar-icon" alt="">
+            <h2 class="tt-topbar-title">Stundenplan</h2>
+            <span class="tt-class-badge" id="tt-view-subtitle">Klasse 7D</span>
           </div>
-          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <button id="btn-tt-view-scan" class="btn-secondary-sm" title="Den hochgeladenen Original-Scan als Dokument ansehen">
-              👁️ Original-Scan ansehen
+
+          <!-- Turnus Segmented Control (A-Woche / B-Woche) -->
+          <div class="tt-segmented-control" role="tablist" aria-label="Turnus-Woche">
+            <button type="button" class="tt-seg-btn active" data-week="A" id="btn-tt-week-a">A-Woche</button>
+            <button type="button" class="tt-seg-btn" data-week="B" id="btn-tt-week-b">B-Woche</button>
+            <span id="tt-auto-week-tag" style="display: none;"></span>
+          </div>
+
+          <div class="tt-topbar-actions">
+            <button id="btn-tt-view-scan" class="btn-secondary-sm" title="Original-Scan ansehen">
+              <img src="/static/Icons/Dokumente.svg" class="btn-sm-svg" alt="">
+              <span>Scan</span>
             </button>
             <button id="btn-tt-upload-new" class="btn-primary-sm parent-only" title="Neuen Stundenplan scannen oder hochladen">
-              📤 Plan aktualisieren
+              <img src="/static/Icons/Upload.svg" class="btn-sm-svg" alt="">
+              <span>Plan ändern</span>
             </button>
           </div>
         </div>
 
-        <!-- Stundenplan Widget Container -->
-        <div class="timetable-widget-container">
-          <!-- Toolbar mit A-/B-Wochen Switcher -->
-          <div class="tt-toolbar">
-            <div class="tt-week-switcher">
-              <span class="tt-toolbar-label">Turnus-Woche:</span>
-              <button class="tt-week-btn active" data-week="A" id="btn-tt-week-a">🅰️ A-Woche</button>
-              <button class="tt-week-btn" data-week="B" id="btn-tt-week-b">🅱️ B-Woche</button>
-              <span class="tt-auto-week-tag" id="tt-auto-week-tag">Aktuell laut Kalender</span>
-            </div>
-            <div class="tt-toolbar-info">
-              <span class="tt-info-icon">💡</span>
-              <span id="tt-differences-text">Montag 5./6.1 Std: In A-Woche Sport (Fr. DÜCK, Halle gewo) • In B-Woche Englisch (Fr. SCHD, R 104)</span>
-            </div>
-          </div>
+        <div id="tt-differences-text" style="display: none;"></div>
 
-          <!-- Interaktives Wochen-Raster -->
-          <div class="timetable-grid-wrapper">
-            <div class="timetable-grid" id="timetable-full-grid">
-              <!-- Dynamisch via app.js gerendert -->
-            </div>
-          </div>
-
-          <!-- Legende & Hilfestellung -->
-          <div class="tt-footer-bar">
-            <div class="tt-legend">
-              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #2563eb;"></span> Hauptfächer (Ma, De, En, Fr)</div>
-              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #10b981;"></span> Naturwissenschaften (Bio, Ph, Ch)</div>
-              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #f59e0b;"></span> Gesellschaft (Ge, Geo, PB)</div>
-              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #14b8a6;"></span> Praxis (Sport, WAT)</div>
-              <div class="tt-legend-item"><span class="tt-legend-dot" style="background: #475569;"></span> Pausen & Mensa</div>
-            </div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">
-              Tipp: Klicke auf ein Fach, um direkt zu dessen Fachseite (Mediathek, Hefter & Tafel) zu springen.
-            </div>
+        <!-- Interaktives Wochen-Raster (100% Höhe & Breite, absolut scrollfrei) -->
+        <div class="timetable-grid-wrapper">
+          <div class="timetable-grid" id="timetable-full-grid">
+            <!-- Dynamisch via app.js gerendert -->
           </div>
         </div>
       </section>
@@ -1231,44 +1211,46 @@
 
   <!-- Modal: Stundenplan Fach-Detail & Schnellzugriff -->
   <div id="modal-tt-slot-detail" class="modal-backdrop" style="display: none;">
-    <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-box" style="max-width: 420px; border-radius: 20px;">
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span id="tt-slot-modal-icon" style="font-size: 1.6rem;">📚</span>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span id="tt-slot-modal-icon" class="tt-slot-modal-squircle">
+            <img src="/static/Icons/Bücher.svg" class="btn-sm-svg" style="width: 24px; height: 24px;" alt="">
+          </span>
           <div>
-            <h3 id="tt-slot-modal-title" style="margin: 0; font-size: 1.2rem;">Mathematik</h3>
+            <h3 id="tt-slot-modal-title" style="margin: 0; font-size: 1.18rem;">Mathematik</h3>
             <span id="tt-slot-modal-time" class="subtitle" style="font-size: 0.8rem; margin: 0;">1. & 2. Stunde • 07:45 – 09:15</span>
           </div>
         </div>
-        <button class="modal-close" id="btn-close-tt-slot-modal">&times;</button>
+        <button class="modal-close" id="btn-close-tt-slot-modal" title="Schließen">&times;</button>
       </div>
-      <div class="modal-body" style="padding-top: 10px;">
+      <div class="modal-body" style="padding-top: 6px;">
         <div class="tt-slot-info-card">
           <div class="tt-slot-info-row">
-            <span class="tt-slot-info-label">🏫 Raum:</span>
+            <span class="tt-slot-info-label">Raum:</span>
             <span class="tt-slot-info-val" id="tt-slot-modal-room">Raum 303</span>
           </div>
           <div class="tt-slot-info-row">
-            <span class="tt-slot-info-label">👩‍🏫 Lehrkraft:</span>
+            <span class="tt-slot-info-label">Lehrkraft:</span>
             <span class="tt-slot-info-val" id="tt-slot-modal-teacher">Hr. HORN</span>
           </div>
           <div class="tt-slot-info-row">
-            <span class="tt-slot-info-label">🗓️ Turnus:</span>
+            <span class="tt-slot-info-label">Turnus:</span>
             <span class="tt-slot-info-val" id="tt-slot-modal-week">Beide Wochen</span>
           </div>
           <div class="tt-slot-info-row" id="tt-slot-modal-note-row" style="display: none;">
-            <span class="tt-slot-info-label">📝 Notiz:</span>
+            <span class="tt-slot-info-label">Notiz:</span>
             <span class="tt-slot-info-val" id="tt-slot-modal-note"></span>
           </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 18px;">
-          <button id="btn-tt-goto-materials" class="btn-primary" style="justify-content: center; gap: 8px;">
-            <span>📚</span>
-            <span>Fachseite & Mediathek öffnen</span>
+          <button id="btn-tt-goto-materials" class="btn-primary" style="justify-content: center; gap: 8px; padding: 11px 16px;">
+            <img src="/static/Icons/Bücher.svg" class="btn-sm-svg" alt="">
+            <span>Fachseite & Mediathek</span>
           </button>
-          <button id="btn-tt-goto-whiteboard" class="btn-secondary-sm" style="justify-content: center; gap: 8px; padding: 10px 14px;">
-            <span>🎨</span>
+          <button id="btn-tt-goto-whiteboard" class="btn-secondary" style="justify-content: center; gap: 8px; width: 100%;">
+            <img src="/static/Icons/Tafel.svg" class="btn-sm-svg" alt="">
             <span>Tafel für dieses Fach öffnen</span>
           </button>
         </div>
@@ -1598,7 +1580,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=9.5"></script>
+  <script src="/static/app.js?v=9.6"></script>
   <script src="/static/whiteboard.js?v=6.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>
