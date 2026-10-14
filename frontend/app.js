@@ -4342,17 +4342,17 @@ async function renderChapterPage() {
     }
   }
 
-  // Aktive Pill markieren und ins Sichtfeld scrollen (nur wenn Bücher-Tab aktiv ist)
+  // Aktive Pill markieren und horizontal ins Sichtfeld scrollen (ohne vertikales Springen)
   document.querySelectorAll(".book-page-pill").forEach((pill) => {
     const isAct = parseInt(pill.dataset.page, 10) === currentChapterPage;
     pill.classList.toggle("active", isAct);
     if (isAct) {
       const booksTab = document.getElementById("tab-books");
       if (booksTab && booksTab.classList.contains("active")) {
-        try {
-          pill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-        } catch (e) {
-          pill.scrollIntoView();
+        const strip = document.getElementById("book-page-strip");
+        if (strip) {
+          const targetScroll = pill.offsetLeft - (strip.clientWidth / 2) + (pill.clientWidth / 2);
+          strip.scrollTo({ left: Math.max(0, targetScroll), behavior: "smooth" });
         }
       }
     }
@@ -4367,6 +4367,11 @@ async function renderChapterPage() {
 
   // Bild in gewähltem Modus laden
   if (imgEl) {
+    if (!imgEl.dataset.calloutProtected) {
+      imgEl.dataset.calloutProtected = "true";
+      imgEl.addEventListener("contextmenu", (e) => e.preventDefault());
+      imgEl.addEventListener("dragstart", (e) => e.preventDefault());
+    }
     if (loadingEl) loadingEl.style.display = "flex";
     imgEl.className = `book-page-img mode-${bookZoomMode}`;
     const targetUrl = `/api/v1/materials/${activeChapter.id}/preview?page=${currentChapterPage}`;

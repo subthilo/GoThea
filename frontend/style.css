@@ -4064,10 +4064,10 @@ body.reader-zen-mode .book-reader-view {
 /* 4. Hauptanzeige: Vollbild-Seitenanzeige ohne Abschneiden */
 body.reader-zen-mode .book-page-canvas-wrapper {
   position: relative;
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  flex: 1 1 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -4076,6 +4076,8 @@ body.reader-zen-mode .book-page-canvas-wrapper {
   min-height: 0;
   max-height: none;
   height: auto;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
 }
 
 body.reader-zen-mode .book-page-stage {
@@ -4086,6 +4088,7 @@ body.reader-zen-mode .book-page-stage {
   max-width: 100%;
   margin: 0 auto;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  touch-action: pan-y !important;
 }
 
 /* Modus Volle Breite: Flüssiges vertikales Scrollen von ganz oben bis ganz unten */
@@ -4096,40 +4099,49 @@ body.reader-zen-mode .book-page-img.mode-width {
   display: block;
   margin: 0 auto;
   border-radius: 4px;
+  touch-action: pan-y !important;
 }
 
 /* Modus Ganze Seite einpassen: 100% Sichtbar ohne Scrollen & ohne Abschneiden */
 body.reader-zen-mode .book-page-img.mode-fit {
-  max-height: calc(100dvh - 100px);
+  max-height: calc(100dvh - 110px);
   width: auto !important;
   max-width: 100%;
   object-fit: contain;
   display: block;
   margin: 0 auto;
   border-radius: 4px;
+  touch-action: pan-y !important;
 }
 
-/* 5. Schlanke Seitenleiste unten */
+/* 5. Schlanke Seitenleiste unten mit ausreichend Platz für iPad-Home-Indicator */
 .reader-bottom-strip-wrap {
   flex-shrink: 0;
-  height: 38px;
-  background: rgba(11, 15, 25, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--border-color);
+  min-height: 52px;
+  height: auto;
+  background: rgba(11, 15, 25, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 10px;
-  overflow-x: auto;
+  padding: 6px 16px max(12px, env(safe-area-inset-bottom, 16px)) 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  z-index: 10;
 }
 
 .reader-bottom-strip-wrap .book-page-strip {
   display: flex;
-  gap: 6px;
-  padding: 2px 6px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 .reader-bottom-strip-wrap .book-page-strip::-webkit-scrollbar {
@@ -4137,42 +4149,38 @@ body.reader-zen-mode .book-page-img.mode-fit {
 }
 
 .reader-bottom-strip-wrap .book-page-pill {
-  min-width: 28px;
-  height: 26px;
-  padding: 0 6px;
-  font-size: 0.78rem;
+  min-width: 36px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 0.88rem;
   font-weight: 700;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: var(--text-secondary);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .reader-bottom-strip-wrap .book-page-pill:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
   color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .reader-bottom-strip-wrap .book-page-pill.active {
   background: var(--accent);
-  color: #fff;
-  box-shadow: 0 0 10px var(--theme-glow);
-}
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 14px var(--theme-glow);
+  transform: scale(1.08);
 }
 
 .reader-nav-left {
@@ -4585,10 +4593,10 @@ body.reader-zen-mode .book-page-img.mode-fit {
 .book-page-canvas-wrapper {
   background: #090b10;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  min-height: 600px;
-  max-height: calc(100vh - 250px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  min-height: 0;
+  flex: 1 1 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -4596,7 +4604,9 @@ body.reader-zen-mode .book-page-img.mode-fit {
   position: relative;
   width: 100%;
   box-sizing: border-box;
-  touch-action: none !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
   user-select: none !important;
   -webkit-user-select: none !important;
   -webkit-touch-callout: none !important;
@@ -4624,6 +4634,7 @@ body.reader-zen-mode .book-page-img.mode-fit {
   margin: 0 auto;
   line-height: 0;
   max-width: 100%;
+  touch-action: pan-y !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
   user-select: none !important;
@@ -4632,7 +4643,7 @@ body.reader-zen-mode .book-page-img.mode-fit {
 .book-page-img {
   border: 1px solid rgba(255, 255, 255, 0.12);
   display: block;
-  pointer-events: none !important; /* Verhindert Safari-Bildauswahl & "Teilen..." Callouts */
+  touch-action: pan-y !important;
   -webkit-user-drag: none !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
