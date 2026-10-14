@@ -402,18 +402,15 @@ def confirm_and_save_material(
     db.commit()
     db.refresh(material)
 
-    # Hintergrund-Rendering für alle Seiten des Dokuments anstoßen
-    try:
-        from backend.app.services.page_renderer import page_renderer
-        page_renderer.queue_material(material.id, material.file_path, material.mime_type, material.page_count)
-    except Exception:
-        pass
-
-    # Automatische Buchsegmentierung im Hintergrund anstoßen (falls Schulbuch)
+    # Bücher werden segmentiert und dann über ihre Kapitel vorgerendert; sonst alle Seiten rendern
     try:
         from backend.app.services.book_segmentation import is_candidate_book, trigger_background_book_segmentation
+        from backend.app.services.page_renderer import page_renderer
         if is_candidate_book(material):
+            page_renderer.queue_material(material.id, material.file_path, material.mime_type, 3)
             trigger_background_book_segmentation(material.id)
+        else:
+            page_renderer.queue_material(material.id, material.file_path, material.mime_type, material.page_count)
     except Exception:
         pass
 

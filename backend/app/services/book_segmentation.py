@@ -791,6 +791,7 @@ def segment_book_material(
     }
 
     created_or_updated: List[Material] = []
+    rewritten_ids: List[str] = []
 
     for idx, spec in enumerate(chapters_spec):
         unit_num = spec.get("unit_number", idx)
@@ -807,6 +808,7 @@ def segment_book_material(
 
         # 1. Kapitel-PDF via pypdf extrahieren
         if force or not chap_path.exists() or chap_path.stat().st_size == 0:
+            rewritten_ids.append(chap_id)
             writer = pypdf.PdfWriter()
             for p_idx in range(start_pdf - 1, end_pdf):
                 writer.add_page(reader.pages[p_idx])
@@ -892,8 +894,10 @@ def segment_book_material(
     kept_ids = {c.id for c in created_or_updated}
     kept_paths = {c.file_path for c in created_or_updated} | {book.file_path}
     stale_paths: List[Path] = []
+    stale_ids: List[str] = []
     for stale in db.query(Material).filter_by(parent_id=book.id).all():
         if stale.id not in kept_ids:
+            stale_ids.append(stale.id)
             logger.info(f"🗑️ Veraltetes Kapitel entfernt: {stale.title} ({stale.id})")
             if stale.file_path and stale.file_path not in kept_paths:
                 stale_paths.append(Path(stale.file_path))
@@ -905,12 +909,25 @@ def segment_book_material(
         db.commit()
         for stale_path in stale_paths:
             stale_path.unlink(missing_ok=True)
+        _refresh_rendered_pages(created_or_updated, rewritten_ids + stale_ids)
         logger.info(f"✅ Schulbuch {book.title} ({book.id}) erfolgreich in {len(created_or_updated)} Kapitel segmentiert.")
         return created_or_updated
     except Exception as e:
         db.rollback()
         logger.error(f"❌ Fehler bei der Buchsegmentierung für {book.id}: {e}", exc_info=True)
         raise
+
+
+def _refresh_rendered_pages(chapters: List[Material], outdated_ids: List[str]) -> None:
+    """Verwirft veraltete Seitenbilder und rendert die Kapitel im Hintergrund vor."""
+    try:
+        from backend.app.services.page_renderer import page_renderer
+        if outdated_ids:
+            page_renderer.purge_material_cache(outdated_ids)
+        for chap in chapters:
+            page_renderer.queue_material(chap.id, chap.file_path, chap.mime_type, chap.page_count)
+    except Exception as e:
+        logger.warning(f"Kapitel konnten nicht zum Vorrendern eingereiht werden: {e}")
 
 
 def is_candidate_book(material: Material) -> bool:
@@ -1238,6 +1255,8 @@ def trigger_background_book_segmentation(material_id: str):
                 logger.info(f"✅ Hintergrund-Segmentierung für Buch '{book.title}' erfolgreich abgeschlossen: {len(result)} Kapitel.")
             else:
                 logger.info(f"ℹ️ Für Buch '{book.title}' wurden keine separaten Kapitel extrahiert (bleibt Gesamtbuch).")
+                from backend.app.services.page_renderer import page_renderer
+                page_renderer.queue_material(book.id, book.file_path, book.mime_type, book.page_count)
         except Exception as e:
             logger.error(f"❌ Fehler bei Hintergrund-Segmentierung für {material_id}: {e}", exc_info=True)
         finally:

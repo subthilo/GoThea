@@ -268,10 +268,12 @@ def process_single_inbox_file(
     db.commit()
     db.refresh(material)
 
-    # Erste Seiten vorab rendern für Sofort-Anzeige im Web-Viewer
+    # Vorrendern: Bücher nur die ersten Seiten (Kapitel folgen nach der Segmentierung), sonst alles
     try:
+        from backend.app.services.book_segmentation import is_candidate_book
         from backend.app.services.material_ingestion import pre_cache_material_pages
-        pre_cache_material_pages(material.id, material.file_path, material.mime_type, max_pages=3)
+        pages = 3 if is_candidate_book(material) else material.page_count
+        pre_cache_material_pages(material.id, material.file_path, material.mime_type, max_pages=pages)
     except Exception:
         pass
 

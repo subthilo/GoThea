@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -7,7 +8,7 @@ import time
 import logging
 from pathlib import Path
 from queue import PriorityQueue, Empty
-from typing import Optional, Tuple, Dict, Set
+from typing import Iterable, Optional, Tuple, Dict, Set
 
 from backend.app.config import PAGE_CACHE_DIR
 
@@ -17,6 +18,9 @@ logger = logging.getLogger(__name__)
 PRIORITY_LIVE = 1        # Sofortiger Live-Aufruf aus dem Browser
 PRIORITY_PREFETCH = 2    # Benachbarte Seiten der aktuell aktiven Lerneinheit
 PRIORITY_BACKGROUND = 3  # Vollständiger Hintergrund-Scan aller Dokumente
+
+# Cache-Dateiname: {material_id}_p{seite}_{mtime}.jpg
+CACHE_NAME_RE = re.compile(r"^(?P<doc>.+)_p(?P<page>\d+)_(?P<mtime>\d+)\.jpg$")
 
 
 class PageRenderingService:
@@ -46,6 +50,12 @@ class PageRenderingService:
         # In-Flight Synchronisation (verhindert doppeltes Rendern derselben Seite)
         self._in_flight_renders: Dict[str, threading.Event] = {}
         self._in_flight_lock = threading.Lock()
+
+        # Seitenzahlen pro (Pfad, mtime), damit nicht jedes Rendering das ganze PDF parst
+        self._page_counts: Dict[Tuple[str, int], int] = {}
+        self._page_counts_lock = threading.Lock()
+
+        self._rendered_in_background = 0
 
         PAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -134,7 +144,7 @@ class PageRenderingService:
                 self._live_in_progress_count += 1
 
         try:
-            img_bytes, out_mime = self._do_render(path, page_num, cache_file)
+            img_bytes, out_mime = self._do_render(path, page_num, cache_file, low_priority=priority == PRIORITY_BACKGROUND)
             # Bei Live-Aufruf direkt Nachbarseiten mit Prio 2 vorwärmen
             if priority == PRIORITY_LIVE and material_id:
                 self.prefetch_adjacent_pages(material_id, file_path, mime_type, page_num)
@@ -149,17 +159,30 @@ class PageRenderingService:
                 if ev:
                     ev.set()
 
-    def _do_render(self, path: Path, page_num: int, cache_file: Path) -> Tuple[bytes, str]:
-        """Führt das physische Rendering mit pdftoppm oder fitz durch."""
-        actual_page = max(1, page_num)
+    def get_page_count(self, path: Path) -> Optional[int]:
+        """Seitenzahl eines PDFs, gecacht pro Datei-Version."""
+        try:
+            key = (str(path), int(path.stat().st_mtime))
+        except OSError:
+            return None
+        with self._page_counts_lock:
+            if key in self._page_counts:
+                return self._page_counts[key]
         try:
             from pypdf import PdfReader
-            reader = PdfReader(str(path))
-            total_pages = len(reader.pages)
-            if total_pages > 0:
-                actual_page = max(1, min(page_num, total_pages))
+            count = len(PdfReader(str(path)).pages)
         except Exception:
-            pass
+            return None
+        with self._page_counts_lock:
+            self._page_counts[key] = count
+        return count
+
+    def _do_render(self, path: Path, page_num: int, cache_file: Path, low_priority: bool = False) -> Tuple[bytes, str]:
+        """Führt das physische Rendering mit pdftoppm oder fitz durch."""
+        actual_page = max(1, page_num)
+        total_pages = self.get_page_count(path)
+        if total_pages:
+            actual_page = max(1, min(page_num, total_pages))
 
         # A) Bevorzugt auf Linux/Raspberry Pi: pdftoppm JPEG (120 DPI, hochoptimiert)
         pdftoppm_bin = shutil.which("pdftoppm") or ("/usr/bin/pdftoppm" if Path("/usr/bin/pdftoppm").exists() else None)
@@ -167,7 +190,10 @@ class PageRenderingService:
             try:
                 with tempfile.TemporaryDirectory() as tmpdir:
                     out_prefix = os.path.join(tmpdir, "page")
-                    cmd = [
+                    # Hintergrundjobs mit niedrigster CPU-Priorität, damit Live-Anfragen
+                    # (auch die der jeweils anderen Umgebung) Vorrang haben
+                    nice_bin = shutil.which("nice") if low_priority else None
+                    cmd = ([nice_bin, "-n", "19"] if nice_bin else []) + [
                         pdftoppm_bin,
                         "-jpeg",
                         "-r", "120",
@@ -278,29 +304,63 @@ class PageRenderingService:
             try:
                 from backend.app.models.material import Material
                 materials = db.query(Material).all()
+                # Gesamtbücher mit Kapiteln werden nur über ihre Kapitel angezeigt -> nicht doppelt rendern
+                parents_with_children = {m.parent_id for m in materials if m.parent_id}
                 queued_count = 0
                 for mat in materials:
+                    if mat.id in parents_with_children:
+                        continue
                     if not mat.file_path or not Path(mat.file_path).exists():
                         continue
                     p_count = mat.page_count or 1
-                    try:
-                        from pypdf import PdfReader
-                        r = PdfReader(str(mat.file_path))
-                        p_count = min(p_count, len(r.pages))
-                    except Exception:
-                        pass
+                    real_count = self.get_page_count(Path(mat.file_path))
+                    if real_count:
+                        p_count = min(p_count, real_count)
                     for p in range(1, p_count + 1):
                         cache_file = self.get_cache_path(mat.id, mat.file_path, p)
                         if not cache_file.exists():
                             self.queue_page(mat.id, mat.file_path, mat.mime_type, p, priority=PRIORITY_BACKGROUND)
                             queued_count += 1
-                logger.info(f"📚 {queued_count} ungerenderte Seiten in Hintergrund-Queue eingereiht.")
+                removed = self.cleanup_stale_cache({m.id: m.file_path for m in materials})
+                logger.info(f"📚 {queued_count} ungerenderte Seiten in Hintergrund-Queue eingereiht, {removed} veraltete Cache-Bilder entfernt.")
             except Exception as e:
                 logger.warning(f"Fehler beim Scannen der Materialien für Hintergrund-Cache: {e}")
             finally:
                 db.close()
 
         threading.Thread(target=_scan, name="InitialPageCacheScan", daemon=True).start()
+
+    def purge_material_cache(self, material_ids: Iterable[str]) -> int:
+        """Entfernt alle gerenderten Seiten der angegebenen Materialien."""
+        ids = set(material_ids)
+        removed = 0
+        for f in PAGE_CACHE_DIR.glob("*.jpg"):
+            m = CACHE_NAME_RE.match(f.name)
+            if m and m.group("doc") in ids:
+                f.unlink(missing_ok=True)
+                removed += 1
+        return removed
+
+    def cleanup_stale_cache(self, current_files: Dict[str, str]) -> int:
+        """
+        Entfernt Cache-Bilder gelöschter Materialien und veralteter Datei-Versionen
+        (z. B. nach Neu-Segmentierung). current_files: {material_id: file_path}
+        """
+        current_mtimes: Dict[str, int] = {}
+        for mat_id, file_path in current_files.items():
+            try:
+                current_mtimes[mat_id] = int(Path(file_path).stat().st_mtime)
+            except (OSError, TypeError):
+                pass
+        removed = 0
+        for f in PAGE_CACHE_DIR.glob("*.jpg"):
+            m = CACHE_NAME_RE.match(f.name)
+            if not m:
+                continue
+            if current_mtimes.get(m.group("doc")) != int(m.group("mtime")):
+                f.unlink(missing_ok=True)
+                removed += 1
+        return removed
 
     def _worker_loop(self):
         """Arbeitet die Queue ab. Pausiert sofort, wenn ein Live-Request aktiv ist."""
@@ -341,6 +401,14 @@ class PageRenderingService:
                 logger.debug(f"Hintergrund-Rendering Fehler für {cache_key}: {e}")
             finally:
                 self._queue.task_done()
+
+            if priority == PRIORITY_BACKGROUND:
+                self._rendered_in_background += 1
+                if self._queue.empty():
+                    logger.info(f"🖼️ Hintergrund-Rendering abgeschlossen ({self._rendered_in_background} Seiten).")
+                    self._rendered_in_background = 0
+                elif self._rendered_in_background % 100 == 0:
+                    logger.info(f"🖼️ Hintergrund-Rendering: {self._rendered_in_background} Seiten, ca. {self._queue.qsize()} ausstehend.")
 
             # Mikropause zwischen Hintergrundseiten, um den Raspberry Pi kühl zu halten
             time.sleep(0.04)

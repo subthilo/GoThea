@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
@@ -25,6 +26,11 @@ from backend.app.routers.timetable import router as timetable_router
 from backend.app.routers.books import router as books_router
 from backend.app.routers.exercises import router as exercises_router
 from backend.app.routers.auth import router as auth_router
+
+# Meldungen der App-Module (Renderer, Segmentierung, Importe) im systemd-Journal sichtbar machen
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+for noisy in ("httpx", "httpcore", "openai", "multipart", "PIL"):
+    logging.getLogger(noisy).setLevel(logging.WARNING)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"

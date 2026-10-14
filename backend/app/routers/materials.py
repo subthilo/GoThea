@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, s
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from backend.app.config import DATA_DIR
 from backend.app.database import get_db
 from backend.app.models.material import Material, MaterialChunk
 from backend.app.models.taxonomy import Subject, Topic
@@ -318,16 +319,23 @@ def delete_material(
     if not mat:
         raise HTTPException(status_code=404, detail="Material nicht gefunden.")
 
-    # Datei auf Festplatte löschen falls vorhanden
-    try:
-        p = Path(mat.file_path)
-        if p.exists():
-            p.unlink()
-    except Exception:
-        pass
+    # Kapitel eines Buchs werden per Kaskade mitgelöscht -> deren Dateien und Seitenbilder auch
+    affected = [mat] + db.query(Material).filter_by(parent_id=mat.id).all()
+    files = [Path(m.file_path) for m in affected if m.file_path]
+    ids = [m.id for m in affected]
 
     db.delete(mat)
     db.commit()
+
+    # Nur Dateien im Datenverzeichnis löschen (vorinstallierte Bücher liegen im Code unter resources/)
+    for p in files:
+        try:
+            if p.resolve().is_relative_to(DATA_DIR.resolve()):
+                p.unlink(missing_ok=True)
+        except Exception:
+            pass
+    from backend.app.services.page_renderer import page_renderer
+    page_renderer.purge_material_cache(ids)
     return None
 
 @router.patch("/{material_id}", response_model=MaterialRead, dependencies=[Depends(require_parent)])
