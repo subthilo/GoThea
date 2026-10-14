@@ -145,8 +145,6 @@ def get_timetable(
     Liefert den vollständigen, strukturierten Wochen-Stundenplan mit
     A-/B-Wochen-Support, Raum-, Lehrer- und Fachzuordnung.
     """
-    seed_timetable_slots_if_empty(db, user_id=user_id)
-
     # Aktuelle Kalenderwoche ermitteln: ungerade = A-Woche, gerade = B-Woche
     current_calendar_week = datetime.now().isocalendar()[1]
     calculated_week_type = "A" if (current_calendar_week % 2 != 0) else "B"
@@ -214,8 +212,6 @@ def get_today_timetable(
     """
     Liefert den Tagesplan für den heutigen Wochentag (oder Montag, falls Wochenende).
     """
-    seed_timetable_slots_if_empty(db, user_id=user_id)
-
     weekdays_de = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
     today_idx = datetime.now().weekday()
     current_day = weekdays_de[today_idx] if today_idx < 5 else "Montag"

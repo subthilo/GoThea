@@ -1,4 +1,22 @@
 import pytest
+from backend.app.routers.timetable import seed_timetable_slots_if_empty
+
+@pytest.fixture(autouse=True)
+def seed_default_timetable(db_session):
+    seed_timetable_slots_if_empty(db_session, user_id="usr_thea")
+
+def test_get_timetable_does_not_auto_seed(client, db_session):
+    from backend.app.models.timetable import TimetableSlot
+    db_session.query(TimetableSlot).delete()
+    db_session.commit()
+
+    res = client.get("/api/v1/timetable")
+    assert res.status_code == 200
+    assert res.json()["slots"] == []
+
+    res_today = client.get("/api/v1/timetable/today")
+    assert res_today.status_code == 200
+    assert res_today.json()["lessons"] == []
 
 def test_get_timetable_overview(client):
     res = client.get("/api/v1/timetable")
