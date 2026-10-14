@@ -667,9 +667,11 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
       loadUploadsHistory();
     }
     if (btn.dataset.tab === "timetable") {
+      document.documentElement.classList.add("timetable-zen-mode");
       document.body.classList.add("timetable-zen-mode");
       loadTimetable();
     } else {
+      document.documentElement.classList.remove("timetable-zen-mode");
       document.body.classList.remove("timetable-zen-mode");
     }
     if (btn.dataset.tab === "books") {
@@ -3551,9 +3553,10 @@ function renderTimetableGrid() {
     // A) Zeit-Zelle links
     const timeCell = document.createElement("div");
     timeCell.className = "tt-time-cell";
+    const periodNumStr = (period.label || String(period.period)).replace(/\s*Std\.?/i, "").trim();
     timeCell.innerHTML = `
-      <span class="tt-period-num">${period.period}</span>
-      <span class="tt-period-time">${period.start_time}</span>
+      <span class="tt-period-num">${escapeHtml(periodNumStr)}</span>
+      <span class="tt-period-time">${escapeHtml(period.start_time || "")}</span>
     `;
     gridEl.appendChild(timeCell);
 
@@ -4945,6 +4948,8 @@ async function loadBookAnnotations(materialId, pageNum) {
 // Init
 async function initApp() {
   document.body.classList.remove("reader-zen-mode");
+  document.body.classList.remove("timetable-zen-mode");
+  document.documentElement.classList.remove("timetable-zen-mode");
   const safeRun = async (fn, name) => {
     try {
       await fn();
