@@ -100,3 +100,42 @@ def test_unsegmented_book_fallback_api(client, db_session):
     assert data["chapters"][0]["page_count"] == 50
     assert data["chapters_count"] == 1
 
+
+
+def test_resegment_book_requires_parent(strict_client):
+    res = strict_client.post("/api/v1/books/mat_book_math_7/resegment")
+    assert res.status_code == 403
+
+
+def test_resegment_book_not_found(client):
+    res = client.post("/api/v1/books/mat_does_not_exist/resegment")
+    assert res.status_code == 404
+
+
+def test_resegment_known_book(client, db_session, tmp_path):
+    import pypdf
+    from backend.app.models.material import Material
+
+    pdf_path = tmp_path / "physik.pdf"
+    writer = pypdf.PdfWriter()
+    for _ in range(108):
+        writer.add_blank_page(width=200, height=300)
+    with open(pdf_path, "wb") as f:
+        writer.write(f)
+
+    db_session.add(Material(
+        id="mat_physik_api",
+        user_id="usr_thea",
+        subject_id="sub_math",
+        title="Physik Plus 7",
+        kind="Buch",
+        filename="physik.pdf",
+        file_path=str(pdf_path),
+        mime_type="application/pdf",
+        page_count=108
+    ))
+    db_session.commit()
+
+    res = client.post("/api/v1/books/mat_physik_api/resegment")
+    assert res.status_code == 200
+    assert res.json()["chapters_count"] == 4

@@ -273,30 +273,41 @@ PHYSIK_PLUS_7_CHAPTERS = [
     {
         "unit_number": 1,
         "title": "Mechanik",
+        "start_pdf_page": 7,
+        "end_pdf_page": 36,
         "book_start_page": 5,
         "book_end_page": 34,
+        "kind": "Buchauszug",
+        "topic_name": "Mechanik & Kräfte",
+        "focus": "Kräfte, Wirkungen, Federkraftmesser, Gewichtskraft, Wechselwirkung, Reibung, einfache Maschinen (Rollen, Hebel, geneigte Ebene) sowie mechanische Arbeit und Leistung.",
         "sections": [
             {"title": "1.1 Kraft & Wirkungen von Kräften", "book_page": 6, "relative_page": 2, "level": 2},
-            {"title": "1.2 Federkraftmesser & Darstellung", "book_page": 8, "relative_page": 4, "level": 2},
+            {"title": "1.2 Federkraftmesser & Darstellen von Kräften", "book_page": 8, "relative_page": 4, "level": 2},
             {"title": "1.3 Gewichtskraft & Gravitation", "book_page": 11, "relative_page": 7, "level": 2},
             {"title": "1.4 Wechselwirkung von Kräften", "book_page": 13, "relative_page": 9, "level": 2},
             {"title": "Streifzug: In der Schwerelosigkeit", "book_page": 14, "relative_page": 10, "level": 2},
             {"title": "Aufgaben & Zusammenfassung: Kraft", "book_page": 15, "relative_page": 11, "level": 2},
             {"title": "1.5 Reibung & Reibungskräfte", "book_page": 16, "relative_page": 12, "level": 2},
-            {"title": "1.6 Haft-, Gleit- und Rollreibung", "book_page": 17, "relative_page": 13, "level": 2},
-            {"title": "Projekt: Sicheres Radfahren", "book_page": 21, "relative_page": 17, "level": 2},
+            {"title": "1.6 Haft-, Gleit- und Rollreibung", "book_page": 16, "relative_page": 12, "level": 2},
+            {"title": "Projekt: Sicheres Radfahren", "book_page": 20, "relative_page": 16, "level": 2},
             {"title": "1.7 Rollen & Flaschenzüge", "book_page": 22, "relative_page": 18, "level": 2},
             {"title": "1.8 Mechanische Arbeit", "book_page": 24, "relative_page": 20, "level": 2},
             {"title": "1.9 Geneigte Ebene & Hebel", "book_page": 26, "relative_page": 22, "level": 2},
             {"title": "1.10 Mechanische Leistung", "book_page": 28, "relative_page": 24, "level": 2},
-            {"title": "Projekt: Hebel am Fahrrad", "book_page": 34, "relative_page": 30, "level": 2}
+            {"title": "Projekt: Hebel am Fahrrad", "book_page": 30, "relative_page": 26, "level": 2},
+            {"title": "Aufgaben & Zusammenfassung: Mechanik", "book_page": 33, "relative_page": 29, "level": 2}
         ]
     },
     {
         "unit_number": 2,
         "title": "Energie in Natur und Technik",
+        "start_pdf_page": 37,
+        "end_pdf_page": 52,
         "book_start_page": 35,
         "book_end_page": 50,
+        "kind": "Buchauszug",
+        "topic_name": "Energie & Umwelt",
+        "focus": "Physikalische Bedeutung der Energie, Energieformen, Energieumwandlung, Energieübertragung, Energieerhaltungssatz und rationelle Energienutzung.",
         "sections": [
             {"title": "2.1 Physikalische Bedeutung der Energie", "book_page": 36, "relative_page": 2, "level": 2},
             {"title": "2.2 Energieformen & Speicherung", "book_page": 37, "relative_page": 3, "level": 2},
@@ -304,28 +315,277 @@ PHYSIK_PLUS_7_CHAPTERS = [
             {"title": "2.4 Energie für Lebensprozesse", "book_page": 40, "relative_page": 6, "level": 2},
             {"title": "2.5 Energie auf dem Weg zum Verbraucher", "book_page": 41, "relative_page": 7, "level": 2},
             {"title": "2.6 Kraftwerke & Umweltbelastung", "book_page": 43, "relative_page": 9, "level": 2},
-            {"title": "2.7 Energieerhaltungssatz", "book_page": 46, "relative_page": 12, "level": 2},
-            {"title": "Projekt: Wind als alternative Energie", "book_page": 46, "relative_page": 12, "level": 2},
-            {"title": "2.8 Rationelle Nutzung von Energie", "book_page": 48, "relative_page": 14, "level": 2},
+            {"title": "2.7 Energieerhaltungssatz", "book_page": 44, "relative_page": 10, "level": 2},
+            {"title": "Projekt: Wind als alternative Energiequelle", "book_page": 45, "relative_page": 11, "level": 2},
+            {"title": "2.8 Rationelle Nutzung von Energie", "book_page": 46, "relative_page": 12, "level": 2},
             {"title": "Aufgaben & Zusammenfassung: Energie", "book_page": 50, "relative_page": 16, "level": 2}
         ]
     },
     {
         "unit_number": 3,
         "title": "Wärmelehre",
+        "start_pdf_page": 53,
+        "end_pdf_page": 105,
         "book_start_page": 51,
-        "book_end_page": 65,
+        "book_end_page": 103,
+        "kind": "Buchauszug",
+        "topic_name": "Wärmelehre & Thermodynamik",
+        "focus": "Teilchenmodell, Temperaturmessung, Kelvin-Skala, thermische Energie und Wärme, Ausdehnung von Körpern, Aggregatzustandsänderungen, Wärmeübertragung und Wärmekraftmaschinen.",
         "sections": [
             {"title": "3.1 Aufbau der Stoffe aus Teilchen", "book_page": 52, "relative_page": 2, "level": 2},
-            {"title": "3.2 Feste Körper, Flüssigkeiten und Gase", "book_page": 53, "relative_page": 3, "level": 2},
-            {"title": "3.3 Brown’sche Bewegung", "book_page": 54, "relative_page": 4, "level": 2},
-            {"title": "Aufgaben: Teilchenmodell", "book_page": 55, "relative_page": 5, "level": 2},
-            {"title": "3.4 Temperaturmessung & Thermometer", "book_page": 56, "relative_page": 6, "level": 2},
-            {"title": "3.5 Die Kelvin-Skala der Temperatur", "book_page": 57, "relative_page": 7, "level": 2},
-            {"title": "3.6 Temperatur & kinetische Energie", "book_page": 58, "relative_page": 8, "level": 2},
-            {"title": "3.7 Thermische Energie & Wärme berechnen", "book_page": 60, "relative_page": 10, "level": 2},
+            {"title": "Teilbarkeit der Stoffe & Brown’sche Bewegung", "book_page": 54, "relative_page": 4, "level": 2},
+            {"title": "3.2 Temperatur, thermische Energie und Wärme", "book_page": 56, "relative_page": 6, "level": 2},
+            {"title": "Die Kelvin-Skala & Berechnung der Wärme", "book_page": 57, "relative_page": 7, "level": 2},
             {"title": "Streifzug: Gefühlte Temperatur", "book_page": 64, "relative_page": 14, "level": 2},
-            {"title": "Aufgaben & Zusammenfassung: Wärmelehre", "book_page": 65, "relative_page": 15, "level": 2}
+            {"title": "3.3 Thermisches Verhalten der Körper (Ausdehnung)", "book_page": 66, "relative_page": 16, "level": 2},
+            {"title": "3.4 Aggregatzustandsänderungen (Schmelzen, Sieden)", "book_page": 72, "relative_page": 22, "level": 2},
+            {"title": "3.5 Wärmeübertragung & Wetter (Leitung, Konvektion, Strahlung)", "book_page": 80, "relative_page": 30, "level": 2},
+            {"title": "3.6 Wärme in der Technik (Motoren, Wärmepumpe, Kollektoren)", "book_page": 94, "relative_page": 44, "level": 2},
+            {"title": "Aufgaben & Zusammenfassung: Wärmelehre", "book_page": 103, "relative_page": 53, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 4,
+        "title": "Register & Anhang",
+        "start_pdf_page": 106,
+        "end_pdf_page": 108,
+        "book_start_page": 104,
+        "book_end_page": 106,
+        "kind": "Buchauszug",
+        "topic_name": "Register & Nachschlagen",
+        "focus": "Stichwortverzeichnis und Sachregister zum schnellen Nachschlagen physikalischer Fachbegriffe.",
+        "sections": [
+            {"title": "Sachregister", "book_page": 104, "relative_page": 1, "level": 2}
+        ]
+    }
+]
+
+DEUTSCHBUCH_7_CHAPTERS = [
+    {
+        "unit_number": 1,
+        "title": "Kapitel 1: On sein, off sein, ich sein – Über Medien informieren",
+        "start_pdf_page": 16,
+        "end_pdf_page": 39,
+        "book_start_page": 13,
+        "book_end_page": 36,
+        "kind": "Buchauszug",
+        "topic_name": "Sprechen – Zuhören – Schreiben",
+        "focus": "Informierende Texte untersuchen, Vergleiche anstellen und einen informierenden Text verfassen.",
+        "sections": [
+            {"title": "1.1 Immer online? – Informationen entnehmen und vergleichen", "book_page": 14, "relative_page": 2, "level": 2},
+            {"title": "1.2 Influencer – Informierende Texte untersuchen", "book_page": 24, "relative_page": 12, "level": 2},
+            {"title": "1.3 Fit in ... – Einen informierenden Text verfassen", "book_page": 33, "relative_page": 21, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 2,
+        "title": "Kapitel 2: Faszinierendes Mittelalter – Beschreiben und erklären",
+        "start_pdf_page": 40,
+        "end_pdf_page": 57,
+        "book_start_page": 37,
+        "book_end_page": 54,
+        "kind": "Buchauszug",
+        "topic_name": "Sprechen – Zuhören – Schreiben",
+        "focus": "Gegenstände und Wege beschreiben, Abläufe erklären und Vorgangsbeschreibungen anfertigen.",
+        "sections": [
+            {"title": "2.1 Leben auf der Burg – Gegenstände und Wege beschreiben", "book_page": 38, "relative_page": 2, "level": 2},
+            {"title": "2.2 Wie lebten die Menschen im Mittelalter? – Abläufe erklären", "book_page": 46, "relative_page": 10, "level": 2},
+            {"title": "2.3 Fit in ... – Einen Vorgang beschreiben", "book_page": 52, "relative_page": 16, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 3,
+        "title": "Kapitel 3: Jedem Trend hinterher? – Argumentieren und überzeugen",
+        "start_pdf_page": 58,
+        "end_pdf_page": 79,
+        "book_start_page": 55,
+        "book_end_page": 76,
+        "kind": "Buchauszug",
+        "topic_name": "Sprechen – Zuhören – Schreiben",
+        "focus": "Meinungen formulieren und begründen, schriftlich argumentieren und materialgestützt Stellung beziehen.",
+        "sections": [
+            {"title": "3.1 Sag, was du denkst! – Eine Meinung formulieren und begründen", "book_page": 56, "relative_page": 2, "level": 2},
+            {"title": "3.2 Streitpunkt: Schönheitsideale – Schriftlich argumentieren", "book_page": 66, "relative_page": 12, "level": 2},
+            {"title": "3.3 Fit in ... – Materialgestützt argumentieren", "book_page": 74, "relative_page": 20, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 4,
+        "title": "Kapitel 4: Besondere Momente – Schildern",
+        "start_pdf_page": 80,
+        "end_pdf_page": 95,
+        "book_start_page": 77,
+        "book_end_page": 92,
+        "kind": "Buchauszug",
+        "topic_name": "Sprechen – Zuhören – Schreiben",
+        "focus": "Mit Sprache malen, Reportagen untersuchen und emotionale Schilderungen verfassen.",
+        "sections": [
+            {"title": "4.1 Die Zeit steht still – Mit Sprache „malen“", "book_page": 78, "relative_page": 2, "level": 2},
+            {"title": "4.2 Felsklettern – Eine Reportage untersuchen", "book_page": 87, "relative_page": 11, "level": 2},
+            {"title": "4.3 Fit in ... – Schildern", "book_page": 90, "relative_page": 14, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 5,
+        "title": "Kapitel 5: Von cleveren Typen – Alte und neue Erzählungen",
+        "start_pdf_page": 96,
+        "end_pdf_page": 119,
+        "book_start_page": 93,
+        "book_end_page": 116,
+        "kind": "Buchauszug",
+        "topic_name": "Lesen – Umgang mit Texten und Medien",
+        "focus": "Kurze Geschichten und Kalendergeschichten untersuchen, Inhalte wiedergeben und Inhaltsangaben schreiben.",
+        "sections": [
+            {"title": "5.1 Unterhaltsames und Lehrreiches – Kurze Geschichten untersuchen", "book_page": 94, "relative_page": 2, "level": 2},
+            {"title": "5.2 Eine überraschende Wende! – Inhalte wiedergeben", "book_page": 103, "relative_page": 11, "level": 2},
+            {"title": "5.3 Fit in ... – Eine Inhaltsangabe schreiben", "book_page": 113, "relative_page": 21, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 6,
+        "title": "Kapitel 6: „Es ist nicht geheuer dort ...“ – Jugendromane lesen und verstehen",
+        "start_pdf_page": 120,
+        "end_pdf_page": 141,
+        "book_start_page": 117,
+        "book_end_page": 138,
+        "kind": "Buchauszug",
+        "topic_name": "Lesen – Umgang mit Texten und Medien",
+        "focus": "Handlung und Figuren untersuchen (z. B. Krabat), gestaltend schreiben und innere Monologe verfassen.",
+        "sections": [
+            {"title": "6.1 „Krabat“ – Handlung und Figuren untersuchen", "book_page": 118, "relative_page": 2, "level": 2},
+            {"title": "6.2 „Die Insel der besonderen Kinder“ – Gestaltend schreiben", "book_page": 131, "relative_page": 15, "level": 2},
+            {"title": "6.3 Fit in ... – Einen inneren Monolog verfassen", "book_page": 137, "relative_page": 21, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 7,
+        "title": "Kapitel 7: Gedichte erzählen Geschichten – Balladen untersuchen und gestalten",
+        "start_pdf_page": 142,
+        "end_pdf_page": 167,
+        "book_start_page": 139,
+        "book_end_page": 164,
+        "kind": "Buchauszug",
+        "topic_name": "Lesen – Umgang mit Texten und Medien",
+        "focus": "Balladen erschließen und vortragen, Balladen in Reportagen umgestalten und Hörspiele produzieren.",
+        "sections": [
+            {"title": "7.1 Schaurig und spannend – Balladen erschließen und vortragen", "book_page": 140, "relative_page": 2, "level": 2},
+            {"title": "7.2 Stoff für eine Reportage – Eine Ballade umgestalten", "book_page": 156, "relative_page": 18, "level": 2},
+            {"title": "7.3 Projekt – Eine Ballade verstehen und als Hörspiel gestalten", "book_page": 161, "relative_page": 23, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 8,
+        "title": "Kapitel 8: „Paul Vier und die Schröders“ – Ein Jugendstück untersuchen und spielen",
+        "start_pdf_page": 168,
+        "end_pdf_page": 187,
+        "book_start_page": 165,
+        "book_end_page": 184,
+        "kind": "Buchauszug",
+        "topic_name": "Lesen – Umgang mit Texten und Medien",
+        "focus": "Figuren und dramatische Konflikte analysieren, Spielszenen verfassen und Szenen auf der Bühne darstellen.",
+        "sections": [
+            {"title": "8.1 Neue Nachbarn – Figuren und ihre Konflikte untersuchen", "book_page": 166, "relative_page": 2, "level": 2},
+            {"title": "8.2 Die Lage spitzt sich zu – Szenen schreiben und spielen", "book_page": 177, "relative_page": 13, "level": 2},
+            {"title": "8.3 Projekt – Ein Theaterstück aufführen", "book_page": 182, "relative_page": 18, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 9,
+        "title": "Kapitel 9: Werbung – Sachtexte und Medien untersuchen",
+        "start_pdf_page": 188,
+        "end_pdf_page": 217,
+        "book_start_page": 185,
+        "book_end_page": 214,
+        "kind": "Buchauszug",
+        "topic_name": "Lesen – Umgang mit Texten und Medien",
+        "focus": "Werbung analysieren, Strategien durchschauen, Informationen recherchieren und Sachtexte kritisch prüfen.",
+        "sections": [
+            {"title": "9.1 Gesehen und gekauft? – Informationen erschließen und vergleichen", "book_page": 186, "relative_page": 2, "level": 2},
+            {"title": "9.2 Fernsehwerbung – Informationen recherchieren, auswerten und präsentieren", "book_page": 204, "relative_page": 20, "level": 2},
+            {"title": "9.3 Fit in ... – Einen Sachtext untersuchen", "book_page": 212, "relative_page": 28, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 10,
+        "title": "Kapitel 10: „Spin or God is a DJ“ – Einen Kurzfilm untersuchen",
+        "start_pdf_page": 218,
+        "end_pdf_page": 227,
+        "book_start_page": 215,
+        "book_end_page": 224,
+        "kind": "Buchauszug",
+        "topic_name": "Lesen – Umgang mit Texten und Medien",
+        "focus": "Filmanalyse, Filmsprache (Kamera, Schnitt, Ton) und filmische Gestaltungselemente kennenlernen.",
+        "sections": [
+            {"title": "10.1 Wenn Gott ein DJ wäre – Story und Figuren des Films kennen lernen", "book_page": 216, "relative_page": 2, "level": 2},
+            {"title": "10.2 Kamera, Schnitt und Ton – Die Sprache des Films untersuchen", "book_page": 219, "relative_page": 5, "level": 2},
+            {"title": "10.3 Projekt – Eine Filmsequenz drehen", "book_page": 223, "relative_page": 9, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 11,
+        "title": "Kapitel 11: Mit Wörtern spielen – Wort und Bedeutung",
+        "start_pdf_page": 228,
+        "end_pdf_page": 243,
+        "book_start_page": 225,
+        "book_end_page": 240,
+        "kind": "Buchauszug",
+        "topic_name": "Nachdenken über Sprache",
+        "focus": "Wortbedeutungen erforschen, Metaphern, Sprachebenen, Mehrsprachigkeit und Jugendsprache.",
+        "sections": [
+            {"title": "11.1 Verstehen und missverstehen – Die Bedeutung von Wörtern untersuchen", "book_page": 226, "relative_page": 2, "level": 2},
+            {"title": "11.2 Wie sprecht ihr denn? – Sprachen in unserer Klasse", "book_page": 233, "relative_page": 9, "level": 2},
+            {"title": "11.3 Projekt – Das Jugendwort unserer Schule", "book_page": 240, "relative_page": 16, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 12,
+        "title": "Kapitel 12: Grammatiktraining – Rund um Wortarten, Sätze und Satzglieder",
+        "start_pdf_page": 244,
+        "end_pdf_page": 289,
+        "book_start_page": 241,
+        "book_end_page": 286,
+        "kind": "Buchauszug",
+        "topic_name": "Nachdenken über Sprache",
+        "focus": "Wortarten, Verbformen, Konjunktiv, Satzglieder (Subjekt, Prädikat, Objekte, Adverbiale) und Satzgefüge.",
+        "sections": [
+            {"title": "12.1 Kuriose Erfindungen – Wortarten und Formen des Verbs untersuchen", "book_page": 242, "relative_page": 2, "level": 2},
+            {"title": "12.2 Geniale Entdeckungen und Experimente – Satzglieder und Sätze untersuchen", "book_page": 265, "relative_page": 25, "level": 2},
+            {"title": "12.3 Fit in ... – Grammatikwissen gezielt anwenden", "book_page": 283, "relative_page": 43, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 13,
+        "title": "Kapitel 13: Rechtschreibung – Mit Training zur Meisterschaft",
+        "start_pdf_page": 290,
+        "end_pdf_page": 321,
+        "book_start_page": 287,
+        "book_end_page": 318,
+        "kind": "Buchauszug",
+        "topic_name": "Nachdenken über Sprache",
+        "focus": "Rechtschreibstrategien, Groß- und Kleinschreibung, Getrennt- und Zusammenschreibung sowie Kommasetzung.",
+        "sections": [
+            {"title": "13.1 Sportlich, sportlich! – Strategien nutzen und Regeln beachten", "book_page": 288, "relative_page": 2, "level": 2},
+            {"title": "13.2 Sport ist … – Zeichen setzen", "book_page": 302, "relative_page": 16, "level": 2},
+            {"title": "13.3 Fit in … Rechtschreibung", "book_page": 310, "relative_page": 24, "level": 2}
+        ]
+    },
+    {
+        "unit_number": 14,
+        "title": "Kapitel 14: Orientierungswissen & Nachschlagen",
+        "start_pdf_page": 322,
+        "end_pdf_page": 383,
+        "book_start_page": 319,
+        "book_end_page": 380,
+        "kind": "Buchauszug",
+        "topic_name": "Orientierungswissen & Nachschlagen",
+        "focus": "Zusammenfassendes Nachschlagewerk für Sprechen, Schreiben, Textuntersuchung, Grammatik und Register.",
+        "sections": [
+            {"title": "Sprechen und Zuhören", "book_page": 319, "relative_page": 1, "level": 2},
+            {"title": "Schreiben", "book_page": 321, "relative_page": 3, "level": 2},
+            {"title": "Umgang mit Texten und Medien", "book_page": 331, "relative_page": 13, "level": 2},
+            {"title": "Nachdenken über Sprache", "book_page": 344, "relative_page": 26, "level": 2},
+            {"title": "Textarten- & Quellenverzeichnis", "book_page": 370, "relative_page": 52, "level": 2},
+            {"title": "Sachregister", "book_page": 373, "relative_page": 55, "level": 2}
         ]
     }
 ]
@@ -483,7 +743,8 @@ def segment_book_material(
     db: Session,
     book: Material,
     chapters_spec: List[Dict[str, Any]],
-    target_dir: Optional[Path] = None
+    target_dir: Optional[Path] = None,
+    force: bool = False
 ) -> List[Material]:
     """
     Teilt ein Schulbuch-Material anhand einer Kapitelspezifikation in
@@ -527,13 +788,13 @@ def segment_book_material(
         chap_path = dest_folder / chap_filename
 
         # 1. Kapitel-PDF via pypdf extrahieren
-        if not chap_path.exists() or chap_path.stat().st_size == 0:
+        if force or not chap_path.exists() or chap_path.stat().st_size == 0:
             writer = pypdf.PdfWriter()
             for p_idx in range(start_pdf - 1, end_pdf):
                 writer.add_page(reader.pages[p_idx])
             with open(chap_path, "wb") as f_out:
                 writer.write(f_out)
-            logger.info(f"📄 Kapitel {unit_num} extrahiert: {chap_path.name} ({page_count} Seiten)")
+            logger.info(f"📄 Kapitel {unit_num} extrahiert: {chap_path.name} ({page_count} Seiten, PDF {start_pdf}-{end_pdf})")
 
         file_size = chap_path.stat().st_size if chap_path.exists() else 0
 
@@ -769,27 +1030,32 @@ Antworte AUSSCHLIESSLICH im JSON-Format mit dem Schlüssel 'chapters':
     {
       "unit_number": 1,
       "title": "Kapitel 1: Zuordnungen und Proportionalität",
-      "start_pdf_page": 15,
-      "end_pdf_page": 46,
-      "book_start_page": 11,
-      "book_end_page": 42,
+      "start_pdf_page": 16,
+      "end_pdf_page": 39,
+      "book_start_page": 13,
+      "book_end_page": 36,
       "topic_name": "Dreisatz und proportionale Zuordnungen",
       "focus": "1 Satz Zusammenfassung der Inhalte",
       "sections": [
         {
           "title": "1.1 Zuordnungen",
           "book_page": 14,
-          "relative_page": 4,
+          "relative_page": 2,
           "level": 2
         }
       ]
     }
   ]
 }
-WICHTIG:
-- 'start_pdf_page' und 'end_pdf_page' müssen die tatsächlichen Seitenzahlen im PDF-Dokument (1-basiert) sein.
-- 'book_page' ist die im Buch gedruckte Seitenzahl. 'relative_page' ist die Seitennummer innerhalb des Kapitels (1-basiert).
-- Erfasse alle nummerierten oder thematischen Unterabschnitte in 'sections'.
+WICHTIG ZUR BERECHNUNG DER PDF-SEITENZAHLEN (SEITEN-OFFSET):
+- Unterscheide strikt zwischen der Dokumentseite im PDF (1-basiert, wie in den Trennzeilen '--- Dokumentseite im PDF: Seite X ---' angegeben) und der im Buch gedruckten Seitenzahl (unten/oben auf der Buchseite aufgedruckt).
+- Ermittle den Seiten-Offset: Wenn eine Inhaltsverzeichnis-Seite z.B. die gedruckte Buchseite 3 zeigt und sich auf PDF-Dokumentseite 6 befindet, beträgt der Offset: offset = PDF-Seite - Buchseite (hier 6 - 3 = +3).
+- 'start_pdf_page' und 'end_pdf_page' MÜSSEN die tatsächlichen Seitenzahlen im gesamten PDF-Dokument (1-basiert) sein:
+  start_pdf_page = book_start_page + offset
+  end_pdf_page = book_end_page + offset
+- 'book_start_page' und 'book_end_page' sind die im Buch aufgedruckten Seitenzahlen.
+- 'book_page' in den sections ist die aufgedruckte Buchseite. 'relative_page' ist die Seitennummer relativ zum Kapitelanfang (1-basiert, also book_page - book_start_page + 1).
+- Erfasse ALLE Kapitel und Verzeichnisse (inklusive Kurzfilm-, Projekt-, Übungs-, Grammatik- oder Orientierungswissen/Register-Kapitel) lückenlos bis zum Ende des Buches!
 """
 
         # Wenn digitaler Text vorhanden ist:
@@ -802,17 +1068,21 @@ WICHTIG:
                 }
             ]
         else:
-            # Gescannte PDF: Seiten 2 bis 4 als Bilder rendern und an Vision übergeben
+            # Gescannte PDF: Seiten als Bilder rendern und an Vision übergeben (bis zu Seite 20)
             user_content: List[Dict[str, Any]] = [
                 {
                     "type": "text",
-                    "text": f"Buchtitel: {title_hint}\nGesamtseiten: {total_pages}\nHier sind die Inhaltsverzeichnis-Seiten des gescannten Buchs. Bitte extrahiere die Hauptkapitel."
+                    "text": f"Buchtitel: {title_hint}\nGesamtseiten: {total_pages}\nHier sind die Inhaltsverzeichnis-Seiten des gescannten Buchs. Achte genau auf die PDF-Seitenzahlen in den Trennzeilen und berechne den Offset zu den gedruckten Buchseiten."
                 }
             ]
-            for p_num in range(2, min(12, total_pages + 1)):
+            for p_num in range(2, min(20, total_pages + 1)):
                 try:
                     img_bytes, mime = render_material_page_as_image(str(file_path), "application/pdf", page_num=p_num)
                     b64 = prepare_image_base64_for_vision(img_bytes, mime)
+                    user_content.append({
+                        "type": "text",
+                        "text": f"--- Dokumentseite im PDF: Seite {p_num} ---"
+                    })
                     user_content.append({
                         "type": "image_url",
                         "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}
@@ -880,26 +1150,28 @@ WICHTIG:
         return []
 
 
-def auto_segment_if_known(db: Session, book: Material) -> Optional[List[Material]]:
+def auto_segment_if_known(db: Session, book: Material, force: bool = False) -> Optional[List[Material]]:
     """
     Prüft, ob für das gegebene Buch eine bekannte Kapiteltabelle vorliegt
-    (z. B. Fundamente der Mathematik, À plus! 1, Physik Plus), und segmentiert es automatisch.
+    (z. B. Fundamente der Mathematik, À plus! 1, Physik Plus, Deutschbuch 7), und segmentiert es automatisch.
     """
     title_lower = (book.title or "").lower()
     if "fundamente" in title_lower and "mathematik" in title_lower:
-        return segment_book_material(db, book, FUNDAMENTE_MATHE_7_CHAPTERS)
+        return segment_book_material(db, book, FUNDAMENTE_MATHE_7_CHAPTERS, force=force)
     if any(k in title_lower for k in ["aplus", "a plus", "à plus"]):
-        return segment_book_material(db, book, APLUS_1_CHAPTERS)
+        return segment_book_material(db, book, APLUS_1_CHAPTERS, force=force)
     if "physik" in title_lower and "plus" in title_lower:
-        return segment_book_material(db, book, PHYSIK_PLUS_7_CHAPTERS)
+        return segment_book_material(db, book, PHYSIK_PLUS_7_CHAPTERS, force=force)
+    if "deutschbuch" in title_lower:
+        return segment_book_material(db, book, DEUTSCHBUCH_7_CHAPTERS, force=force)
     return None
 
 
-def auto_detect_and_segment_book(db: Session, book: Material) -> Optional[List[Material]]:
+def auto_detect_and_segment_book(db: Session, book: Material, force: bool = False) -> Optional[List[Material]]:
     """
     Vollautomatische Pipeline zur Erkennung und Segmentierung von Schulbüchern:
     1. Prüft, ob bereits Kapitel existieren.
-    2. Prüft bekannte Lehrbücher (Fundamente der Mathematik etc.).
+    2. Prüft bekannte Lehrbücher (Fundamente der Mathematik, Deutschbuch 7, Physik Plus 7 etc.).
     3. Liest PDF-Outline / Bookmarks aus (für digitale Lehrbücher).
     4. Nutzt OpenAI Inhaltsverzeichnis-Analyse (Text oder Vision für Scans).
     """
@@ -907,12 +1179,13 @@ def auto_detect_and_segment_book(db: Session, book: Material) -> Optional[List[M
         return None
 
     # Bereits segmentiert?
-    existing_children = db.query(Material).filter_by(parent_id=book.id).count()
-    if existing_children > 0:
-        return db.query(Material).filter_by(parent_id=book.id).order_by(Material.dossier_order).all()
+    if not force:
+        existing_children = db.query(Material).filter_by(parent_id=book.id).count()
+        if existing_children > 0:
+            return db.query(Material).filter_by(parent_id=book.id).order_by(Material.dossier_order).all()
 
     # 1. Bekannte Vorlagen prüfen
-    known = auto_segment_if_known(db, book)
+    known = auto_segment_if_known(db, book, force=force)
     if known:
         return known
 
@@ -921,12 +1194,12 @@ def auto_detect_and_segment_book(db: Session, book: Material) -> Optional[List[M
     # 2. PDF Outline / Lesezeichen prüfen
     outline_chapters = extract_chapters_from_pdf_outline(pdf_path, book.page_count)
     if outline_chapters:
-        return segment_book_material(db, book, outline_chapters)
+        return segment_book_material(db, book, outline_chapters, force=force)
 
     # 3. KI Inhaltsverzeichnis-Erkennung (Vision/Text)
     ai_chapters = extract_chapters_with_ai(pdf_path, book.page_count, title_hint=book.title)
     if ai_chapters:
-        return segment_book_material(db, book, ai_chapters)
+        return segment_book_material(db, book, ai_chapters, force=force)
 
     return None
 
@@ -1008,6 +1281,13 @@ def get_chapter_sections(material: Material, parent_book: Optional[Material] = N
                (material.start_page == p_chap["book_start_page"]):
                 return p_chap.get("sections", [])
 
+    if "deutschbuch" in title_search:
+        for d_chap in DEUTSCHBUCH_7_CHAPTERS:
+            if (d_chap["title"].lower() in (material.title or "").lower()) or \
+               (material.dossier_order is not None and material.dossier_order == d_chap["unit_number"] + 2) or \
+               (material.start_page == d_chap["book_start_page"]):
+                return d_chap.get("sections", [])
+
     return []
 
 
@@ -1047,17 +1327,38 @@ def get_all_book_sections(book: Material) -> List[Dict[str, Any]]:
 
     if "physik" in title_lower:
         for p_chap in PHYSIK_PLUS_7_CHAPTERS:
+            chap_start_pdf = p_chap.get("start_pdf_page", p_chap["book_start_page"])
             all_sections.append({
                 "title": p_chap["title"],
                 "book_page": p_chap["book_start_page"],
-                "relative_page": p_chap["book_start_page"],
+                "relative_page": chap_start_pdf,
                 "level": 1
             })
             for sec in p_chap.get("sections", []):
+                rel_p = sec.get("relative_page", 1)
                 all_sections.append({
                     "title": sec.get("title", ""),
                     "book_page": sec.get("book_page", p_chap["book_start_page"]),
-                    "relative_page": sec.get("book_page", p_chap["book_start_page"]),
+                    "relative_page": chap_start_pdf + rel_p - 1,
+                    "level": sec.get("level", 2)
+                })
+        return all_sections
+
+    if "deutschbuch" in title_lower:
+        for d_chap in DEUTSCHBUCH_7_CHAPTERS:
+            chap_start_pdf = d_chap.get("start_pdf_page", d_chap["book_start_page"])
+            all_sections.append({
+                "title": d_chap["title"],
+                "book_page": d_chap["book_start_page"],
+                "relative_page": chap_start_pdf,
+                "level": 1
+            })
+            for sec in d_chap.get("sections", []):
+                rel_p = sec.get("relative_page", 1)
+                all_sections.append({
+                    "title": sec.get("title", ""),
+                    "book_page": sec.get("book_page", d_chap["book_start_page"]),
+                    "relative_page": chap_start_pdf + rel_p - 1,
                     "level": sec.get("level", 2)
                 })
         return all_sections

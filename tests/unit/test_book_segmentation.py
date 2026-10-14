@@ -13,7 +13,11 @@ from backend.app.services.book_segmentation import (
     auto_detect_and_segment_book,
     segment_book_material,
     trigger_background_book_segmentation,
-    FUNDAMENTE_MATHE_7_CHAPTERS
+    get_chapter_sections,
+    get_all_book_sections,
+    FUNDAMENTE_MATHE_7_CHAPTERS,
+    PHYSIK_PLUS_7_CHAPTERS,
+    DEUTSCHBUCH_7_CHAPTERS
 )
 
 def test_is_candidate_book():
@@ -252,3 +256,89 @@ def test_outline_with_nested_sections(tmp_path):
     # Jedes Kapitel oder Bookmark wurde erfasst
     assert any("Kapitel 1" in c["title"] for c in chaps)
 
+
+
+def _make_blank_book(db_session, tmp_path, book_id, title, subject_id, pages):
+    pdf_path = tmp_path / f"{book_id}.pdf"
+    writer = pypdf.PdfWriter()
+    for _ in range(pages):
+        writer.add_blank_page(width=200, height=300)
+    with open(pdf_path, "wb") as f:
+        writer.write(f)
+
+    book = Material(
+        id=book_id,
+        user_id="usr_thea",
+        subject_id=subject_id,
+        title=title,
+        kind="Buch",
+        filename=pdf_path.name,
+        file_path=str(pdf_path),
+        file_size=pdf_path.stat().st_size,
+        mime_type="application/pdf",
+        page_count=pages,
+        start_page=1,
+        end_page=pages
+    )
+    db_session.add(book)
+    db_session.commit()
+    return book
+
+
+def test_known_chapter_tables_are_consistent():
+    for chapters in (PHYSIK_PLUS_7_CHAPTERS, DEUTSCHBUCH_7_CHAPTERS):
+        prev_end = None
+        for chap in chapters:
+            start_pdf, end_pdf = chap["start_pdf_page"], chap["end_pdf_page"]
+            assert end_pdf - start_pdf == chap["book_end_page"] - chap["book_start_page"]
+            if prev_end is not None:
+                assert start_pdf == prev_end + 1
+            prev_end = end_pdf
+            for sec in chap["sections"]:
+                assert chap["book_start_page"] <= sec["book_page"] <= chap["book_end_page"]
+                assert sec["relative_page"] == sec["book_page"] - chap["book_start_page"] + 1
+
+
+def test_auto_segment_physik_plus(db_session, tmp_path):
+    book = _make_blank_book(db_session, tmp_path, "mat_physik_test", "Physik Plus 7", "sub_math", 108)
+
+    segmented = auto_segment_if_known(db_session, book)
+    assert [c.page_count for c in segmented] == [30, 16, 53, 3]
+    assert segmented[0].start_page == 5
+    assert "Darstellen von Kräften" in segmented[0].toc_json
+
+    # Gesamtbuch-Abschnitte zeigen auf absolute PDF-Seiten
+    all_secs = get_all_book_sections(book)
+    mechanik = next(s for s in all_secs if s["title"] == "Mechanik")
+    assert mechanik["relative_page"] == 7
+    federkraft = next(s for s in all_secs if s["title"].startswith("1.2 "))
+    assert federkraft["relative_page"] == 10
+
+
+def test_auto_segment_deutschbuch(db_session, tmp_path):
+    book = _make_blank_book(db_session, tmp_path, "mat_deutsch_test", "Deutschbuch 7", "sub_math", 383)
+
+    segmented = auto_segment_if_known(db_session, book)
+    assert len(segmented) == len(DEUTSCHBUCH_7_CHAPTERS)
+    assert segmented[0].page_count == 24
+
+    secs = get_chapter_sections(segmented[11], parent_book=book)
+    assert secs[0]["title"].startswith("12.1 ")
+
+
+def test_force_resegments_existing_chapters(db_session, tmp_path):
+    book = _make_blank_book(db_session, tmp_path, "mat_physik_force", "Physik Plus 7", "sub_math", 108)
+    first = auto_detect_and_segment_book(db_session, book)
+    chap = first[0]
+
+    # Veralteten Stand simulieren (z. B. alte, falsche Kapiteltabelle)
+    chap.page_count = 1
+    Path(chap.file_path).write_bytes(b"")
+    db_session.commit()
+
+    unchanged = auto_detect_and_segment_book(db_session, book)
+    assert unchanged[0].page_count == 1
+
+    refreshed = auto_detect_and_segment_book(db_session, book, force=True)
+    assert refreshed[0].page_count == 30
+    assert len(pypdf.PdfReader(refreshed[0].file_path).pages) == 30

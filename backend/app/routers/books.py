@@ -226,6 +226,32 @@ def get_book_chapter(
         sections=sec_list
     )
 
+@router.post("/{book_id}/resegment", dependencies=[Depends(require_parent)])
+def resegment_book(
+    book_id: str,
+    user_id: str = "usr_thea",
+    db: Session = Depends(get_db)
+):
+    """
+    Segmentiert ein Schulbuch erneut und überschreibt vorhandene Kapitel-PDFs,
+    z. B. nachdem eine bekannte Kapiteltabelle korrigiert wurde.
+    """
+    book = db.query(Material).filter_by(id=book_id, user_id=user_id, parent_id=None).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Schulbuch nicht gefunden.")
+
+    try:
+        chapters = auto_detect_and_segment_book(db, book, force=True)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Neu-Segmentierung für {book.id} fehlgeschlagen: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Neu-Segmentierung fehlgeschlagen.")
+
+    if not chapters:
+        raise HTTPException(status_code=422, detail="Für dieses Buch konnte keine Kapitelstruktur ermittelt werden.")
+
+    return {"status": "success", "book_id": book.id, "chapters_count": len(chapters)}
+
 @router.post("/seed", dependencies=[Depends(require_parent)])
 def seed_default_textbook(
     user_id: str = "usr_thea",

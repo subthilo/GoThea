@@ -604,6 +604,18 @@
 * **Beschreibung:** Liefert Detaildaten einer einzelnen Lerneinheit eines Schulbuchs.
 * **Status:** `200 OK` (oder `404 Not Found`).
 
+### `POST /api/v1/books/{book_id}/resegment`
+* **Beschreibung:** Segmentiert ein Schulbuch neu und überschreibt vorhandene Kapitel-PDFs (z. B. nach Korrektur einer bekannten Kapiteltabelle). Geschützt durch Eltern-PIN.
+* **Status:** `200 OK`, `404 Not Found` (Buch unbekannt), `422 Unprocessable Entity` (keine Kapitelstruktur ermittelbar).
+* **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "book_id": "mat_physik_7",
+  "chapters_count": 4
+}
+```
+
 ### `POST /api/v1/books/seed`
 * **Beschreibung:** Manueller Re-Import des vorinstallierten Mathematik-7 Lehrbuchs (geschützt durch Eltern-PIN).
 * **Response (200 OK):**
