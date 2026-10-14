@@ -48,6 +48,8 @@
   const btnDocPrev = document.getElementById("btn-wb-doc-prev");
   const btnDocNext = document.getElementById("btn-wb-doc-next");
   const btnDocClose = document.getElementById("btn-wb-doc-close");
+  const btnReturnToBook = document.getElementById("btn-wb-doc-return-to-book");
+  const docSaveStatus = document.getElementById("wb-doc-save-status");
 
   let currentTutorAudio = null;
   let tutorAudioEnabled = true;
@@ -56,6 +58,11 @@
   let activeMaterial = null;
   let activeMaterialPage = 1;
   let isUnderlayVisible = false;
+
+  // Modus: Buchseite auf der Tafel beschreiben
+  let isBookPageMode = false;
+  let bookPageContext = null; // { materialId, page, pageCount, title, subjectId }
+  let bookPageSaveDebounceTimer = null;
 
   // Interaktive Aufgaben-Ebene & Modal
   const tasksLayer = document.getElementById("wb-tasks-layer");
@@ -572,6 +579,27 @@
 
     isDrawing = true;
     const pt = getEventPoint(e);
+
+    // Strikte Begrenzung im Buchseiten-Modus: Kein Malen außerhalb der Buchseite!
+    if (isBookPageMode && docUnderlayImg) {
+      const dx = docUnderlayImg.offsetLeft || 0;
+      const dy = docUnderlayImg.offsetTop || 0;
+      const dw = docUnderlayImg.offsetWidth || docUnderlayImg.naturalWidth;
+      const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
+      if (dw > 0 && dh > 0) {
+        if (pt.x < dx || pt.x > dx + dw || pt.y < dy || pt.y > dy + dh) {
+          isDrawing = false;
+          activePointerId = null;
+          try {
+            if (inkCanvas.hasPointerCapture(e.pointerId)) {
+              inkCanvas.releasePointerCapture(e.pointerId);
+            }
+          } catch (_) {}
+          return;
+        }
+      }
+    }
+
     lastPoint = pt;
     lastMidPoint = pt;
     const strokeWidth = currentBaseWidth / scale;
@@ -638,6 +666,16 @@
     inkCtx.moveTo(lastMidPoint.x, lastMidPoint.y);
     for (let i = 0; i < events.length; i++) {
       const pt = getEventPoint(events[i]);
+      if (isBookPageMode && docUnderlayImg) {
+        const dx = docUnderlayImg.offsetLeft || 0;
+        const dy = docUnderlayImg.offsetTop || 0;
+        const dw = docUnderlayImg.offsetWidth || docUnderlayImg.naturalWidth;
+        const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
+        if (dw > 0 && dh > 0) {
+          pt.x = Math.max(dx, Math.min(dx + dw, pt.x));
+          pt.y = Math.max(dy, Math.min(dy + dh, pt.y));
+        }
+      }
       currentStroke.points.push(pt);
 
       const midX = (lastPoint.x + pt.x) * 0.5;
@@ -702,7 +740,9 @@
       strokes.push(currentStroke);
       undoStack.push({ type: "add_stroke", stroke: currentStroke });
       redoStack = [];
-      sendCanvasUpdate([currentStroke]);
+      if (!isBookPageMode) {
+        sendCanvasUpdate([currentStroke]);
+      }
       scheduleAutoSave();
     }
 
@@ -1173,7 +1213,128 @@
   }
 
   // 9. Backend-Persistenz (Auto-Save OHNE teures toDataURL)
+  function setBookDocSaveStatus(status) {
+    if (!docSaveStatus) return;
+    docSaveStatus.style.display = "inline-block";
+    if (status === "saving") {
+      docSaveStatus.textContent = "Speichere...";
+      docSaveStatus.className = "wb-doc-save-status saving";
+    } else if (status === "saved") {
+      docSaveStatus.textContent = "✓ Gespeichert";
+      docSaveStatus.className = "wb-doc-save-status";
+    } else if (status === "error") {
+      docSaveStatus.textContent = "⚠ Fehler";
+      docSaveStatus.className = "wb-doc-save-status saving";
+    }
+  }
+
+  async function saveBookPageAnnotationsNow() {
+    if (!isBookPageMode || !bookPageContext || !docUnderlayImg) return;
+    clearTimeout(bookPageSaveDebounceTimer);
+    bookPageSaveDebounceTimer = null;
+    setBookDocSaveStatus("saving");
+
+    const dx = docUnderlayImg.offsetLeft || 0;
+    const dy = docUnderlayImg.offsetTop || 0;
+    const dw = docUnderlayImg.offsetWidth || docUnderlayImg.naturalWidth;
+    const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
+    if (dw === 0 || dh === 0) return;
+
+    const normalizedStrokes = strokes.map(s => ({
+      id: s.id,
+      tool: s.tool,
+      color: s.color,
+      width: s.width,
+      points: (s.points || []).map(p => ({
+        x: Math.max(0, Math.min(1, (p.x - dx) / dw)),
+        y: Math.max(0, Math.min(1, (p.y - dy) / dh)),
+        pressure: p.pressure
+      }))
+    }));
+
+    try {
+      const payload = {
+        material_id: bookPageContext.materialId,
+        page_number: bookPageContext.page,
+        strokes: normalizedStrokes,
+        strokes_json: JSON.stringify(normalizedStrokes)
+      };
+      const res = await fetch(`/api/v1/materials/${bookPageContext.materialId}/pages/${bookPageContext.page}/annotations`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        setBookDocSaveStatus("saved");
+      } else {
+        setBookDocSaveStatus("error");
+      }
+    } catch (err) {
+      console.error("Fehler beim Speichern der Buchseiten-Notizen:", err);
+      setBookDocSaveStatus("error");
+    }
+  }
+
+  function scheduleBookPageAutoSave() {
+    clearTimeout(bookPageSaveDebounceTimer);
+    bookPageSaveDebounceTimer = setTimeout(() => {
+      saveBookPageAnnotationsNow();
+    }, 700);
+  }
+
+  async function loadBookPageAnnotations() {
+    if (!isBookPageMode || !bookPageContext || !docUnderlayImg) return;
+    strokes = [];
+    undoStack = [];
+    redoStack = [];
+    redrawAllStrokes();
+
+    const dx = docUnderlayImg.offsetLeft || 0;
+    const dy = docUnderlayImg.offsetTop || 0;
+    const dw = docUnderlayImg.offsetWidth || docUnderlayImg.naturalWidth;
+    const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
+    if (dw === 0 || dh === 0) return;
+
+    try {
+      const res = await fetch(`/api/v1/materials/${bookPageContext.materialId}/pages/${bookPageContext.page}/annotations`);
+      if (res.ok) {
+        const data = await res.json();
+        let loaded = [];
+        if (Array.isArray(data.strokes) && data.strokes.length > 0) {
+          loaded = data.strokes;
+        } else if (data.strokes_json) {
+          try { loaded = JSON.parse(data.strokes_json) || []; } catch (_) {}
+        }
+
+        strokes = loaded.map(s => ({
+          id: s.id || ("str_" + Date.now() + "_" + Math.floor(Math.random() * 10000)),
+          tool: s.tool || "pen",
+          color: s.color || "#2563eb",
+          width: s.width || 3,
+          points: (s.points || []).map(pt => {
+            const px = Array.isArray(pt) ? pt[0] : pt.x;
+            const py = Array.isArray(pt) ? pt[1] : pt.y;
+            const pr = Array.isArray(pt) ? (pt[2] || 0.5) : (pt.pressure || 0.5);
+            return {
+              x: dx + px * dw,
+              y: dy + py * dh,
+              pressure: pr
+            };
+          })
+        }));
+        redrawAllStrokes();
+        setBookDocSaveStatus("saved");
+      }
+    } catch (err) {
+      console.error("Fehler beim Laden der Buch-Notizen auf Tafel:", err);
+    }
+  }
+
   function scheduleAutoSave() {
+    if (isBookPageMode) {
+      scheduleBookPageAutoSave();
+      return;
+    }
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(async () => {
       if (!currentSession) return;
@@ -1606,7 +1767,18 @@
 
   // Vorlagen-Pager Buttons
   if (btnDocPrev) {
-    btnDocPrev.addEventListener("click", () => {
+    btnDocPrev.addEventListener("click", async () => {
+      if (isBookPageMode && bookPageContext && bookPageContext.page > 1) {
+        await saveBookPageAnnotationsNow();
+        bookPageContext.page--;
+        const p = bookPageContext.page;
+        if (docPageInfo) docPageInfo.textContent = `Seite ${p} / ${bookPageContext.pageCount || 1}`;
+        btnDocPrev.disabled = p <= 1;
+        if (btnDocNext) btnDocNext.disabled = p >= bookPageContext.pageCount;
+        docUnderlayImg.src = `/api/v1/materials/${bookPageContext.materialId}/preview?page=${p}`;
+        loadBookPageAnnotations();
+        return;
+      }
       if (activeMaterial && activeMaterialPage > 1) {
         activeMaterialPage--;
         renderUnderlayPage();
@@ -1614,7 +1786,18 @@
     });
   }
   if (btnDocNext) {
-    btnDocNext.addEventListener("click", () => {
+    btnDocNext.addEventListener("click", async () => {
+      if (isBookPageMode && bookPageContext && bookPageContext.page < (bookPageContext.pageCount || 1)) {
+        await saveBookPageAnnotationsNow();
+        bookPageContext.page++;
+        const p = bookPageContext.page;
+        if (docPageInfo) docPageInfo.textContent = `Seite ${p} / ${bookPageContext.pageCount || 1}`;
+        btnDocPrev.disabled = p <= 1;
+        if (btnDocNext) btnDocNext.disabled = p >= bookPageContext.pageCount;
+        docUnderlayImg.src = `/api/v1/materials/${bookPageContext.materialId}/preview?page=${p}`;
+        loadBookPageAnnotations();
+        return;
+      }
       if (activeMaterial && activeMaterialPage < (activeMaterial.page_count || 1)) {
         activeMaterialPage++;
         renderUnderlayPage();
@@ -1622,9 +1805,33 @@
     });
   }
   if (btnDocClose) {
-    btnDocClose.addEventListener("click", () => {
+    btnDocClose.addEventListener("click", async () => {
+      if (isBookPageMode) {
+        await saveBookPageAnnotationsNow();
+        isBookPageMode = false;
+      }
       isUnderlayVisible = false;
       updateUnderlayVisibility();
+    });
+  }
+
+  if (btnReturnToBook) {
+    btnReturnToBook.addEventListener("click", async () => {
+      if (isBookPageMode && bookPageContext) {
+        await saveBookPageAnnotationsNow();
+        const retPage = bookPageContext.page;
+        isBookPageMode = false;
+        isUnderlayVisible = false;
+        updateUnderlayVisibility();
+        btnReturnToBook.style.display = "none";
+        if (docSaveStatus) docSaveStatus.style.display = "none";
+        if (btnDocClose) btnDocClose.style.display = "inline-block";
+        strokes = [];
+        redrawAllStrokes();
+        if (typeof window.returnToBookReader === "function") {
+          window.returnToBookReader(retPage);
+        }
+      }
     });
   }
 
@@ -2292,7 +2499,62 @@
     }
   };
 
-  // Start
+  // Globale Funktion: Buchseite auf der Tafel im Dokument-Notiz-Modus öffnen
+  window.openBookPageOnWhiteboard = async function({ materialId, page = 1, pageCount = 1, title = "Buchseite", subjectId = null }) {
+    isBookPageMode = true;
+    bookPageContext = { materialId, page, pageCount, title, subjectId };
+
+    if (typeof switchToTab === "function") {
+      switchToTab("whiteboard");
+    } else {
+      const tabBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
+      if (tabBtn) tabBtn.click();
+    }
+
+    if (subjectId && subjectSelect && subjectSelect.value !== subjectId) {
+      subjectSelect.value = subjectId;
+    }
+
+    // Standard-Farbe auf Blau stellen, falls Weiß aktiv ist (damit auf weißer Seite lesbar)
+    if (currentColor === "#f8fafc" || currentColor === "#ffffff") {
+      currentColor = "#3b82f6";
+      const colorSel = document.getElementById("wb-color-select");
+      if (colorSel) colorSel.value = "#3b82f6";
+      const colorInd = document.getElementById("wb-color-indicator");
+      if (colorInd) colorInd.style.background = "#3b82f6";
+    }
+
+    // Viewport zurücksetzen
+    panX = 0;
+    panY = 0;
+    scale = 1.0;
+
+    // Topbar anpassen
+    if (docTopbar) docTopbar.style.display = "flex";
+    if (btnReturnToBook) btnReturnToBook.style.display = "inline-flex";
+    if (docBadge) docBadge.textContent = "📖 Buchseite";
+    if (docTitle) docTitle.textContent = title;
+    if (docPageInfo) docPageInfo.textContent = `Seite ${page} / ${pageCount || 1}`;
+    if (btnDocPrev) btnDocPrev.disabled = page <= 1;
+    if (btnDocNext) btnDocNext.disabled = page >= pageCount;
+    if (btnDocClose) btnDocClose.style.display = "none";
+    if (btnToggleUnderlay) btnToggleUnderlay.style.display = "none";
+
+    // Underlay anzeigen
+    isUnderlayVisible = true;
+    if (docUnderlay) docUnderlay.style.display = "block";
+
+    const targetSrc = `/api/v1/materials/${materialId}/preview?page=${page}`;
+    docUnderlayImg.onload = () => {
+      updateViewportPan();
+      loadBookPageAnnotations();
+    };
+    docUnderlayImg.src = targetSrc;
+    if (docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
+      updateViewportPan();
+      loadBookPageAnnotations();
+    }
+  };
   setTimeout(() => {
     resizeCanvases();
     initSession();

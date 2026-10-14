@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=7.6">
+  <link rel="stylesheet" href="/static/style.css?v=7.7">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -291,9 +291,10 @@
                   <span class="btn-icon" id="zoom-mode-icon">⛶</span>
                 </button>
 
-                <!-- Zeichentools ein-/ausklappen -->
-                <button type="button" class="btn-reader-action-icon" id="btn-toggle-ink-toolbar" title="Zeichenwerkzeuge ein-/ausblenden">
+                <!-- Seite auf Tafel bearbeiten / beschreiben -->
+                <button type="button" class="btn-reader-edit-wb" id="btn-edit-page-on-whiteboard" title="Diese Seite auf der interaktiven Tafel öffnen und mit Apple Pencil beschreiben">
                   <span class="btn-icon">✏️</span>
+                  <span class="btn-label-inline">Auf Tafel beschreiben</span>
                 </button>
 
                 <!-- Inhaltsverzeichnis / Kapitel wechseln Drawer -->
@@ -308,45 +309,6 @@
               </div>
             </header>
 
-            <!-- Schwebende, ein-/ausklappbare Stift-Palette (Standard: eingeklappt!) -->
-            <div class="reader-floating-ink-palette" id="reader-floating-ink-palette" style="display: none;">
-              <div class="ink-tool-group">
-                <button type="button" class="btn-ink-tool active" id="btn-book-pen-only" title="Nur Apple Pencil zeichnet (Handballenschutz aktiviert)">
-                  <span class="ink-tool-label">✏️ Nur Stift</span>
-                </button>
-                <button type="button" class="btn-ink-tool active" data-tool="pen" title="Kugelschreiber">
-                  <span class="ink-tool-label">Stift</span>
-                </button>
-                <button type="button" class="btn-ink-tool" data-tool="highlighter" title="Textmarker">
-                  <span class="ink-tool-label">Marker</span>
-                </button>
-                <button type="button" class="btn-ink-tool" data-tool="eraser" title="Radierer">
-                  <span class="ink-tool-label">Radierer</span>
-                </button>
-              </div>
-
-              <div class="ink-color-group" id="book-ink-colors">
-                <button type="button" class="ink-color-dot active" data-color="#2563eb" style="background-color: #2563eb;" title="Blau"></button>
-                <button type="button" class="ink-color-dot" data-color="#0f172a" style="background-color: #0f172a;" title="Schwarz"></button>
-                <button type="button" class="ink-color-dot" data-color="#dc2626" style="background-color: #dc2626;" title="Rot"></button>
-                <button type="button" class="ink-color-dot" data-color="#16a34a" style="background-color: #16a34a;" title="Grün"></button>
-                <button type="button" class="ink-color-dot" data-color="#facc15" style="background-color: #facc15;" title="Gelb"></button>
-              </div>
-
-              <div class="ink-action-group">
-                <button type="button" class="btn-ink-action" id="btn-book-ink-undo" title="Letzten Strich rückgängig machen">↩</button>
-                <button type="button" class="btn-ink-action" id="btn-book-ink-clear" title="Alle Notizen auf dieser Seite löschen">🗑️</button>
-                <span id="book-ink-save-status" class="ink-save-status" title="Autosave-Status">✓ Gespeichert</span>
-              </div>
-
-              <div class="page-zoom-controls">
-                <button type="button" id="btn-book-zoom-width" class="btn-zoom-mode active" title="Auf Dokumentbreite anpassen">↔ Breite</button>
-                <button type="button" id="btn-book-zoom-fit" class="btn-zoom-mode" title="Ganze Seite einpassen">⛶ Einpassen</button>
-              </div>
-
-              <button type="button" class="btn-close-palette" id="btn-close-ink-palette" title="Palette schließen">✕</button>
-            </div>
-
             <!-- Schwebepfeile fest verankert in der Bildschirmmitte (wandern NIE beim Scrollen) -->
             <button type="button" class="reader-floating-nav-btn nav-prev" id="btn-floating-prev" title="Vorherige Seite (oder mit 2 Fingern nach rechts wischen)">‹</button>
             <button type="button" class="reader-floating-nav-btn nav-next" id="btn-floating-next" title="Nächste Seite (oder mit 2 Fingern nach links wischen)">›</button>
@@ -359,7 +321,7 @@
               </div>
               <div class="book-page-stage" id="book-page-stage">
                 <img id="book-page-img" class="book-page-img mode-width" src="" alt="Buchseite" />
-                <canvas id="book-annotation-canvas" class="book-annotation-canvas"></canvas>
+                <canvas id="book-annotation-canvas" class="book-annotation-canvas" style="pointer-events: none;"></canvas>
               </div>
             </div>
 
@@ -695,8 +657,10 @@
             <!-- Dokument-Leiste oben auf der Tafel -->
             <div id="wb-doc-topbar" class="wb-doc-topbar" style="display: none;">
               <div class="wb-doc-info">
+                <button type="button" class="btn-wb-doc-return" id="btn-wb-doc-return-to-book" style="display: none;" title="Notizen sichern und zurück zum Buchleser">📖 Zurück zum Buch</button>
                 <span class="wb-doc-badge" id="wb-doc-badge">Arbeitsblatt</span>
                 <span class="wb-doc-title-text" id="wb-doc-title">Titel</span>
+                <span id="wb-doc-save-status" class="wb-doc-save-status" style="display: none;">✓ Gespeichert</span>
               </div>
               <div class="wb-doc-pager">
                 <button type="button" class="btn-pager" id="btn-wb-doc-prev">◀</button>
@@ -1628,8 +1592,8 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=7.6"></script>
-  <script src="/static/whiteboard.js?v=5.1"></script>
+  <script src="/static/app.js?v=7.7"></script>
+  <script src="/static/whiteboard.js?v=5.2"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>
 </html>
