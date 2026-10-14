@@ -1038,11 +1038,79 @@ body {
    Whiteboard Subsystem (Canvas, Floating Toolbar, Patterns, iPad Touch)
    ========================================================================== */
 
+/* Zero-scroll iPadOS Mode for Whiteboard (Null Scrollen der Seite, nur Tafel scrollbar) */
+html:has(body.whiteboard-zen-mode),
+html.whiteboard-zen-mode,
+body.whiteboard-zen-mode {
+  height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body.whiteboard-zen-mode .staging-banner {
+  display: none !important;
+}
+
+body.whiteboard-zen-mode .app-container {
+  height: 100% !important;
+  max-height: 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: max(6px, env(safe-area-inset-top)) 12px max(8px, env(safe-area-inset-bottom)) 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+
+body.whiteboard-zen-mode .header {
+  flex-shrink: 0 !important;
+  flex-wrap: nowrap !important;
+  padding-bottom: 6px !important;
+  margin-bottom: 0 !important;
+  gap: 10px !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+body.whiteboard-zen-mode .content {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  padding: 6px 0 0 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+body.whiteboard-zen-mode #tab-whiteboard.active {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
 .wb-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 160px);
-  min-height: 520px;
+  flex: 1 1 0%;
+  min-height: 0;
+  height: 100%;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 18px;
@@ -1050,14 +1118,20 @@ body {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
 }
 
+body.whiteboard-zen-mode .wb-container {
+  margin: 0 !important;
+  border-radius: 16px !important;
+}
+
 .wb-header-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 18px;
+  padding: 8px 16px;
   background: rgba(18, 22, 32, 0.95);
   border-bottom: 1px solid var(--border-color);
   z-index: 10;
+  flex-shrink: 0;
 }
 
 .wb-session-info {
@@ -1273,161 +1347,230 @@ body {
   transform: translateY(-2px);
 }
 
-/* Schwebende iPad Toolbar */
+/* Schwebende iPad Toolbar (Apple PencilKit Design) */
 .wb-floating-toolbar {
   position: absolute;
-  bottom: 20px;
+  bottom: max(14px, env(safe-area-inset-bottom, 14px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: rgba(22, 27, 36, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(18, 22, 32, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 9999px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  max-width: calc(100% - 24px);
+  overflow-x: auto;
+  scrollbar-width: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.wb-tool-group,
-.wb-color-group {
+.wb-floating-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.wb-tool-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .wb-divider {
   width: 1px;
-  height: 24px;
+  height: 20px;
   background: rgba(255, 255, 255, 0.15);
-  margin: 0 4px;
+  margin: 0 3px;
+  flex-shrink: 0;
 }
 
+/* 1. Werkzeuge (Pill / Icon Buttons) */
+.wb-pill-btn,
 .wb-tool-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  padding: 6px 10px;
-  border-radius: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
+  padding: 0;
 }
 
-.wb-tool-btn .tool-icon {
-  font-size: 1.15rem;
-}
-
-.wb-tool-btn .tool-name {
-  font-size: 0.65rem;
-  font-weight: 600;
-  margin-top: 2px;
-}
-
+.wb-pill-btn:hover,
 .wb-tool-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
+  transform: translateY(-1px);
 }
 
+.wb-pill-btn:active,
+.wb-tool-btn:active {
+  transform: scale(0.92);
+}
+
+.wb-pill-btn.active,
 .wb-tool-btn.active {
-  background: rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.28);
   color: #fff;
-  border: 1px solid rgba(99, 102, 241, 0.5);
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
 }
 
-/* Strichstärken */
-.wb-size-btn {
+/* 2. Strichstärken (Punkte) */
+.wb-dot-btn {
   width: 30px;
   height: 30px;
   border-radius: 50%;
+  border: 1.5px solid transparent;
   background: transparent;
-  border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
-}
-
-.wb-size-btn .dot-sm { width: 4px; height: 4px; border-radius: 50%; background: #fff; }
-.wb-size-btn .dot-md { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
-.wb-size-btn .dot-lg { width: 12px; height: 12px; border-radius: 50%; background: #fff; }
-
-.wb-size-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.wb-size-btn.active {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: rgba(99, 102, 241, 0.6);
-}
-
-/* Farbknöpfe */
-.wb-color-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-}
-
-.wb-color-btn:hover {
-  transform: scale(1.15);
-}
-
-.wb-color-btn.active {
-  transform: scale(1.2);
-  border-color: #fff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-}
-
-.wb-select-sm {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  padding: 5px 8px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.wb-select-sm:hover,
-.wb-select-sm:focus {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(99, 102, 241, 0.5);
-}
-
-.wb-select-sm option {
-  background: #181c26;
-  color: #f1f5f9;
-}
-
-.wb-color-dropdown-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.wb-color-indicator {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  padding: 0;
+}
+
+.wb-dot-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.wb-dot-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(99, 102, 241, 0.8);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+}
+
+.wb-dot {
+  display: block;
+  border-radius: 50%;
+  background: #f8fafc;
+  pointer-events: none;
+  transition: background-color 0.15s ease;
+}
+
+.wb-dot-sm { width: 3px; height: 3px; }
+.wb-dot-md { width: 6px; height: 6px; }
+.wb-dot-lg { width: 9px; height: 9px; }
+.wb-dot-xl { width: 13px; height: 13px; }
+
+/* 3. Farb-Swatches (Unbeschriftet) */
+.wb-color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background-color: var(--swatch-color);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.wb-color-swatch:hover {
+  transform: scale(1.18);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.wb-color-swatch.active {
+  transform: scale(1.24);
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #121620, 0 0 0 4px #ffffff, 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* 4. Muster-Swatches (Unbeschriftet) */
+.wb-pattern-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.wb-pattern-swatch:hover {
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.wb-pattern-swatch.active {
+  transform: scale(1.2);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px #121620, 0 0 0 3px #6366f1;
+}
+
+.pattern-thumb-chalkboard {
+  background-color: #121620;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.35) 0.8px, transparent 0.8px);
+  background-size: 5px 5px;
+}
+
+.pattern-thumb-grid {
+  background-color: #121620;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 5px 5px;
+}
+
+.pattern-thumb-lines {
+  background-color: #121620;
+  background-image: linear-gradient(to bottom, transparent 4px, rgba(99, 102, 241, 0.6) 5px);
+  background-size: 100% 5px;
+}
+
+.pattern-thumb-white {
+  background-color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Header Vektor-Icon Buttons */
+.wb-btn-icon-svg {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+  filter: brightness(0) invert(0.9);
+  vertical-align: middle;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.wb-btn-subtle:hover .wb-btn-icon-svg,
+.wb-btn-primary:hover .wb-btn-icon-svg {
+  filter: brightness(0) invert(1);
+  transform: scale(1.08);
+}
+
+.wb-btn-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.wb-spinner {
+  animation: wbSpin 0.9s linear infinite;
+}
+
+@keyframes wbSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Tutor Speech Bubble & Audio Controls */
@@ -1526,39 +1669,40 @@ body {
   background: rgba(239, 68, 68, 0.3);
 }
 
-.wb-mode-btn {
+.wb-mode-btn,
+.wb-action-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text-primary);
-  padding: 6px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.wb-action-btn:hover,
+.wb-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.wb-action-btn:active,
+.wb-mode-btn:active {
+  transform: scale(0.92);
 }
 
 .wb-mode-btn.active {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.22);
   color: #10b981;
-}
-
-.wb-action-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.15rem;
-  padding: 6px 8px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.wb-action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
 
 /* Vollbildmodus für Whiteboard */

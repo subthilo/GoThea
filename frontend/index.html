@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=10.0">
+  <link rel="stylesheet" href="/static/style.css?v=11.0">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -604,24 +604,42 @@
 
               <span class="wb-label" style="margin-left: 6px;">Unterlage:</span>
               <select id="wb-material-select" class="wb-select" style="max-width: 250px;" title="Wähle eine Unterlage, ein Arbeitsblatt oder Buchkapitel zum gezielten Üben">
-                <option value="">✨ Freies Üben</option>
+                <option value="">Freies Üben</option>
               </select>
-              <button id="btn-wb-toggle-underlay" class="wb-btn-subtle" style="display: none; padding: 4px 10px; font-size: 0.8rem;" title="Vorlage auf Tafel ein-/ausblenden">📄 Vorlage</button>
+              <button id="btn-wb-toggle-underlay" class="wb-btn-subtle" style="display: none; padding: 4px 10px; font-size: 0.8rem;" title="Vorlage auf Tafel ein-/ausblenden">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <span>Vorlage</span>
+              </button>
 
-              <div class="wb-conn-badge">
+              <div class="wb-conn-badge" title="Tafel aktiv">
                 <span class="wb-session-dot" id="wb-ws-dot"></span>
                 <span class="wb-session-status" id="wb-ws-status">Tafel aktiv</span>
               </div>
             </div>
             <div class="wb-header-actions">
-              <button id="btn-wb-new-session" class="wb-btn-subtle" title="Neue Tafel beginnen">✨ Neu</button>
-              <button id="btn-wb-place-exercise" class="wb-btn-subtle" style="font-weight: 600;" title="Aufgabe von Luna auf die Tafel legen">📝 Aufgabe stellen</button>
-              <button id="btn-wb-audio-toggle" class="wb-btn-subtle wb-btn-speaker active" title="Sprachausgabe (TTS) an/aus">🔊</button>
+              <button id="btn-wb-new-session" class="wb-btn-subtle" title="Neue Tafel beginnen">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Neu</span>
+              </button>
+              <button id="btn-wb-place-exercise" class="wb-btn-subtle" style="font-weight: 600;" title="Aufgabe von Luna auf die Tafel legen">
+                <img src="/static/Icons/Übungen.svg" class="wb-btn-icon-svg" alt="">
+                <span>Aufgabe</span>
+              </button>
+              <button id="btn-wb-audio-toggle" class="wb-btn-subtle wb-btn-speaker active" title="Sprachausgabe (TTS) an/aus">
+                <span id="wb-audio-icon-wrap" class="wb-btn-icon-wrap">
+                  <svg id="wb-audio-icon-on" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                  <svg id="wb-audio-icon-off" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                </span>
+              </button>
               <button id="btn-wb-request-hint" class="wb-btn-primary" title="Tafel mit KI analysieren &amp; sokratischen Tipp vorlesen">
-                <span id="wb-hint-icon">✨</span>
+                <span id="wb-hint-icon" class="wb-btn-icon-wrap">
+                  <img src="/static/Icons/Stern.svg" class="wb-btn-icon-svg" alt="">
+                </span>
                 <span id="wb-hint-label">Tutor fragen</span>
               </button>
-              <button id="btn-wb-fullscreen" class="wb-btn-icon" title="Vollbildmodus umschalten">⛶</button>
+              <button id="btn-wb-fullscreen" class="wb-btn-icon" title="Vollbildmodus umschalten">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+              </button>
             </div>
           </div>
 
@@ -672,88 +690,112 @@
               <div id="wb-scroll-thumb" class="wb-scroll-thumb"></div>
             </div>
 
-            <!-- Schwebende iPad-Toolbar (Frosted Glass) -->
-            <div class="wb-floating-toolbar" id="wb-toolbar">
-              <!-- Werkzeuge (Dropdown) -->
-              <div class="wb-tool-group">
-                <select id="wb-tool-select" class="wb-select-sm" title="Stift-Typ / Werkzeug">
-                  <option value="pen" selected>✏️ Stift</option>
-                  <option value="highlighter">🖊️ Marker</option>
-                  <option value="pixel_eraser">🧹 Pixel-Radierer</option>
-                  <option value="object_eraser">🎯 Objekt-Radierer</option>
-                </select>
-              </div>
-
-              <div class="wb-divider"></div>
-
-              <!-- Strichbreiten (Dropdown) -->
-              <div class="wb-tool-group">
-                <select id="wb-size-select" class="wb-select-sm" title="Strichstärke">
-                  <option value="2">2px Fein</option>
-                  <option value="4" selected>4px Normal</option>
-                  <option value="6">6px Mittel</option>
-                  <option value="8">8px Dick</option>
-                  <option value="12">12px Fett</option>
-                </select>
-              </div>
-
-              <div class="wb-divider"></div>
-
-              <!-- Stiftfarbe (Dropdown mit Live-Farbpunkt) -->
-              <div class="wb-tool-group wb-color-dropdown-group">
-                <span id="wb-color-indicator" class="wb-color-indicator" style="background: #f8fafc;" title="Aktive Farbe"></span>
-                <select id="wb-color-select" class="wb-select-sm" title="Farbe">
-                  <option value="#f8fafc" selected>⚪ Weiß</option>
-                  <option value="#3b82f6">🔵 Blau</option>
-                  <option value="#10b981">🟢 Mintgrün</option>
-                  <option value="#fbbf24">🟡 Gelb</option>
-                  <option value="#f43f5e">🔴 Koralle</option>
-                  <option value="#a855f7">🟣 Lila</option>
-                  <option value="#000000">⚫ Schwarz</option>
-                </select>
-              </div>
-
-              <div class="wb-divider"></div>
-
-              <!-- Tafel-Hintergrund -->
-              <div class="wb-tool-group">
-                <select id="wb-pattern-select" class="wb-select-sm" title="Hintergrund-Muster">
-                  <option value="pattern-chalkboard" selected>⬛ Tafel</option>
-                  <option value="pattern-grid">📐 Mathe</option>
-                  <option value="pattern-lines">📄 Liniert</option>
-                  <option value="pattern-white">⬜ Weiß</option>
-                </select>
-              </div>
-
-              <div class="wb-divider"></div>
-
-              <!-- Zoom-Regler (Großansicht für feines Schreiben) -->
-              <div class="wb-tool-group">
-                <button type="button" id="btn-wb-zoom-out" class="wb-action-btn" title="Herauszoomen" style="font-size: 0.95rem;">➖</button>
-                <button type="button" id="btn-wb-zoom-reset" class="wb-mode-btn" title="Auf 100% zurücksetzen">
-                  <span id="wb-zoom-level-text" style="font-weight: 700; font-size: 0.78rem;">100%</span>
+            <!-- Schwebende iPad-Toolbar (Apple PencilKit Design) -->
+            <div class="wb-floating-toolbar" id="wb-toolbar" role="toolbar" aria-label="Tafel Werkzeuge">
+              <!-- 1. Werkzeuge (Reine Vektor-Icons) -->
+              <div class="wb-tool-group wb-tools-segment" id="wb-tools-container">
+                <button type="button" class="wb-pill-btn wb-tool-btn active" data-tool="pen" title="Stift" aria-label="Stift">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                  </svg>
                 </button>
-                <button type="button" id="btn-wb-zoom-in" class="wb-action-btn" title="Hereinzoomen (Großansicht zum Schreiben)" style="font-size: 0.95rem;">➕</button>
-              </div>
-
-              <div class="wb-divider"></div>
-
-              <!-- Stift-Modus (Palm Rejection) -->
-              <div class="wb-tool-group">
-                <button id="btn-wb-pen-only" class="wb-mode-btn active" title="Touch-Filter: Handfläche wird ignoriert">
-                  <span id="wb-pen-icon">✍️</span>
-                  <span id="wb-pen-label">Pencil</span>
+                <button type="button" class="wb-pill-btn wb-tool-btn" data-tool="highlighter" title="Marker" aria-label="Marker">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m9 11-6 6v3h3l6-6"></path>
+                    <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path>
+                  </svg>
+                </button>
+                <button type="button" class="wb-pill-btn wb-tool-btn" data-tool="pixel_eraser" title="Pixel-Radierer" aria-label="Pixel-Radierer">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+                    <path d="M22 21H7"></path>
+                    <path d="m5 11 9 9"></path>
+                  </svg>
+                </button>
+                <button type="button" class="wb-pill-btn wb-tool-btn" data-tool="object_eraser" title="Objekt-Radierer" aria-label="Objekt-Radierer">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                  </svg>
                 </button>
               </div>
 
               <div class="wb-divider"></div>
 
-              <!-- Aktionen -->
+              <!-- 2. Strichbreiten (Unterschiedlich große Punkte statt Pixelgröße) -->
+              <div class="wb-tool-group wb-sizes-segment" id="wb-sizes-container">
+                <button type="button" class="wb-dot-btn" data-size="2" title="Sehr fein" aria-label="Sehr fein">
+                  <span class="wb-dot wb-dot-sm"></span>
+                </button>
+                <button type="button" class="wb-dot-btn active" data-size="4" title="Normal" aria-label="Normal">
+                  <span class="wb-dot wb-dot-md"></span>
+                </button>
+                <button type="button" class="wb-dot-btn" data-size="7" title="Kräftig" aria-label="Kräftig">
+                  <span class="wb-dot wb-dot-lg"></span>
+                </button>
+                <button type="button" class="wb-dot-btn" data-size="12" title="Sehr kräftig" aria-label="Sehr kräftig">
+                  <span class="wb-dot wb-dot-xl"></span>
+                </button>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- 3. Farben (Unbeschriftete Farbpunkte) -->
+              <div class="wb-tool-group wb-colors-segment" id="wb-colors-container">
+                <button type="button" class="wb-color-swatch active" data-color="#f8fafc" style="--swatch-color: #f8fafc;" title="Weiß" aria-label="Weiß"></button>
+                <button type="button" class="wb-color-swatch" data-color="#fbbf24" style="--swatch-color: #fbbf24;" title="Gelb" aria-label="Gelb"></button>
+                <button type="button" class="wb-color-swatch" data-color="#10b981" style="--swatch-color: #10b981;" title="Grün" aria-label="Grün"></button>
+                <button type="button" class="wb-color-swatch" data-color="#38bdf8" style="--swatch-color: #38bdf8;" title="Blau" aria-label="Blau"></button>
+                <button type="button" class="wb-color-swatch" data-color="#f43f5e" style="--swatch-color: #f43f5e;" title="Rot" aria-label="Rot"></button>
+                <button type="button" class="wb-color-swatch" data-color="#c084fc" style="--swatch-color: #c084fc;" title="Lila" aria-label="Lila"></button>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- 4. Tafel-Hintergrund (Unbeschriftete Muster-Flächen) -->
+              <div class="wb-tool-group wb-patterns-segment" id="wb-patterns-container">
+                <button type="button" class="wb-pattern-swatch pattern-thumb-chalkboard active" data-pattern="pattern-chalkboard" title="Klassische Tafel" aria-label="Tafel"></button>
+                <button type="button" class="wb-pattern-swatch pattern-thumb-grid" data-pattern="pattern-grid" title="Mathe-Gitter" aria-label="Mathe-Gitter"></button>
+                <button type="button" class="wb-pattern-swatch pattern-thumb-lines" data-pattern="pattern-lines" title="Linien" aria-label="Linien"></button>
+                <button type="button" class="wb-pattern-swatch pattern-thumb-white" data-pattern="pattern-white" title="Weißes Blatt" aria-label="Weißes Blatt"></button>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- 5. Apple Pencil Palm Rejection Toggle -->
               <div class="wb-tool-group">
-                <button id="btn-wb-undo" class="wb-action-btn" title="Rückgängig (Cmd+Z)">↩️</button>
-                <button id="btn-wb-redo" class="wb-action-btn" title="Wiederholen (Cmd+Y)">↪️</button>
-                <button id="btn-wb-clear" class="wb-action-btn" title="Tafel leeren">🗑️</button>
-                <button id="btn-wb-save" class="wb-action-btn" title="Bild herunterladen">📷</button>
+                <button type="button" id="btn-wb-pen-only" class="wb-mode-btn active" title="Apple Pencil aktiv (Handfläche wird ignoriert)" aria-label="Apple Pencil Modus">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="2" x2="22" y2="6"></line>
+                    <path d="M7.5 20.5 19 9l-4-4L3.5 16.5 2 22z"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="wb-divider"></div>
+
+              <!-- 6. Aktionen (Undo, Redo, Leeren - Kein Download-Button, kein Zoom) -->
+              <div class="wb-tool-group">
+                <button type="button" id="btn-wb-undo" class="wb-action-btn" title="Rückgängig" aria-label="Rückgängig">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                  </svg>
+                </button>
+                <button type="button" id="btn-wb-redo" class="wb-action-btn" title="Wiederholen" aria-label="Wiederholen">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                </button>
+                <button type="button" id="btn-wb-clear" class="wb-action-btn" title="Tafel leeren" aria-label="Tafel leeren">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -1580,8 +1622,8 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=10.0"></script>
-  <script src="/static/whiteboard.js?v=6.0"></script>
+  <script src="/static/app.js?v=11.0"></script>
+  <script src="/static/whiteboard.js?v=7.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>
 </html>

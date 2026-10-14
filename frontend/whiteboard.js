@@ -311,25 +311,29 @@
     });
   }
 
-  // Mac Trackpad & Mausrad-Scrolling
-  viewport.addEventListener("wheel", (e) => {
+  // Mac Trackpad & Mausrad-Scrolling (Pinch-to-Zoom & Pan)
+  function handleWheel(e) {
     e.preventDefault();
     if (e.ctrlKey) {
+      // 2-Finger Trackpad Pinch on macOS (Chrome, Firefox, Safari)
       const rect = viewport.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
-      const factor = e.deltaY < 0 ? 1.08 : 0.92;
-      setZoomLevel(scale * factor, cx, cy);
+      const zoomFactor = Math.exp(-e.deltaY * 0.01);
+      setZoomLevel(scale * zoomFactor, cx, cy);
     } else {
       panY -= e.deltaY;
       panX -= e.deltaX;
-      if (scale === 1.0) {
+      if (scale <= 1.01) {
         panX = 0;
         if (panY > 0) panY = 0;
       }
       updateViewportPan();
     }
-  }, { passive: false });
+  }
+
+  viewport.addEventListener("wheel", handleWheel, { passive: false });
+  inkCanvas.addEventListener("wheel", handleWheel, { passive: false });
 
   // 4. Geometry Math for Object Eraser (Stroke Hit-Testing)
   function distToSegment(px, py, x1, y1, x2, y2) {
@@ -803,15 +807,29 @@
     }
   });
 
-  const blockGesture = (e) => {
+  // 2-Finger Mac Safari Trackpad Pinch-to-Zoom
+  let gestureStartScale = 1.0;
+  const handleGestureStart = (e) => {
+    e.preventDefault();
+    gestureStartScale = scale;
+  };
+  const handleGestureChange = (e) => {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    const cx = (typeof e.clientX === "number" && e.clientX > 0) ? (e.clientX - rect.left) : (rect.width / 2);
+    const cy = (typeof e.clientY === "number" && e.clientY > 0) ? (e.clientY - rect.top) : (rect.height / 2);
+    setZoomLevel(gestureStartScale * e.scale, cx, cy);
+  };
+  const handleGestureEnd = (e) => {
     e.preventDefault();
   };
-  inkCanvas.addEventListener("gesturestart", blockGesture, { passive: false, capture: true });
-  inkCanvas.addEventListener("gesturechange", blockGesture, { passive: false, capture: true });
-  inkCanvas.addEventListener("gestureend", blockGesture, { passive: false, capture: true });
-  viewport.addEventListener("gesturestart", blockGesture, { passive: false, capture: true });
-  viewport.addEventListener("gesturechange", blockGesture, { passive: false, capture: true });
-  viewport.addEventListener("gestureend", blockGesture, { passive: false, capture: true });
+
+  inkCanvas.addEventListener("gesturestart", handleGestureStart, { passive: false, capture: true });
+  inkCanvas.addEventListener("gesturechange", handleGestureChange, { passive: false, capture: true });
+  inkCanvas.addEventListener("gestureend", handleGestureEnd, { passive: false, capture: true });
+  viewport.addEventListener("gesturestart", handleGestureStart, { passive: false, capture: true });
+  viewport.addEventListener("gesturechange", handleGestureChange, { passive: false, capture: true });
+  viewport.addEventListener("gestureend", handleGestureEnd, { passive: false, capture: true });
 
   viewport.addEventListener("touchstart", (e) => {
     if (!e.target.closest(".wb-floating-toolbar, button, select, input, textarea")) {
@@ -1368,7 +1386,7 @@
       console.warn("Fehler beim Laden der Fach-Materialien:", err);
     }
 
-    materialSelect.innerHTML = `<option value="">✨ Freies Üben (ohne Vorlage)</option>`;
+    materialSelect.innerHTML = `<option value="">Freies Üben (ohne Vorlage)</option>`;
     if (currentSubjectMaterialsList.length === 0) {
       clearWhiteboardMaterial();
       return;
@@ -1587,64 +1605,76 @@
     }
   }
 
-  // 11. Toolbar Event-Handler (Dropdowns für Stift-Typ, Stärke & Farbe)
-  const wbToolSelect = document.getElementById("wb-tool-select");
-  const wbSizeSelect = document.getElementById("wb-size-select");
-  const wbColorSelect = document.getElementById("wb-color-select");
-  const wbColorIndicator = document.getElementById("wb-color-indicator");
-
+  // 11. Toolbar Event-Handler (Apple PencilKit Design: Tools, Dot-Größen, Farb- & Muster-Swatches)
   function setTool(tool) {
     currentTool = tool;
-    if (wbToolSelect) wbToolSelect.value = tool;
+    document.querySelectorAll(".wb-tool-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.tool === tool);
+    });
   }
 
   function setSize(size) {
     currentBaseWidth = parseFloat(size);
-    if (wbSizeSelect) wbSizeSelect.value = String(size);
+    document.querySelectorAll(".wb-dot-btn").forEach(btn => {
+      btn.classList.toggle("active", parseFloat(btn.dataset.size) === currentBaseWidth);
+    });
   }
 
   function setColor(color) {
     currentColor = color;
-    if (wbColorSelect) wbColorSelect.value = color;
-    if (wbColorIndicator) wbColorIndicator.style.backgroundColor = color;
+    document.querySelectorAll(".wb-color-swatch").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.color.toLowerCase() === color.toLowerCase());
+    });
+    // Farbpunkte der Strichstärken dezent mit der gewählten Farbe einfärben
+    document.querySelectorAll(".wb-dot").forEach(dot => {
+      dot.style.backgroundColor = color;
+    });
     if (currentTool === "pixel_eraser" || currentTool === "object_eraser" || currentTool === "eraser") {
       setTool("pen");
     }
   }
 
-  if (wbToolSelect) {
-    wbToolSelect.addEventListener("change", (e) => {
-      setTool(e.target.value);
+  function setPattern(pattern) {
+    viewport.className = `wb-viewport ${pattern}`;
+    document.querySelectorAll(".wb-pattern-swatch").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.pattern === pattern);
     });
   }
 
-  if (wbSizeSelect) {
-    wbSizeSelect.addEventListener("change", (e) => {
-      setSize(e.target.value);
+  // Werkzeug-Buttons binden
+  document.querySelectorAll(".wb-tool-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.tool) setTool(btn.dataset.tool);
     });
-  }
+  });
 
-  if (wbColorSelect) {
-    wbColorSelect.addEventListener("change", (e) => {
-      setColor(e.target.value);
+  // Strichstärken (Punkte) binden
+  document.querySelectorAll(".wb-dot-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.size) setSize(btn.dataset.size);
     });
-  }
+  });
 
-  if (wbColorIndicator && currentColor) {
-    wbColorIndicator.style.backgroundColor = currentColor;
-  }
-
-  if (patternSelect) {
-    patternSelect.addEventListener("change", (e) => {
-      viewport.className = `wb-viewport ${e.target.value}`;
+  // Farb-Swatches binden
+  document.querySelectorAll(".wb-color-swatch").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.color) setColor(btn.dataset.color);
     });
-  }
+  });
+
+  // Muster-Swatches binden
+  document.querySelectorAll(".wb-pattern-swatch").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.pattern) setPattern(btn.dataset.pattern);
+    });
+  });
 
   if (btnPenOnly) {
     btnPenOnly.addEventListener("click", () => {
       penOnlyMode = !penOnlyMode;
       btnPenOnly.classList.toggle("active", penOnlyMode);
-      document.getElementById("wb-pen-label").textContent = penOnlyMode ? "Pencil" : "Touch";
+      const penLabel = document.getElementById("wb-pen-label");
+      if (penLabel) penLabel.textContent = penOnlyMode ? "Pencil" : "Touch";
       btnPenOnly.title = penOnlyMode
         ? "Apple Pencil aktiv (Handfläche wird ignoriert)"
         : "Touch-Modus aktiv (Finger und Stift zeichnen)";
@@ -1841,7 +1871,12 @@
       tutorAudioEnabled = !tutorAudioEnabled;
       btnAudioToggle.classList.toggle("active", tutorAudioEnabled);
       btnAudioToggle.classList.toggle("muted", !tutorAudioEnabled);
-      btnAudioToggle.textContent = tutorAudioEnabled ? "🔊" : "🔇";
+      const iconOn = document.getElementById("wb-audio-icon-on");
+      const iconOff = document.getElementById("wb-audio-icon-off");
+      if (iconOn && iconOff) {
+        iconOn.style.display = tutorAudioEnabled ? "inline-block" : "none";
+        iconOff.style.display = tutorAudioEnabled ? "none" : "inline-block";
+      }
       btnAudioToggle.title = tutorAudioEnabled ? "Sprachausgabe (TTS) aktiv" : "Sprachausgabe stummgeschaltet";
       if (!tutorAudioEnabled) {
         stopTutorSpeech();
@@ -1867,10 +1902,12 @@
         return;
       }
 
-      const origIcon = hintIcon ? hintIcon.textContent : "✨";
+      const origHtml = hintIcon ? hintIcon.innerHTML : "";
       const origText = hintLabel ? hintLabel.textContent : "Tutor fragen";
 
-      if (hintIcon) hintIcon.textContent = "⏳";
+      if (hintIcon) {
+        hintIcon.innerHTML = `<svg class="wb-spinner" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle><path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"></path></svg>`;
+      }
       if (hintLabel) hintLabel.textContent = "Luna schaut...";
       btnRequestHint.disabled = true;
 
@@ -1903,7 +1940,7 @@
         console.error("Fehler beim Abrufen des KI-Hinweises:", e);
         alert("Netzwerkfehler beim Abrufen des Hinweises.");
       } finally {
-        if (hintIcon) hintIcon.textContent = origIcon;
+        if (hintIcon) hintIcon.innerHTML = origHtml;
         if (hintLabel) hintLabel.textContent = origText;
         btnRequestHint.disabled = false;
       }
@@ -2517,11 +2554,7 @@
 
     // Standard-Farbe auf Blau stellen, falls Weiß aktiv ist (damit auf weißer Seite lesbar)
     if (currentColor === "#f8fafc" || currentColor === "#ffffff") {
-      currentColor = "#3b82f6";
-      const colorSel = document.getElementById("wb-color-select");
-      if (colorSel) colorSel.value = "#3b82f6";
-      const colorInd = document.getElementById("wb-color-indicator");
-      if (colorInd) colorInd.style.background = "#3b82f6";
+      setColor("#38bdf8");
     }
 
     // Viewport zurücksetzen
