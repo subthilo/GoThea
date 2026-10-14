@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=6.7">
+  <link rel="stylesheet" href="/static/style.css?v=6.8">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -347,12 +347,12 @@
               <button type="button" class="btn-close-palette" id="btn-close-ink-palette" title="Palette schließen">✕</button>
             </div>
 
-            <!-- Der Hauptbereich: Vollbild-Seitenanzeige mit dezenten Schwebepfeilen -->
-            <div class="book-page-canvas-wrapper" id="book-page-canvas-wrapper">
-              <!-- Subtile Schwebepfeile zum Blättern (links & rechts) -->
-              <button type="button" class="reader-floating-nav-btn nav-prev" id="btn-floating-prev" title="Vorherige Seite (oder mit 2 Fingern nach rechts wischen)">‹</button>
-              <button type="button" class="reader-floating-nav-btn nav-next" id="btn-floating-next" title="Nächste Seite (oder mit 2 Fingern nach links wischen)">›</button>
+            <!-- Schwebepfeile fest verankert in der Bildschirmmitte (wandern NIE beim Scrollen) -->
+            <button type="button" class="reader-floating-nav-btn nav-prev" id="btn-floating-prev" title="Vorherige Seite (oder mit 2 Fingern nach rechts wischen)">‹</button>
+            <button type="button" class="reader-floating-nav-btn nav-next" id="btn-floating-next" title="Nächste Seite (oder mit 2 Fingern nach links wischen)">›</button>
 
+            <!-- Der Hauptbereich: Vollbild-Seitenanzeige -->
+            <div class="book-page-canvas-wrapper" id="book-page-canvas-wrapper">
               <div class="book-page-loading" id="book-page-loading" style="display: none;">
                 <div class="spinner"></div>
                 <span>Lade Buchseite in Retina-Auflösung...</span>
@@ -1628,7 +1628,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=6.9"></script>
+  <script src="/static/app.js?v=7.0"></script>
   <script src="/static/whiteboard.js?v=5.1"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>

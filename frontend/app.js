@@ -4527,6 +4527,45 @@ function setupBookBrowserEvents() {
     }
   });
 
+  // 2-Finger-Wischen auf Mac-Trackpads (Horizontaler 2-Finger-Wisch erzeugt deltaX)
+  let macWheelCooldown = false;
+  let macAccumulatedDeltaX = 0;
+  let macWheelTimer = null;
+
+  window.addEventListener("wheel", (e) => {
+    const readerView = document.getElementById("book-reader-view");
+    if (!readerView || readerView.style.display === "none") return;
+
+    // Nur horizontal dominierende Gesten auswerten (damit normales vertikales Scrollen unberührt bleibt)
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.2 && Math.abs(e.deltaX) > 8) {
+      if (macWheelCooldown) {
+        e.preventDefault();
+        return;
+      }
+
+      macAccumulatedDeltaX += e.deltaX;
+
+      clearTimeout(macWheelTimer);
+      macWheelTimer = setTimeout(() => {
+        macAccumulatedDeltaX = 0;
+      }, 140);
+
+      // Schwellenwert für Seitenwechsel: 45px akkumulierter Wischweg
+      if (Math.abs(macAccumulatedDeltaX) > 45) {
+        macWheelCooldown = true;
+        const dir = macAccumulatedDeltaX > 0 ? 1 : -1;
+        macAccumulatedDeltaX = 0;
+        flipBookPage(dir);
+        e.preventDefault();
+
+        // Cooldown, um Trägheitsimpulse des Trackpads abzufangen
+        setTimeout(() => {
+          macWheelCooldown = false;
+        }, 400);
+      }
+    }
+  }, { passive: false });
+
   // 1-Klick Zoom-Umschalter in der Kopfzeile & Palette
   const btnToggleZoom = document.getElementById("btn-toggle-zoom-mode");
   const zoomIcon = document.getElementById("zoom-mode-icon");
@@ -4735,6 +4774,14 @@ function initBookInking() {
     wrapper.addEventListener("touchmove", handleTwoFingerTouchMove, { passive: false, capture: true });
     wrapper.addEventListener("touchend", handleTwoFingerTouchEnd, { passive: false, capture: true });
     wrapper.addEventListener("touchcancel", handleTwoFingerTouchEnd, { passive: false, capture: true });
+  }
+
+  const readerViewEl = document.getElementById("book-reader-view");
+  if (readerViewEl) {
+    readerViewEl.addEventListener("touchstart", handleTwoFingerTouchStart, { passive: false, capture: true });
+    readerViewEl.addEventListener("touchmove", handleTwoFingerTouchMove, { passive: false, capture: true });
+    readerViewEl.addEventListener("touchend", handleTwoFingerTouchEnd, { passive: false, capture: true });
+    readerViewEl.addEventListener("touchcancel", handleTwoFingerTouchEnd, { passive: false, capture: true });
   }
 
   // Pointer Events auf Canvas für Apple Pencil & Touch

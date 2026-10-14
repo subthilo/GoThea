@@ -3949,29 +3949,30 @@ body.reader-zen-mode .book-reader-view {
   transform: translateY(-50%);
   width: 44px;
   height: 72px;
-  background: rgba(15, 20, 30, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
+  background: rgba(15, 20, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 2rem;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 50;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  z-index: 95;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: all 0.2s ease;
   user-select: none;
-  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .reader-floating-nav-btn.nav-prev {
-  left: 12px;
+  left: 16px;
 }
 
 .reader-floating-nav-btn.nav-next {
-  right: 12px;
+  right: 16px;
 }
 
 .reader-floating-nav-btn:hover:not(:disabled) {
