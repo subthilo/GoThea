@@ -70,8 +70,8 @@ flowchart TD
    * Bei digitalen Verlagsausgaben (Cornelsen, Klett, Westermann) parst `pypdf` die eingebettete Dokument-Outline (`reader.outline`).
    * Funktioniert deterministisch in **unter 0,1 Sekunden**, völlig offline und ohne jegliche KI-Token-Kosten.
 3. **Stufe 3 – Multimodale KI-Inhaltsverzeichnis-Analyse (`extract_chapters_with_ai`)**:
-   * Bei gescannten Schulbüchern ohne digitale Lesezeichen extrahiert das System Text von den Seiten 1–8.
-   * Fehlt digitaler Text, rendert das System die Seiten 2–5 als Bilder und übergibt sie an OpenAI Vision (`gpt-4o-mini`). Die KI liest das Inhaltsverzeichnis, gleicht den Seitennummern-Offset ab und liefert eine strukturierte JSON-Kapitelliste zurück.
+   * Bei Schulbüchern ohne digitale Lesezeichen extrahiert das System Text von den Seiten 1–20 (max. 15.000 Zeichen), jede Seite mit der Trennzeile `--- Dokumentseite im PDF: Seite X ---`.
+   * Fehlt digitaler Text, rendert das System die Seiten 2–20 als Bilder (mit derselben Trennzeile) und übergibt sie an das Hauptmodell (`OPENAI_MODEL`). Die KI liest das Inhaltsverzeichnis, berechnet den Versatz zwischen PDF-Seite und gedruckter Buchseite und liefert eine strukturierte JSON-Kapitelliste zurück.
 
 ### Asynchroner Hintergrund-Betrieb & Entkopplung:
 * Das physische Slicing von 300-Seiten-PDFs in 11 Kapitel-PDFs dauert auf dem Raspberry Pi ca. 2–3 Sekunden.

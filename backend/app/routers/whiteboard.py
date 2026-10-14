@@ -175,7 +175,7 @@ def ask_tutor_endpoint(
 
     # 1. Spezifisches Material (falls übergeben oder in Session hinterlegt)
     material_context = None
-    mat_id = payload.material_id or getattr(session, "material_id", None)
+    mat_id = payload.material_id
     if mat_id:
         mat = db.query(Material).filter(Material.id == mat_id).first()
         if mat:
@@ -289,7 +289,7 @@ def generate_exercise_for_session(
 
     # Material-Kontext falls vorhanden
     material_context = None
-    mat_id = payload.material_id or getattr(session, "material_id", None)
+    mat_id = payload.material_id
     if mat_id:
         mat = db.query(Material).filter(Material.id == mat_id).first()
         if mat:

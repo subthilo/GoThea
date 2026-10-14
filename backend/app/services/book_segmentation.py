@@ -7,6 +7,8 @@ import pypdf
 from sqlalchemy.orm import Session
 
 from backend.app.config import MATERIALS_DIR
+from backend.app.prompts.book_toc import BOOK_TOC_SYSTEM_PROMPT
+from backend.app.services.llm import chat_params
 from backend.app.models.material import Material
 from backend.app.models.taxonomy import Topic
 
@@ -997,6 +999,11 @@ def extract_chapters_from_pdf_outline(pdf_path: Path, total_pages: int) -> List[
         return []
 
 
+# Inhaltsverzeichnisse stehen in den ersten Seiten; lange TOCs (z. B. Deutschbuch) brauchen viel Text
+TOC_SCAN_PAGES = 20
+TOC_MAX_TEXT_CHARS = 15000
+
+
 def extract_chapters_with_ai(file_path: Path, total_pages: int, title_hint: str = "") -> List[Dict[str, Any]]:
     """
     Analysiert die ersten Seiten eines Schulbuchs (Inhaltsverzeichnis) via OpenAI.
@@ -1012,59 +1019,23 @@ def extract_chapters_with_ai(file_path: Path, total_pages: int, title_hint: str 
         from backend.app.services.material_ingestion import render_material_page_as_image, prepare_image_base64_for_vision
 
         client = OpenAI(api_key=OPENAI_API_KEY)
-        effective_model = OPENAI_MODEL if "gpt-4o" in (OPENAI_MODEL or "") else "gpt-4o-mini"
 
         reader = pypdf.PdfReader(str(file_path))
         toc_text = ""
-        max_scan_pages = min(8, len(reader.pages))
+        max_scan_pages = min(TOC_SCAN_PAGES, len(reader.pages))
         for p_idx in range(max_scan_pages):
             t = (reader.pages[p_idx].extract_text() or "").strip()
             if t:
-                toc_text += f"\n--- Seite {p_idx + 1} ---\n" + t
+                toc_text += f"\n--- Dokumentseite im PDF: Seite {p_idx + 1} ---\n" + t
 
-        system_instruction = """Du bist ein Experte für deutsche Schulbücher (Gymnasium 7. Klasse).
-Deine Aufgabe: Extrahiere das Inhaltsverzeichnis inklusive aller Hauptkapitel und deren Unterabschnitte / Unterthemen aus den übergebenen Buchseiten.
-Antworte AUSSCHLIESSLICH im JSON-Format mit dem Schlüssel 'chapters':
-{
-  "chapters": [
-    {
-      "unit_number": 1,
-      "title": "Kapitel 1: Zuordnungen und Proportionalität",
-      "start_pdf_page": 16,
-      "end_pdf_page": 39,
-      "book_start_page": 13,
-      "book_end_page": 36,
-      "topic_name": "Dreisatz und proportionale Zuordnungen",
-      "focus": "1 Satz Zusammenfassung der Inhalte",
-      "sections": [
-        {
-          "title": "1.1 Zuordnungen",
-          "book_page": 14,
-          "relative_page": 2,
-          "level": 2
-        }
-      ]
-    }
-  ]
-}
-WICHTIG ZUR BERECHNUNG DER PDF-SEITENZAHLEN (SEITEN-OFFSET):
-- Unterscheide strikt zwischen der Dokumentseite im PDF (1-basiert, wie in den Trennzeilen '--- Dokumentseite im PDF: Seite X ---' angegeben) und der im Buch gedruckten Seitenzahl (unten/oben auf der Buchseite aufgedruckt).
-- Ermittle den Seiten-Offset: Wenn eine Inhaltsverzeichnis-Seite z.B. die gedruckte Buchseite 3 zeigt und sich auf PDF-Dokumentseite 6 befindet, beträgt der Offset: offset = PDF-Seite - Buchseite (hier 6 - 3 = +3).
-- 'start_pdf_page' und 'end_pdf_page' MÜSSEN die tatsächlichen Seitenzahlen im gesamten PDF-Dokument (1-basiert) sein:
-  start_pdf_page = book_start_page + offset
-  end_pdf_page = book_end_page + offset
-- 'book_start_page' und 'book_end_page' sind die im Buch aufgedruckten Seitenzahlen.
-- 'book_page' in den sections ist die aufgedruckte Buchseite. 'relative_page' ist die Seitennummer relativ zum Kapitelanfang (1-basiert, also book_page - book_start_page + 1).
-- Erfasse ALLE Kapitel und Verzeichnisse (inklusive Kurzfilm-, Projekt-, Übungs-, Grammatik- oder Orientierungswissen/Register-Kapitel) lückenlos bis zum Ende des Buches!
-"""
 
         # Wenn digitaler Text vorhanden ist:
         if len(toc_text.strip()) > 150 and any(k in toc_text.lower() for k in ["inhalt", "kapitel", "unit", "inhaltsverzeichnis"]):
             messages = [
-                {"role": "system", "content": system_instruction},
+                {"role": "system", "content": BOOK_TOC_SYSTEM_PROMPT},
                 {
                     "role": "user",
-                    "content": f"Buchtitel: {title_hint}\nGesamtseitenzahl: {total_pages}\n\nInhaltsverzeichnis-Text:\n{toc_text[:4000]}"
+                    "content": f"Buchtitel: {title_hint}\nGesamtseitenzahl: {total_pages}\nAchte genau auf die PDF-Seitenzahlen in den Trennzeilen und berechne den Offset zu den gedruckten Buchseiten.\n\nInhaltsverzeichnis-Text:\n{toc_text[:TOC_MAX_TEXT_CHARS]}"
                 }
             ]
         else:
@@ -1075,7 +1046,7 @@ WICHTIG ZUR BERECHNUNG DER PDF-SEITENZAHLEN (SEITEN-OFFSET):
                     "text": f"Buchtitel: {title_hint}\nGesamtseiten: {total_pages}\nHier sind die Inhaltsverzeichnis-Seiten des gescannten Buchs. Achte genau auf die PDF-Seitenzahlen in den Trennzeilen und berechne den Offset zu den gedruckten Buchseiten."
                 }
             ]
-            for p_num in range(2, min(20, total_pages + 1)):
+            for p_num in range(2, min(TOC_SCAN_PAGES, total_pages) + 1):
                 try:
                     img_bytes, mime = render_material_page_as_image(str(file_path), "application/pdf", page_num=p_num)
                     b64 = prepare_image_base64_for_vision(img_bytes, mime)
@@ -1094,16 +1065,16 @@ WICHTIG ZUR BERECHNUNG DER PDF-SEITENZAHLEN (SEITEN-OFFSET):
                 return []
 
             messages = [
-                {"role": "system", "content": system_instruction},
+                {"role": "system", "content": BOOK_TOC_SYSTEM_PROMPT},
                 {"role": "user", "content": user_content}
             ]
 
-        response = client.chat.completions.create(
-            model=effective_model,
+        response = client.chat.completions.create(**chat_params(
+            OPENAI_MODEL,
+            temperature=0.1,
             messages=messages,
-            response_format={"type": "json_object"},
-            temperature=0.1
-        )
+            response_format={"type": "json_object"}
+        ))
 
         content = response.choices[0].message.content or "{}"
         data = json.loads(content)

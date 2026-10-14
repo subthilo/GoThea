@@ -63,10 +63,12 @@ Um das Ablegen von Dokumenten über das Heimnetzwerk (Mac Finder / Windows Explo
 Auf dem Raspberry Pi liegt unter `/home/pi/GoThea/.env` die Konfiguration für externe APIs (wird durch `deploy.sh` geschützt und nie überschrieben):
 ```bash
 OPENAI_API_KEY=sk-proj-...
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_MODEL=gpt-6-luna
+OPENAI_ANALYSIS_MODEL=gpt-4o-mini
 ```
-* **`OPENAI_MODEL=gpt-4o-mini`**: Standardmodell für die multimodale Vorverarbeitung & Titelerkennung (Vision & Text).
-* Für den interaktiven Tutor (Whiteboard-Lernbegleitung) werden die spezialisierten Modelle `gpt-6-luna` (Streaming-Tutor) und `gpt-6.1-sol` (Tafel-Diagnostik) angesteuert.
+* **`OPENAI_MODEL`** (aktuell `gpt-6-luna`): Hauptmodell für Tutor-Feedback, Übungsgenerierung, Lückenprüfung und die Inhaltsverzeichnis-Erkennung von Schulbüchern (läuft nur einmal pro Buch und ist die anspruchsvollste Analyse).
+* **`OPENAI_ANALYSIS_MODEL`** (Standard `gpt-4o-mini`): Günstiges Modell für die Vorverarbeitung jedes Uploads (Dokumentanalyse & Titelerkennung, Stundenplan-Import).
+* Alle Prompts liegen zentral in `backend/app/prompts/`. `temperature` wird nur an Modelle übergeben, die ihn unterstützen (nicht an GPT-6- und o-Modelle, siehe `services/llm.py`).
 
 ---
 

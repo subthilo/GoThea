@@ -3,7 +3,7 @@ Prompts und Schemata für die intelligente Dokumenten-Analyse (Material-Ingestio
 Wird sowohl für Web-Uploads als auch für die Samba-Inbox genutzt.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 CANONICAL_SUBJECT_NAMES: List[str] = [
     "Mathematik",
@@ -69,7 +69,7 @@ PÄDAGOGISCHE REGELN ZUR FÄCHERZUORDNUNG:
    - "Test" (Lernzielkontrollen, Vokabeltests, Tests bis max. 30 Minuten)
    - "Klassenarbeit" (Große schriftliche Arbeiten / Klausuren)
    - "Buchauszug" (Einige wenige Seiten oder einzelnes Kapitel aus einem Lehrbuch)
-   - "Buch" (Umfangreiches Gesamt-Lehrwerk ab ca. 20 Seiten)
+   - "Buch" (Umfangreiches Gesamt-Lehrwerk ab ca. 20 Seiten – nutze dafür die angegebene Seitenzahl des Dokuments)
    - "Stundenplan" (Stundenraster mit Wochentagen, Fächern, Räumen und Lehrern)
 
 3. 'oberthema': Konkretes Lehrplanthema der 7. Klasse Brandenburg:
@@ -104,11 +104,16 @@ Antworte IMMER im validen JSON-Format:
 """
 
 
-def build_analysis_user_prompt(filename: str, extracted_text: str = "") -> str:
+def build_page_count_line(page_count: Optional[int]) -> str:
+    return f"Seitenzahl des Dokuments: {page_count}\n" if page_count else ""
+
+
+def build_analysis_user_prompt(filename: str, extracted_text: str = "", page_count: Optional[int] = None) -> str:
     """Erstellt den Benutzer-Prompt für Text-basierte Dokumentanalyse."""
     clean_text = (extracted_text or "").strip()
     return (
-        f"Ursprünglicher Dateiname: {filename}\n\n"
+        f"Ursprünglicher Dateiname: {filename}\n"
+        f"{build_page_count_line(page_count)}\n"
         f"Extrahierter Textauszug aus dem Dokument:\n"
         f"{clean_text[:3500] if clean_text else '(Kein digitaler Text vorhanden)'}"
     )

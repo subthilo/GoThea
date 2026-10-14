@@ -10,7 +10,8 @@ from typing import Optional, Dict, Any, Tuple
 from PIL import Image
 from sqlalchemy.orm import Session
 
-from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
+from backend.app.config import OPENAI_API_KEY, OPENAI_ANALYSIS_MODEL
+from backend.app.services.llm import chat_params
 from backend.app.models import Subject, Topic, Dossier, Material
 from backend.app.services.material_ingestion import (
     render_material_page_as_image,
@@ -144,7 +145,18 @@ def prepare_image_base64_for_vision(image_bytes: bytes, mime_type: str = "image/
 from backend.app.prompts.document_analysis import (
     DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
     build_analysis_user_prompt,
+    build_page_count_line,
 )
+
+
+def get_pdf_page_count(file_path: Path, mime_type: str) -> Optional[int]:
+    if mime_type != "application/pdf":
+        return None
+    try:
+        import pypdf
+        return len(pypdf.PdfReader(str(file_path)).pages)
+    except Exception:
+        return None
 
 
 def query_openai_analyzer(
@@ -161,6 +173,7 @@ def query_openai_analyzer(
         client = OpenAI(api_key=api_key)
 
         effective_name = original_filename or file_path.name
+        page_count = get_pdf_page_count(file_path, mime_type)
         clean_text = (extracted_text or "").strip()
         word_count = len(clean_text.split())
 
@@ -170,7 +183,7 @@ def query_openai_analyzer(
         if clean_text and len(clean_text) >= 200 and word_count >= 25:
             messages = [
                 {"role": "system", "content": DOCUMENT_ANALYSIS_SYSTEM_PROMPT},
-                {"role": "user", "content": build_analysis_user_prompt(effective_name, clean_text)}
+                {"role": "user", "content": build_analysis_user_prompt(effective_name, clean_text, page_count)}
             ]
         else:
             # Reiner Scan oder unvollständiger Text: Seite 1 als Bild an Vision-Modell senden
@@ -185,6 +198,7 @@ def query_openai_analyzer(
                             "type": "text",
                             "text": (
                                 f"Ursprünglicher Dateiname: {effective_name}\n"
+                                f"{build_page_count_line(page_count)}"
                                 f"Bitte analysiere diese gescannte Seite und ordne sie dem passenden Fach und Thema der 7. Klasse Brandenburg zu."
                             ),
                         },
@@ -193,14 +207,12 @@ def query_openai_analyzer(
                 }
             ]
 
-        # Wenn model_name gpt-6 enthält oder unpassend ist, auf gpt-4o-mini zurückfallen
-        effective_model = model_name if "gpt-4o" in model_name else "gpt-4o-mini"
-        response = client.chat.completions.create(
-            model=effective_model,
+        response = client.chat.completions.create(**chat_params(
+            model_name,
+            temperature=0.1,
             messages=messages,
-            response_format={"type": "json_object"},
-            temperature=0.1
-        )
+            response_format={"type": "json_object"}
+        ))
 
         content = response.choices[0].message.content or "{}"
         return json.loads(content)
@@ -230,7 +242,7 @@ def analyze_document_content(
             extracted_text=extracted_text,
             mime_type=mime_type,
             api_key=OPENAI_API_KEY,
-            model_name=OPENAI_MODEL,
+            model_name=OPENAI_ANALYSIS_MODEL,
             original_filename=effective_name
         )
 
