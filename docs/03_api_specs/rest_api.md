@@ -617,16 +617,6 @@
 }
 ```
 
-### `POST /api/v1/books/seed`
-* **Beschreibung:** Manueller Re-Import des vorinstallierten Mathematik-7 Lehrbuchs (geschützt durch Eltern-PIN).
-* **Response (200 OK):**
-```json
-{
-  "status": "success",
-  "book_id": "mat_book_math_7"
-}
-```
-
 ---
 
 ## 8. Elternmodus & PIN-Authentifizierung (`/api/v1/auth/parent`)

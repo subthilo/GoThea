@@ -1,76 +1,90 @@
+import pypdf
 import pytest
-from backend.app.services.book_seeder import seed_textbooks_if_empty
+
+from backend.app.models.material import Material
+from backend.app.services.book_segmentation import segment_book_material
+
+BOOK_ID = "mat_test_book"
+TEST_CHAPTERS = [
+    {"unit_number": 0, "title": "Titelei", "start_pdf_page": 1, "end_pdf_page": 4,
+     "book_start_page": 1, "book_end_page": 4, "focus": "Inhaltsverzeichnis", "sections": []},
+    {"unit_number": 1, "title": "Lerneinheit 1: Zahlen und Rechenoperationen", "start_pdf_page": 5, "end_pdf_page": 16,
+     "book_start_page": 10, "book_end_page": 21, "focus": "Rechnen mit rationalen Zahlen",
+     "sections": [{"title": "1.1 Brüche", "book_page": 12, "relative_page": 3, "level": 2}]},
+    {"unit_number": 2, "title": "Lerneinheit 2: Satz des Pythagoras", "start_pdf_page": 17, "end_pdf_page": 30,
+     "book_start_page": 22, "book_end_page": 35, "focus": "Metrische Beziehungen und Satz des Pythagoras", "sections": []},
+]
+
 
 @pytest.fixture(autouse=True)
-def seed_book_for_tests(db_session):
-    seed_textbooks_if_empty(db_session, user_id="usr_thea")
+def segmented_test_book(db_session, tmp_path):
+    pdf_path = tmp_path / "testbuch.pdf"
+    writer = pypdf.PdfWriter()
+    for _ in range(30):
+        writer.add_blank_page(width=200, height=300)
+    with open(pdf_path, "wb") as f:
+        writer.write(f)
+    book = Material(id=BOOK_ID, user_id="usr_thea", subject_id="sub_math", title="Mathematik – Testbuch 7",
+                    kind="Buch", filename="testbuch.pdf", file_path=str(pdf_path), mime_type="application/pdf",
+                    page_count=30)
+    db_session.add(book)
+    db_session.commit()
+    segment_book_material(db_session, book, TEST_CHAPTERS)
+
 
 def test_list_books_api(client):
     res = client.get("/api/v1/books")
     assert res.status_code == 200
-    data = res.json()
-    assert isinstance(data, list)
-    assert len(data) >= 1
+    book = next(b for b in res.json() if b["id"] == BOOK_ID)
+    assert book["total_pages"] == 30
+    assert book["chapters_count"] == 3
+    assert book["subject_name"] == "Mathematik"
+    assert "preview" in book["cover_preview_url"]
 
-    math_book = next((b for b in data if "Mathematik" in b["title"]), None)
-    assert math_book is not None
-    assert math_book["id"] == "mat_book_math_7"
-    assert math_book["total_pages"] == 196
-    assert math_book["chapters_count"] == 11
-    assert math_book["grade_level"] == 7
-    assert math_book["subject_name"] == "Mathematik"
-    assert "preview" in math_book["cover_preview_url"]
 
 def test_get_book_detail_api(client):
-    res = client.get("/api/v1/books/mat_book_math_7")
+    res = client.get(f"/api/v1/books/{BOOK_ID}")
     assert res.status_code == 200
     data = res.json()
-    assert data["id"] == "mat_book_math_7"
-    assert data["total_pages"] == 196
-    assert len(data["chapters"]) == 11
+    assert data["total_pages"] == 30
+    assert len(data["chapters"]) == 3
 
-    # Kapitel 1 prüfen
     ch1 = data["chapters"][1]
     assert ch1["chapter_number"] == 1
     assert "Zahlen und Rechenoperationen" in ch1["title"]
-    assert ch1["start_page"] == 10
-    assert ch1["end_page"] == 21
-    assert ch1["page_count"] == 12
-    assert "file" in ch1["file_url"]
-    assert "preview" in ch1["preview_url"]
-    assert "sections" in ch1
-    assert isinstance(ch1["sections"], list)
+    assert (ch1["start_page"], ch1["end_page"], ch1["page_count"]) == (10, 21, 12)
+    assert "file" in ch1["file_url"] and "preview" in ch1["preview_url"]
+    assert ch1["sections"][0]["title"] == "1.1 Brüche"
 
-    # Kapitel 8 (Pythagoras) prüfen
-    ch8 = next((c for c in data["chapters"] if "Pythagoras" in c["title"] or "Metrische Beziehungen" in c["title"]), None)
-    assert ch8 is not None
-    assert ch8["start_page"] == 152
-    assert ch8["end_page"] == 173
-    assert ch8["page_count"] == 22
-    assert "Satz des Pythagoras" in ch8["focus"]
-    assert "sections" in ch8
+    ch2 = data["chapters"][2]
+    assert "Pythagoras" in ch2["focus"]
+    assert ch2["page_count"] == 14
+
 
 def test_get_book_chapter_api(client):
-    res = client.get("/api/v1/books/mat_book_math_7/chapters/mat_book_math_7_ch8")
+    res = client.get(f"/api/v1/books/{BOOK_ID}/chapters/{BOOK_ID}_ch02")
     assert res.status_code == 200
     data = res.json()
-    assert data["id"] == "mat_book_math_7_ch8"
-    assert data["start_page"] == 152
-    assert data["end_page"] == 173
-    assert data["page_count"] == 22
-    assert "Pythagoras" in data["title"] or "Metrische Beziehungen" in data["title"]
-    assert "sections" in data
+    assert data["id"] == f"{BOOK_ID}_ch02"
+    assert (data["start_page"], data["end_page"], data["page_count"]) == (22, 35, 14)
+    assert "Pythagoras" in data["title"]
     assert isinstance(data["sections"], list)
+
 
 def test_get_book_not_found(client):
     res = client.get("/api/v1/books/non_existent_book_id")
     assert res.status_code == 404
     assert "nicht gefunden" in res.json()["detail"]
 
+
 def test_get_book_chapter_not_found(client):
-    res = client.get("/api/v1/books/mat_book_math_7/chapters/non_existent_chap_id")
+    res = client.get(f"/api/v1/books/{BOOK_ID}/chapters/non_existent_chap_id")
     assert res.status_code == 404
     assert "nicht gefunden" in res.json()["detail"]
+
+
+def test_books_seed_endpoint_is_gone(client):
+    assert client.post("/api/v1/books/seed").status_code in (404, 405)
 
 
 def test_unsegmented_book_fallback_api(client, db_session):
@@ -103,7 +117,7 @@ def test_unsegmented_book_fallback_api(client, db_session):
 
 
 def test_resegment_book_requires_parent(strict_client):
-    res = strict_client.post("/api/v1/books/mat_book_math_7/resegment")
+    res = strict_client.post(f"/api/v1/books/{BOOK_ID}/resegment")
     assert res.status_code == 403
 
 

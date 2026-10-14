@@ -49,7 +49,6 @@ Ohne gültige Eltern-Session weisen folgende Endpunkte Anfragen mit HTTP `401 Un
 * `POST /api/v1/materials/merge` (Zusammenführen von Dokumenten & Quell-Löschung)
 * `POST /api/v1/materials/{id}/reorder-pages` (Umordnen oder Löschen von PDF-Seiten)
 * `POST /api/v1/env/staging/reset` (Rücksetzen der Staging-Datenbank)
-* `POST /api/v1/books/seed` (Manueller Lehrbuch-Import)
 
 ### 4. Clientseitige Schutzschicht
 * Alle geschützten Schaltflächen im Frontend tragen die CSS-Klasse `.parent-only`.

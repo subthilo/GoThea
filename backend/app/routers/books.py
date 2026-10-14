@@ -7,7 +7,6 @@ from backend.app.database import get_db
 from backend.app.models.material import Material
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.schemas.book import BookOverviewRead, BookDetailRead, BookChapterRead
-from backend.app.services.book_seeder import seed_textbooks_if_empty
 from backend.app.services.book_segmentation import (
     auto_detect_and_segment_book,
     auto_segment_if_known,
@@ -237,14 +236,3 @@ def resegment_book(
         raise HTTPException(status_code=422, detail="Für dieses Buch konnte keine Kapitelstruktur ermittelt werden.")
 
     return {"status": "success", "book_id": book.id, "chapters_count": len(chapters)}
-
-@router.post("/seed", dependencies=[Depends(require_parent)])
-def seed_default_textbook(
-    user_id: str = "usr_thea",
-    db: Session = Depends(get_db)
-):
-    """
-    Importiert das vorinstallierte Mathematik-7 Lehrbuch auf Wunsch des Nutzers.
-    """
-    book_id = seed_textbooks_if_empty(db, user_id=user_id)
-    return {"status": "success", "book_id": book_id}

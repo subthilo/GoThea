@@ -3927,32 +3927,15 @@ async function loadBooks() {
             <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
               Sobald Lehrwerke hochgeladen oder importiert werden, kannst du hier interaktiv durch alle Kapitel und Seiten navigieren.
             </p>
-            <button id="btn-seed-sample-book" class="btn-primary-sm" style="display: inline-flex; align-items: center; gap: 8px;">
-              <span>📥</span>
-              <span>Mathematik 7 (Lehrwerk Eichwalde) laden</span>
+            <button id="btn-books-goto-upload" class="btn-primary-sm" style="display: inline-flex; align-items: center; gap: 8px;">
+              <span>📤</span>
+              <span>Schulbuch hochladen</span>
             </button>
           </div>
         `;
-        const btnSeed = document.getElementById("btn-seed-sample-book");
-        if (btnSeed) {
-          btnSeed.addEventListener("click", async () => {
-            btnSeed.disabled = true;
-            btnSeed.textContent = "Lade Lehrwerk...";
-            try {
-              const seedRes = await fetch("/api/v1/books/seed", { method: "POST" });
-              if (seedRes.ok) {
-                await loadBooks();
-              } else {
-                alert("Fehler beim Laden des Lehrbuchs.");
-                btnSeed.disabled = false;
-                btnSeed.textContent = "Mathematik 7 (Lehrwerk Eichwalde) laden";
-              }
-            } catch (e) {
-              alert("Netzwerkfehler.");
-              btnSeed.disabled = false;
-              btnSeed.textContent = "Mathematik 7 (Lehrwerk Eichwalde) laden";
-            }
-          });
+        const btnUpload = document.getElementById("btn-books-goto-upload");
+        if (btnUpload) {
+          btnUpload.addEventListener("click", () => switchToTab("uploads"));
         }
       }
       return;
