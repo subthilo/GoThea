@@ -665,14 +665,17 @@ async function loadProfile() {
     const res = await fetch("/api/v1/profile");
     if (res.ok) {
       currentProfile = await res.json();
-      badgeGrade.textContent = `${currentProfile.grade_level}. Klasse`;
-      userGreeting.textContent = `Hallo, ${currentProfile.name}! 👋`;
-      userSubtitle.textContent = `${currentProfile.grade_level}. Klasse ${currentProfile.school_type} • Land ${currentProfile.federal_state} (Niveaustufe E)`;
+      if (badgeGrade) badgeGrade.textContent = `${currentProfile.grade_level}. Klasse`;
+      if (userGreeting) userGreeting.textContent = `Hallo, ${currentProfile.name}! 👋`;
+      if (userSubtitle) userSubtitle.textContent = `${currentProfile.grade_level}. Klasse ${currentProfile.school_type} • Land ${currentProfile.federal_state} (Niveaustufe E)`;
 
       // Profil-Formular initialisieren
-      document.getElementById("prof-name").value = currentProfile.name;
-      document.getElementById("prof-grade").value = currentProfile.grade_level;
-      document.getElementById("prof-school").value = currentProfile.school_type;
+      const profNameInput = document.getElementById("prof-name");
+      const profGradeInput = document.getElementById("prof-grade");
+      const profSchoolInput = document.getElementById("prof-school");
+      if (profNameInput) profNameInput.value = currentProfile.name;
+      if (profGradeInput) profGradeInput.value = currentProfile.grade_level;
+      if (profSchoolInput) profSchoolInput.value = currentProfile.school_type;
     }
   } catch (err) {
     console.error("Fehler beim Laden des Profils:", err);
@@ -692,8 +695,8 @@ async function loadTaxonomy() {
       const allTopics = await topRes.json();
       allTopicsCache = allTopics;
 
-      statSubjectsCount.textContent = currentSubjects.length;
-      statTopicsCount.textContent = allTopics.length;
+      if (statSubjectsCount) statSubjectsCount.textContent = currentSubjects.length;
+      if (statTopicsCount) statTopicsCount.textContent = allTopics.length;
 
       // Group topics by subject
       const topicsBySubject = {};
@@ -3671,11 +3674,11 @@ async function loadTodayDashboardWidget() {
 
     if (titleEl) {
       titleEl.textContent = data.is_weekend
-        ? `Dein Schultag am Montag (Wochenende frei! 🌴)`
-        : `Dein Schultag heute (${data.day})`;
+        ? `Nächster Schultag (Montag)`
+        : `Heute • ${data.day}`;
     }
     if (weekPill) {
-      weekPill.textContent = `${data.active_week === "A" ? "🅰️" : "🅱️"} ${data.active_week}-Woche`;
+      weekPill.textContent = `${data.active_week}-Woche`;
     }
 
     container.innerHTML = "";

@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=9.1">
+  <link rel="stylesheet" href="/static/style.css?v=9.2">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -129,75 +129,45 @@
     <main class="content">
       <!-- Tab 1: Dashboard -->
       <section id="tab-dashboard" class="tab-pane active">
-        <div class="welcome-banner">
-          <div>
-            <h1 id="user-greeting">Hallo, Thea! 👋</h1>
+        <!-- Oberer iPadOS Dashboard-Header: Begrüßung links, kompakte Status-Kapsel rechts -->
+        <div class="dash-header-bar">
+          <div class="dash-welcome">
+            <h1 class="dash-greeting" id="user-greeting">Hallo, Thea! 👋</h1>
           </div>
 
-          <div class="gamification-header-stats" id="gamification-header-stats">
-            <div class="game-stat-chip chip-level" id="chip-level" title="Dein aktuelles Level">
-              <span class="chip-icon" id="game-level-icon">🌱</span>
-              <div class="chip-content">
-                <span class="chip-sub">Level <span id="game-level-num">1</span></span>
-                <strong class="chip-title" id="game-level-title">Wissens-Entdeckerin</strong>
+          <!-- iPad-native Status-Kapsel (kompakt, elegant, ohne Textballast) -->
+          <div class="dash-stats-capsule" id="gamification-header-stats">
+            <div class="capsule-chip chip-level" id="chip-level" title="Dein Level und Fortschritt">
+              <span class="capsule-icon" id="game-level-icon">🌱</span>
+              <span class="capsule-level-label">Lvl <span id="game-level-num">1</span></span>
+              <div class="capsule-progress-track" title="XP Fortschritt">
+                <div class="capsule-progress-fill" id="game-level-bar-fill" style="width: 0%;"></div>
               </div>
+              <span class="capsule-xp-mini" id="game-level-bar-xp-text">0 / 100 XP</span>
+              <span id="game-level-title" style="display: none;">Wissens-Entdeckerin</span>
+              <span id="game-level-bar-title" style="display: none;">Level 1</span>
             </div>
 
-            <div class="game-stat-chip chip-streak" id="chip-streak" title="Tage in Folge fleißig geübt">
-              <span class="chip-icon">🔥</span>
-              <div class="chip-content">
-                <span class="chip-sub">Streak</span>
-                <strong class="chip-title"><span id="game-streak-days">0</span> Tage</strong>
-              </div>
+            <div class="capsule-divider"></div>
+
+            <div class="capsule-chip chip-streak" id="chip-streak" title="Tage in Folge fleißig geübt">
+              <span class="capsule-icon">🔥</span>
+              <strong class="capsule-val"><span id="game-streak-days">0</span> d</strong>
             </div>
 
-            <div class="game-stat-chip chip-stars" id="chip-stars" title="Wissens-Sterne gesammelt">
-              <span class="chip-icon">⭐</span>
-              <div class="chip-content">
-                <span class="chip-sub">Sterne</span>
-                <strong class="chip-title" id="game-total-stars">0</strong>
-              </div>
+            <div class="capsule-divider"></div>
+
+            <div class="capsule-chip chip-stars" id="chip-stars" title="Wissens-Sterne">
+              <span class="capsule-icon">⭐</span>
+              <strong class="capsule-val" id="game-total-stars">0</strong>
             </div>
 
-            <div class="game-stat-chip chip-xp" id="chip-xp" title="Erfahrungspunkte (XP)">
-              <span class="chip-icon">⚡</span>
-              <div class="chip-content">
-                <span class="chip-sub">XP</span>
-                <strong class="chip-title"><span id="game-total-xp">0</span> XP</strong>
-              </div>
-            </div>
-          </div>
-        </div>
+            <div class="capsule-divider"></div>
 
-        <!-- Level XP Fortschrittsbalken -->
-        <div class="gamification-level-bar-card" id="gamification-level-bar-card">
-          <div class="game-level-bar-header">
-            <span class="game-level-bar-title" id="game-level-bar-title">Level 1: Wissens-Entdeckerin</span>
-            <span class="game-level-bar-xp-text" id="game-level-bar-xp-text">0 / 100 XP bis Level 2</span>
-          </div>
-          <div class="game-level-bar-track">
-            <div class="game-level-bar-fill" id="game-level-bar-fill" style="width: 0%;"></div>
-          </div>
-        </div>
-
-        <!-- Dashboard Stundenplan-Widget -->
-        <div class="dash-timetable-card" id="dash-tt-card">
-          <div class="dash-tt-header">
-            <div class="dash-tt-title-group">
-              <div class="dash-tt-icon-wrap">
-                <img src="/static/Icons/Kalender.svg" class="dash-tt-header-svg" alt="Kalender">
-              </div>
-              <div>
-                <div class="dash-tt-title" id="dash-tt-day-title">Heute</div>
-              </div>
+            <div class="capsule-chip chip-xp" id="chip-xp" title="Erfahrungspunkte (XP)">
+              <span class="capsule-icon">⚡</span>
+              <strong class="capsule-val"><span id="game-total-xp">0</span> XP</strong>
             </div>
-            <div class="dash-tt-actions">
-              <span class="dash-tt-week-pill" id="dash-tt-week-pill">A-Woche</span>
-              <button class="btn-secondary-sm" id="btn-dash-goto-timetable">Stundenplan ➔</button>
-            </div>
-          </div>
-          <div class="dash-tt-slots-row" id="dash-tt-slots-row">
-            <div class="dash-tt-empty">Lade Stundenplan...</div>
           </div>
         </div>
 
@@ -231,6 +201,27 @@
               </div>
               <div class="quick-card-title">Upload</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Stundenplan-Widget -->
+        <div class="dash-timetable-card" id="dash-tt-card">
+          <div class="dash-tt-header">
+            <div class="dash-tt-title-group">
+              <div class="dash-tt-icon-wrap">
+                <img src="/static/Icons/Kalender.svg" class="dash-tt-header-svg" alt="Kalender">
+              </div>
+              <div>
+                <div class="dash-tt-title" id="dash-tt-day-title">Heute</div>
+              </div>
+            </div>
+            <div class="dash-tt-actions">
+              <span class="dash-tt-week-pill" id="dash-tt-week-pill">A-Woche</span>
+              <button class="btn-secondary-sm" id="btn-dash-goto-timetable">Stundenplan ➔</button>
+            </div>
+          </div>
+          <div class="dash-tt-slots-row" id="dash-tt-slots-row">
+            <div class="dash-tt-empty">Lade Stundenplan...</div>
           </div>
         </div>
 
@@ -1661,7 +1652,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=9.0"></script>
+  <script src="/static/app.js?v=9.2"></script>
   <script src="/static/whiteboard.js?v=6.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>
