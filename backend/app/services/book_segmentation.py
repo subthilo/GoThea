@@ -1,8 +1,9 @@
 import json
 import logging
 import os
+import threading
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 import pypdf
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,21 @@ from backend.app.models.material import Material
 from backend.app.models.taxonomy import Topic
 
 logger = logging.getLogger(__name__)
+
+# Pro Buch darf nur eine Segmentierung gleichzeitig laufen (Upload-Hintergrund vs. Bücher-Tab)
+_segmentation_locks: Dict[str, threading.Lock] = {}
+_segmentation_locks_guard = threading.Lock()
+_segmentations_running: Set[str] = set()
+
+
+def _get_book_lock(book_id: str) -> threading.Lock:
+    with _segmentation_locks_guard:
+        return _segmentation_locks.setdefault(book_id, threading.Lock())
+
+
+def is_segmentation_running(book_id: str) -> bool:
+    with _segmentation_locks_guard:
+        return book_id in _segmentations_running
 
 # Bekannte Kapiteldefinitionen für "Fundamente der Mathematik, Ausgabe B, Gymnasium, Klasse 7"
 # Basierend auf der Vision-Analyse des Original-Inhaltsverzeichnisses
@@ -872,10 +888,23 @@ def segment_book_material(
 
         created_or_updated.append(child)
 
+    # Kapitel aus einer früheren Segmentierung, die es nicht mehr gibt, entfernen
+    kept_ids = {c.id for c in created_or_updated}
+    kept_paths = {c.file_path for c in created_or_updated} | {book.file_path}
+    stale_paths: List[Path] = []
+    for stale in db.query(Material).filter_by(parent_id=book.id).all():
+        if stale.id not in kept_ids:
+            logger.info(f"🗑️ Veraltetes Kapitel entfernt: {stale.title} ({stale.id})")
+            if stale.file_path and stale.file_path not in kept_paths:
+                stale_paths.append(Path(stale.file_path))
+            db.delete(stale)
+
     try:
         if book.kind != "Buch":
             book.kind = "Buch"
         db.commit()
+        for stale_path in stale_paths:
+            stale_path.unlink(missing_ok=True)
         logger.info(f"✅ Schulbuch {book.title} ({book.id}) erfolgreich in {len(created_or_updated)} Kapitel segmentiert.")
         return created_or_updated
     except Exception as e:
@@ -1102,7 +1131,7 @@ def extract_chapters_with_ai(file_path: Path, total_pages: int, title_hint: str 
                         })
 
                 valid_chaps.append({
-                    "unit_number": int(c.get("unit_number", len(valid_chaps) + 1)),
+                    "unit_number": len(valid_chaps) + 1,
                     "title": str(c.get("title", f"Kapitel {len(valid_chaps) + 1}")),
                     "start_pdf_page": sp,
                     "end_pdf_page": ep,
@@ -1139,6 +1168,18 @@ def auto_segment_if_known(db: Session, book: Material, force: bool = False) -> O
 
 
 def auto_detect_and_segment_book(db: Session, book: Material, force: bool = False) -> Optional[List[Material]]:
+    """Segmentiert ein Buch; parallele Aufrufe für dasselbe Buch warten aufeinander."""
+    with _get_book_lock(book.id):
+        with _segmentation_locks_guard:
+            _segmentations_running.add(book.id)
+        try:
+            return _auto_detect_and_segment_book_unlocked(db, book, force=force)
+        finally:
+            with _segmentation_locks_guard:
+                _segmentations_running.discard(book.id)
+
+
+def _auto_detect_and_segment_book_unlocked(db: Session, book: Material, force: bool = False) -> Optional[List[Material]]:
     """
     Vollautomatische Pipeline zur Erkennung und Segmentierung von Schulbüchern:
     1. Prüft, ob bereits Kapitel existieren.
@@ -1180,7 +1221,9 @@ def trigger_background_book_segmentation(material_id: str):
     Startet die automatische Buchsegmentierung asynchron in einem Hintergrund-Thread,
     damit Web-Uploads und Inbox-Verarbeitung blitzschnell antworten.
     """
-    import threading
+    if is_segmentation_running(material_id):
+        logger.info(f"📚 Segmentierung für {material_id} läuft bereits.")
+        return
 
     def _worker():
         from backend.app.database import SessionLocal

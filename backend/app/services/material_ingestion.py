@@ -138,36 +138,43 @@ def pre_analyze_upload(
     predicted_title: str = clean_title_from_filename(filename)
     predicted_kind: str = detect_kind_from_filename_and_text(filename, extracted_text)
 
-    # 1. Intelligente KI-Analyse (falls OpenAI konfiguriert und kein Fach-Hint fixiert)
-    if not subject_id_hint:
-        from backend.app.config import OPENAI_API_KEY
-        if OPENAI_API_KEY:
-            try:
-                from backend.app.services.document_analyzer import analyze_document_content
-                ai_res = analyze_document_content(
-                    db, temp_path, extracted_text, content_type, original_filename=filename
+    # 1. Intelligente KI-Analyse (falls OpenAI konfiguriert). Ein fixiertes Fach (Upload von der
+    #    Fachseite) bleibt bestehen; Titel, Art, Zusammenfassung und ggf. Thema kommen von der KI.
+    from backend.app.config import OPENAI_API_KEY
+    hint_subject = db.query(Subject).filter_by(id=subject_id_hint).first() if subject_id_hint else None
+    if OPENAI_API_KEY:
+        try:
+            from backend.app.services.document_analyzer import analyze_document_content
+            ai_res = analyze_document_content(
+                db, temp_path, extracted_text, content_type, original_filename=filename
+            )
+            if ai_res and ai_res.subject_id:
+                subject_matches = not hint_subject or ai_res.subject_id == hint_subject.id
+                ai_kind = ai_res.kind
+                if hint_subject and ai_kind == "Stundenplan":
+                    ai_kind = predicted_kind
+                if is_pdf and page_count >= 20 and ai_kind in ("Arbeitsblatt", "Hefterseite", "Buchauszug"):
+                    ai_kind = "Buch"
+                preview_snippet = ai_res.summary or ((extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None))
+                return PreAnalysisResponse(
+                    upload_token=upload_token,
+                    filename=filename,
+                    file_size=len(file_bytes),
+                    mime_type=content_type,
+                    page_count=page_count,
+                    predicted_subject_id=hint_subject.id if hint_subject else ai_res.subject_id,
+                    predicted_topic_id=ai_res.topic_id if subject_matches else None,
+                    predicted_title=ai_res.title,
+                    predicted_kind=ai_kind,
+                    preview_snippet=preview_snippet,
+                    extracted_text=extracted_text or None
                 )
-                if ai_res and ai_res.subject_id:
-                    preview_snippet = ai_res.summary or ((extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None))
-                    return PreAnalysisResponse(
-                        upload_token=upload_token,
-                        filename=filename,
-                        file_size=len(file_bytes),
-                        mime_type=content_type,
-                        page_count=page_count,
-                        predicted_subject_id=ai_res.subject_id,
-                        predicted_topic_id=ai_res.topic_id,
-                        predicted_title=ai_res.title,
-                        predicted_kind=ai_res.kind,
-                        preview_snippet=preview_snippet,
-                        extracted_text=extracted_text or None
-                    )
-            except Exception as e:
-                logger.warning(f"KI-Vorabanalyse im Web-Upload fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
+        except Exception as e:
+            logger.warning(f"KI-Vorabanalyse im Web-Upload fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
 
     # 2. Heuristik-Fallback (Offline oder mit festem Fach-Hint)
-    if subject_id_hint and db.query(Subject).filter_by(id=subject_id_hint).first():
-        predicted_subject_id = subject_id_hint
+    if hint_subject:
+        predicted_subject_id = hint_subject.id
     else:
         best_score = 0
         all_subjects = db.query(Subject).all()

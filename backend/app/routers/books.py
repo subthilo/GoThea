@@ -11,6 +11,7 @@ from backend.app.services.book_seeder import seed_textbooks_if_empty
 from backend.app.services.book_segmentation import (
     auto_detect_and_segment_book,
     auto_segment_if_known,
+    trigger_background_book_segmentation,
     segment_book_material,
     get_chapter_sections,
     get_all_book_sections,
@@ -42,13 +43,8 @@ def list_books(
         sub = subjects_map.get(book.subject_id)
         children = db.query(Material).filter_by(parent_id=book.id).order_by(Material.dossier_order).all()
         if not children:
-            # Falls noch unsegmentiert, automatische Erkennung versuchen
-            try:
-                auto_detect_and_segment_book(db, book)
-                children = db.query(Material).filter_by(parent_id=book.id).order_by(Material.dossier_order).all()
-            except Exception as e:
-                db.rollback()
-                logger.warning(f"Automatische Segmentierung für {book.id} fehlgeschlagen: {e}")
+            # Noch unsegmentiert: Segmentierung im Hintergrund anstoßen (KI-Analyse kann über eine Minute dauern)
+            trigger_background_book_segmentation(book.id)
 
         first_chap = children[0] if children else None
         cover_preview = f"/api/v1/materials/{first_chap.id}/preview?page=1" if first_chap else f"/api/v1/materials/{book.id}/preview?page=1"
@@ -103,18 +99,8 @@ def get_book_detail(
     )
 
     if not children:
-        # Automatische Segmentierung versuchen
-        try:
-            auto_detect_and_segment_book(db, book)
-            children = (
-                db.query(Material)
-                .filter_by(parent_id=book.id, user_id=user_id)
-                .order_by(Material.dossier_order, Material.start_page)
-                .all()
-            )
-        except Exception as e:
-            db.rollback()
-            logger.warning(f"Automatische Segmentierung für {book.id} in get_book_detail fehlgeschlagen: {e}")
+        # Noch unsegmentiert: Segmentierung im Hintergrund anstoßen, bis dahin Gesamtbuch anzeigen
+        trigger_background_book_segmentation(book.id)
 
     chapters_out: List[BookChapterRead] = []
     if children:

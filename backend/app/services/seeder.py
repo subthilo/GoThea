@@ -1,6 +1,10 @@
+import logging
+
 from sqlalchemy.orm import Session
 from backend.app.models.user import User
 from backend.app.models.taxonomy import Subject, Topic
+
+logger = logging.getLogger(__name__)
 
 INITIAL_SUBJECTS = [
     {
@@ -201,7 +205,7 @@ def seed_database(db: Session):
 
     # 4. Nicht segmentierte Lehrbücher automatisch segmentieren
     try:
-        from backend.app.services.book_segmentation import auto_detect_and_segment_book
+        from backend.app.services.book_segmentation import trigger_background_book_segmentation
         unsegmented_books = db.query(Material).filter(
             Material.kind == "Buch",
             Material.parent_id == None
@@ -209,7 +213,7 @@ def seed_database(db: Session):
         for b in unsegmented_books:
             children_count = db.query(Material).filter_by(parent_id=b.id).count()
             if children_count == 0:
-                auto_detect_and_segment_book(db, b)
+                trigger_background_book_segmentation(b.id)
     except Exception as e:
         logger.warning(f"Konnte Lehrbücher nicht automatisch segmentieren: {e}")
 
