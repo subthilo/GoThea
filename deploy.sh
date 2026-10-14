@@ -68,9 +68,12 @@ rsync -avz --delete \
   --exclude '.pytest_cache' \
   --exclude '.coverage' \
   --exclude '.DS_Store' \
-  --exclude 'data/' \
-  --exclude 'experiments/' \
-  --exclude 'inbox/' \
+  --exclude '/data' \
+  --exclude '/data/**' \
+  --exclude '/experiments' \
+  --exclude '/experiments/**' \
+  --exclude '/inbox' \
+  --exclude '/inbox/**' \
   --exclude '.env' \
   --exclude '.requirements.md5' \
   ./ "$PI_USER@$PI_HOST:$REMOTE_DIR/"
