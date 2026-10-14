@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=9.2">
+  <link rel="stylesheet" href="/static/style.css?v=9.3">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -31,56 +31,49 @@
         <span class="badge-grade" id="badge-grade">7. Klasse</span>
       </div>
 
-      <!-- Navigation Dock (Klickbare Icon-Zonen) -->
+      <!-- Navigation Dock (Reine Icon-Zonen ohne Text) -->
       <nav class="nav-tabs nav-dock" id="main-nav-dock">
-        <button class="nav-tab dock-tab active" data-tab="dashboard" title="Übersicht">
+        <button class="nav-tab dock-tab active" data-tab="dashboard" title="Übersicht" aria-label="Übersicht">
           <span class="dock-tab-icon-wrap">
             <img src="/static/Icons/Übersicht.svg" class="dock-icon" alt="Übersicht">
           </span>
-          <span class="dock-tab-label">Übersicht</span>
         </button>
 
-        <button class="nav-tab dock-tab" data-tab="timetable" title="Stundenplan">
+        <button class="nav-tab dock-tab" data-tab="timetable" title="Stundenplan" aria-label="Stundenplan">
           <span class="dock-tab-icon-wrap">
             <img src="/static/Icons/Stundenplan.svg" class="dock-icon" alt="Stundenplan">
           </span>
-          <span class="dock-tab-label">Stundenplan</span>
         </button>
 
-        <button class="nav-tab dock-tab" data-tab="books" title="Bücher">
+        <button class="nav-tab dock-tab" data-tab="books" title="Bücher" aria-label="Bücher">
           <span class="dock-tab-icon-wrap">
             <img src="/static/Icons/Bücher.svg" class="dock-icon" alt="Bücher">
           </span>
-          <span class="dock-tab-label">Bücher</span>
         </button>
 
-        <button class="nav-tab dock-tab" data-tab="whiteboard" title="Tafel">
+        <button class="nav-tab dock-tab" data-tab="whiteboard" title="Tafel" aria-label="Tafel">
           <span class="dock-tab-icon-wrap">
             <img src="/static/Icons/Tafel.svg" class="dock-icon" alt="Tafel">
           </span>
-          <span class="dock-tab-label">Tafel</span>
         </button>
 
-        <button class="nav-tab dock-tab" data-tab="planner" title="Lernplan">
+        <button class="nav-tab dock-tab" data-tab="planner" title="Lernplan" aria-label="Lernplan">
           <span class="dock-tab-icon-wrap">
             <img src="/static/Icons/Lernplan.svg" class="dock-icon" alt="Lernplan">
           </span>
-          <span class="dock-tab-label">Lernplan</span>
         </button>
 
-        <button class="nav-tab dock-tab" data-tab="uploads" title="Upload & Eingang">
+        <button class="nav-tab dock-tab" data-tab="uploads" title="Upload & Eingang" aria-label="Upload">
           <span class="dock-tab-icon-wrap">
             <img src="/static/Icons/Upload.svg" class="dock-icon" alt="Upload">
             <span id="nav-inbox-badge" class="nav-counter-badge" style="display: none;">0</span>
           </span>
-          <span class="dock-tab-label">Upload</span>
         </button>
 
-        <button class="nav-tab dock-tab" data-tab="profile" title="Profil">
+        <button class="nav-tab dock-tab" data-tab="profile" title="Profil" aria-label="Profil">
           <span class="dock-tab-icon-wrap">
             <img src="/static/Icons/Kind.svg" class="dock-icon" alt="Profil">
           </span>
-          <span class="dock-tab-label">Profil</span>
         </button>
       </nav>
 
@@ -167,39 +160,6 @@
             <div class="capsule-chip chip-xp" id="chip-xp" title="Erfahrungspunkte (XP)">
               <span class="capsule-icon">⚡</span>
               <strong class="capsule-val"><span id="game-total-xp">0</span> XP</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- Schnell-Zonen (4 Große iPad-App-Tiles) -->
-        <div class="dash-quick-actions-section">
-          <div class="dash-quick-grid">
-            <div class="dash-quick-card card-tafel" id="btn-quick-tafel" role="button" tabindex="0" title="Tafel">
-              <div class="quick-card-icon-wrap">
-                <img src="/static/Icons/Tafel.svg" class="quick-card-svg" alt="Tafel">
-              </div>
-              <div class="quick-card-title">Tafel</div>
-            </div>
-
-            <div class="dash-quick-card card-homework" id="btn-quick-planner" role="button" tabindex="0" title="Hausaufgaben">
-              <div class="quick-card-icon-wrap">
-                <img src="/static/Icons/Hausaufgaben.svg" class="quick-card-svg" alt="Hausaufgaben">
-              </div>
-              <div class="quick-card-title">Hausaufgaben</div>
-            </div>
-
-            <div class="dash-quick-card card-books" id="btn-quick-books" role="button" tabindex="0" title="Bücher">
-              <div class="quick-card-icon-wrap">
-                <img src="/static/Icons/Bücher.svg" class="quick-card-svg" alt="Bücher">
-              </div>
-              <div class="quick-card-title">Bücher</div>
-            </div>
-
-            <div class="dash-quick-card card-upload" id="btn-quick-upload" role="button" tabindex="0" title="Upload">
-              <div class="quick-card-icon-wrap">
-                <img src="/static/Icons/Upload.svg" class="quick-card-svg" alt="Upload">
-              </div>
-              <div class="quick-card-title">Upload</div>
             </div>
           </div>
         </div>
@@ -1652,7 +1612,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=9.2"></script>
+  <script src="/static/app.js?v=9.3"></script>
   <script src="/static/whiteboard.js?v=6.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>

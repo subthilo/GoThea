@@ -165,12 +165,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 20px;
+  padding-bottom: 18px;
   border-bottom: 1px solid var(--border-color);
   gap: 16px;
-  flex-wrap: wrap;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .header {
+    flex-wrap: wrap;
+  }
 }
 
 .brand {
@@ -209,22 +214,20 @@ body {
   font-weight: 600;
 }
 
-/* Nav Tabs / Dock */
+/* Nav Tabs / Dock: Modern iPadOS Icon-Only Dock */
 .nav-tabs,
 .nav-dock {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   background: rgba(18, 21, 28, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  padding: 4px 6px;
-  border-radius: 14px;
+  padding: 5px 8px;
+  border-radius: 16px;
   border: 1px solid var(--border-color);
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  margin: 0 auto;
 }
 
 .nav-tabs::-webkit-scrollbar,
@@ -235,50 +238,52 @@ body {
 .nav-tab,
 .dock-tab {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-secondary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  display: inline-flex;
+  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
   align-items: center;
-  gap: 8px;
-  white-space: nowrap;
+  justify-content: center;
+  position: relative;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .dock-tab-icon-wrap {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .dock-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   filter: brightness(0) invert(0.85);
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
-}
-
-.dock-tab-label {
-  font-size: 0.86rem;
-  font-weight: 600;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.18s ease;
 }
 
 .nav-tab:hover,
 .dock-tab:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.dock-tab:active {
+  transform: scale(0.92);
 }
 
 .dock-tab:hover .dock-icon {
-  transform: scale(1.1);
+  transform: scale(1.12);
   filter: brightness(0) invert(1);
 }
 
@@ -287,12 +292,23 @@ body {
   background: var(--bg-card);
   color: #fff;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 16px var(--theme-glow);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .dock-tab.active .dock-icon {
-  transform: scale(1.08);
+  transform: scale(1.1);
   filter: brightness(0) invert(1);
+}
+
+.dock-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
 }
 
 .dock-tab .nav-counter-badge {
@@ -7450,104 +7466,7 @@ body.parent-mode-active .parent-status-pill {
   font-weight: 500;
 }
 
-/* Schnell-Zonen (Große, anfassbare Aktionskacheln) */
-.dash-quick-actions-section {
-  margin: 24px 0 28px;
-}
-
-.dash-quick-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-@media (max-width: 680px) {
-  .dash-quick-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-}
-
-.dash-quick-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 22px;
-  padding: 24px 16px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, border-color 0.18s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.dash-quick-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
-}
-
-.dash-quick-card:active {
-  transform: scale(0.95);
-}
-
-.quick-card-icon-wrap {
-  width: 68px;
-  height: 68px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.card-tafel .quick-card-icon-wrap {
-  background: rgba(99, 102, 241, 0.18);
-  border: 1px solid rgba(99, 102, 241, 0.4);
-}
-
-.card-homework .quick-card-icon-wrap {
-  background: rgba(245, 158, 11, 0.18);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-}
-
-.card-books .quick-card-icon-wrap {
-  background: rgba(16, 185, 129, 0.18);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-}
-
-.card-upload .quick-card-icon-wrap {
-  background: rgba(236, 72, 153, 0.18);
-  border: 1px solid rgba(236, 72, 153, 0.4);
-}
-
-.dash-quick-card:hover .quick-card-icon-wrap {
-  transform: scale(1.08);
-}
-
-.quick-card-svg {
-  width: 44px;
-  height: 44px;
-  filter: brightness(0) invert(0.95);
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.dash-quick-card:hover .quick-card-svg {
-  transform: scale(1.08);
-}
-
-.quick-card-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
+/* Quick-Actions redundant styles removed in favor of top icon dock */
 
 /* Kompakte Statuszeile */
 .dash-stats-bar {
