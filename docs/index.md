@@ -23,6 +23,7 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 * **[02.8 Schulbücher & Segmentierung](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/book_browser.md):** **3-stufige automatische Buch-Segmentierung (`book_segmentation.py`)**, Hintergrund-Slicing, Fallback-Browsing ohne Sackgassen, Apple-Pencil Inking mit Palm Rejection.
 * **[02.9 Übungs-Arena & Hintergrund-Pools](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/exercise_arena_and_pools.md):** Vollbild-Arena (`cloze_trainer.js`), **kontinuierlicher Vorratsspeicher (`exercise_pool_service.py`)** mit vorgerendertem TTS-Audio (< 10 ms Latenz), Handschrift-Erkennung mit Wiederholungsbitte.
 * **[02.10 Didaktisches Score-Tracking & Gamification](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/gamification_and_scores.md):** Fächer- und Methodenscores (`score_service.py`), **adaptive Schwierigkeitsstufen (leicht, mittel, schwer)**, XP, Level-Progression (1–5), Streaks 🔥.
+* **[02.11 iPadOS Design-System & Ergonomie](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/02_modules/ui_and_design_system.md):** Squircle App-Tiles (`22px`), 55+ SVG-Vektor-Icons, radikale Textreduktion, Eulen-Eliminierung & Viewport-Fixes.
 
 ### [03. Schnittstellen-Spezifikationen](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/rest_api.md)
 * **[03.1 REST API Spezifikation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/03_api_specs/rest_api.md):** Alle HTTP-Endpunkte (Profile, Taxonomie, Environment, Ingestion, Inbox, Stundenplan, Schulbücher, **Eltern-Auth, Übungs-Arena, Scores, TTS & Buch-Notizen**).
@@ -35,7 +36,8 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 * **[04.4 Iteration 04 – Smarte Material-Ingestion](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_04_material_ingestion.md):** 43 Tests, 100% Passed.
 * **[04.5 Iteration 05 – Stundenplan & Organisation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_05_timetable_and_organization.md):** 76 Tests, 100% Passed.
 * **[04.6 Iteration 06 – Handschriftliche Buchnotizen](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_06_book_inking_engine.md):** 89 Tests, 100% Passed.
-* **[04.7 Iteration 07 – Vollständige Plattform- & Performance-Verifikation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_07_full_platform_verification.md):** **143 Tests, 100% Passed (Vollständige Suite)**.
+* **[04.7 Iteration 07 – Vollständige Plattform- & Performance-Verifikation](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_07_full_platform_verification.md):** 143 Tests, 100% Passed.
+* **[04.8 Iteration 08 – iPadOS Modernisierung & Redesign](file:///Users/thilo/Library/CloudStorage/SynologyDrive-DatenSync/Repos/GoThea/docs/04_test_reports/iteration_08_ui_redesign_and_ipados_modernization.md):** **146 Tests, 100% Passed (Vollständige Suite)**.
 
 ---
 
@@ -52,6 +54,7 @@ Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale 
 | **M5.1: Schulbuch-Notizen** | Ultra-Low-Latency Inking, Palm Rejection, Bézier-Glättung | ✅ Abgeschlossen | 89/89 Passed (86% Cov) |
 | **M6: Übungs-Arena & Pools** | Continuous Background Generator (`< 10ms`), Lückentext, Vision OCR | ✅ Abgeschlossen | 114/114 Passed |
 | **M7: Didaktik & Elternschutz** | Adaptive Schwierigkeit, XP, Streaks, PIN-Schutz mit Lockout | ✅ Abgeschlossen | 139/139 Passed |
-| **M8: Auto-Segmentierung** | 3-stufige Inhaltsverzeichnis-Erkennung, Outline/Vision Slicing | ✅ Abgeschlossen | **143/143 Passed** |
+| **M8: Auto-Segmentierung** | 3-stufige Inhaltsverzeichnis-Erkennung, Outline/Vision Slicing | ✅ Abgeschlossen | 143/143 Passed |
+| **M8.1: iPadOS-Design & Redesign** | Squircle App-Tiles, 55+ SVGs, Textreduktion, Eulen-Entfernung | ✅ Abgeschlossen | **146/146 Passed** |
 | **M9: IServ-Connector** | CalDAV, WebDAV, AES-256 Vault | ⏳ Geplant | - |
 | **M10: Sokratischer Audio-Tutor** | Live-Audio Dialog & Multimodal Vision Streaming | ⏳ Geplant | - |

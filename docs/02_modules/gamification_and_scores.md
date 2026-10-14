@@ -74,7 +74,7 @@ Die Schülerin steigt durch fleißiges Üben in Stufen auf:
 * **Level 2:** *Rätsel-Meisterin 🔍* ($250 - 600\text{ XP}$)
 * **Level 3:** *Gymnasial-Profi 🎯* ($600 - 1.200\text{ XP}$)
 * **Level 4:** *Olympia-Denkerin ⚡* ($1.200 - 2.500\text{ XP}$)
-* **Level 5:** *GoThea-Meisterin 🦉✨* ($> 2.500\text{ XP}$)
+* **Level 5:** *GoThea-Meisterin ✨* ($> 2.500\text{ XP}$)
 
 ### 3. Tages-Lernserien (Streaks 🔥)
 * Ein Streak zählt die lückenlos aufeinanderfolgenden Tage mit mindestens einer absolvierten Lerneinheit (`calculate_streak_days`).

@@ -73,7 +73,7 @@ tests/unit/test_whiteboard_models.py ..                                  [100%]
 
 ### C. Didaktisches Score-Tracking & Gamification (`test_gamification.py`, `test_score_service.py`)
 * `test_calculate_exercise_rewards`: Prüft XP-Berechnung (Basis-XP + Genauigkeits-Bonus) und Sterne (1–3 ⭐).
-* `test_level_progression`: Validiert Stufen-Aufstieg von Level 1 bis 5 (*GoThea-Meisterin 🦉✨*).
+* `test_level_progression`: Validiert Stufen-Aufstieg von Level 1 bis 5 (*GoThea-Meisterin ✨*).
 * `test_streak_calculation`: Prüft lückenlose Tages-Lernserien mit Datums-Tracking.
 * `test_adaptive_difficulty`: Validiert die Herabstufung bei akuten Schwierigkeiten ($< 60\,\%$) und Aufstieg bei fehlerfreien Serien ($\ge 85\,\%$).
 

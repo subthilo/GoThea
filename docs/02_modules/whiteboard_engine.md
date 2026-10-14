@@ -121,7 +121,7 @@ GoThea trennt die Anzeigeschichten streng nach Z-Index, um komfortables Schreibe
    * Sendet das kompakte JSON der Vektorstriche an `PUT /api/v1/whiteboard/sessions/{id}/state`.
    * Kein teures synchrones `toDataURL()` während des Schreibens.
  * **KI-Tutor Vision- & Sprach-Feedback (`POST /ask-tutor`):**
-   * Button `🦉 Tutor fragen` in der Toolbar rendert einen kontrastreichen Snapshot (mit Schiefertafel- oder Papier-Hintergrund).
+   * Button `✨ Tutor fragen` in der Toolbar rendert einen kontrastreichen Snapshot (mit Schiefertafel- oder Papier-Hintergrund).
    * Backend analysiert das Tafelbild via OpenAI Vision (`gpt-4o-mini`) und synthetisiert sogleich gesprochene Audio via OpenAI TTS (`tts-1`, Stimme `nova`).
    * Visuelle Rückmeldung über pulsierende Sprechblase (`#wb-tutor-bubble`) mit Avatar und Stopp-Option.
  * **Zero-Latency Barge-In:**
