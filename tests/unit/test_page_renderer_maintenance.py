@@ -128,3 +128,25 @@ def test_delete_book_removes_chapter_files_and_cache(client, db_session, tmp_pat
     assert not book_pdf.exists() and not chap_file.exists()
     assert set(purge.call_args.args[0]) == {"mat_del_book", "mat_del_book_ch01"}
     assert db_session.query(Material).filter_by(parent_id="mat_del_book").count() == 0
+
+
+def test_images_are_not_parsed_or_queued(db_session, tmp_path):
+    from PIL import Image
+    img = tmp_path / "plan.png"
+    Image.new("RGB", (10, 10)).save(img)
+    db_session.add(Material(id="mat_png_plan", user_id="usr_thea", subject_id="sub_bio", title="Plan", kind="Stundenplan",
+                            filename="plan.png", file_path=str(img), mime_type="image/png", page_count=1))
+    db_session.commit()
+
+    renderer = pr.PageRenderingService()
+    assert renderer.get_page_count(img) is None
+    queued = []
+    renderer.queue_page = lambda mat_id, *a, **k: queued.append(mat_id)
+
+    class _Thread:
+        def __init__(self, target, **kw): self.target = target
+        def start(self): self.target()
+
+    with patch.object(pr.threading, "Thread", _Thread), patch.object(pr.time, "sleep"):
+        renderer.queue_all_database_materials(lambda: db_session)
+    assert "mat_png_plan" not in queued

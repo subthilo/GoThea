@@ -161,6 +161,8 @@ class PageRenderingService:
 
     def get_page_count(self, path: Path) -> Optional[int]:
         """Seitenzahl eines PDFs, gecacht pro Datei-Version."""
+        if path.suffix.lower() != ".pdf":
+            return None
         try:
             key = (str(path), int(path.stat().st_mtime))
         except OSError:
@@ -311,6 +313,9 @@ class PageRenderingService:
                     if mat.id in parents_with_children:
                         continue
                     if not mat.file_path or not Path(mat.file_path).exists():
+                        continue
+                    # Bilder (z. B. Stundenplan-Fotos) werden direkt ausgeliefert, nicht gerendert
+                    if "pdf" not in (mat.mime_type or "").lower() and not mat.file_path.lower().endswith(".pdf"):
                         continue
                     p_count = mat.page_count or 1
                     real_count = self.get_page_count(Path(mat.file_path))
