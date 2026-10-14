@@ -124,6 +124,7 @@
 
 ### `POST /api/v1/taxonomy/import-timetable`
 * **Beschreibung:** Lädt ein Stundenplan-Dokument (PDF oder Bild) hoch, extrahiert Fächerkürzel mittels multimodaler OpenAI-Vision-Analyse (oder heuristischem Offline-Fallback), gleicht sie mit dem 23-Fächer-Kanon des Brandenburger Rahmenlehrplans ab, legt fehlende Fächer & Basisthemen automatisch in der Datenbank an und ordnet das Dokument im Dossier *„Stundenplan & Organisation“* ein.
+* **Stundenplan-Raster:** Das erkannte Wochenraster ersetzt den bisherigen Stundenplan (`timetable_slots`), sofern mindestens eine Unterrichtsstunde erkannt wurde (`services/timetable_slots.py`: Untis-Zeilen 1–5, 6.1, 6.2, 7, 8 → Periode 1–9, Doppelstunden, parallele Kurse, Pausen, A/B-Wochen). Die Anzahl übernommener Stunden steht in `slots_imported` (0 = Raster nicht erkannt, bisheriger Plan bleibt).
 * **Content-Type:** `multipart/form-data`
 * **Form-Parameter:**
   - `file`: `UploadFile` (PDF, PNG, JPG, WebP)

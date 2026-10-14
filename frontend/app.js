@@ -3389,10 +3389,12 @@ if (timetableFileInput) {
 
       const newlyAddedCount = (data.created_subjects || []).length;
       if (ttResultStatusTitle) {
-        if (newlyAddedCount > 0) {
-          ttResultStatusTitle.textContent = `🎉 ${newlyAddedCount} neue(s) Schulfach/Fächer angelegt!`;
+        if (!data.slots_imported) {
+          ttResultStatusTitle.textContent = "⚠️ Wochenraster nicht erkannt – Stundenplan unverändert";
+        } else if (newlyAddedCount > 0) {
+          ttResultStatusTitle.textContent = `🎉 ${data.slots_imported} Stunden übernommen, ${newlyAddedCount} neue(s) Fach/Fächer angelegt!`;
         } else {
-          ttResultStatusTitle.textContent = "✅ Stundenplan erfolgreich erfasst!";
+          ttResultStatusTitle.textContent = `✅ Stundenplan übernommen: ${data.slots_imported} Stunden`;
         }
       }
 
@@ -3458,9 +3460,11 @@ if (timetableFileInput) {
         }
       }
 
-      // Refresh taxonomy and materials across the whole app
+      // Refresh taxonomy, materials and timetable across the whole app
       await loadTaxonomy();
       await loadMaterials();
+      await loadTimetable();
+      await loadTodayDashboardWidget();
 
     } catch (err) {
       console.error("Fehler beim Import des Stundenplans:", err);

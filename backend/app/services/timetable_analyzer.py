@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 
-from backend.app.config import OPENAI_API_KEY, OPENAI_ANALYSIS_MODEL
+from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
 from backend.app.prompts.timetable import TIMETABLE_SYSTEM_PROMPT
 from backend.app.services.llm import chat_params
 from backend.app.models.taxonomy import Subject, Topic
@@ -654,6 +654,7 @@ class TimetableImportResult:
     dossier_title: str
     timetable_grid: Dict[str, Any]
     summary: str
+    slots_imported: int = 0
 
 def process_and_import_timetable(
     db: Session,
@@ -692,7 +693,8 @@ def process_and_import_timetable(
             extracted_text=extracted_text,
             mime_type=mime_type,
             api_key=OPENAI_API_KEY,
-            model_name=OPENAI_ANALYSIS_MODEL
+            # Stundenpläne werden selten importiert, das Raster-Lesen ist aber anspruchsvoll -> Hauptmodell
+            model_name=OPENAI_MODEL
         )
 
     if not analysis_data or not analysis_data.get("erkannte_faecher"):
@@ -758,6 +760,11 @@ def process_and_import_timetable(
     db.commit()
     db.refresh(material)
 
+    # 6. Erkanntes Wochenraster als Stundenplan übernehmen
+    from backend.app.services.timetable_slots import build_slot_specs, replace_timetable_slots
+    slots_imported = replace_timetable_slots(db, build_slot_specs(analysis_data.get("wochenplan") or {}), user_id=user_id)
+    logger.info(f"📅 Stundenplan-Import: {slots_imported} Slots aus '{material.title}' übernommen.")
+
     # Erste Seite vorab rendern für Sofort-Anzeige
     try:
         from backend.app.services.material_ingestion import pre_cache_material_pages
@@ -775,5 +782,6 @@ def process_and_import_timetable(
         dossier_id=dossier.id,
         dossier_title=dossier.title,
         timetable_grid=analysis_data.get("wochenplan", {}),
-        summary=material.summary
+        summary=material.summary,
+        slots_imported=slots_imported
     )

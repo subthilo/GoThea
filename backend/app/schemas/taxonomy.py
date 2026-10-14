@@ -52,4 +52,5 @@ class TimetableImportResponse(BaseModel):
     dossier_title: str
     timetable_grid: dict = {}
     summary: str
+    slots_imported: int = 0
 

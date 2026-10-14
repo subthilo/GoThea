@@ -75,6 +75,10 @@ async def import_timetable_endpoint(
             if created_count > 0
             else "Stundenplan erfolgreich erfasst. Alle Fächer waren bereits vorhanden."
         )
+        if res.slots_imported:
+            msg += f" {res.slots_imported} Stunden wurden in den Stundenplan übernommen."
+        else:
+            msg += " Das Wochenraster konnte nicht gelesen werden, der bisherige Stundenplan bleibt unverändert."
 
         return TimetableImportResponse(
             status="success",
@@ -88,7 +92,8 @@ async def import_timetable_endpoint(
             dossier_id=res.dossier_id,
             dossier_title=res.dossier_title,
             timetable_grid=res.timetable_grid,
-            summary=res.summary
+            summary=res.summary,
+            slots_imported=res.slots_imported
         )
     finally:
         if temp_path.exists():

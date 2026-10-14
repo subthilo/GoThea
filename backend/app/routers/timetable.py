@@ -13,22 +13,14 @@ from backend.app.schemas.timetable import (
     TimetableOverviewResponse,
     TimetableSlotRead,
     TimetableSlotCreateUpdate,
-    PeriodMeta,
+)
+from backend.app.services.timetable_slots import (
+    PERIODS_CONFIG,
+    insert_timetable_slots,
+    describe_week_differences,
 )
 
 router = APIRouter(prefix="/api/v1/timetable", tags=["Stundenplan"])
-
-PERIODS_CONFIG = [
-    PeriodMeta(period=1, label="1. Std", start_time="07:45", end_time="08:30", is_break=False),
-    PeriodMeta(period=2, label="2. Std", start_time="08:30", end_time="09:15", is_break=False),
-    PeriodMeta(period=3, label="3. Std", start_time="09:45", end_time="10:30", is_break=False),
-    PeriodMeta(period=4, label="4. Std", start_time="10:30", end_time="11:15", is_break=False),
-    PeriodMeta(period=5, label="5. Std", start_time="11:25", end_time="12:10", is_break=False),
-    PeriodMeta(period=6, label="6.1 Std", start_time="12:15", end_time="13:00", is_break=False),
-    PeriodMeta(period=7, label="6.2 Std", start_time="13:05", end_time="13:50", is_break=False),
-    PeriodMeta(period=8, label="7. Std", start_time="13:55", end_time="14:40", is_break=False),
-    PeriodMeta(period=9, label="8. Std", start_time="14:40", end_time="15:25", is_break=False),
-]
 
 def get_initial_thea_slots_data() -> List[Dict[str, Any]]:
     """Definiert Theas offiziellen Stundenplan (Klasse 7D, Humboldt-Gymnasium Eichwalde)."""
@@ -102,36 +94,7 @@ def seed_timetable_slots_if_empty(db: Session, user_id: str = "usr_thea"):
     except Exception:
         pass
 
-    # Fächer vorbereiten
-    subjects_by_id = {s.id: s for s in db.query(Subject).all()}
-    subjects_by_name = {s.name.lower(): s for s in db.query(Subject).all()}
-    periods_by_num = {p.period: p for p in PERIODS_CONFIG}
-
-    for item in slots_data:
-        p_meta = periods_by_num.get(item["period"])
-        sub = subjects_by_id.get(item.get("sub_id")) or subjects_by_name.get((item.get("name") or "").lower())
-        valid_sub_id = sub.id if sub else None
-
-        slot = TimetableSlot(
-            id=f"slot_{uuid.uuid4().hex[:8]}",
-            user_id=user_id,
-            day_of_week=item["day"],
-            period=item["period"],
-            period_label=p_meta.label if p_meta else f"{item['period']}. Std",
-            start_time=p_meta.start_time if p_meta else None,
-            end_time=p_meta.end_time if p_meta else None,
-            subject_id=valid_sub_id,
-            subject_code=item.get("code"),
-            subject_name=item.get("name") or (sub.name if sub else "Allgemein"),
-            custom_title=item.get("code") if item.get("is_break") else None,
-            teacher=item.get("teacher"),
-            room=item.get("room"),
-            week_type=item.get("week", "both"),
-            is_double_period=item.get("double", False),
-            is_break=item.get("is_break", False),
-            note=item.get("note")
-        )
-        db.add(slot)
+    insert_timetable_slots(db, slots_data, user_id=user_id)
     db.commit()
 
 
@@ -197,9 +160,7 @@ def get_timetable(
         scan_material_title=scan_mat_title,
         periods=PERIODS_CONFIG,
         slots=output_slots,
-        week_differences=[
-            "Montag 5./6.1 Std: In A-Woche Sport (Halle gewo, Fr. DÜCK), in B-Woche Englisch (Raum 104, Fr. SCHD)."
-        ]
+        week_differences=describe_week_differences(slots_db)
     )
 
 

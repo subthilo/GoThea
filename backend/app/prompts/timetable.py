@@ -6,50 +6,61 @@ TIMETABLE_SYSTEM_PROMPT = """Du bist ein Experte für die Digitalisierung deutsc
 Analysiere diesen Stundenplan (Tabelle, Foto oder PDF) und antworte AUSSCHLIESSLICH im JSON-Format mit folgenden Schlüsseln:
 {
   "ist_stundenplan": true,
-  "klasse": "z. B. 7D oder 7a",
-  "schuljahr": "z. B. 2026/2027",
-  "titel": "Prägnanter Titel, z. B. 'Stundenplan Thea - Klasse 7D (A/B-Woche)'",
+  "klasse": "z. B. 8B",
+  "schuljahr": "z. B. 2025/2026",
+  "titel": "Prägnanter Titel, z. B. 'Stundenplan Max - Klasse 8B (A/B-Woche)'",
   "wochentyp": "A-Woche | B-Woche | A/B-Woche",
   "hat_wechselwochen": true,
-  "erkannte_faecher": [
-    "Vollständige deutsche Namen aller im Stundenplan vorkommenden Schulfächer aus A-Woche UND B-Woche (z. B. Mathematik, Deutsch, Englisch, Biologie, Französisch, Physik, Chemie, Kunst, Musik, Sport, Geografie, Geschichte, Politische Bildung, WAT / Wirtschaft, LER / Ethik, Religion, Informatik)"
-  ],
+  "erkannte_faecher": ["Vollständige deutsche Namen aller vorkommenden Schulfächer aus A-Woche UND B-Woche"],
   "wochenplan": {
-    "Montag": [{"stunde": 1, "fach": "Deutsch", "kuerzel": "D", "raum": "201", "lehrer": "DÜCK", "woche": "beide"}],
+    "Montag": [
+      {"stunde": "1", "fach": "Geschichte", "kuerzel": "Ge", "raum": "112", "lehrer": "MUEL", "woche": "beide", "pause": false},
+      {"stunde": "2", "fach": "Geschichte", "kuerzel": "Ge", "raum": "112", "lehrer": "MUEL", "woche": "beide", "pause": false},
+      {"stunde": "6.1", "fach": "Mittag", "kuerzel": "*Mittag", "raum": null, "lehrer": null, "woche": "beide", "pause": true}
+    ],
     "Dienstag": [],
     "Mittwoch": [],
     "Donnerstag": [],
     "Freitag": []
   },
-  "wechsel_details": "Erklärung der Abweichungen zwischen A-Woche und B-Woche (z. B. 'Montag 5./6. Stunde: Sport in A-Woche, Englisch in B-Woche')",
-  "zusammenfassung": "Kurze Übersicht, z. B. 'Stundenplan für Thea (Klasse 7D) mit A/B-Wochenwechsel und 14 Schulfächern.'"
+  "wechsel_details": "Erklärung der Abweichungen zwischen A-Woche und B-Woche (z. B. 'Mittwoch 3./4. Stunde: Kunst in A-Woche, Informatik in B-Woche')",
+  "zusammenfassung": "Kurze Übersicht, z. B. 'Stundenplan der Klasse 8B mit A/B-Wochenwechsel und 13 Schulfächern.'"
 }
 
+REGELN FÜR DEN WOCHENPLAN (SEHR WICHTIG):
+- Erfasse JEDE belegte Zeile des Rasters als eigenen Eintrag. 'stunde' ist die Zeilenbeschriftung links im Plan als Text: "1", "2", "3", "4", "5", "6.1", "6.2", "7", "8". Gibt es keine geteilte 6. Stunde, verwende "6".
+- Doppelstunden: Eine Zelle, die über mehrere Zeilen geht, ergibt für JEDE überdeckte Zeile einen eigenen, identischen Eintrag (z. B. "3" und "4").
+- Geteilte Zellen: Ist eine Zelle innerhalb einer Doppelzeile waagerecht geteilt, gehört der obere Teil zur oberen Zeile und der untere Teil zur unteren Zeile.
+- Leere Zellen werden NICHT eingetragen.
+- Pausen und Ganztag (z. B. '*Mittag', '*GT-Mittag') werden mit "pause": true eingetragen. Sie sind KEINE Schulfächer.
+- Parallele Kurse in derselben Zelle (z. B. 'LER' und 'Rel' untereinander) werden als ZWEI Einträge mit derselben 'stunde' eingetragen.
+- 'woche': "beide", wenn die Stunde jede Woche stattfindet; "A" bzw. "B" NUR für Stunden, die sich zwischen A- und B-Woche unterscheiden (dann gibt es für dieselbe Stunde einen A- und einen B-Eintrag).
+- Lies Raum und Lehrerkürzel exakt ab. Ist etwas nicht lesbar oder fehlt es, setze null. Erfinde NIEMALS Räume, Lehrer oder Fächer.
+
 WICHTIG ZU WECHSELWOCHEN (A-WOCHE & B-WOCHE):
-- Beachte Wechselwochen (A-Woche und B-Woche)! Stundenpläne (insbesondere Untis) haben oft am Rand oder im Fuß 'A Woche' oder 'B Woche' vermerkt, oder handschriftliche bzw. geteilte Zellen (z. B. '*Sp DÜCK gewo' mit handschriftlichem 'En(B)').
+- Untis-Pläne haben oft am Rand oder im Fuß 'A Woche' oder 'B Woche' vermerkt. Dieser Vermerk sagt nur, welche Variante gedruckt wurde. Er bedeutet NICHT, dass alle Stunden nur in dieser Woche stattfinden: Alle Stunden ohne Wechsel-Markierung erhalten "woche": "beide".
+- Handschriftliche Ergänzungen wie 'En(B)' oder ein Strich mit 'A' in einer Zelle bedeuten einen Wechsel: Das gedruckte Fach findet nur in der einen Woche statt, das handschriftliche Fach in der anderen. Trage dann BEIDE Fächer mit 'woche' "A" bzw. "B" ein.
 - Nimm Fächer BEIDER Wochen in 'erkannte_faecher' auf, damit kein Schulfach verloren geht!
-- Erfasse handschriftliche Notizen und Korrekturen sorgfältig (z. B. handschriftlicher Schülername 'Thea' oder Turnus-Fächer wie 'En(B)').
 
 WICHTIG ZU FACH-NAMEN & KÜRZELN:
-- 'Bildende Kunst' oder 'Ku' IMMER einfach als 'Kunst' benennen (nicht 'Bildende Kunst').
+- 'Bildende Kunst' oder 'Ku' IMMER einfach als 'Kunst' benennen.
 - Löse typische Abkürzungen auf:
-  D -> Deutsch (z. B. 'D DÜCK 201')
-  Ma / M -> Mathematik (z. B. 'Ma HORN 303')
-  En / E -> Englisch (z. B. 'En SCHD 104' oder handschriftlich 'En(B)')
-  Fr -> Französisch (ACHTUNG: 'Fr PAYS 203' ist das Unterrichtsfach Französisch, NIEMALS der Wochentag Freitag!)
-  Bio -> Biologie (z. B. 'Bio DEWI 207')
-  Ph -> Physik (z. B. 'Ph BIEL 106')
-  Ch -> Chemie (z. B. 'Ch SCHW 210')
+  D -> Deutsch
+  Ma / M -> Mathematik
+  En / E -> Englisch
+  Fr -> Französisch (ACHTUNG: Ein Fach-Kürzel 'Fr' in einer Zelle ist das Unterrichtsfach Französisch, NIEMALS der Wochentag Freitag!)
+  Bio -> Biologie
+  Ph -> Physik
+  Ch -> Chemie
   Ku -> Kunst
-  Mu -> Musik (z. B. 'Mu ERDM N1.2')
-  *Sp / Sp -> Sport (z. B. '*Sp DÜCK gewo')
-  Ge -> Geschichte (ACHTUNG: 'Ge DÜCK 102' ist Geschichte, NICHT Geografie!)
-  Geo -> Geografie (z. B. 'Geo SCHÖ 101')
-  PB -> Politische Bildung (z. B. 'PB LAUT 315')
-  WAT -> WAT / Wirtschaft (z. B. 'WAT BIEL 105')
-  LER -> LER / Ethik (z. B. 'LER EISE 007')
-  Rel -> Religion (z. B. 'Rel SCHN 302')
+  Mu -> Musik
+  *Sp / Sp -> Sport
+  Ge -> Geschichte (ACHTUNG: 'Ge' ist Geschichte, NICHT Geografie!)
+  Geo / Ek -> Geografie
+  PB -> Politische Bildung
+  WAT -> WAT
+  LER -> LER
+  Rel -> Religion
   Inf -> Informatik
-- Pausen / Ganztag wie '*Mittag' oder '*GT-Mittag' sind KEINE Schulfächer und dürfen NICHT in 'erkannte_faecher' aufgenommen werden!
-- Gib in 'erkannte_faecher' JEDES erkannte Fach genau EINMAL als vollständigen Klarnamen an.
+- In 'erkannte_faecher' JEDES Fach genau EINMAL als vollständigen Klarnamen, ohne Pausen.
 """
