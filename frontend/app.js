@@ -3549,6 +3549,10 @@ function renderTimetableGrid() {
   const periods = currentTimetableData.periods || [];
   const slots = currentTimetableData.slots || [];
 
+  if (periods.length > 0) {
+    gridEl.style.gridTemplateRows = `minmax(20px, 2.8vh) repeat(${periods.length}, minmax(0, 1fr))`;
+  }
+
   periods.forEach((period) => {
     // A) Zeit-Zelle links
     const timeCell = document.createElement("div");
