@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Back booklet -->
+  <path d="M 32 78 L 23 78 A 5 5 0 0 1 18 73 L 18 19 A 5 5 0 0 1 23 14 L 67 14 A 5 5 0 0 1 72 19 L 72 26" />
+  <!-- Front booklet -->
+  <rect x="32" y="26" width="50" height="60" rx="5" />
+  <!-- Label sticker -->
+  <rect x="43" y="38" width="28" height="15" rx="2.5" />
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Rechtwinkliges Geodreieck mit Skala und Innendreieck -->
+  <polygon points="50,20 86,78 14,78" />
+  <polygon points="50,42 70,72 30,72" />
+  <line x1="50" y1="20" x2="50" y2="42" stroke-width="3" />
+  <!-- Skala an Grundlinie -->
+  <line x1="22" y1="78" x2="22" y2="74" />
+  <line x1="36" y1="78" x2="36" y2="74" />
+  <line x1="64" y1="78" x2="64" y2="74" />
+  <line x1="78" y1="78" x2="78" y2="74" />
+</svg>

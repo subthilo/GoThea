@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Offener Fortschrittskreis (270 Grad) -->
+  <path d="M 24 76 A 36 36 0 1 1 76 76" />
+  <!-- Zentrierter Erfolgs-Haken -->
+  <polyline points="38,50 46,58 64,40" />
+</svg>

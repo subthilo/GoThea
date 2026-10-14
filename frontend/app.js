@@ -109,12 +109,12 @@ function updateParentModeUI(active, isDefault = isDefaultParentPin) {
   if (pillBtn && pillIcon && pillText) {
     if (isParentActive) {
       pillBtn.classList.add("is-parent-active");
-      pillIcon.textContent = "🛡️";
+      pillIcon.innerHTML = '<img src="/static/Icons/Erwachsener.svg" class="pill-svg-icon" alt="Eltern-Modus">';
       pillText.textContent = "Eltern-Modus (Aktiv)";
       pillBtn.title = "Klicken, um den Eltern-Modus zu sperren (zurück zu Thea)";
     } else {
       pillBtn.classList.remove("is-parent-active");
-      pillIcon.textContent = "👧";
+      pillIcon.innerHTML = '<img src="/static/Icons/Kind.svg" class="pill-svg-icon" alt="Thea-Modus">';
       pillText.textContent = "Thea-Modus";
       pillBtn.title = "Klicken, um Eltern-PIN einzugeben (Einstellungen & Prüfungen freischalten)";
     }
@@ -718,7 +718,51 @@ let currentDetailSubjectId = null;
 let currentSubjectMaterials = [];
 let activeSubjectKindFilter = "all";
 
-// Render Dashboard Cards (klickbar zur Fach-Detailseite)
+// ==========================================================================
+// Icon Resolver Helpers (Konzept 1: 55 Vektorgrafiken)
+// ==========================================================================
+function getSubjectIconUrl(subjectNameOrCode) {
+  if (!subjectNameOrCode) return "/static/Icons/Dokumente.svg";
+  const norm = String(subjectNameOrCode).toLowerCase().trim();
+  if (norm.includes("math")) return "/static/Icons/Mathematik.svg";
+  if (norm.includes("deutsch")) return "/static/Icons/Deutsch.svg";
+  if (norm.includes("eng")) return "/static/Icons/Englisch.svg";
+  if (norm.includes("franz") || norm.includes("franç")) return "/static/Icons/Französisch.svg";
+  if (norm.includes("bio")) return "/static/Icons/Biologie.svg";
+  if (norm.includes("phys")) return "/static/Icons/Physik.svg";
+  if (norm.includes("chem")) return "/static/Icons/Chemie.svg";
+  if (norm.includes("gesch")) return "/static/Icons/Geschichte.svg";
+  if (norm.includes("geo")) return "/static/Icons/Geografie.svg";
+  if (norm.includes("politi") || norm === "pb") return "/static/Icons/Politische Bildung.svg";
+  if (norm.includes("wat") || norm.includes("wirtsch")) return "/static/Icons/WAT.svg";
+  if (norm.includes("ler")) return "/static/Icons/LER.svg";
+  if (norm.includes("relig")) return "/static/Icons/Religion.svg";
+  if (norm.includes("mus")) return "/static/Icons/Musik.svg";
+  if (norm.includes("sport") || norm.includes("*sp")) return "/static/Icons/Sport.svg";
+  if (norm.includes("kunst")) return "/static/Icons/Kunst.svg";
+  if (norm.includes("info")) return "/static/Icons/Informatik.svg";
+  if (norm.includes("mittag") || norm.includes("mensa")) return "/static/Icons/Mittagspause.svg";
+  if (norm.includes("pause")) return "/static/Icons/Pause.svg";
+  if (norm.includes("frei")) return "/static/Icons/Freistunde.svg";
+  return "/static/Icons/Bücher.svg";
+}
+
+function getDocumentIconUrl(docKind) {
+  if (!docKind) return "/static/Icons/Dokumente.svg";
+  const norm = String(docKind).toLowerCase().trim();
+  if (norm.includes("blatt") || norm.includes("arbeitsblatt")) return "/static/Icons/Arbeitsblätter.svg";
+  if (norm.includes("heft") || norm.includes("arbeitsheft")) return "/static/Icons/Arbeitshefte.svg";
+  if (norm.includes("mitschrift") || norm.includes("notiz")) return "/static/Icons/Mitschriften.svg";
+  if (norm.includes("übung") || norm.includes("uebung")) return "/static/Icons/Übungen.svg";
+  if (norm.includes("test")) return "/static/Icons/Tests.svg";
+  if (norm.includes("arbeit") || norm.includes("klausur")) return "/static/Icons/Arbeiten.svg";
+  if (norm.includes("berichtigung")) return "/static/Icons/Berichtigungen.svg";
+  if (norm.includes("hausaufgabe")) return "/static/Icons/Hausaufgaben.svg";
+  if (norm.includes("buch")) return "/static/Icons/Bücher.svg";
+  return "/static/Icons/Dokumente.svg";
+}
+
+// Render Dashboard Cards (klickbar zur Fach-Detailseite mit Vektor-Icons)
 function renderDashboardSubjects(subjects, topicsMap) {
   cachedSubjects = subjects;
   cachedTopicsMap = topicsMap;
@@ -728,7 +772,8 @@ function renderDashboardSubjects(subjects, topicsMap) {
   subjects.forEach((s) => {
     const card = document.createElement("div");
     card.className = "subject-card";
-    card.style.borderLeft = `5px solid ${s.color_code}`;
+    const subColor = s.color_code || "var(--accent)";
+    card.style.borderLeft = `5px solid ${subColor}`;
     card.style.cursor = "pointer";
     card.dataset.subjectId = s.id;
     card.setAttribute("role", "button");
@@ -736,8 +781,14 @@ function renderDashboardSubjects(subjects, topicsMap) {
     card.setAttribute("title", `${s.name} öffnen`);
 
     card.innerHTML = `
-      <div class="subject-badge-icon" style="background: ${s.color_code}18; border: 1px solid ${s.color_code}35;">${s.icon}</div>
-      <div class="subject-name">${escapeHtml(s.name)}</div>
+      <div class="subject-card-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}40;">
+        <img src="${getSubjectIconUrl(s.name)}" class="subject-card-svg" alt="${escapeHtml(s.name)}">
+      </div>
+      <div class="subject-card-info">
+        <div class="subject-name">${escapeHtml(s.name)}</div>
+        <div class="subject-meta-tag">Klasse 7 • Gym Eichwalde</div>
+      </div>
+      <span class="subject-card-arrow">➔</span>
     `;
 
     const handleOpen = () => {
@@ -791,7 +842,7 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
 
   const iconEl = document.getElementById("subject-detail-icon");
   if (iconEl) {
-    iconEl.textContent = s.icon || "📚";
+    iconEl.innerHTML = `<img src="${getSubjectIconUrl(s.name)}" class="subject-hero-svg" alt="${escapeHtml(s.name)}">`;
     iconEl.style.background = `${s.color_code}22`;
     iconEl.style.borderColor = `${s.color_code}44`;
   }
@@ -840,6 +891,20 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
       openMaterialUploadModal(s.id);
     };
   }
+
+  const handleKeyTrigger = (el) => {
+    if (el) {
+      el.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          el.click();
+        }
+      };
+    }
+  };
+  handleKeyTrigger(btnWb);
+  handleKeyTrigger(btnExercise);
+  handleKeyTrigger(btnUpload);
 
   const topics = cachedTopicsMap[s.id] || [];
   const topicsCount = document.getElementById("subject-topics-count");
@@ -3485,9 +3550,12 @@ function renderTimetableGrid() {
 
       if (matchingSlot) {
         if (matchingSlot.is_break) {
+          const isLunch = (matchingSlot.subject_name || "").toLowerCase().includes("mittag") || (matchingSlot.subject_name || "").toLowerCase().includes("mensa");
+          const breakIcon = isLunch ? "/static/Icons/Mittagspause.svg" : "/static/Icons/Pause.svg";
           slotCell.innerHTML = `
             <div class="tt-lesson-card tt-lesson-break">
-              <span>🥗 ${matchingSlot.subject_name || "Mittagspause"}</span>
+              <img src="${breakIcon}" class="tt-break-svg" alt="">
+              <span>${escapeHtml(matchingSlot.subject_name || "Pause")}</span>
             </div>
           `;
         } else {
@@ -3502,18 +3570,19 @@ function renderTimetableGrid() {
 
           card.innerHTML = `
             <div class="tt-lesson-top">
-              <span class="tt-lesson-name" title="Fachseite für ${matchingSlot.subject_name} öffnen">
-                ${matchingSlot.subject_icon || "📚"} ${matchingSlot.subject_name}
-              </span>
+              <div class="tt-lesson-name-group" title="Fachseite für ${escapeHtml(matchingSlot.subject_name)} öffnen">
+                <img src="${getSubjectIconUrl(matchingSlot.subject_name)}" class="tt-slot-svg" alt="">
+                <span class="tt-lesson-name">${escapeHtml(matchingSlot.subject_name)}</span>
+              </div>
               <div style="display: flex; align-items: center; gap: 4px;">
-                ${matchingSlot.subject_code ? `<span class="tt-lesson-code">${matchingSlot.subject_code}</span>` : ""}
-                <button class="btn-tt-slot-info" title="Raum & Lehrer Details anzeigen" type="button">ℹ️</button>
+                ${matchingSlot.subject_code ? `<span class="tt-lesson-code">${escapeHtml(matchingSlot.subject_code)}</span>` : ""}
+                <button class="btn-tt-slot-info" title="Raum &amp; Lehrer Details anzeigen" type="button">ℹ️</button>
               </div>
             </div>
             <div class="tt-lesson-meta">
-              <span class="tt-lesson-room">${roomStr}</span>
-              <span class="tt-lesson-teacher">${matchingSlot.teacher || ""}</span>
-              ${matchingSlot.week_type !== "both" ? `<span class="tt-tag-turnus">${matchingSlot.week_type}-Woche</span>` : ""}
+              <span class="tt-lesson-room">${escapeHtml(roomStr)}</span>
+              <span class="tt-lesson-teacher">${escapeHtml(matchingSlot.teacher || "")}</span>
+              ${matchingSlot.week_type !== "both" ? `<span class="tt-tag-turnus">${escapeHtml(matchingSlot.week_type)}-Woche</span>` : ""}
             </div>
           `;
 
@@ -3628,7 +3697,11 @@ async function loadTodayDashboardWidget() {
     lessons.forEach((l) => {
       const card = document.createElement("div");
       card.className = "dash-tt-slot-card";
-      card.style.borderLeftColor = l.subject_color || "var(--accent)";
+      const subColor = l.subject_color || "var(--accent)";
+      card.style.borderLeftColor = subColor;
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("title", `${l.subject_name} öffnen`);
 
       let roomStr = l.room || "";
       if (roomStr && !roomStr.toLowerCase().includes("halle") && !roomStr.startsWith("R")) {
@@ -3636,22 +3709,34 @@ async function loadTodayDashboardWidget() {
       }
 
       card.innerHTML = `
-        <div class="dash-tt-slot-time">${l.period_label || l.period + '. Std'} • ${l.start_time || ""}</div>
+        <div class="dash-tt-slot-top">
+          <div class="dash-tt-slot-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}40;">
+            <img src="${getSubjectIconUrl(l.subject_name)}" class="dash-tt-slot-svg" alt="${escapeHtml(l.subject_name)}">
+          </div>
+          <span class="dash-tt-slot-time">${escapeHtml(l.period_label || l.period + '. Std')} • ${escapeHtml(l.start_time || "")}</span>
+        </div>
         <div class="dash-tt-slot-subject">
-          <span>${l.subject_icon || "📚"}</span>
-          <span>${l.subject_name}</span>
+          <span>${escapeHtml(l.subject_name)}</span>
         </div>
         <div class="dash-tt-slot-meta">
-          <span>${roomStr}</span>
-          <span>${l.teacher || ""}</span>
+          ${roomStr ? `<span class="dash-tt-badge-room">${escapeHtml(roomStr)}</span>` : ""}
+          ${l.teacher ? `<span class="dash-tt-badge-teacher">${escapeHtml(l.teacher)}</span>` : ""}
         </div>
       `;
 
-      card.addEventListener("click", () => {
+      const handleSlotOpen = () => {
         if (l.subject_id) {
           openSubjectDetail(l.subject_id, "dashboard");
         } else {
           switchToTab("timetable");
+        }
+      };
+
+      card.addEventListener("click", handleSlotOpen);
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleSlotOpen();
         }
       });
 
@@ -4871,7 +4956,51 @@ async function initApp() {
   safeRun(setupBookBrowserEvents, "setupBookBrowserEvents");
   safeRun(setupSubjectDetailEvents, "setupSubjectDetailEvents");
   safeRun(setupUploadsPageEvents, "setupUploadsPageEvents");
+  safeRun(initDashboardQuickActions, "initDashboardQuickActions");
   safeRun(connectWebSocket, "connectWebSocket");
+}
+
+function initDashboardQuickActions() {
+  const quickTafel = document.getElementById("btn-quick-tafel");
+  if (quickTafel) {
+    quickTafel.addEventListener("click", () => switchToTab("whiteboard"));
+    quickTafel.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        switchToTab("whiteboard");
+      }
+    });
+  }
+  const quickPlanner = document.getElementById("btn-quick-planner");
+  if (quickPlanner) {
+    quickPlanner.addEventListener("click", () => switchToTab("planner"));
+    quickPlanner.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        switchToTab("planner");
+      }
+    });
+  }
+  const quickBooks = document.getElementById("btn-quick-books");
+  if (quickBooks) {
+    quickBooks.addEventListener("click", () => switchToTab("books"));
+    quickBooks.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        switchToTab("books");
+      }
+    });
+  }
+  const quickUpload = document.getElementById("btn-quick-upload");
+  if (quickUpload) {
+    quickUpload.addEventListener("click", () => switchToTab("uploads"));
+    quickUpload.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        switchToTab("uploads");
+      }
+    });
+  }
 }
 
 initApp();

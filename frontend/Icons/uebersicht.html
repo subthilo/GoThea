@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theas Schul-Icons (55 Vektorgrafiken)</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-hover: #f1f5f9;
+      --text: #0f172a;
+      --subtext: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --badge-bg: #f1f5f9;
+      --badge-text: #475569;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1120;
+        --card-bg: #1e293b;
+        --card-hover: #334155;
+        --text: #f8fafc;
+        --subtext: #94a3b8;
+        --border: #334155;
+        --accent: #38bdf8;
+        --accent-light: #082f49;
+        --badge-bg: #0f172a;
+        --badge-text: #cbd5e1;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 40px 24px 80px;
+      line-height: 1.5;
+    }
+    header {
+      max-width: 1200px;
+      margin: 0 auto 36px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 26px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      color: var(--subtext);
+      font-size: 15px;
+      max-width: 680px;
+      margin: 0 auto 24px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      max-width: 900px;
+      margin: 0 auto 32px;
+    }
+    .search-input {
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--card-bg);
+      color: var(--text);
+      font-size: 14px;
+      width: 280px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--card-bg);
+      color: var(--subtext);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover {
+      background: var(--card-hover);
+      color: var(--text);
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 40px auto 16px;
+      max-width: 1200px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-count {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .icon-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 12px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .icon-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -4px rgba(0,0,0,0.08);
+      border-color: var(--accent);
+    }
+    .preview {
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .filename {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      word-break: break-word;
+      margin-bottom: 4px;
+    }
+    .meta {
+      font-size: 11px;
+      color: var(--subtext);
+    }
+    .copied-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .copied-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Theas Schul-Icons Vektorsammlung</h1>
+    <p class="subtitle">55 ultra-minimalistische SVG-Icons – Passend für den Untis-Stundenplan der Klasse 7D, Lernplan-App und Unterrichtsmaterialien.</p>
+    
+    <div class="controls">
+      <input type="text" id="search" class="search-input" placeholder="Icon suchen (z. B. WAT, Deutsch, Mittag)..." oninput="filterIcons()">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="selectCategory('all', this)">Alle (55)</button>
+        <button class="tab-btn" onclick="selectCategory('cat-0', this)">Designstudie (15)</button>
+        <button class="tab-btn" onclick="selectCategory('cat-1', this)">App &amp; Lernplan (9)</button>
+        <button class="tab-btn" onclick="selectCategory('cat-2', this)">Schulfächer (17)</button>
+        <button class="tab-btn" onclick="selectCategory('cat-3', this)">Schule allgemein (14)</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="content">
+
+    <section class="category-section" id="cat-0">
+      <div class="section-title">
+        <span>Designstudie (Basis)</span>
+        <span class="section-count">15</span>
+      </div>
+      <div class="grid">
+
+        <div class="icon-card" data-name="dokumente" onclick="copySvgPath('Dokumente.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Dokumente.svg" alt="Dokumente" loading="lazy"></div>
+          <div class="filename">Dokumente.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="seiten anzeigen" onclick="copySvgPath('Seiten anzeigen.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Seiten anzeigen.svg" alt="Seiten anzeigen" loading="lazy"></div>
+          <div class="filename">Seiten anzeigen.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="blätterpfeile" onclick="copySvgPath('Blätterpfeile.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Blätterpfeile.svg" alt="Blätterpfeile" loading="lazy"></div>
+          <div class="filename">Blätterpfeile.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="inhaltsverzeichnis" onclick="copySvgPath('Inhaltsverzeichnis.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Inhaltsverzeichnis.svg" alt="Inhaltsverzeichnis" loading="lazy"></div>
+          <div class="filename">Inhaltsverzeichnis.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="bücher" onclick="copySvgPath('Bücher.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Bücher.svg" alt="Bücher" loading="lazy"></div>
+          <div class="filename">Bücher.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="mitschriften" onclick="copySvgPath('Mitschriften.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Mitschriften.svg" alt="Mitschriften" loading="lazy"></div>
+          <div class="filename">Mitschriften.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="arbeitsblätter" onclick="copySvgPath('Arbeitsblätter.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Arbeitsblätter.svg" alt="Arbeitsblätter" loading="lazy"></div>
+          <div class="filename">Arbeitsblätter.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="übungen" onclick="copySvgPath('Übungen.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Übungen.svg" alt="Übungen" loading="lazy"></div>
+          <div class="filename">Übungen.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="tests" onclick="copySvgPath('Tests.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Tests.svg" alt="Tests" loading="lazy"></div>
+          <div class="filename">Tests.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="arbeiten" onclick="copySvgPath('Arbeiten.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Arbeiten.svg" alt="Arbeiten" loading="lazy"></div>
+          <div class="filename">Arbeiten.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="berichtigungen" onclick="copySvgPath('Berichtigungen.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Berichtigungen.svg" alt="Berichtigungen" loading="lazy"></div>
+          <div class="filename">Berichtigungen.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="arbeitshefte" onclick="copySvgPath('Arbeitshefte.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Arbeitshefte.svg" alt="Arbeitshefte" loading="lazy"></div>
+          <div class="filename">Arbeitshefte.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="stundenplan" onclick="copySvgPath('Stundenplan.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Stundenplan.svg" alt="Stundenplan" loading="lazy"></div>
+          <div class="filename">Stundenplan.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="schreibwerkzeuge" onclick="copySvgPath('Schreibwerkzeuge.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Schreibwerkzeuge.svg" alt="Schreibwerkzeuge" loading="lazy"></div>
+          <div class="filename">Schreibwerkzeuge.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="federmappe" onclick="copySvgPath('Federmappe.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Federmappe.svg" alt="Federmappe" loading="lazy"></div>
+          <div class="filename">Federmappe.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="category-section" id="cat-1">
+      <div class="section-title">
+        <span>App & Lernplanung</span>
+        <span class="section-count">9</span>
+      </div>
+      <div class="grid">
+
+        <div class="icon-card" data-name="übersicht" onclick="copySvgPath('Übersicht.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Übersicht.svg" alt="Übersicht" loading="lazy"></div>
+          <div class="filename">Übersicht.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="lernplan" onclick="copySvgPath('Lernplan.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Lernplan.svg" alt="Lernplan" loading="lazy"></div>
+          <div class="filename">Lernplan.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="lernstatus" onclick="copySvgPath('Lernstatus.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Lernstatus.svg" alt="Lernstatus" loading="lazy"></div>
+          <div class="filename">Lernstatus.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="countdown" onclick="copySvgPath('Countdown.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Countdown.svg" alt="Countdown" loading="lazy"></div>
+          <div class="filename">Countdown.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="upload" onclick="copySvgPath('Upload.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Upload.svg" alt="Upload" loading="lazy"></div>
+          <div class="filename">Upload.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="kind" onclick="copySvgPath('Kind.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Kind.svg" alt="Kind" loading="lazy"></div>
+          <div class="filename">Kind.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="erwachsener" onclick="copySvgPath('Erwachsener.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Erwachsener.svg" alt="Erwachsener" loading="lazy"></div>
+          <div class="filename">Erwachsener.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="tafel" onclick="copySvgPath('Tafel.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Tafel.svg" alt="Tafel" loading="lazy"></div>
+          <div class="filename">Tafel.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="radierer" onclick="copySvgPath('Radierer.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Radierer.svg" alt="Radierer" loading="lazy"></div>
+          <div class="filename">Radierer.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="category-section" id="cat-2">
+      <div class="section-title">
+        <span>Schulfächer (Theas Stundenplan)</span>
+        <span class="section-count">17</span>
+      </div>
+      <div class="grid">
+
+        <div class="icon-card" data-name="deutsch" onclick="copySvgPath('Deutsch.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Deutsch.svg" alt="Deutsch" loading="lazy"></div>
+          <div class="filename">Deutsch.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="mathematik" onclick="copySvgPath('Mathematik.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Mathematik.svg" alt="Mathematik" loading="lazy"></div>
+          <div class="filename">Mathematik.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="englisch" onclick="copySvgPath('Englisch.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Englisch.svg" alt="Englisch" loading="lazy"></div>
+          <div class="filename">Englisch.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="französisch" onclick="copySvgPath('Französisch.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Französisch.svg" alt="Französisch" loading="lazy"></div>
+          <div class="filename">Französisch.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="biologie" onclick="copySvgPath('Biologie.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Biologie.svg" alt="Biologie" loading="lazy"></div>
+          <div class="filename">Biologie.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="physik" onclick="copySvgPath('Physik.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Physik.svg" alt="Physik" loading="lazy"></div>
+          <div class="filename">Physik.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="chemie" onclick="copySvgPath('Chemie.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Chemie.svg" alt="Chemie" loading="lazy"></div>
+          <div class="filename">Chemie.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="geschichte" onclick="copySvgPath('Geschichte.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Geschichte.svg" alt="Geschichte" loading="lazy"></div>
+          <div class="filename">Geschichte.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="geografie" onclick="copySvgPath('Geografie.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Geografie.svg" alt="Geografie" loading="lazy"></div>
+          <div class="filename">Geografie.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="politische bildung" onclick="copySvgPath('Politische Bildung.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Politische Bildung.svg" alt="Politische Bildung" loading="lazy"></div>
+          <div class="filename">Politische Bildung.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="wat" onclick="copySvgPath('WAT.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="WAT.svg" alt="WAT" loading="lazy"></div>
+          <div class="filename">WAT.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="ler" onclick="copySvgPath('LER.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="LER.svg" alt="LER" loading="lazy"></div>
+          <div class="filename">LER.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="religion" onclick="copySvgPath('Religion.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Religion.svg" alt="Religion" loading="lazy"></div>
+          <div class="filename">Religion.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="musik" onclick="copySvgPath('Musik.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Musik.svg" alt="Musik" loading="lazy"></div>
+          <div class="filename">Musik.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="sport" onclick="copySvgPath('Sport.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Sport.svg" alt="Sport" loading="lazy"></div>
+          <div class="filename">Sport.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="kunst" onclick="copySvgPath('Kunst.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Kunst.svg" alt="Kunst" loading="lazy"></div>
+          <div class="filename">Kunst.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="informatik" onclick="copySvgPath('Informatik.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Informatik.svg" alt="Informatik" loading="lazy"></div>
+          <div class="filename">Informatik.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="category-section" id="cat-3">
+      <div class="section-title">
+        <span>Schule allgemein & Alltag</span>
+        <span class="section-count">14</span>
+      </div>
+      <div class="grid">
+
+        <div class="icon-card" data-name="mittagspause" onclick="copySvgPath('Mittagspause.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Mittagspause.svg" alt="Mittagspause" loading="lazy"></div>
+          <div class="filename">Mittagspause.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="freistunde" onclick="copySvgPath('Freistunde.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Freistunde.svg" alt="Freistunde" loading="lazy"></div>
+          <div class="filename">Freistunde.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="schulranzen" onclick="copySvgPath('Schulranzen.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Schulranzen.svg" alt="Schulranzen" loading="lazy"></div>
+          <div class="filename">Schulranzen.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="geodreieck" onclick="copySvgPath('Geodreieck.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Geodreieck.svg" alt="Geodreieck" loading="lazy"></div>
+          <div class="filename">Geodreieck.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="lineal" onclick="copySvgPath('Lineal.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Lineal.svg" alt="Lineal" loading="lazy"></div>
+          <div class="filename">Lineal.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="schere" onclick="copySvgPath('Schere.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Schere.svg" alt="Schere" loading="lazy"></div>
+          <div class="filename">Schere.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="hausaufgaben" onclick="copySvgPath('Hausaufgaben.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Hausaufgaben.svg" alt="Hausaufgaben" loading="lazy"></div>
+          <div class="filename">Hausaufgaben.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="pausengong" onclick="copySvgPath('Pausengong.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Pausengong.svg" alt="Pausengong" loading="lazy"></div>
+          <div class="filename">Pausengong.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="pause" onclick="copySvgPath('Pause.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Pause.svg" alt="Pause" loading="lazy"></div>
+          <div class="filename">Pause.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="noten" onclick="copySvgPath('Noten.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Noten.svg" alt="Noten" loading="lazy"></div>
+          <div class="filename">Noten.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="kalender" onclick="copySvgPath('Kalender.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Kalender.svg" alt="Kalender" loading="lazy"></div>
+          <div class="filename">Kalender.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="nachrichten" onclick="copySvgPath('Nachrichten.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Nachrichten.svg" alt="Nachrichten" loading="lazy"></div>
+          <div class="filename">Nachrichten.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="suche" onclick="copySvgPath('Suche.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Suche.svg" alt="Suche" loading="lazy"></div>
+          <div class="filename">Suche.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+        <div class="icon-card" data-name="einstellungen" onclick="copySvgPath('Einstellungen.svg')" title="Klicken zum Kopieren des Dateinamens">
+          <div class="preview"><img src="Einstellungen.svg" alt="Einstellungen" loading="lazy"></div>
+          <div class="filename">Einstellungen.svg</div>
+          <div class="meta">100 × 100 px</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast" class="copied-toast">Dateiname kopiert!</div>
+
+  <script>
+    let activeCat = 'all';
+
+    function selectCategory(catId, btn) {
+      activeCat = catId;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterIcons();
+    }
+
+    function filterIcons() {
+      const q = document.getElementById('search').value.toLowerCase().trim();
+      const sections = document.querySelectorAll('.category-section');
+
+      sections.forEach(sec => {
+        const secId = sec.id;
+        const matchesCat = (activeCat === 'all' || activeCat === secId);
+        
+        if (!matchesCat) {
+          sec.style.display = 'none';
+          return;
+        }
+
+        const cards = sec.querySelectorAll('.icon-card');
+        let visibleCount = 0;
+        cards.forEach(card => {
+          const name = card.getAttribute('data-name');
+          if (!q || name.includes(q)) {
+            card.style.display = 'flex';
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+
+        sec.style.display = visibleCount > 0 ? 'block' : 'none';
+      });
+    }
+
+    function copySvgPath(filename) {
+      navigator.clipboard.writeText(filename).then(() => {
+        showToast('Kopiert: ' + filename);
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+  </script>
+</body>
+</html>

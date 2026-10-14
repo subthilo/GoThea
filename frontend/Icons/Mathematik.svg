@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- 4 Grundrechenarten im harmonischen Quadrat -->
+  <!-- Plus (oben links) -->
+  <line x1="23" y1="33" x2="43" y2="33" />
+  <line x1="33" y1="23" x2="33" y2="43" />
+  <!-- Minus (oben rechts) -->
+  <line x1="57" y1="33" x2="77" y2="33" />
+  <!-- Mal (unten links) -->
+  <line x1="26" y1="60" x2="40" y2="74" />
+  <line x1="40" y1="60" x2="26" y2="74" />
+  <!-- Geteilt (unten rechts) -->
+  <line x1="57" y1="67" x2="77" y2="67" />
+  <circle cx="67" cy="58" r="2" fill="#1E293B" />
+  <circle cx="67" cy="76" r="2" fill="#1E293B" />
+</svg>

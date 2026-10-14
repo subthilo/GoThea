@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Book 1 (top) -->
+  <path d="M 27 22 L 75 22 Q 71 31 75 40 L 27 40 A 9 9 0 0 1 27 22 Z" />
+  <!-- Book 2 (middle, shifted right) -->
+  <path d="M 36 40 L 83 40 Q 79 49 83 58 L 36 58 A 9 9 0 0 1 36 40 Z" />
+  <!-- Book 3 (bottom) -->
+  <path d="M 27 58 L 75 58 Q 71 67 75 76 L 27 76 A 9 9 0 0 1 27 58 Z" />
+</svg>

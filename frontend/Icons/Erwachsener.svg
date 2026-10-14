@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Kopf Erwachsener -->
+  <circle cx="50" cy="33" r="15" />
+  <!-- Schultern & Kragen -->
+  <path d="M 18 84 C 18 66, 32 60, 50 60 C 68 60, 82 66, 82 84" />
+  <!-- Hemdkragen / V-Ausschnitt -->
+  <polyline points="44,60 50,68 56,60" />
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="rotate(-30 50 50)">
+    <rect x="12" y="37" width="76" height="26" rx="4" />
+    <!-- Millimeter- und Zentimeter-Skala -->
+    <line x1="22" y1="37" x2="22" y2="49" />
+    <line x1="30" y1="37" x2="30" y2="44" />
+    <line x1="38" y1="37" x2="38" y2="49" />
+    <line x1="46" y1="37" x2="46" y2="44" />
+    <line x1="54" y1="37" x2="54" y2="49" />
+    <line x1="62" y1="37" x2="62" y2="44" />
+    <line x1="70" y1="37" x2="70" y2="49" />
+    <line x1="78" y1="37" x2="78" y2="44" />
+  </g>
+</svg>

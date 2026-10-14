@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="rotate(-25 50 50)">
+    <!-- Radiergummi-Körper -->
+    <rect x="18" y="36" width="64" height="28" rx="5" />
+    <!-- Banderole / Hülse -->
+    <line x1="46" y1="36" x2="46" y2="64" />
+    <line x1="52" y1="36" x2="52" y2="64" />
+  </g>
+</svg>

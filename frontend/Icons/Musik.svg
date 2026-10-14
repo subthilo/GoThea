@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Zwei verbundene Achtelnoten -->
+  <ellipse cx="28" cy="68" rx="8" ry="6" transform="rotate(-20 28 68)" fill="#1E293B" />
+  <ellipse cx="68" cy="60" rx="8" ry="6" transform="rotate(-20 68 60)" fill="#1E293B" />
+  <line x1="34" y1="66" x2="34" y2="26" />
+  <line x1="74" y1="58" x2="74" y2="18" />
+  <!-- Verbindungsbalken -->
+  <line x1="32" y1="25" x2="76" y2="17" stroke-width="6" />
+</svg>

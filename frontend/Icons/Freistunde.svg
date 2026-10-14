@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Uhr-Zifferblatt -->
+  <circle cx="50" cy="50" r="32" />
+  <polyline points="50,28 50,50 64,50" />
+  <!-- Sonnenschein-Strahlen oben rechts (freie Zeit) -->
+  <line x1="78" y1="22" x2="86" y2="14" />
+  <line x1="70" y1="16" x2="74" y2="8" />
+  <line x1="84" y1="30" x2="92" y2="26" />
+</svg>

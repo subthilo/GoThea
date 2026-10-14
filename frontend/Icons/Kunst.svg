@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Maler-Palette mit Pinsel -->
+  <path d="M 46 18 C 70 18, 84 32, 84 50 C 84 68, 70 82, 50 82 C 38 82, 30 76, 28 66 C 26 58, 30 52, 26 44 C 22 36, 16 36, 16 28 C 16 20, 28 18, 46 18 Z" />
+  <!-- Daumenloch -->
+  <circle cx="66" cy="60" r="5" />
+  <!-- Farbpunkte -->
+  <circle cx="36" cy="28" r="2.5" fill="#1E293B" />
+  <circle cx="54" cy="25" r="2.5" fill="#1E293B" />
+  <circle cx="70" cy="34" r="2.5" fill="#1E293B" />
+  <!-- Pinsel schräg -->
+  <line x1="22" y1="84" x2="50" y2="56" />
+  <path d="M 50 56 L 56 50 C 58 48, 62 48, 64 50 C 66 52, 66 56, 64 58 L 58 64 Z" />
+</svg>

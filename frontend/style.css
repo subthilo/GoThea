@@ -209,13 +209,17 @@ body {
   font-weight: 600;
 }
 
-/* Nav Tabs */
-.nav-tabs {
+/* Nav Tabs / Dock */
+.nav-tabs,
+.nav-dock {
   display: flex;
-  gap: 6px;
-  background: var(--bg-secondary);
-  padding: 4px;
-  border-radius: 12px;
+  align-items: center;
+  gap: 4px;
+  background: rgba(18, 21, 28, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 4px 6px;
+  border-radius: 14px;
   border: 1px solid var(--border-color);
   max-width: 100%;
   overflow-x: auto;
@@ -223,30 +227,80 @@ body {
   scrollbar-width: none;
 }
 
-.nav-tabs::-webkit-scrollbar {
+.nav-tabs::-webkit-scrollbar,
+.nav-dock::-webkit-scrollbar {
   display: none;
 }
 
-.nav-tab {
+.nav-tab,
+.dock-tab {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 6px 14px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  user-select: none;
 }
 
-.nav-tab:hover {
+.dock-tab-icon-wrap {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dock-icon {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(0.85);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+}
+
+.dock-tab-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.nav-tab:hover,
+.dock-tab:hover {
   color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.nav-tab.active {
+.dock-tab:hover .dock-icon {
+  transform: scale(1.1);
+  filter: brightness(0) invert(1);
+}
+
+.nav-tab.active,
+.dock-tab.active {
   background: var(--bg-card);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 16px var(--theme-glow);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dock-tab.active .dock-icon {
+  transform: scale(1.08);
+  filter: brightness(0) invert(1);
+}
+
+.dock-tab .nav-counter-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  font-size: 0.68rem;
+  padding: 1px 5px;
 }
 
 /* Status Badge */
@@ -7290,6 +7344,550 @@ body.parent-mode-active .parent-status-pill {
   pointer-events: none;
   z-index: 9999;
   display: none;
+}
+
+/* ==========================================================================
+   Konzept 1: Theas iPad-Desk (Moderne Kachel- & SVG-Icon-Architektur)
+   ========================================================================== */
+
+/* Parent / Profile Pill Icon */
+.pill-svg-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(0.92);
+  vertical-align: middle;
+}
+
+/* Dashboard: Stundenplan Header & Slot Cards */
+.dash-tt-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-tt-header-svg {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(0.95);
+}
+
+.dash-tt-slot-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  user-select: none;
+}
+
+.dash-tt-slot-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dash-tt-slot-card:active {
+  transform: scale(0.98);
+}
+
+.dash-tt-slot-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dash-tt-slot-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.dash-tt-slot-svg {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(0.95);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dash-tt-slot-card:hover .dash-tt-slot-svg {
+  transform: scale(1.12);
+}
+
+.dash-tt-slot-time {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dash-tt-slot-subject {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.dash-tt-slot-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.dash-tt-badge-room {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dash-tt-badge-teacher {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Schnell-Zonen (Große, anfassbare Aktionskacheln) */
+.dash-quick-actions-section {
+  margin: 24px 0 28px;
+}
+
+.dash-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.dash-quick-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-quick-card.card-tafel {
+  border-left: 4px solid #6366f1;
+}
+
+.dash-quick-card.card-homework {
+  border-left: 4px solid #f59e0b;
+}
+
+.dash-quick-card.card-books {
+  border-left: 4px solid #10b981;
+}
+
+.dash-quick-card.card-upload {
+  border-left: 4px solid #ec4899;
+}
+
+.dash-quick-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+.dash-quick-card:active {
+  transform: scale(0.98);
+}
+
+.quick-card-icon-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-tafel .quick-card-icon-wrap {
+  background: rgba(99, 102, 241, 0.16);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.card-homework .quick-card-icon-wrap {
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.card-books .quick-card-icon-wrap {
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.card-upload .quick-card-icon-wrap {
+  background: rgba(236, 72, 153, 0.16);
+  border: 1px solid rgba(236, 72, 153, 0.35);
+}
+
+.dash-quick-card:hover .quick-card-icon-wrap {
+  transform: scale(1.08);
+}
+
+.quick-card-svg {
+  width: 28px;
+  height: 28px;
+  filter: brightness(0) invert(0.95);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dash-quick-card:hover .quick-card-svg {
+  transform: scale(1.1);
+}
+
+.quick-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-card-title {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.quick-card-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.quick-card-go {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+}
+
+.dash-quick-card:hover .quick-card-go {
+  transform: translateX(4px);
+  color: var(--text-primary);
+}
+
+/* Kompakte Statuszeile */
+.dash-stats-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: 4px 6px;
+}
+
+.dash-stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.stat-mini-svg {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(0.85);
+}
+
+/* Upgrade für Subject Cards im Dashboard */
+.subject-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.subject-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+.subject-card:active {
+  transform: scale(0.985);
+}
+
+.subject-card-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.subject-card:hover .subject-card-icon-wrap {
+  transform: scale(1.08);
+}
+
+.subject-card-svg {
+  width: 30px;
+  height: 30px;
+  filter: brightness(0) invert(0.95);
+}
+
+.subject-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.subject-card .subject-name {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.subject-meta-tag {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.subject-card-arrow {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+}
+
+.subject-card:hover .subject-card-arrow {
+  transform: translateX(4px);
+  color: var(--text-primary);
+}
+
+/* Fach-Detailseite: Hero Icon & 3 Große Touch-Aktionskarten */
+.subject-hero-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.subject-hero-svg {
+  width: 38px;
+  height: 38px;
+  filter: brightness(0) invert(0.95);
+}
+
+.subject-action-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 18px 0 24px;
+}
+
+.subject-action-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.subject-action-card.card-accent-tafel {
+  border-left: 5px solid #6366f1;
+}
+
+.subject-action-card.card-accent-exercise {
+  border-left: 5px solid #f59e0b;
+}
+
+.subject-action-card.card-accent-upload {
+  border-left: 5px solid #10b981;
+}
+
+.subject-action-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+}
+
+.subject-action-card:active {
+  transform: scale(0.98);
+}
+
+.subject-action-card .action-card-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-accent-tafel .action-card-icon-wrap {
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.card-accent-exercise .action-card-icon-wrap {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.card-accent-upload .action-card-icon-wrap {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.subject-action-card:hover .action-card-icon-wrap {
+  transform: scale(1.08);
+}
+
+.action-card-svg {
+  width: 30px;
+  height: 30px;
+  filter: brightness(0) invert(0.95);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.subject-action-card:hover .action-card-svg {
+  transform: scale(1.1);
+}
+
+.action-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.action-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 3px 0;
+}
+
+.action-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.action-card-arrow {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+}
+
+.subject-action-card:hover .action-card-arrow {
+  transform: translateX(4px);
+  color: var(--text-primary);
+}
+
+/* Material Filter-Pills mit SVGs */
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-pill-svg {
+  width: 17px;
+  height: 17px;
+  filter: brightness(0) invert(0.85);
+  transition: transform 0.2s ease, filter 0.2s ease;
+  vertical-align: middle;
+}
+
+.filter-pill:hover .filter-pill-svg {
+  transform: scale(1.08);
+  filter: brightness(0) invert(1);
+}
+
+.filter-pill.active .filter-pill-svg {
+  filter: brightness(0) invert(1);
+}
+
+/* Timetable Raster SVGs */
+.tt-lesson-name-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.tt-slot-svg {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(0.95);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.tt-lesson-card:hover .tt-slot-svg {
+  transform: scale(1.15);
+}
+
+.tt-break-svg {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(0.95);
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
 

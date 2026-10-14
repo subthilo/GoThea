@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Kerze mit Flamme (Lebensgestaltung, Ethik, Religion) -->
+  <rect x="42" y="46" width="16" height="36" rx="3" />
+  <!-- Docht -->
+  <line x1="50" y1="46" x2="50" y2="38" />
+  <!-- Tropfenflamme -->
+  <path d="M 50 18 C 42 26, 42 34, 50 38 C 58 34, 58 26, 50 18 Z" />
+  <!-- Kerzenteller -->
+  <line x1="28" y1="82" x2="72" y2="82" />
+</svg>

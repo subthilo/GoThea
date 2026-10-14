@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Wahlurne mit Stimmzettel (Demokratie & Politik) -->
+  <rect x="22" y="46" width="56" height="38" rx="4" />
+  <line x1="36" y1="46" x2="64" y2="46" />
+  <!-- Einwurf-Stimmzettel -->
+  <path d="M 36 20 L 64 20 L 64 46 L 36 46 Z" />
+  <polyline points="44,32 48,36 56,28" />
+</svg>

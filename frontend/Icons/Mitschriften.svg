@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Notebook cover -->
+  <path d="M 29 18 A 6 6 0 0 1 35 14 L 75 14 A 6 6 0 0 1 81 20 L 81 80 A 6 6 0 0 1 75 86 L 35 86 A 6 6 0 0 1 29 82" />
+  <!-- Left edge spine segments between rings -->
+  <line x1="29" y1="18" x2="29" y2="23" />
+  <line x1="29" y1="33" x2="29" y2="39" />
+  <line x1="29" y1="49" x2="29" y2="55" />
+  <line x1="29" y1="65" x2="29" y2="71" />
+  <line x1="29" y1="81" x2="29" y2="82" />
+  <!-- 4 Spiral Rings -->
+  <path d="M 37 25 L 21 25 A 4 4 0 0 0 21 33 L 29 33" />
+  <path d="M 37 41 L 21 41 A 4 4 0 0 0 21 49 L 29 49" />
+  <path d="M 37 57 L 21 57 A 4 4 0 0 0 21 65 L 29 65" />
+  <path d="M 37 73 L 21 73 A 4 4 0 0 0 21 81 L 29 81" />
+</svg>

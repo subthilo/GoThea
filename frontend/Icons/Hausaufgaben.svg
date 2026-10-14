@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Haus-Symbol mit Buch / Aufgabe -->
+  <polyline points="18,46 50,20 82,46" />
+  <polyline points="26,42 26,82 74,82 74,42" />
+  <polyline points="66,33 66,22 72,22 72,38" />
+  <!-- Offenes Heft / Buch im Haus -->
+  <path d="M 36 68 Q 50 64 50 56 Q 50 64 64 68 L 64 50 Q 50 46 50 54 Q 50 46 36 50 Z" />
+</svg>

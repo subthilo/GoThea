@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Hammer (von unten links nach oben rechts) -->
+  <line x1="28" y1="76" x2="64" y2="40" stroke-width="5" />
+  <rect x="54" y="22" width="28" height="16" rx="3" transform="rotate(45 68 30)" />
+  
+  <!-- Schraubenschlüssel (von unten rechts nach oben links) -->
+  <line x1="72" y1="76" x2="44" y2="48" stroke-width="5" />
+  <!-- Ring unten rechts -->
+  <circle cx="75" cy="79" r="5" />
+  <!-- Maul oben links -->
+  <path d="M 40 44 L 32 36 C 27 31, 27 23, 32 18 C 37 13, 45 13, 50 18 L 58 26" />
+  <polyline points="33,26 42,26 42,35" />
+</svg>

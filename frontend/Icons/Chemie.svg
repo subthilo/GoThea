@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Erlenmeyerkolben mit Flüssigkeit und Bläschen -->
+  <line x1="38" y1="16" x2="62" y2="16" />
+  <line x1="43" y1="16" x2="43" y2="36" />
+  <line x1="57" y1="16" x2="57" y2="36" />
+  <path d="M 43 36 L 20 76 A 6 6 0 0 0 25 84 L 75 84 A 6 6 0 0 0 80 76 L 57 36" />
+  <!-- Flüssigkeitsspiegel -->
+  <path d="M 29 64 Q 50 68 71 64" />
+  <!-- Reaktionsbläschen -->
+  <circle cx="44" cy="52" r="2.5" />
+  <circle cx="55" cy="46" r="2" />
+</svg>
