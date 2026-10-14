@@ -638,7 +638,8 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
     const target = document.getElementById(`tab-${btn.dataset.tab}`);
     if (target) target.classList.add("active");
 
-    if (btn.dataset.tab !== "books") {
+    const readerView = document.getElementById("book-reader-view");
+    if (btn.dataset.tab !== "books" || !readerView || readerView.style.display === "none") {
       document.body.classList.remove("reader-zen-mode");
     }
 
@@ -4535,6 +4536,7 @@ function setupBookBrowserEvents() {
   let macWheelTimer = null;
 
   window.addEventListener("wheel", (e) => {
+    if (!document.body.classList.contains("reader-zen-mode")) return;
     const readerView = document.getElementById("book-reader-view");
     if (!readerView || readerView.style.display === "none") return;
 
@@ -4844,6 +4846,7 @@ async function loadBookAnnotations(materialId, pageNum) {
 
 // Init
 async function initApp() {
+  document.body.classList.remove("reader-zen-mode");
   const safeRun = async (fn, name) => {
     try {
       await fn();
