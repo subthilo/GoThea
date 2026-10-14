@@ -42,7 +42,7 @@ LEVELS: List[Dict[str, Any]] = [
     {"level": 2, "title": "Rätsel-Meisterin 🔍", "min_xp": 250, "max_xp": 600},
     {"level": 3, "title": "Gymnasial-Profi 🎯", "min_xp": 600, "max_xp": 1200},
     {"level": 4, "title": "Olympia-Denkerin ⚡", "min_xp": 1200, "max_xp": 2500},
-    {"level": 5, "title": "GoThea-Meisterin 🦉✨", "min_xp": 2500, "max_xp": 999999},
+    {"level": 5, "title": "GoThea-Meisterin ✨", "min_xp": 2500, "max_xp": 999999},
 ]
 
 
@@ -448,7 +448,7 @@ def get_gamification_overview(db: Session, user_id: str = "usr_thea") -> Dict[st
         },
         {
             "id": "knowledge_master",
-            "icon": "🦉",
+            "icon": "👑",
             "title": "GoThea-Meisterin",
             "description": "Erreiche Level 3 oder höher!",
             "unlocked": level_info["level"] >= 3

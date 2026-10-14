@@ -1867,7 +1867,7 @@
         return;
       }
 
-      const origIcon = hintIcon ? hintIcon.textContent : "🦉";
+      const origIcon = hintIcon ? hintIcon.textContent : "✨";
       const origText = hintLabel ? hintLabel.textContent : "Tutor fragen";
 
       if (hintIcon) hintIcon.textContent = "⏳";

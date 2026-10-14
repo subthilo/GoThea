@@ -92,8 +92,8 @@ async def get_index():
 @app.get("/apple-touch-icon.png")
 @app.get("/apple-touch-icon-precomposed.png")
 async def get_app_icon():
-    # Schneller SVG/PNG-Fallback für Safari
-    svg_icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🦉</text></svg>'
+    # Schneller SVG/PNG-Fallback für Safari (modernes Minimal-Logo)
+    svg_icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" rx="22" fill="#6366f1"/><path d="M28 35h44v38a6 6 0 0 1-6 6H34a6 6 0 0 1-6-6V35z" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M38 27h24v8H38z" fill="#fff"/></svg>'
     return Response(content=svg_icon, media_type="image/svg+xml")
 
 @app.get("/manifest.json")

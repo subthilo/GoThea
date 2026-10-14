@@ -590,7 +590,7 @@ async function loadGamificationOverview() {
       }
       if (barXpEl) {
         if (lvl.max_xp === null) {
-          barXpEl.textContent = `Maximales Level erreicht! 🦉✨ (${data.total_xp} XP)`;
+          barXpEl.textContent = `Maximales Level erreicht! ✨ (${data.total_xp} XP)`;
         } else {
           barXpEl.textContent = `${lvl.current_level_xp} / ${lvl.needed_level_xp} XP bis Level ${lvl.level + 1}`;
         }
@@ -771,24 +771,19 @@ function renderDashboardSubjects(subjects, topicsMap) {
 
   subjects.forEach((s) => {
     const card = document.createElement("div");
-    card.className = "subject-card";
-    const subColor = s.color_code || "var(--accent)";
-    card.style.borderLeft = `5px solid ${subColor}`;
-    card.style.cursor = "pointer";
+    card.className = "subject-card subject-app-tile";
+    const subColor = s.color_code || "#2563eb";
+    card.style.setProperty("--tile-color", subColor);
     card.dataset.subjectId = s.id;
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
     card.setAttribute("title", `${s.name} öffnen`);
 
     card.innerHTML = `
-      <div class="subject-card-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}40;">
-        <img src="${getSubjectIconUrl(s.name)}" class="subject-card-svg" alt="${escapeHtml(s.name)}">
+      <div class="subject-tile-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}45;">
+        <img src="${getSubjectIconUrl(s.name)}" class="subject-tile-svg" alt="${escapeHtml(s.name)}">
       </div>
-      <div class="subject-card-info">
-        <div class="subject-name">${escapeHtml(s.name)}</div>
-        <div class="subject-meta-tag">Klasse 7 • Gym Eichwalde</div>
-      </div>
-      <span class="subject-card-arrow">➔</span>
+      <div class="subject-tile-name">${escapeHtml(s.name)}</div>
     `;
 
     const handleOpen = () => {
@@ -852,9 +847,6 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
 
   const gradeEl = document.getElementById("subject-detail-grade");
   if (gradeEl) gradeEl.textContent = `Klasse ${s.min_grade}–${s.max_grade}`;
-
-  const descEl = document.getElementById("subject-detail-desc");
-  if (descEl) descEl.textContent = `Humboldt-Gymnasium Eichwalde • Brandenburger Rahmenlehrplan`;
 
   const btnWb = document.getElementById("btn-subject-open-wb");
   if (btnWb) {
@@ -1852,7 +1844,7 @@ function buildMaterialCard(m, onDeleted) {
         📖 Reader
       </button>
       <button class="btn-mat-action btn-mat-wb" title="Dieses Dokument auf der digitalen Tafel mit KI-Tutorin Luna üben">
-        🦉 Tafel
+        🎨 Tafel
       </button>
       <button class="btn-mat-action btn-mat-cloze" title="Lückentext-Übung direkt aus diesem Dokument erstellen">
         🧩 Üben
@@ -2107,7 +2099,7 @@ async function handleSingleFileUpload(file) {
   const pStat = document.getElementById("mat-batch-status");
   if (pStat) pStat.textContent = "";
   const spinnerText = document.getElementById("mat-spinner-text");
-  if (spinnerText) spinnerText.textContent = "🦉 Analysiere Dokument & Schlagwörter...";
+  if (spinnerText) spinnerText.textContent = "Analysiere Dokument & Schlagwörter...";
 
   const formData = new FormData();
   formData.append("file", file);
@@ -2205,8 +2197,8 @@ async function handleBatchFileUpload(files) {
     if (pFill) pFill.style.width = `${pct}%`;
     if (spinnerText) {
       spinnerText.textContent = targetSub
-        ? `🦉 Verarbeite Dokumente für ${targetSub.name}...`
-        : "🦉 Verarbeite Dokumente...";
+        ? `Verarbeite Dokumente für ${targetSub.name}...`
+        : "Verarbeite Dokumente...";
     }
     if (pStat) {
       pStat.textContent = `Datei ${i + 1} von ${total}: ${file.name}`;
@@ -2290,7 +2282,7 @@ function resetMaterialModal() {
   const pStat = document.getElementById("mat-batch-status");
   if (pStat) pStat.textContent = "";
   const spinnerText = document.getElementById("mat-spinner-text");
-  if (spinnerText) spinnerText.textContent = "🦉 Analysiere Dokument & Schlagwörter...";
+  if (spinnerText) spinnerText.textContent = "Analysiere Dokument & Schlagwörter...";
 
   const fixedBadge = document.getElementById("mat-fixed-subject-badge");
   if (fixedBadge) fixedBadge.style.display = "none";

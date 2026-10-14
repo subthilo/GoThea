@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=9.0">
+  <link rel="stylesheet" href="/static/style.css?v=9.1">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -27,11 +27,8 @@
     <!-- Header -->
     <header class="header">
       <div class="brand">
-        <span class="logo-icon">🦉</span>
-        <div class="brand-text">
-          <span class="logo">GoThea</span>
-          <span class="badge-grade" id="badge-grade">7. Klasse</span>
-        </div>
+        <span class="logo">GoThea</span>
+        <span class="badge-grade" id="badge-grade">7. Klasse</span>
       </div>
 
       <!-- Navigation Dock (Klickbare Icon-Zonen) -->
@@ -135,7 +132,6 @@
         <div class="welcome-banner">
           <div>
             <h1 id="user-greeting">Hallo, Thea! 👋</h1>
-            <p class="subtitle" id="user-subtitle">7. Klasse Gymnasium • Land Brandenburg (Niveaustufe E)</p>
           </div>
 
           <div class="gamification-header-stats" id="gamification-header-stats">
@@ -176,7 +172,7 @@
         <!-- Level XP Fortschrittsbalken -->
         <div class="gamification-level-bar-card" id="gamification-level-bar-card">
           <div class="game-level-bar-header">
-            <span class="game-level-bar-title" id="game-level-bar-title">🦉 Level 1: Wissens-Entdeckerin</span>
+            <span class="game-level-bar-title" id="game-level-bar-title">Level 1: Wissens-Entdeckerin</span>
             <span class="game-level-bar-xp-text" id="game-level-bar-xp-text">0 / 100 XP bis Level 2</span>
           </div>
           <div class="game-level-bar-track">
@@ -192,13 +188,12 @@
                 <img src="/static/Icons/Kalender.svg" class="dash-tt-header-svg" alt="Kalender">
               </div>
               <div>
-                <div class="dash-tt-title" id="dash-tt-day-title">Dein Schultag heute</div>
-                <div class="dash-tt-subtitle" id="dash-tt-subtitle">Humboldt-Gymnasium Eichwalde • Klasse 7D</div>
+                <div class="dash-tt-title" id="dash-tt-day-title">Heute</div>
               </div>
             </div>
             <div class="dash-tt-actions">
-              <span class="dash-tt-week-pill" id="dash-tt-week-pill">🅰️ A-Woche</span>
-              <button class="btn-secondary-sm" id="btn-dash-goto-timetable">Vollständigen Stundenplan ansehen ➔</button>
+              <span class="dash-tt-week-pill" id="dash-tt-week-pill">A-Woche</span>
+              <button class="btn-secondary-sm" id="btn-dash-goto-timetable">Stundenplan ➔</button>
             </div>
           </div>
           <div class="dash-tt-slots-row" id="dash-tt-slots-row">
@@ -206,67 +201,35 @@
           </div>
         </div>
 
-        <!-- Schnell-Zonen (Große, anfassbare Aktionskacheln) -->
+        <!-- Schnell-Zonen (4 Große iPad-App-Tiles) -->
         <div class="dash-quick-actions-section">
           <div class="dash-quick-grid">
-            <div class="dash-quick-card card-tafel" id="btn-quick-tafel" role="button" tabindex="0" title="Freie Tafel öffnen">
+            <div class="dash-quick-card card-tafel" id="btn-quick-tafel" role="button" tabindex="0" title="Tafel">
               <div class="quick-card-icon-wrap">
                 <img src="/static/Icons/Tafel.svg" class="quick-card-svg" alt="Tafel">
               </div>
-              <div class="quick-card-body">
-                <div class="quick-card-title">Freie Tafel</div>
-                <div class="quick-card-desc">Sofort zeichnen, rechnen &amp; mitschreiben</div>
-              </div>
-              <span class="quick-card-go">➔</span>
+              <div class="quick-card-title">Tafel</div>
             </div>
 
-            <div class="dash-quick-card card-homework" id="btn-quick-planner" role="button" tabindex="0" title="Hausaufgaben &amp; Lernplan ansehen">
+            <div class="dash-quick-card card-homework" id="btn-quick-planner" role="button" tabindex="0" title="Hausaufgaben">
               <div class="quick-card-icon-wrap">
                 <img src="/static/Icons/Hausaufgaben.svg" class="quick-card-svg" alt="Hausaufgaben">
               </div>
-              <div class="quick-card-body">
-                <div class="quick-card-title">Hausaufgaben</div>
-                <div class="quick-card-desc">Aufgaben, Termine &amp; To-dos im Blick</div>
-              </div>
-              <span class="quick-card-go">➔</span>
+              <div class="quick-card-title">Hausaufgaben</div>
             </div>
 
-            <div class="dash-quick-card card-books" id="btn-quick-books" role="button" tabindex="0" title="Schulbücher aufschlagen">
+            <div class="dash-quick-card card-books" id="btn-quick-books" role="button" tabindex="0" title="Bücher">
               <div class="quick-card-icon-wrap">
-                <img src="/static/Icons/Bücher.svg" class="quick-card-svg" alt="Schulbücher">
+                <img src="/static/Icons/Bücher.svg" class="quick-card-svg" alt="Bücher">
               </div>
-              <div class="quick-card-body">
-                <div class="quick-card-title">Schulbücher</div>
-                <div class="quick-card-desc">Lehrwerke &amp; Kapitel digital aufschlagen</div>
-              </div>
-              <span class="quick-card-go">➔</span>
+              <div class="quick-card-title">Bücher</div>
             </div>
 
-            <div class="dash-quick-card card-upload" id="btn-quick-upload" role="button" tabindex="0" title="Neues Dokument scannen oder hochladen">
+            <div class="dash-quick-card card-upload" id="btn-quick-upload" role="button" tabindex="0" title="Upload">
               <div class="quick-card-icon-wrap">
                 <img src="/static/Icons/Upload.svg" class="quick-card-svg" alt="Upload">
               </div>
-              <div class="quick-card-body">
-                <div class="quick-card-title">Neues Blatt</div>
-                <div class="quick-card-desc">Scannen oder Foto im Postfach ablegen</div>
-              </div>
-              <span class="quick-card-go">➔</span>
-            </div>
-          </div>
-
-          <!-- Kompakte Statuszeile -->
-          <div class="dash-stats-bar">
-            <div class="dash-stat-chip">
-              <img src="/static/Icons/Bücher.svg" class="stat-mini-svg" alt="">
-              <span><strong id="stat-subjects-count">0</strong> Schulfächer aktiv</span>
-            </div>
-            <div class="dash-stat-chip">
-              <img src="/static/Icons/Dokumente.svg" class="stat-mini-svg" alt="">
-              <span><strong id="stat-topics-count">0</strong> Lehrplanthemen (Klasse 7)</span>
-            </div>
-            <div class="dash-stat-chip">
-              <img src="/static/Icons/Übungen.svg" class="stat-mini-svg" alt="">
-              <span><strong id="stat-today-exercises">0</strong> heute gemeistert</span>
+              <div class="quick-card-title">Upload</div>
             </div>
           </div>
         </div>
@@ -551,44 +514,31 @@
                 <h1 class="subject-hero-title" id="subject-detail-name">Mathematik</h1>
                 <span class="badge-grade" id="subject-detail-grade">7. Klasse</span>
               </div>
-              <p class="subject-hero-subtitle" id="subject-detail-desc">Humboldt-Gymnasium Eichwalde • Brandenburger Rahmenlehrplan</p>
             </div>
           </div>
         </div>
 
         <!-- 3 Große Touch-Aktionskarten statt Buttonleiste -->
         <div class="subject-action-cards-grid">
-          <div class="subject-action-card card-accent-tafel" id="btn-subject-open-wb" role="button" tabindex="0" title="Tafel für dieses Fach öffnen">
+          <div class="subject-action-card card-accent-tafel" id="btn-subject-open-wb" role="button" tabindex="0" title="Tafel">
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Tafel.svg" class="action-card-svg" alt="Tafel">
             </div>
-            <div class="action-card-content">
-              <h3 class="action-card-title">Fach-Tafel</h3>
-              <p class="action-card-desc">Hefter &amp; Notizen für dieses Fach öffnen</p>
-            </div>
-            <span class="action-card-arrow">➔</span>
+            <div class="action-card-title">Tafel</div>
           </div>
 
-          <div class="subject-action-card card-accent-exercise" id="btn-subject-start-exercise" role="button" tabindex="0" title="Lückentext-Übung starten">
+          <div class="subject-action-card card-accent-exercise" id="btn-subject-start-exercise" role="button" tabindex="0" title="Üben">
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Übungen.svg" class="action-card-svg" alt="Übungen">
             </div>
-            <div class="action-card-content">
-              <h3 class="action-card-title">Übungs-Studio</h3>
-              <p class="action-card-desc">Lückentext &amp; Training aus Schulunterlagen</p>
-            </div>
-            <span class="action-card-arrow">➔</span>
+            <div class="action-card-title">Üben</div>
           </div>
 
-          <div class="subject-action-card card-accent-upload" id="btn-subject-upload-doc" role="button" tabindex="0" title="Neues Dokument hochladen">
+          <div class="subject-action-card card-accent-upload" id="btn-subject-upload-doc" role="button" tabindex="0" title="Upload">
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Upload.svg" class="action-card-svg" alt="Upload">
             </div>
-            <div class="action-card-content">
-              <h3 class="action-card-title">Neues Material</h3>
-              <p class="action-card-desc">Arbeitsblatt hochladen oder abfotografieren</p>
-            </div>
-            <span class="action-card-arrow">➔</span>
+            <div class="action-card-title">Upload</div>
           </div>
         </div>
 
@@ -614,7 +564,6 @@
               <span class="subject-scores-icon">🎯</span>
               <div>
                 <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Trainingsstand & Niveau</h3>
-                <p class="subtitle" style="margin: 2px 0 0; font-size: 0.8rem;">Erfolgs-Tracking & automatische Schwierigkeitsanpassung durch Luna</p>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -655,8 +604,7 @@
         <div class="materials-section" style="margin-top: 28px;">
           <div class="section-title-row">
             <div>
-              <h3>📚 Dokumente & Arbeitsmaterialien</h3>
-              <p class="subtitle" id="subject-materials-subtitle">Alle Hefter, Arbeitsblätter, Buchkapitel und Tests für dieses Fach</p>
+              <h3>Dokumente</h3>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
               <button id="btn-open-subject-merge-modal" class="btn-secondary-sm parent-only" title="Ausgewählte Dokumente dieses Fachs vereinen">🔗 Dokumente zusammenführen</button>
@@ -757,8 +705,8 @@
               <button id="btn-wb-new-session" class="wb-btn-subtle" title="Neue Tafel beginnen">✨ Neu</button>
               <button id="btn-wb-place-exercise" class="wb-btn-subtle" style="font-weight: 600;" title="Aufgabe von Luna auf die Tafel legen">📝 Aufgabe stellen</button>
               <button id="btn-wb-audio-toggle" class="wb-btn-subtle wb-btn-speaker active" title="Sprachausgabe (TTS) an/aus">🔊</button>
-              <button id="btn-wb-request-hint" class="wb-btn-primary" title="Tafel mit KI analysieren & sokratischen Tipp vorlesen">
-                <span id="wb-hint-icon">🦉</span>
+              <button id="btn-wb-request-hint" class="wb-btn-primary" title="Tafel mit KI analysieren &amp; sokratischen Tipp vorlesen">
+                <span id="wb-hint-icon">✨</span>
                 <span id="wb-hint-label">Tutor fragen</span>
               </button>
               <button id="btn-wb-fullscreen" class="wb-btn-icon" title="Vollbildmodus umschalten">⛶</button>
@@ -798,7 +746,7 @@
 
             <!-- Floating Tutor Speech Bubble (erscheint wenn Luna spricht) -->
             <div id="wb-tutor-bubble" class="wb-tutor-bubble" style="display: none;">
-              <span class="wb-tutor-avatar">🦉</span>
+              <span class="wb-tutor-avatar">✨</span>
               <div class="wb-tutor-bubble-content">
                 <div class="wb-tutor-name">Luna (Tutorin)</div>
                 <div id="wb-tutor-speech-text" class="wb-tutor-speech-text"></div>
@@ -1175,7 +1123,7 @@
           </div>
           <div id="mat-upload-spinner" style="display: none; text-align: center; padding: 24px;">
             <div class="mat-spinner"></div>
-            <p id="mat-spinner-text" style="margin-top: 12px; color: var(--accent-light); font-weight: 600;">🦉 Analysiere Dokument & Schlagwörter...</p>
+            <p id="mat-spinner-text" style="margin-top: 12px; color: var(--accent-light); font-weight: 600;">Analysiere Dokument...</p>
             <div id="mat-batch-progress-bar" style="display: none; width: 100%; max-width: 340px; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; margin: 14px auto 6px; overflow: hidden;">
               <div id="mat-batch-progress-fill" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
             </div>
@@ -1569,7 +1517,7 @@
             <span>← Zurück zu</span>
             <strong id="cloze-back-subject-name">Fach</strong>
           </button>
-          <div class="cloze-luna-avatar" id="cloze-luna-avatar">🦉</div>
+          <div class="cloze-luna-avatar" id="cloze-luna-avatar">✨</div>
           <div class="cloze-header-titles">
             <div class="cloze-header-title-row">
               <h3 id="cloze-modal-title">Lückentext-Übung</h3>
@@ -1627,7 +1575,7 @@
       <div class="exercise-arena-body cloze-trainer-body" id="cloze-trainer-body">
         <!-- Loading State -->
         <div class="cloze-loading-state" id="cloze-loading-state" style="display: none;">
-          <div class="cloze-spinner-owl">🦉</div>
+          <div class="cloze-spinner-owl">✨</div>
           <div style="margin-top: 12px; font-weight: 600; font-size: 1.05rem;" id="cloze-loading-text">Luna bereitet deine Übung vor...</div>
           <p style="margin: 6px 0 0; font-size: 0.85rem; color: var(--text-secondary);">Unterrichtsmaterialien werden analysiert und Satz-Audio vorgerendert</p>
         </div>
@@ -1713,8 +1661,8 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=8.0"></script>
-  <script src="/static/whiteboard.js?v=5.2"></script>
+  <script src="/static/app.js?v=9.0"></script>
+  <script src="/static/whiteboard.js?v=6.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>
 </html>
