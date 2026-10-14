@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=6.6">
+  <link rel="stylesheet" href="/static/style.css?v=6.7">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -286,6 +286,11 @@
               </div>
 
               <div class="topbar-right">
+                <!-- Zoom Umschalter: Ganze Seite einpassen / Volle Breite -->
+                <button type="button" class="btn-reader-action-icon" id="btn-toggle-zoom-mode" title="Zwischen 'Ganze Seite einpassen' und 'Volle Breite' wechseln">
+                  <span class="btn-icon" id="zoom-mode-icon">⛶</span>
+                </button>
+
                 <!-- Zeichentools ein-/ausklappen -->
                 <button type="button" class="btn-reader-action-icon" id="btn-toggle-ink-toolbar" title="Zeichenwerkzeuge ein-/ausblenden">
                   <span class="btn-icon">✏️</span>
@@ -1623,7 +1628,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=6.8"></script>
+  <script src="/static/app.js?v=6.9"></script>
   <script src="/static/whiteboard.js?v=5.1"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>

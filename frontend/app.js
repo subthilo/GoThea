@@ -4365,7 +4365,11 @@ async function renderChapterPage() {
   // Drawer-Aktualisierung (aktive Sektion hervorheben)
   updateDrawerActiveState();
 
-  // Bild in voller Breite laden
+  // Scrollposition auf Seitenanfang zurücksetzen
+  const canvasWrap = document.getElementById("book-page-canvas-wrapper");
+  if (canvasWrap) canvasWrap.scrollTop = 0;
+
+  // Bild in gewähltem Modus laden
   if (imgEl) {
     if (loadingEl) loadingEl.style.display = "flex";
     imgEl.className = `book-page-img mode-${bookZoomMode}`;
@@ -4523,29 +4527,35 @@ function setupBookBrowserEvents() {
     }
   });
 
-  // Zoom Fit / Width Umschalter
+  // 1-Klick Zoom-Umschalter in der Kopfzeile & Palette
+  const btnToggleZoom = document.getElementById("btn-toggle-zoom-mode");
+  const zoomIcon = document.getElementById("zoom-mode-icon");
   const zoomFitBtn = document.getElementById("btn-book-zoom-fit");
   const zoomWidthBtn = document.getElementById("btn-book-zoom-width");
   const imgEl = document.getElementById("book-page-img");
 
-  if (zoomFitBtn) {
-    zoomFitBtn.addEventListener("click", () => {
-      bookZoomMode = "fit";
-      zoomFitBtn.classList.add("active");
-      if (zoomWidthBtn) zoomWidthBtn.classList.remove("active");
-      if (imgEl) imgEl.className = "book-page-img mode-fit";
-      setTimeout(syncBookAnnotationCanvasSize, 220);
+  function setBookZoomMode(mode) {
+    bookZoomMode = mode;
+    if (imgEl) imgEl.className = `book-page-img mode-${mode}`;
+    if (zoomIcon) zoomIcon.textContent = mode === "fit" ? "↔" : "⛶";
+    if (btnToggleZoom) btnToggleZoom.title = mode === "fit" ? "Auf volle Breite umschalten (↔)" : "Ganze Seite einpassen (⛶)";
+    if (zoomFitBtn) zoomFitBtn.classList.toggle("active", mode === "fit");
+    if (zoomWidthBtn) zoomWidthBtn.classList.toggle("active", mode === "width");
+    setTimeout(syncBookAnnotationCanvasSize, 220);
+  }
+
+  if (btnToggleZoom) {
+    btnToggleZoom.addEventListener("click", () => {
+      setBookZoomMode(bookZoomMode === "width" ? "fit" : "width");
     });
   }
 
+  if (zoomFitBtn) {
+    zoomFitBtn.addEventListener("click", () => setBookZoomMode("fit"));
+  }
+
   if (zoomWidthBtn) {
-    zoomWidthBtn.addEventListener("click", () => {
-      bookZoomMode = "width";
-      zoomWidthBtn.classList.add("active");
-      if (zoomFitBtn) zoomFitBtn.classList.remove("active");
-      if (imgEl) imgEl.className = "book-page-img mode-width";
-      setTimeout(syncBookAnnotationCanvasSize, 220);
-    });
+    zoomWidthBtn.addEventListener("click", () => setBookZoomMode("width"));
   }
 
   // Inking Engine starten
