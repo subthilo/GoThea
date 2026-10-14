@@ -640,9 +640,6 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
 
     if (btn.dataset.tab !== "books") {
       document.body.classList.remove("reader-zen-mode");
-      if (bookSaveTimer) {
-        saveCurrentBookAnnotations();
-      }
     }
 
     if (btn.dataset.tab === "uploads") {
@@ -653,7 +650,9 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
       loadTimetable();
     }
     if (btn.dataset.tab === "books") {
-      loadBooks();
+      if (currentBooks.length === 0) {
+        loadBooks();
+      }
       setTimeout(syncBookAnnotationCanvasSize, 100);
     }
   });
@@ -3903,10 +3902,15 @@ async function selectBook(bookId) {
     renderDrawerTOC();
 
     if (isReaderOpen && activeChapter) {
-      // Wenn das Buch gewechselt wurde während der Reader offen war, erstes Kapitel des neuen Buchs laden
+      // Wenn das Buch gewechselt wurde während der Reader offen war, selbes Kapitel oder erstes Kapitel laden
       const chaps = activeBookDetail.chapters || [];
-      const newChap = chaps.find(c => c.id === activeChapter.id) || (chaps.find(c => c.chapter_number === 1) || chaps[0]);
-      if (newChap) openChapter(newChap);
+      const sameChap = chaps.find(c => c.id === activeChapter.id);
+      if (sameChap) {
+        openChapter(sameChap, currentChapterPage);
+      } else {
+        const newChap = chaps.find(c => c.chapter_number === 1) || chaps[0];
+        if (newChap) openChapter(newChap, 1);
+      }
     }
   } catch (err) {
     console.error("Fehler beim Abruf der Buch-Details:", err);
@@ -4086,9 +4090,6 @@ function openChapter(ch, targetPage = 1) {
 }
 
 function closeReaderToCatalog() {
-  if (bookSaveTimer) {
-    saveCurrentBookAnnotations();
-  }
   const catalogView = document.getElementById("book-catalog-view");
   const readerView = document.getElementById("book-reader-view");
   if (readerView) readerView.style.display = "none";
@@ -4281,11 +4282,6 @@ function renderBookPageStrip() {
 async function renderChapterPage() {
   if (!activeChapter) return;
 
-  // Wenn noch ein Autosave der vorherigen Seite aussteht, sofort speichern
-  if (bookSaveTimer) {
-    await saveCurrentBookAnnotations();
-  }
-
   const counterEl = document.getElementById("book-page-counter");
   const counterSlim = document.getElementById("reader-page-counter-slim");
   const prevBtn = document.getElementById("btn-book-prev-page");
@@ -4382,8 +4378,9 @@ async function renderChapterPage() {
     };
 
     imgEl.onload = onImageLoaded;
-    imgEl.onerror = () => {
+    imgEl.onerror = (e) => {
       if (loadingEl) loadingEl.style.display = "none";
+      console.error("Fehler beim Laden der Buchseite:", targetUrl, e);
     };
     imgEl.src = targetUrl;
 
@@ -4698,6 +4695,9 @@ function syncBookAnnotationCanvasSize() {
   const targetPixelW = Math.round(w * dpr);
   const targetPixelH = Math.round(h * dpr);
 
+  canvas.style.left = `${imgEl.offsetLeft}px`;
+  canvas.style.top = `${imgEl.offsetTop}px`;
+
   if (canvas.width !== targetPixelW || canvas.height !== targetPixelH) {
     canvas.width = targetPixelW;
     canvas.height = targetPixelH;
@@ -4707,7 +4707,6 @@ function syncBookAnnotationCanvasSize() {
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  bookCanvasRect = null;
   redrawBookAnnotations();
 }
 
@@ -4801,9 +4800,6 @@ function redrawBookAnnotations() {
   }
 }
 
-async function saveCurrentBookAnnotations() {
-  // Notizen werden direkt auf der interaktiven Tafel gespeichert
-}
 
 async function loadBookAnnotations(materialId, pageNum) {
   currentBookAnnotationMaterialId = materialId;
