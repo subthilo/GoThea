@@ -3071,20 +3071,21 @@ body.timetable-zen-mode {
   left: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 body.timetable-zen-mode .staging-banner {
-  flex-shrink: 0 !important;
+  display: none !important;
 }
 
 body.timetable-zen-mode .app-container {
   height: 100% !important;
-  height: 100dvh !important;
-  max-height: 100dvh !important;
+  max-height: 100% !important;
   width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
-  padding: max(6px, env(safe-area-inset-top)) 14px max(6px, env(safe-area-inset-bottom)) 14px !important;
+  padding: max(6px, env(safe-area-inset-top)) 12px max(8px, env(safe-area-inset-bottom)) 12px !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
