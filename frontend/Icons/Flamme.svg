@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Flamme / Streak-Tage -->
+  <path d="M 50 14 C 54 26 62 36 72 48 C 80 58 80 72 70 80 C 62 86 38 86 30 80 C 20 72 20 58 28 48 C 36 38 42 28 42 20 C 44 26 48 30 52 30 C 50 24 50 18 50 14 Z" />
+  <path d="M 50 52 C 58 60 58 72 50 76 C 42 72 42 60 50 52 Z" />
+</svg>

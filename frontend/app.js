@@ -571,7 +571,7 @@ async function loadGamificationOverview() {
 
     if (levelNumEl) levelNumEl.textContent = data.level?.level || 1;
     if (levelTitleEl) levelTitleEl.textContent = data.level?.title || "Wissens-Entdeckerin";
-    if (levelIconEl) levelIconEl.textContent = data.level?.icon || "🌱";
+    if (levelIconEl) levelIconEl.innerHTML = `<img src="/static/Icons/Level.svg" class="capsule-svg-icon" alt="Level">`;
 
     if (streakDaysEl) streakDaysEl.textContent = data.streak_days || 0;
     if (totalStarsEl) totalStarsEl.textContent = data.total_stars || 0;
@@ -586,7 +586,7 @@ async function loadGamificationOverview() {
     if (data.level) {
       const lvl = data.level;
       if (barTitleEl) {
-        barTitleEl.textContent = `${lvl.icon} Level ${lvl.level}: ${lvl.title}`;
+        barTitleEl.textContent = `Level ${lvl.level}: ${lvl.title}`;
       }
       if (barXpEl) {
         if (lvl.max_xp === null) {

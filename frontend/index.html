@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=9.3">
+  <link rel="stylesheet" href="/static/style.css?v=9.4">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -122,16 +122,16 @@
     <main class="content">
       <!-- Tab 1: Dashboard -->
       <section id="tab-dashboard" class="tab-pane active">
-        <!-- Oberer iPadOS Dashboard-Header: Begrüßung links, kompakte Status-Kapsel rechts -->
+        <!-- Oberer iPadOS Dashboard-Header: Kompakte Status-Kapsel mit Vektor-Icons -->
         <div class="dash-header-bar">
-          <div class="dash-welcome">
-            <h1 class="dash-greeting" id="user-greeting">Hallo, Thea! 👋</h1>
-          </div>
+          <span id="user-greeting" style="display: none;"></span>
 
-          <!-- iPad-native Status-Kapsel (kompakt, elegant, ohne Textballast) -->
+          <!-- iPad-native Status-Kapsel (kompakt, elegant, reine Vektorgrafiken) -->
           <div class="dash-stats-capsule" id="gamification-header-stats">
             <div class="capsule-chip chip-level" id="chip-level" title="Dein Level und Fortschritt">
-              <span class="capsule-icon" id="game-level-icon">🌱</span>
+              <span class="capsule-icon-wrap" id="game-level-icon">
+                <img src="/static/Icons/Level.svg" class="capsule-svg-icon" alt="Level">
+              </span>
               <span class="capsule-level-label">Lvl <span id="game-level-num">1</span></span>
               <div class="capsule-progress-track" title="XP Fortschritt">
                 <div class="capsule-progress-fill" id="game-level-bar-fill" style="width: 0%;"></div>
@@ -144,21 +144,27 @@
             <div class="capsule-divider"></div>
 
             <div class="capsule-chip chip-streak" id="chip-streak" title="Tage in Folge fleißig geübt">
-              <span class="capsule-icon">🔥</span>
+              <span class="capsule-icon-wrap">
+                <img src="/static/Icons/Flamme.svg" class="capsule-svg-icon" alt="Streak">
+              </span>
               <strong class="capsule-val"><span id="game-streak-days">0</span> d</strong>
             </div>
 
             <div class="capsule-divider"></div>
 
             <div class="capsule-chip chip-stars" id="chip-stars" title="Wissens-Sterne">
-              <span class="capsule-icon">⭐</span>
+              <span class="capsule-icon-wrap">
+                <img src="/static/Icons/Stern.svg" class="capsule-svg-icon" alt="Sterne">
+              </span>
               <strong class="capsule-val" id="game-total-stars">0</strong>
             </div>
 
             <div class="capsule-divider"></div>
 
             <div class="capsule-chip chip-xp" id="chip-xp" title="Erfahrungspunkte (XP)">
-              <span class="capsule-icon">⚡</span>
+              <span class="capsule-icon-wrap">
+                <img src="/static/Icons/Blitz.svg" class="capsule-svg-icon" alt="XP">
+              </span>
               <strong class="capsule-val"><span id="game-total-xp">0</span> XP</strong>
             </div>
           </div>
@@ -1612,7 +1618,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=9.3"></script>
+  <script src="/static/app.js?v=9.4"></script>
   <script src="/static/whiteboard.js?v=6.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>

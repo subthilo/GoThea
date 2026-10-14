@@ -7127,24 +7127,8 @@ body.parent-mode-active .parent-status-pill {
 .dash-header-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-
-.dash-welcome {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dash-greeting {
-  font-size: 1.85rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin: 0;
+  justify-content: center;
+  margin-bottom: 20px;
 }
 
 /* Glassmorphism iPad Status Capsule */
@@ -7157,14 +7141,14 @@ body.parent-mode-active .parent-status-pill {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 6px 16px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
 }
 
 .capsule-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   padding: 3px 6px;
   border-radius: 999px;
   font-size: 0.84rem;
@@ -7182,9 +7166,25 @@ body.parent-mode-active .parent-status-pill {
   gap: 8px;
 }
 
-.capsule-icon {
-  font-size: 1.15rem;
-  line-height: 1;
+.capsule-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.capsule-svg-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(0.92);
+  transition: transform 0.15s ease;
+}
+
+.capsule-chip:hover .capsule-svg-icon {
+  transform: scale(1.15);
+  filter: brightness(0) invert(1);
 }
 
 .capsule-level-label {
