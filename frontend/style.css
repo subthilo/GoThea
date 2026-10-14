@@ -3083,8 +3083,21 @@ body.timetable-zen-mode .content {
   box-sizing: border-box;
 }
 
+/* Timetable Tab Pane: nur anzeigen wenn .active */
+.tab-pane.tt-page-pane,
 .tt-page-pane {
-  display: flex;
+  display: none;
+}
+
+#tab-timetable:not(.active),
+.tt-page-pane:not(.active) {
+  display: none !important;
+}
+
+.tab-pane.tt-page-pane.active,
+.tt-page-pane.active,
+#tab-timetable.active {
+  display: flex !important;
   flex-direction: column;
   height: 100%;
   width: 100%;
