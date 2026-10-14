@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=9.4">
+  <link rel="stylesheet" href="/static/style.css?v=9.5">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -78,31 +78,6 @@
       </nav>
 
       <div class="header-right-group">
-        <div class="theme-selector-widget" id="theme-selector-widget">
-          <button id="btn-theme-toggle" class="btn-theme-pill" type="button" title="Design & Farbschema wählen">
-            <span class="theme-pill-icon" id="theme-pill-icon">🚀</span>
-            <span class="theme-pill-text" id="theme-pill-text">Weltall</span>
-          </button>
-          <div class="theme-dropdown-menu" id="theme-dropdown-menu" style="display: none;">
-            <button type="button" class="theme-opt-btn active" data-theme="space">
-              <span class="theme-opt-emoji">🚀</span>
-              <span class="theme-opt-name">Weltall</span>
-            </button>
-            <button type="button" class="theme-opt-btn" data-theme="sunset">
-              <span class="theme-opt-emoji">🌅</span>
-              <span class="theme-opt-name">Sonnenuntergang</span>
-            </button>
-            <button type="button" class="theme-opt-btn" data-theme="nature">
-              <span class="theme-opt-emoji">🌲</span>
-              <span class="theme-opt-name">Zauberwald</span>
-            </button>
-            <button type="button" class="theme-opt-btn" data-theme="candy">
-              <span class="theme-opt-emoji">🦄</span>
-              <span class="theme-opt-name">Zauberwelt</span>
-            </button>
-          </div>
-        </div>
-
         <div class="parent-mode-widget" id="parent-mode-widget">
           <button id="btn-parent-toggle" class="btn-parent-pill" type="button" title="Zwischen Thea-Modus und Eltern-Modus wechseln">
             <span class="parent-pill-icon" id="parent-pill-icon">
@@ -111,9 +86,9 @@
             <span class="parent-pill-text" id="parent-pill-text">Thea-Modus</span>
           </button>
         </div>
-        <div class="status-badge" id="status-badge">
+        <div class="status-badge status-dot-only" id="status-badge" title="Verbunden">
           <span class="status-dot"></span>
-          <span id="status-text">Verbinde...</span>
+          <span id="status-text" style="display: none;">Verbunden</span>
         </div>
       </div>
     </header>
@@ -865,7 +840,7 @@
       <!-- Tab 5: Profil -->
       <section id="tab-profile" class="tab-pane">
         <div class="profile-card">
-          <h2>Schülerprofil & Schulform</h2>
+          <h2><img src="/static/Icons/Kind.svg" class="prof-heading-icon" alt=""> Schülerprofil & Schulform</h2>
           <div class="form-group">
             <label>Name</label>
             <input type="text" id="prof-name" class="input-field" value="Thea">
@@ -891,8 +866,9 @@
           </div>
           <div style="display: flex; gap: 12px; align-items: center; margin-top: 18px; flex-wrap: wrap;">
             <button id="btn-save-profile" class="btn-primary parent-only">Profil aktualisieren</button>
-            <div id="prof-thea-notice" class="thea-only text-muted-sm" style="font-size: 0.85rem; color: var(--text-muted);">
-              🔒 <em>Schulform & Klassenstufe können im Eltern-Modus geändert werden.</em>
+            <div id="prof-thea-notice" class="thea-only text-muted-sm" style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+              <img src="/static/Icons/Einstellungen.svg" class="prof-inline-icon" alt="">
+              <em>Schulform & Klassenstufe können im Eltern-Modus geändert werden.</em>
             </div>
           </div>
           <div id="prof-feedback" class="feedback-msg"></div>
@@ -900,7 +876,7 @@
 
         <!-- App-Design & Farbschema (Themes) -->
         <div class="profile-card" id="card-app-theme" style="margin-top: 24px;">
-          <h2>🎨 Design & Farbschema</h2>
+          <h2><img src="/static/Icons/Kunst.svg" class="prof-heading-icon" alt=""> Design & Farbschema</h2>
           <p class="subtitle" style="margin-bottom: 16px;">
             Wähle dein Lieblings-Aussehen für GoThea. Das Design wird sofort auf allen Seiten angewendet!
           </p>
@@ -908,28 +884,28 @@
             <button type="button" class="theme-card-btn active" data-theme="space">
               <span class="theme-card-preview theme-preview-space"></span>
               <div class="theme-card-info">
-                <strong>🚀 Weltall (Standard)</strong>
+                <strong>Weltall (Standard)</strong>
                 <span>Dunkles Nachtblau mit Neon-Indigo</span>
               </div>
             </button>
             <button type="button" class="theme-card-btn" data-theme="sunset">
               <span class="theme-card-preview theme-preview-sunset"></span>
               <div class="theme-card-info">
-                <strong>🌅 Sonnenuntergang</strong>
+                <strong>Sonnenuntergang</strong>
                 <span>Warme Beeren- & Korallentöne</span>
               </div>
             </button>
             <button type="button" class="theme-card-btn" data-theme="nature">
               <span class="theme-card-preview theme-preview-nature"></span>
               <div class="theme-card-info">
-                <strong>🌲 Zauberwald</strong>
+                <strong>Zauberwald</strong>
                 <span>Frisches Smaragd- & Minzgrün</span>
               </div>
             </button>
             <button type="button" class="theme-card-btn" data-theme="candy">
               <span class="theme-card-preview theme-preview-candy"></span>
               <div class="theme-card-info">
-                <strong>🦄 Zauberwelt</strong>
+                <strong>Zauberwelt</strong>
                 <span>Magisches Violett & Flieder</span>
               </div>
             </button>
@@ -939,38 +915,31 @@
         <!-- Theas Erfolge & Level-Roadmap -->
         <div class="profile-card" id="card-thea-trophies" style="margin-top: 24px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-            <h2 style="margin: 0;">🏆 Theas Auszeichnungen & Level-Reise</h2>
-            <span class="badge-grade" id="prof-level-badge">Level 1 🌱</span>
+            <h2 style="margin: 0;"><img src="/static/Icons/Stern.svg" class="prof-heading-icon" alt=""> Theas Auszeichnungen & Level-Reise</h2>
+            <span class="badge-grade" id="prof-level-badge"><img src="/static/Icons/Level.svg" class="badge-svg-icon" alt=""> Level 1</span>
           </div>
           <div id="prof-achievements-grid" class="achievements-grid">
             <!-- Dynamisch befüllt via Gamification-Service -->
           </div>
         </div>
 
-        <!-- Eltern-Sicherheit & PIN-Verwaltung -->
-        <div class="profile-card" id="card-parent-security" style="margin-top: 24px;">
+        <!-- Eltern-Sicherheit & PIN-Verwaltung (nur im Eltern-Modus sichtbar, redundant im Thea-Modus da im Header) -->
+        <div class="profile-card parent-only" id="card-parent-security" style="margin-top: 24px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-            <h2 style="margin: 0;">🛡️ Eltern-Bereich & PIN-Schutz</h2>
-            <span id="prof-parent-badge" class="parent-status-pill">Thea-Modus aktiv</span>
+            <h2 style="margin: 0;"><img src="/static/Icons/Einstellungen.svg" class="prof-heading-icon" alt=""> Eltern-PIN Verwaltung</h2>
+            <span id="prof-parent-badge" class="parent-status-pill">Eltern-Modus aktiv</span>
           </div>
 
-          <div id="parent-security-locked">
-            <p class="subtitle" style="margin-bottom: 16px;">
-              Aktuell ist der sichere <strong>Thea-Modus</strong> aktiv. Lösch- und Verwaltungsfunktionen (Sperrtage, Prüfungen, Profil) sind geschützt.
-            </p>
-            <button id="btn-prof-unlock-parent" class="btn-secondary" type="button">
-              🔐 Mit Eltern-PIN freischalten
-            </button>
-          </div>
+          <div id="parent-security-locked" style="display: none;"></div>
 
-          <div id="parent-security-unlocked" style="display: none;">
+          <div id="parent-security-unlocked">
             <div class="parent-status-box" style="margin-bottom: 16px;">
               <p class="subtitle" style="margin: 0; color: var(--text-primary);">
                 Der Eltern-Modus ist freigeschaltet. Alle Verwaltungsfunktionen sind aktiv.
               </p>
             </div>
             <div id="parent-default-pin-warn" class="warning-callout" style="display: none; margin-bottom: 16px;">
-              ⚠️ <strong>Sicherheitshinweis:</strong> Aktuell wird noch die Standard-PIN (<code>1234</code>) verwendet. Bitte ändere sie zu deiner persönlichen Wunsch-PIN.
+              <strong>Sicherheitshinweis:</strong> Aktuell wird noch die Standard-PIN (<code>1234</code>) verwendet. Bitte ändere sie zu deiner persönlichen Wunsch-PIN.
             </div>
 
             <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Eltern-PIN ändern</h3>
@@ -988,8 +957,8 @@
                 <input type="password" id="input-new-pin-confirm" class="input-field" maxlength="8" inputmode="numeric" placeholder="Neue persönliche PIN wiederholen">
               </div>
               <div style="display: flex; gap: 10px; align-items: center; margin-top: 16px; flex-wrap: wrap;">
-                <button type="button" id="btn-change-parent-pin" class="btn-primary">💾 PIN jetzt ändern</button>
-                <button type="button" id="btn-prof-lock-parent" class="btn-secondary">🔒 Eltern-Modus jetzt sperren</button>
+                <button type="button" id="btn-change-parent-pin" class="btn-primary" style="width: auto;">PIN jetzt ändern</button>
+                <button type="button" id="btn-prof-lock-parent" class="btn-secondary">Eltern-Modus sperren</button>
               </div>
             </form>
             <div id="parent-pin-change-msg" class="feedback-msg"></div>
@@ -1580,37 +1549,48 @@
     </div>
   </div>
 
-  <!-- Modal: Eltern-PIN Eingabe -->
+  <!-- Modal: Eltern-PIN Eingabe (Apple-Design) -->
   <div id="modal-parent-pin" class="modal-backdrop" style="display: none;">
     <div class="modal-box modal-box-pin">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.5rem;">🔐</span>
+      <div class="modal-header modal-header-pin">
+        <div class="pin-header-content">
+          <div class="pin-icon-squircle">
+            <img src="/static/Icons/Erwachsener.svg" class="pin-svg-icon" alt="Eltern">
+          </div>
           <div>
-            <h3 style="margin: 0; font-size: 1.2rem;">Eltern-Modus</h3>
-            <span class="subtitle" style="font-size: 0.8rem;">PIN-Freischaltung für Einstellungen & Verwaltung</span>
+            <h3 class="pin-title">Eltern-Modus</h3>
+            <span class="pin-subtitle">Einstellungen & Verwaltung freischalten</span>
           </div>
         </div>
-        <button class="modal-close" id="btn-close-parent-pin-modal">&times;</button>
+        <button class="modal-close" id="btn-close-parent-pin-modal" title="Schließen">&times;</button>
       </div>
-      <div class="modal-body">
-        <p class="subtitle" style="margin-bottom: 16px;">
-          Gib eure Eltern-PIN ein, um geschützte Verwaltungs- und Löschfunktionen freizuschalten.
+      <div class="modal-body pin-modal-body">
+        <p class="pin-intro-text">
+          Gib die Eltern-PIN ein, um geschützte Verwaltungs- und Einstellungsfunktionen freizuschalten.
         </p>
-        <div id="parent-pin-default-hint" class="parent-pin-hint" style="display: none;">
-          💡 <strong>Erstmalige Nutzung:</strong> Die voreingestellte Standard-PIN lautet <code>1234</code>.
-        </div>
-        <div class="form-group pin-input-group" style="margin-top: 14px;">
-          <label for="input-parent-pin">Eltern-PIN (4–8 Ziffern)</label>
-          <div class="pin-input-wrap">
+
+        <div class="pin-field-wrapper">
+          <label for="input-parent-pin" class="pin-label">Eltern-PIN</label>
+          <div class="pin-input-container">
             <input type="password" id="input-parent-pin" class="input-field input-pin-large" maxlength="8" inputmode="numeric" placeholder="••••" autocomplete="off">
-            <button type="button" id="btn-toggle-pin-visibility" class="btn-pin-eye" title="PIN anzeigen/verbergen">👁️</button>
+            <button type="button" id="btn-toggle-pin-visibility" class="btn-pin-eye" title="PIN anzeigen oder verbergen">
+              <svg id="pin-eye-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
           </div>
         </div>
+
+        <div id="parent-pin-default-hint" class="parent-pin-default-pill" style="display: none;">
+          Standard-PIN bei Erstnutzung: <strong>1234</strong>
+        </div>
+
         <div id="parent-pin-error" class="parent-pin-error" style="display: none;"></div>
-        <div style="display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end;">
-          <button type="button" id="btn-cancel-parent-pin" class="btn-secondary">Abbrechen</button>
-          <button type="button" id="btn-submit-parent-pin" class="btn-primary">🔓 Freischalten</button>
+
+        <div class="pin-modal-actions">
+          <button type="button" id="btn-cancel-parent-pin" class="btn-secondary btn-pin-action">Abbrechen</button>
+          <button type="button" id="btn-submit-parent-pin" class="btn-primary btn-pin-action">Freischalten</button>
         </div>
       </div>
     </div>
@@ -1618,7 +1598,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=9.4"></script>
+  <script src="/static/app.js?v=9.5"></script>
   <script src="/static/whiteboard.js?v=6.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>

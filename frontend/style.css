@@ -319,23 +319,24 @@ body {
   padding: 1px 5px;
 }
 
-/* Status Badge */
+/* Status Badge: Sleek Minimal iPad Status Dot */
 .status-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-secondary);
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: rgba(18, 21, 28, 0.7);
   border: 1px solid var(--border-color);
-  padding: 6px 14px;
-  border-radius: 9999px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: default;
+  transition: all 0.2s ease;
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--warning);
   transition: all 0.3s ease;
@@ -343,7 +344,7 @@ body {
 
 .status-badge.online .status-dot {
   background: var(--success);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
 /* Main Content */
@@ -671,6 +672,34 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
   transition: opacity 0.2s;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.24);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
 }
 
 .btn-secondary-sm {
@@ -6870,71 +6899,158 @@ body.parent-mode-active .parent-status-pill {
   line-height: 1.45;
 }
 
-/* PIN Modal Styling */
+/* PIN Modal Styling (Authentic Apple Security Sheet) */
 #modal-parent-pin {
   z-index: 2500;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .modal-box-pin {
-  max-width: 420px;
-  border-radius: 20px;
-  background: var(--bg-card);
+  max-width: 390px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 24px 26px;
+  background: rgba(22, 26, 36, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
-  animation: modalPopIn 0.22s ease-out;
+  animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes modalPopIn {
-  from {
-    opacity: 0;
-    transform: scale(0.94) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+.modal-header-pin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 
-.pin-input-wrap {
+.pin-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pin-icon-squircle {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.16);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pin-svg-icon {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1);
+}
+
+.pin-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.pin-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  display: block;
+}
+
+.pin-intro-text {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0 0 16px 0;
+}
+
+.pin-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pin-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pin-input-container {
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
 }
 
 .input-pin-large {
-  font-size: 1.6rem !important;
-  letter-spacing: 0.35em;
-  text-align: center;
-  font-weight: 700;
-  padding: 12px 48px 12px 18px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  font-size: 1.5rem !important;
+  letter-spacing: 0.35em !important;
+  text-align: center !important;
+  font-weight: 700 !important;
+  padding: 12px 48px 12px 48px !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  transition: all 0.2s ease;
+}
+
+.input-pin-large:focus {
+  border-color: var(--accent) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
 }
 
 .btn-pin-eye {
   position: absolute;
   right: 10px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
   color: var(--text-secondary);
-  padding: 6px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
 }
 
 .btn-pin-eye:hover {
-  color: var(--text-primary);
+  color: #fff;
   background: rgba(255, 255, 255, 0.08);
 }
 
-.parent-pin-hint {
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+.parent-pin-default-pill {
+  margin-top: 12px;
+  padding: 7px 12px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
   border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   color: var(--accent-light);
-  line-height: 1.4;
-  margin-bottom: 12px;
+  text-align: center;
 }
 
 .parent-pin-error {
@@ -6947,6 +7063,26 @@ body.parent-mode-active .parent-status-pill {
   font-weight: 500;
   margin-top: 12px;
   line-height: 1.4;
+}
+
+.pin-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.btn-pin-action {
+  flex: 1;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-radius: 12px;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 /* ==========================================================================
@@ -7280,6 +7416,32 @@ body.parent-mode-active .parent-status-pill {
   margin-top: 4px;
 }
 
+/* Profile Heading & Inline Icons */
+.prof-heading-icon {
+  width: 22px;
+  height: 22px;
+  vertical-align: -4px;
+  margin-right: 8px;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+.prof-inline-icon {
+  width: 15px;
+  height: 15px;
+  vertical-align: -2px;
+  filter: brightness(0) invert(1);
+  opacity: 0.6;
+}
+
+.badge-svg-icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 4px;
+  filter: brightness(0) invert(1);
+}
+
 /* ==========================================================================
    Achievements Grid (Profil-Ansicht)
    ========================================================================== */
@@ -7295,15 +7457,15 @@ body.parent-mode-active .parent-status-pill {
   gap: 12px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 12px 14px;
   transition: all 0.2s ease;
 }
 
 .achievement-card.unlocked {
   border-color: rgba(250, 204, 21, 0.4);
-  background: linear-gradient(135deg, rgba(250, 204, 21, 0.07) 0%, var(--bg-card) 100%);
-  box-shadow: 0 2px 10px rgba(250, 204, 21, 0.1);
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.08) 0%, var(--bg-card) 100%);
+  box-shadow: 0 2px 10px rgba(250, 204, 21, 0.12);
 }
 
 .achievement-card.locked {
@@ -7312,9 +7474,32 @@ body.parent-mode-active .parent-status-pill {
 }
 
 .achievement-icon {
-  font-size: 1.8rem;
-  line-height: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.achievement-svg-icon {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+}
+
+.achievement-card.unlocked .achievement-icon {
+  background: rgba(250, 204, 21, 0.15);
+  border-color: rgba(250, 204, 21, 0.35);
+}
+
+.achievement-card.unlocked .achievement-svg-icon {
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.6)) brightness(0) invert(1);
+  opacity: 1;
 }
 
 .achievement-content strong {

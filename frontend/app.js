@@ -128,7 +128,7 @@ function updateParentModeUI(active, isDefault = isDefaultParentPin) {
   const defPinHint = document.getElementById("parent-pin-default-hint");
 
   if (profBadge) {
-    profBadge.textContent = isParentActive ? "✅ Eltern-Modus aktiv" : "Thea-Modus aktiv";
+    profBadge.textContent = isParentActive ? "Eltern-Modus aktiv" : "Thea-Modus aktiv";
   }
   if (secLocked) secLocked.style.display = isParentActive ? "none" : "block";
   if (secUnlocked) secUnlocked.style.display = isParentActive ? "block" : "none";
@@ -183,6 +183,11 @@ function openParentPinModal(customHint = "") {
   if (pinInput) {
     pinInput.value = "";
     pinInput.type = "password";
+  }
+
+  const eyeBtn = document.getElementById("btn-toggle-pin-visibility");
+  if (eyeBtn) {
+    eyeBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
   }
 
   modal.style.display = "flex";
@@ -368,7 +373,9 @@ function setupParentModeEvents() {
     eyeBtn.addEventListener("click", () => {
       const isPassword = pinInput.type === "password";
       pinInput.type = isPassword ? "text" : "password";
-      eyeBtn.textContent = isPassword ? "🙈" : "👁️";
+      eyeBtn.innerHTML = isPassword
+        ? `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`
+        : `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
     });
   }
 
@@ -603,20 +610,32 @@ async function loadGamificationOverview() {
     // Profile Tab Trophies
     const profBadgeEl = document.getElementById("prof-level-badge");
     if (profBadgeEl && data.level) {
-      profBadgeEl.textContent = `Level ${data.level.level} ${data.level.icon}`;
+      profBadgeEl.innerHTML = `<img src="/static/Icons/Level.svg" class="badge-svg-icon" alt=""> Level ${data.level.level}`;
     }
 
     const gridEl = document.getElementById("prof-achievements-grid");
     if (gridEl && Array.isArray(data.achievements)) {
-      gridEl.innerHTML = data.achievements.map((ach) => `
+      const iconMap = {
+        first_step: "/static/Icons/Tests.svg",
+        star_collector: "/static/Icons/Stern.svg",
+        streak_flame: "/static/Icons/Flamme.svg",
+        perfect_run: "/static/Icons/Blitz.svg",
+        knowledge_master: "/static/Icons/Level.svg"
+      };
+      gridEl.innerHTML = data.achievements.map((ach) => {
+        const svgSrc = iconMap[ach.id] || "/static/Icons/Stern.svg";
+        return `
         <div class="achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}" title="${escapeHtml(ach.description)}">
-          <span class="achievement-icon">${ach.icon}</span>
+          <span class="achievement-icon">
+            <img src="${svgSrc}" class="achievement-svg-icon" alt="${escapeHtml(ach.title)}">
+          </span>
           <div class="achievement-content">
             <strong>${escapeHtml(ach.title)}</strong>
             <p>${escapeHtml(ach.description)}</p>
           </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
     }
   } catch (err) {
     console.warn("Fehler beim Laden des Gamification-Status:", err);
@@ -1237,13 +1256,19 @@ function connectWebSocket() {
   const ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
-    statusBadge.classList.add("online");
-    statusText.textContent = "Verbunden";
+    if (statusBadge) {
+      statusBadge.classList.add("online");
+      statusBadge.title = "Verbunden";
+    }
+    if (statusText) statusText.textContent = "Verbunden";
   };
 
   ws.onclose = () => {
-    statusBadge.classList.remove("online");
-    statusText.textContent = "Verbindung getrennt";
+    if (statusBadge) {
+      statusBadge.classList.remove("online");
+      statusBadge.title = "Verbindung getrennt";
+    }
+    if (statusText) statusText.textContent = "Verbindung getrennt";
     setTimeout(connectWebSocket, 3000);
   };
 }
