@@ -694,7 +694,8 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
       window.dispatchEvent(new Event("resize"));
     }
     if (btn.dataset.tab === "books") {
-      if (currentBooks.length === 0) {
+      // Immer neu laden (neue Uploads, fertige Segmentierungen), aber einen offenen Reader nicht stören
+      if (!document.body.classList.contains("reader-zen-mode")) {
         loadBooks();
       }
       setTimeout(syncBookAnnotationCanvasSize, 100);
@@ -3926,6 +3927,7 @@ async function loadBooks() {
     }
     currentBooks = await res.json();
     renderBooksShelf();
+    scheduleBooksRefreshWhileSegmenting();
 
     const toolbar = document.getElementById("book-catalog-toolbar");
     const grid = document.getElementById("book-catalog-grid");
@@ -3968,6 +3970,21 @@ async function loadBooks() {
   }
 }
 
+// Solange ein Buch im Hintergrund in Kapitel zerlegt wird, regelmäßig nachladen
+let booksRefreshTimer = null;
+function scheduleBooksRefreshWhileSegmenting() {
+  clearTimeout(booksRefreshTimer);
+  if (!currentBooks.some((b) => b.segmenting)) return;
+  booksRefreshTimer = setTimeout(() => {
+    const booksTabActive = document.getElementById("tab-books")?.classList.contains("active");
+    if (booksTabActive && !document.body.classList.contains("reader-zen-mode")) {
+      loadBooks();
+    } else {
+      scheduleBooksRefreshWhileSegmenting();
+    }
+  }, 5000);
+}
+
 function renderBooksShelf() {
   const container = document.getElementById("books-shelf-selector");
   if (!container) return;
@@ -3981,7 +3998,7 @@ function renderBooksShelf() {
     pill.innerHTML = `
       <span class="shelf-book-icon">${book.subject_icon || "📚"}</span>
       <span class="shelf-book-title">${escapeHtml(book.title)}</span>
-      <span class="shelf-book-badge">${book.chapters_count} Kap. • ${book.total_pages} S.</span>
+      <span class="shelf-book-badge">${book.segmenting ? "⏳ wird in Kapitel zerlegt…" : `${book.chapters_count} Kap. • ${book.total_pages} S.`}</span>
     `;
     pill.addEventListener("click", () => selectBook(book.id));
     container.appendChild(pill);

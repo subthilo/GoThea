@@ -43,6 +43,7 @@ class BookOverviewRead(BaseModel):
     chapters_count: int
     summary: Optional[str] = None
     cover_preview_url: Optional[str] = None
+    segmenting: bool = False  # Kapitel werden gerade im Hintergrund erzeugt
 
 class BookDetailRead(BookOverviewRead):
     dossier_id: Optional[str] = None

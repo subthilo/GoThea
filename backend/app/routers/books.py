@@ -11,6 +11,7 @@ from backend.app.services.book_segmentation import (
     auto_detect_and_segment_book,
     auto_segment_if_known,
     trigger_background_book_segmentation,
+    is_segmentation_running,
     segment_book_material,
     get_chapter_sections,
     get_all_book_sections,
@@ -67,7 +68,8 @@ def list_books(
                 total_pages=book.page_count,
                 chapters_count=len(children) if children else 1,
                 summary=book.summary,
-                cover_preview_url=cover_preview
+                cover_preview_url=cover_preview,
+                segmenting=is_segmentation_running(book.id)
             )
         )
 
@@ -168,6 +170,7 @@ def get_book_detail(
         chapters_count=len(children) if children else 1,
         summary=book.summary,
         cover_preview_url=cover_preview,
+        segmenting=is_segmentation_running(book.id),
         dossier_id=book.dossier_id,
         chapters=chapters_out
     )

@@ -1238,9 +1238,12 @@ def trigger_background_book_segmentation(material_id: str):
     Startet die automatische Buchsegmentierung asynchron in einem Hintergrund-Thread,
     damit Web-Uploads und Inbox-Verarbeitung blitzschnell antworten.
     """
-    if is_segmentation_running(material_id):
-        logger.info(f"📚 Segmentierung für {material_id} läuft bereits.")
-        return
+    with _segmentation_locks_guard:
+        if material_id in _segmentations_running:
+            logger.info(f"📚 Segmentierung für {material_id} läuft bereits.")
+            return
+        # Sofort als laufend markieren, damit die Bücherliste es direkt anzeigen kann
+        _segmentations_running.add(material_id)
 
     def _worker():
         from backend.app.database import SessionLocal
@@ -1261,6 +1264,8 @@ def trigger_background_book_segmentation(material_id: str):
             logger.error(f"❌ Fehler bei Hintergrund-Segmentierung für {material_id}: {e}", exc_info=True)
         finally:
             db.close()
+            with _segmentation_locks_guard:
+                _segmentations_running.discard(material_id)
 
     thread = threading.Thread(target=_worker, daemon=True, name=f"BookSegmenter-{material_id}")
     thread.start()

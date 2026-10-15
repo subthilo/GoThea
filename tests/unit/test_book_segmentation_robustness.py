@@ -138,3 +138,17 @@ def test_pre_analyze_with_fixed_subject_still_uses_ai_title(client):
     assert data["predicted_title"] == "Biosphäre 7/8 Berlin/Brandenburg"
     assert data["predicted_subject_id"] == "sub_bio"
     assert data["predicted_topic_id"] is None
+
+
+def test_books_list_reports_running_segmentation(client, db_session, tmp_path):
+    _make_book(db_session, tmp_path, book_id="mat_segmenting")
+    try:
+        # Hintergrund-Thread nicht wirklich starten: Buch bleibt "in Arbeit"
+        with patch.object(bs.threading, "Thread"):
+            books = client.get("/api/v1/books").json()
+        book = next(b for b in books if b["id"] == "mat_segmenting")
+        assert book["segmenting"] is True
+        assert client.get("/api/v1/books/mat_segmenting").json()["segmenting"] is True
+    finally:
+        with bs._segmentation_locks_guard:
+            bs._segmentations_running.discard("mat_segmenting")
