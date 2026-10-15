@@ -36,7 +36,8 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 
 - `backend/main.py` – App, Lifespan (Tabellen, Migrationen, Seeder, Hintergrund-Worker).
 - `backend/app/config.py` – alle Pfade/Schalter aus der Umgebung. `database.py` – Engine + schlanke Spalten-Migrationen (`ensure_schema_migrations`).
-- `backend/app/prompts/` – **alle** KI-Prompts. `services/llm.py: chat_params()` setzt `temperature` nur für Modelle, die es unterstützen (nicht GPT-6/o-Modelle).
+- `backend/app/prompts/` – **alle** KI-Prompts.
+- `services/llm.py` – **einziger Zugang zu OpenAI**: `chat()`, `chat_json()`, `speech()`, gemeinsamer `client()`, `is_available()`. Jeder Aufruf nennt einen `purpose` und landet im Log und in `DATA_DIR/logs/llm_usage.jsonl` (Tokens, Dauer, Fehler). `temperature` nur für Modelle, die es kennen; lehnt die API einen optionalen Parameter ab, ein Versuch ohne. Fehler = `LLMError`, der Dienst entscheidet über den Fallback. Modelle, Stimme, Zeitlimit, Wiederholungen in `config.py`. Tests schalten KI über `backend.app.config.OPENAI_API_KEY` + Ersetzen von `openai.OpenAI` ein; `conftest` setzt den Client pro Test zurück.
 - `backend/app/services/` – Fachlogik. Wichtige Dienste:
   - `document_kinds.py` – einzige Quelle der Dokumentarten (inkl. Altnamen-Abbildung).
   - `document_analyzer.py` – Upload-Analyse (Seitenbilder: ≤6 Seiten alle, sonst 3), liefert Art, Fach, Thema, Titel, Signale (Lösungsseiten, auf Papier bearbeitet, von Lehrkraft bewertet).
