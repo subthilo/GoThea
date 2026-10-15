@@ -137,3 +137,27 @@ def test_opening_a_note_from_another_subject_does_not_carry_the_board(app_page):
     _settle(app_page)
     assert abs(_pixels(app_page) - math_pixels) <= max(5, math_pixels * 0.02)
     assert app_page.problems.errors == []
+
+
+def test_tall_document_page_is_not_cut_off_when_scrolled(app_page):
+    """Hochformatige Seiten sind höher als die Tafel; ihr unterer Teil muss beim Scrollen sichtbar werden."""
+    import io
+
+    from PIL import Image
+    note_id = upload_document(app_page, "Hochformat", "sub_bio", pages=1)
+    app_page.evaluate("(id) => window.openMaterialOnWhiteboard(id, 'sub_bio')", note_id)
+    _settle(app_page)
+    app_page.wait_for_function("document.getElementById('wb-doc-underlay-img').naturalWidth > 0", timeout=5000)
+    page_bottom = app_page.evaluate("""() => {
+      const i = document.getElementById('wb-doc-underlay-img');
+      const v = document.getElementById('wb-viewport').getBoundingClientRect();
+      return {imgBottom: i.offsetTop + i.offsetHeight, viewportH: v.height, x: v.left + v.width / 2, top: v.top};
+    }""")
+    assert page_bottom["imgBottom"] > page_bottom["viewportH"]  # Seite ragt wirklich über die Tafel hinaus
+    # So weit scrollen, wie die Tafel es täte, dass das Seitenende unten im Bild steht
+    # (Seitenende 250 px über dem unteren Tafelrand, dort liegt keine Werkzeugleiste)
+    shift = page_bottom["imgBottom"] - (page_bottom["viewportH"] - 250)
+    app_page.evaluate(f"() => {{ document.getElementById('wb-doc-underlay').style.transform = 'translate(0px, -{shift}px) scale(1)'; }}")
+    y = page_bottom["top"] + page_bottom["viewportH"] - 280  # knapp über dem Seitenende
+    png = app_page.screenshot(clip={"x": page_bottom["x"], "y": y, "width": 1, "height": 1})
+    assert Image.open(io.BytesIO(png)).convert("RGB").getpixel((0, 0)) == (255, 255, 255)

@@ -395,7 +395,9 @@
   height: 100%;
   z-index: 1;
   pointer-events: none;
-  overflow: hidden;
+  /* Hochformatige Seiten sind höher als die Tafel: nicht hier abschneiden, sonst fehlt beim
+     Scrollen der untere Teil (abgeschnitten wird erst am Rand von .wb-viewport) */
+  overflow: visible;
 }
 
 .wb-doc-page-img {
