@@ -153,6 +153,11 @@ def reset_lockout_state() -> None:
     _locked_until = 0.0
 
 
+def is_parent(x_parent_token: Optional[str] = Header(None)) -> bool:
+    """FastAPI-Dependency für Endpunkte, die Thea und Eltern verschieden antworten (z. B. Lösungen)."""
+    return validate_token(x_parent_token)
+
+
 def require_parent(x_parent_token: Optional[str] = Header(None)) -> bool:
     """FastAPI-Dependency: Bricht mit 403 ab, wenn kein gültiges Eltern-Token mitgeschickt wurde."""
     if not validate_token(x_parent_token):

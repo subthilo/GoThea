@@ -22,6 +22,7 @@ from backend.app.routers.books import router as books_router
 from backend.app.routers.exercises import router as exercises_router
 from backend.app.routers.auth import router as auth_router
 from backend.app.routers.boards import router as boards_router
+from backend.app.routers.search import router as search_router
 
 # Meldungen der App-Module (Renderer, Segmentierung, Importe) im systemd-Journal sichtbar machen
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -36,6 +37,8 @@ async def lifespan(app: FastAPI):
     # 1. Datenbanktabellen initialisieren
     Base.metadata.create_all(bind=engine)
     ensure_schema_migrations(engine)
+    from backend.app.services.material_search import ensure_search_index
+    ensure_search_index(engine)
     # 2. Seed-Daten einspielen
     db = SessionLocal()
     try:
@@ -84,6 +87,7 @@ app.include_router(books_router)
 app.include_router(exercises_router)
 app.include_router(auth_router)
 app.include_router(boards_router)
+app.include_router(search_router)
 
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():
