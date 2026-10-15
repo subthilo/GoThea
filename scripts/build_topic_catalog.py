@@ -4,7 +4,7 @@ und verknüpft Themen mit Buchseiten. Bestehende Themen aus Theas Unterlagen wer
 
 Auf dem Pi (Staging), erst ansehen, dann anwenden:
     cd ~/GoThea && APP_ENV=staging .venv/bin/python scripts/build_topic_catalog.py [--subject sub_physics]
-    cd ~/GoThea && APP_ENV=staging .venv/bin/python scripts/build_topic_catalog.py --apply
+    cd ~/GoThea && APP_ENV=staging .venv/bin/python scripts/build_topic_catalog.py --apply   # wendet die gespeicherte Vorschau an
 """
 import argparse
 import sys
@@ -17,7 +17,9 @@ from backend.app.config import DATA_DIR  # noqa: E402
 from backend.app.database import SessionLocal  # noqa: E402
 from backend.app.models.material import Material  # noqa: E402
 from backend.app.models.taxonomy import Subject, Topic  # noqa: E402
-from backend.app.services.book_topic_catalog import apply_catalog, plan_catalog  # noqa: E402
+from backend.app.services.book_topic_catalog import (  # noqa: E402
+    apply_catalog, catalog_fingerprint, catalog_plan_from_dict, plan_catalog)
+from backend.app.services.topic_plans import discard_plan, load_plan, save_plan  # noqa: E402
 from backend.app.services.document_kinds import BUCH  # noqa: E402
 
 
@@ -33,7 +35,14 @@ def main():
         subject_ids = [args.subject] if args.subject else [
             sid for (sid,) in db.query(Material.subject_id).filter_by(kind=BUCH, parent_id=None).distinct()]
         for subject in db.query(Subject).filter(Subject.id.in_(subject_ids)).order_by(Subject.name):
-            plan = plan_catalog(db, subject)
+            if args.apply:
+                try:
+                    plan = catalog_plan_from_dict(load_plan("catalog", subject.id, catalog_fingerprint(db, subject.id)))
+                except (FileNotFoundError, ValueError) as e:
+                    print(f"\n=== {subject.name}: NICHT angewendet – {e}")
+                    continue
+            else:
+                plan = plan_catalog(db, subject)
             print(f"\n=== {subject.name}: {len(plan.sections)} Buchabschnitte -> {len(plan.groups)} Themen")
             if plan.error:
                 print(f"   ÜBERSPRUNGEN: {plan.error}")
@@ -49,7 +58,11 @@ def main():
                 print(f"   weggelassen: {'; '.join(s.title for s in omitted[:12])}{' …' if len(omitted) > 12 else ''}")
             if args.apply:
                 apply_catalog(db, plan)
+                discard_plan("catalog", subject.id)
                 print(f"   angewendet: jetzt {db.query(Topic).filter_by(subject_id=subject.id).count()} Themen")
+            else:
+                save_plan("catalog", subject.id, plan, catalog_fingerprint(db, subject.id))
+                print("   Vorschau gespeichert; --apply wendet genau diesen Plan an")
     finally:
         db.close()
 

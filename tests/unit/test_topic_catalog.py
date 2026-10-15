@@ -111,3 +111,13 @@ def test_chapters_with_unusual_kind_do_not_count(db_session):
     db_session.commit()
     plan = tc.plan_for_subject(db_session, db_session.get(Subject, "sub_physics"), ask=lambda p: {"themen": []})
     assert "top_appendix" in plan.delete_unused
+
+
+def test_consolidation_plan_roundtrip_and_fingerprint(db_session):
+    from dataclasses import asdict
+    _topic(db_session, "top_a", "Hookesches Gesetz")
+    plan = tc.ConsolidationPlan("sub_physics", "Physik", [tc.TopicGroup("Hookesches Gesetz", "Mechanik", ["top_a"])], ["top_x"])
+    assert tc.consolidation_plan_from_dict(asdict(plan)) == plan
+    before = tc.consolidation_fingerprint(db_session, "sub_physics")
+    _material(db_session, "mat_new", "top_a")
+    assert tc.consolidation_fingerprint(db_session, "sub_physics") != before

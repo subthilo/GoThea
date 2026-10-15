@@ -91,3 +91,53 @@ def test_existing_topics_must_not_be_merged(db_session):
     topics = {tid: Topic(id=tid, subject_id="sub_physics", name=tid, grade_level=7) for tid in ("top_a", "top_b")}
     merged = [btc.CatalogGroup("Kräfte", "Mechanik", ["s1"], ["top_a", "top_b"])]
     assert "zusammengelegt" in btc.validate_catalog(merged, sections, topics)
+
+
+def _fake_catalog(payload):
+    ids = {a["titel"]: a["id"] for b in payload["buecher"] for k in b["kapitel"] for a in k["abschnitte"]}
+    existing = [t["id"] for t in payload["bestehende_themen"]]
+    groups = [{"name": "Reibung", "bereich": "Mechanik",
+               "abschnitte": [ids["1.5 Reibung"], ids["1.6 Haft-, Gleit- und Rollreibung"]]}]
+    groups += [{"name": f"Umbenannt {i}", "bereich": "Neu", "abschnitte": [], "bestehende_themen": [tid]}
+               for i, tid in enumerate(existing)]
+    return {"themen": groups}
+
+
+def test_saved_plan_is_applied_exactly_and_rejected_after_changes(db_session):
+    from backend.app.services.topic_plans import load_plan, save_plan
+    _book_with_chapter(db_session, SECTIONS)
+    subject = db_session.get(Subject, "sub_physics")
+    plan = btc.plan_catalog(db_session, subject, ask=_fake_catalog)
+    save_plan("catalog", subject.id, plan, btc.catalog_fingerprint(db_session, subject.id))
+
+    restored = btc.catalog_plan_from_dict(load_plan("catalog", subject.id, btc.catalog_fingerprint(db_session, subject.id)))
+    assert [(g.name, g.section_ids) for g in restored.groups] == [(g.name, g.section_ids) for g in plan.groups]
+    assert restored.sections == plan.sections
+
+    db_session.add(Topic(id="top_new", subject_id="sub_physics", name="Neues Thema", grade_level=7))
+    db_session.commit()
+    import pytest
+    with pytest.raises(ValueError):
+        load_plan("catalog", subject.id, btc.catalog_fingerprint(db_session, subject.id))
+
+
+def test_automatic_extension_keeps_existing_topic_names(db_session, monkeypatch):
+    _book_with_chapter(db_session, SECTIONS)
+    for t in db_session.query(Topic).filter_by(subject_id="sub_physics").all():
+        db_session.delete(t)
+    db_session.add(Topic(id="top_known", subject_id="sub_physics", name="Masse und Gewichtskraft", area="Mechanik", grade_level=7))
+    db_session.commit()
+    monkeypatch.setattr(btc, "OPENAI_API_KEY", "sk-fake")
+    monkeypatch.setattr(btc, "_ask_model", _fake_catalog)
+
+    plan = btc.extend_catalog_for_subject(db_session, "sub_physics")
+
+    assert plan.error is None
+    known = db_session.get(Topic, "top_known")
+    assert (known.name, known.area) == ("Masse und Gewichtskraft", "Mechanik")   # nicht umbenannt
+    assert db_session.query(Topic).filter_by(subject_id="sub_physics", name="Reibung").one().area == "Mechanik"
+
+
+def test_extension_is_skipped_without_api_key(db_session, monkeypatch):
+    monkeypatch.setattr(btc, "OPENAI_API_KEY", "")
+    assert btc.extend_catalog_for_subject(db_session, "sub_physics") is None

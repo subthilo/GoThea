@@ -15,7 +15,9 @@ import backend.main  # noqa: E402,F401  (registriert alle Modelle)
 from backend.app.config import DATA_DIR  # noqa: E402
 from backend.app.database import SessionLocal  # noqa: E402
 from backend.app.models.taxonomy import Subject, Topic  # noqa: E402
-from backend.app.services.topic_consolidation import apply_plan, plan_for_subject  # noqa: E402
+from backend.app.services.topic_consolidation import (  # noqa: E402
+    apply_plan, consolidation_fingerprint, consolidation_plan_from_dict, plan_for_subject)
+from backend.app.services.topic_plans import discard_plan, load_plan, save_plan  # noqa: E402
 
 
 def main():
@@ -34,7 +36,15 @@ def main():
             before = db.query(Topic).filter_by(subject_id=subject.id).count()
             if before == 0:
                 continue
-            plan = plan_for_subject(db, subject)
+            if args.apply:
+                try:
+                    plan = consolidation_plan_from_dict(
+                        load_plan("consolidation", subject.id, consolidation_fingerprint(db, subject.id)))
+                except (FileNotFoundError, ValueError) as e:
+                    print(f"\n=== {subject.name}: NICHT angewendet – {e}")
+                    continue
+            else:
+                plan = plan_for_subject(db, subject)
             print(f"\n=== {subject.name}: {before} Themen -> {len(plan.groups)} (+{len(plan.delete_unused)} ungenutzte entfernt)")
             if plan.error:
                 print(f"   ÜBERSPRUNGEN, Vorschlag ungültig: {plan.error}")
@@ -45,7 +55,11 @@ def main():
                 print(f"   [{g.area or '-'}] {g.name}{suffix}")
             if args.apply:
                 apply_plan(db, plan)
+                discard_plan("consolidation", subject.id)
                 print(f"   angewendet: jetzt {db.query(Topic).filter_by(subject_id=subject.id).count()} Themen")
+            else:
+                save_plan("consolidation", subject.id, plan, consolidation_fingerprint(db, subject.id))
+                print("   Vorschau gespeichert; --apply wendet genau diesen Plan an")
     finally:
         db.close()
 

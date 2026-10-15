@@ -17,6 +17,7 @@ from backend.app.models.whiteboard import TutorSession
 from backend.app.prompts.topic_consolidation import TOPIC_CONSOLIDATION_SYSTEM_PROMPT
 from backend.app.services.document_kinds import BUCH, BUCHAUSZUG
 from backend.app.services.llm import chat_params
+from backend.app.services.topic_plans import fingerprint
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,17 @@ def plan_for_subject(db: Session, subject: Subject, ask=_ask_model) -> Consolida
     if not plan.error:
         plan.groups = groups
     return plan
+
+
+def consolidation_fingerprint(db: Session, subject_id: str) -> str:
+    topics = sorted((t.id, t.name, _usage_count(db, t.id)) for t in db.query(Topic).filter_by(subject_id=subject_id))
+    return fingerprint(topics)
+
+
+def consolidation_plan_from_dict(data: dict) -> ConsolidationPlan:
+    return ConsolidationPlan(subject_id=data["subject_id"], subject_name=data["subject_name"],
+                             groups=[TopicGroup(**g) for g in data["groups"]],
+                             delete_unused=list(data["delete_unused"]), error=data.get("error"))
 
 
 def merge_topics(db: Session, target: Topic, others: List[Topic]) -> None:

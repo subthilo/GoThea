@@ -1239,6 +1239,12 @@ def trigger_background_book_segmentation(material_id: str):
             result = auto_detect_and_segment_book(db, book)
             if result:
                 logger.info(f"✅ Hintergrund-Segmentierung für Buch '{book.title}' erfolgreich abgeschlossen: {len(result)} Kapitel.")
+                try:
+                    from backend.app.services.book_topic_catalog import extend_catalog_for_subject
+                    extend_catalog_for_subject(db, book.subject_id)
+                except Exception as e:
+                    db.rollback()
+                    logger.warning(f"Themenkatalog nach Segmentierung von {book.id} nicht erweitert: {e}")
             else:
                 logger.info(f"ℹ️ Für Buch '{book.title}' wurden keine separaten Kapitel extrahiert (bleibt Gesamtbuch).")
                 from backend.app.services.page_renderer import page_renderer

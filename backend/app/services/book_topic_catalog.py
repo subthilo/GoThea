@@ -5,7 +5,7 @@ verknüpft jedes Thema mit den Buchseiten, auf denen es steht (TopicBookRef).
 import json
 import logging
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Callable, Dict, List, Optional
 
 from sqlalchemy.orm import Session
@@ -17,6 +17,7 @@ from backend.app.prompts.book_topic_catalog import BOOK_TOPIC_CATALOG_SYSTEM_PRO
 from backend.app.services.document_kinds import BUCH
 from backend.app.services.llm import chat_params
 from backend.app.services.topic_consolidation import IS_BOOK_OR_CHAPTER, merge_topics
+from backend.app.services.topic_plans import fingerprint
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +123,8 @@ def _ask_model(payload: dict) -> dict:
     return json.loads(response.choices[0].message.content or "{}")
 
 
-def plan_catalog(db: Session, subject: Subject, ask: Callable[[dict], dict] = _ask_model) -> CatalogPlan:
+def plan_catalog(db: Session, subject: Subject, ask: Optional[Callable[[dict], dict]] = None) -> CatalogPlan:
+    ask = ask or _ask_model
     plan = CatalogPlan(subject_id=subject.id, subject_name=subject.name)
     plan.sections = collect_book_sections(db, subject.id)
     topics = _existing_topics(db, subject.id)
@@ -162,7 +164,38 @@ def plan_catalog(db: Session, subject: Subject, ask: Callable[[dict], dict] = _a
     return plan
 
 
-def apply_catalog(db: Session, plan: CatalogPlan) -> None:
+def catalog_fingerprint(db: Session, subject_id: str) -> str:
+    """Ändert sich, sobald Buchabschnitte oder Themen des Fachs sich ändern."""
+    sections = [asdict(s) for s in collect_book_sections(db, subject_id).values()]
+    topics = sorted((t.id, t.name) for t in db.query(Topic).filter_by(subject_id=subject_id))
+    return fingerprint({"sections": sections, "topics": topics})
+
+
+def catalog_plan_from_dict(data: dict) -> CatalogPlan:
+    plan = CatalogPlan(subject_id=data["subject_id"], subject_name=data["subject_name"], error=data.get("error"))
+    plan.sections = {sid: BookSection(**s) for sid, s in data["sections"].items()}
+    plan.groups = [CatalogGroup(**g) for g in data["groups"]]
+    return plan
+
+
+def extend_catalog_for_subject(db: Session, subject_id: str) -> Optional[CatalogPlan]:
+    """Nach dem Segmentieren eines neuen Buchs: Katalog des Fachs neu aufbauen, ohne bestehende
+    Themen umzubenennen (Thea soll ihre Themen wiederfinden)."""
+    if not OPENAI_API_KEY:
+        return None
+    subject = db.get(Subject, subject_id)
+    if subject is None:
+        return None
+    plan = plan_catalog(db, subject)
+    if plan.error:
+        logger.warning(f"Themenkatalog für {subject.name} nicht erweitert: {plan.error}")
+        return plan
+    apply_catalog(db, plan, rename_existing=False)
+    logger.info(f"📚 Themenkatalog für {subject.name} aus den Büchern aktualisiert: {len(plan.groups)} Themen.")
+    return plan
+
+
+def apply_catalog(db: Session, plan: CatalogPlan, rename_existing: bool = True) -> None:
     if plan.error:
         raise ValueError(plan.error)
     # Buchverweise dieses Fachs neu aufbauen; Bücher/Kapitel selbst tragen kein Thema
@@ -181,8 +214,10 @@ def apply_catalog(db: Session, plan: CatalogPlan) -> None:
             db.add(target)
             db.flush()
         merge_topics(db, target, [t for t in existing if t.id != target.id])
-        target.name = group.name
-        target.area = group.area or target.area
+        if rename_existing or not existing:
+            target.name = group.name
+        if rename_existing or not target.area:
+            target.area = group.area or target.area
         for sid in group.section_ids:
             sec = plan.sections[sid]
             db.add(TopicBookRef(topic_id=target.id, material_id=sec.material_id, section_title=sec.title,
