@@ -74,7 +74,7 @@ Vereinbarte Reihenfolge:
 1. **Aufräumen** (vor neuer Oberfläche): `frontend/app.js` (~5.100 Z.) und `style.css` (~8.200 Z.) in Module aufteilen, Dialoge aus `index.html` lösen; dafür zuerst einen einfachen automatischen Browser-Test (z. B. Playwright) für die Hauptansichten aufsetzen. Kapiteltabellen aus `book_segmentation.py` in Datendateien. README (Testanzahl, Modellnamen) aktualisieren.
 2. **Arbeitsblatt-Ablauf** komplett (siehe Konzepte), danach Arbeitsheft-Seiten, Tests & Arbeiten (inkl. Stärken/Schwächen), Mitschriften, Hefte mit PDF-Export, Vokabellisten.
 3. **Tutor** an die Seiten-Erschließung anbinden (voller Materialzugriff).
-4. Übernahme Staging → Produktion per Skript mit Sicherung (Erschließungen werden über `data/shared/` ohnehin wiederverwendet).
+4. Übernahme Staging → Produktion per Skript mit Sicherung: Datenbank + Materialdateien als Ganzes kopieren (nicht neu hochladen). Der Cache `data/shared/` ist nach Datei-SHA-256 + Seite verschlüsselt und greift nur bei byte-gleichen Dateien; Buchkapitel sind eigene, aus dem Buch geschnittene PDFs – eine andere Kapitel-Einteilung (KI-Inhaltsverzeichnis) erzeugt andere Dateien und damit eine erneute Erschließung. Der Schlüssel enthält keine Prompt-Version: nach einer Prompt-Änderung liefert der Cache alte Ergebnisse.
 
 **Tutor & Übungen werden neu gedacht** (eigene Session, „muss sauber sein und Spaß machen“). Der bisherige Code (`tutor_service.py`, Übungs-/Phrasen-Pool, Übungslogik in den Routern) ist ein früher Schnellschuss: beim Aufräumen einfrieren, nicht polieren. Das Aufräumen schafft stattdessen die Basis (zentrale KI-Schicht, modulares Frontend) und endet mit einer Bestandsaufnahme als Startpunkt.
 
