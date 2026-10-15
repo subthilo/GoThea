@@ -54,10 +54,8 @@
   let tutorAudioEnabled = true;
 
   let currentSubjectMaterialsList = [];
-  let isUnderlayVisible = false;
 
   // Modus: Buchseite auf der Tafel beschreiben
-  let isBookPageMode = false;
   let bookPageContext = null; // { materialId, page, pageCount, title, subjectId }
   let bookPageSaveDebounceTimer = null;
 
@@ -74,7 +72,6 @@
   const exerciseDiffSelect = document.getElementById("wb-exercise-difficulty-select");
   const exercisePromptInput = document.getElementById("wb-exercise-custom-prompt");
 
-  let exercises = [];
 
   if (!inkCanvas || !overlayCanvas || !viewport) {
     return;
@@ -84,850 +81,37 @@
   const overlayCtx = overlayCanvas.getContext("2d");
 
   // State
-  let currentSession = null;
   let tutorSocket = null;
-  let isDrawing = false;
-  let currentTool = "pen"; // 'pen', 'highlighter', 'pixel_eraser', 'object_eraser'
-  let currentColor = "#f8fafc";
-  let currentBaseWidth = 4;
-  let currentSmoothWidth = 4;
-  let penOnlyMode = true; // Palm rejection: ignore finger touch for drawing
-  let activePointerId = null; // Track current active pencil/pen pointer
-  let strokes = [];
-  let undoStack = []; // Stores action history { type: 'add'|'delete'|'clear', ... }
-  let redoStack = [];
-  let currentStroke = null;
-  let lastPoint = null;
-  let lastMidPoint = null;
-  let dragDeletedItems = []; // For object_eraser drag session
-  let dpr = window.devicePixelRatio || 1;
   let saveDebounceTimer = null;
 
-  // Viewport Transform & Zoom
-  let panX = 0;
-  let panY = 0;
-  let scale = 1.0;
-  let activeTouches = new Map(); // pointerId -> { x, y }
-  let isTwoFingerPanning = false;
-  let scrollbarFadeTimer = null;
-  let lastCaptureBounds = null;
-
-  // 1. Canvas Resize & HiDPI Alignment
-  function resizeCanvases() {
-    const rect = viewport.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-
-    dpr = window.devicePixelRatio || 1;
-    const w = Math.floor(rect.width * dpr);
-    const h = Math.floor(rect.height * dpr);
-
-    if (inkCanvas.width !== w || inkCanvas.height !== h) {
-      inkCanvas.width = w;
-      inkCanvas.height = h;
-      overlayCanvas.width = w;
-      overlayCanvas.height = h;
-
-      inkCanvas.style.width = `${rect.width}px`;
-      inkCanvas.style.height = `${rect.height}px`;
-      overlayCanvas.style.width = `${rect.width}px`;
-      overlayCanvas.style.height = `${rect.height}px`;
-
-      updateViewportPan();
-    }
-  }
-
-  window.addEventListener("resize", resizeCanvases);
-
-  // Tab activation
-  document.querySelectorAll(".nav-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      if (tab.dataset.tab === "whiteboard") {
-        setTimeout(resizeCanvases, 50);
-      }
-    });
+  // Zeichenkern (js/ink_core.js): gemeinsamer Zustand und Funktionen über surface.…
+  const surface = createInkSurface({
+    viewport,
+    inkCanvas,
+    overlayCanvas,
+    btnScrollTop,
+    scrollTrack,
+    scrollThumb,
+    btnWbZoomIn,
+    btnWbZoomOut,
+    btnWbZoomReset,
+    wbZoomLevelText,
+    docUnderlay,
+    docUnderlayImg,
+    tasksLayer,
+    inkCtx,
+    overlayCtx,
+    stopTutorSpeech,
+    scheduleAutoSave,
+    sendCanvasUpdate,
   });
-
-  // 2. High-Precision Coordinate & Pressure Extractor (Board Virtual Coordinates)
-  function getEventPoint(e) {
-    const rect = inkCanvas.getBoundingClientRect();
-    const pressure = (typeof e.pressure === "number" && e.pressure > 0) ? e.pressure : 0.5;
-    const screenX = e.clientX - rect.left;
-    const screenY = e.clientY - rect.top;
-    return {
-      x: (screenX - panX) / scale,
-      y: (screenY - panY) / scale,
-      screenX: screenX,
-      screenY: screenY,
-      pressure: pressure,
-      pointerType: e.pointerType || "mouse"
-    };
-  }
-
-  function computeBoundingBox(points) {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for (let i = 0; i < points.length; i++) {
-      const p = points[i];
-      if (p.x < minX) minX = p.x;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.y > maxY) maxY = p.y;
-    }
-    return { minX, maxX, minY, maxY };
-  }
-
-  // 3. Viewport Panning & Zooming
-  function updateViewportPan() {
-    inkCtx.setTransform(dpr * scale, 0, 0, dpr * scale, panX * dpr, panY * dpr);
-    overlayCtx.setTransform(dpr * scale, 0, 0, dpr * scale, panX * dpr, panY * dpr);
-    viewport.style.backgroundPositionY = `${panY}px`;
-    viewport.style.backgroundPositionX = `${panX}px`;
-    viewport.style.backgroundSize = `${24 * scale}px ${24 * scale}px`;
-
-    if (docUnderlay && isUnderlayVisible) {
-      docUnderlay.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-      docUnderlay.style.transformOrigin = "0 0";
-    }
-
-    if (tasksLayer) {
-      tasksLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-      tasksLayer.style.transformOrigin = "0 0";
-    }
-
-    redrawAllStrokes();
-    updateScrollUI();
-  }
-
-  function setZoomLevel(newScale, centerScreenX = null, centerScreenY = null) {
-    const rect = viewport.getBoundingClientRect();
-    const cx = centerScreenX !== null ? centerScreenX : rect.width / 2;
-    const cy = centerScreenY !== null ? centerScreenY : rect.height / 2;
-
-    const clampedScale = Math.max(1.0, Math.min(3.5, Math.round(newScale * 100) / 100));
-    if (Math.abs(clampedScale - scale) < 0.01) return;
-
-    // Virtueller Punkt unter dem Zoom-Zentrum
-    const vx = (cx - panX) / scale;
-    const vy = (cy - panY) / scale;
-
-    scale = clampedScale;
-
-    if (scale === 1.0) {
-      panX = 0;
-      panY = Math.min(0, panY);
-    } else {
-      panX = cx - vx * scale;
-      panY = cy - vy * scale;
-    }
-
-    updateViewportPan();
-    updateZoomUI();
-  }
-
-  function updateZoomUI() {
-    if (wbZoomLevelText) {
-      wbZoomLevelText.textContent = `${Math.round(scale * 100)}%`;
-    }
-  }
-
-  if (btnWbZoomIn) {
-    btnWbZoomIn.addEventListener("click", () => setZoomLevel(scale + 0.35));
-  }
-  if (btnWbZoomOut) {
-    btnWbZoomOut.addEventListener("click", () => setZoomLevel(scale - 0.35));
-  }
-  if (btnWbZoomReset) {
-    btnWbZoomReset.addEventListener("click", () => setZoomLevel(1.0));
-  }
-
-  function updateScrollUI() {
-    // "Zum Anfang" Button ein-/ausblenden
-    if (btnScrollTop) {
-      if (panY < -60) {
-        btnScrollTop.style.display = "flex";
-      } else {
-        btnScrollTop.style.display = "none";
-      }
-    }
-
-    // Scrollbar-Position berechnen
-    if (scrollTrack && scrollThumb) {
-      scrollTrack.classList.add("visible");
-      clearTimeout(scrollbarFadeTimer);
-      scrollbarFadeTimer = setTimeout(() => {
-        scrollTrack.classList.remove("visible");
-      }, 1200);
-
-      let maxStrokeY = 0;
-      for (let i = 0; i < strokes.length; i++) {
-        if (strokes[i].bbox && strokes[i].bbox.maxY > maxStrokeY) {
-          maxStrokeY = strokes[i].bbox.maxY;
-        }
-      }
-      const viewH = viewport.clientHeight || 600;
-      const totalH = Math.max(viewH, -panY + viewH, maxStrokeY + 400);
-
-      const trackH = scrollTrack.clientHeight || (viewH - 24);
-      const thumbH = Math.max(30, Math.min(trackH, (viewH / totalH) * trackH));
-      scrollThumb.style.height = `${thumbH}px`;
-
-      const maxScroll = Math.max(1, totalH - viewH);
-      const scrollRatio = Math.min(1, Math.max(0, (-panY) / maxScroll));
-      const thumbTop = scrollRatio * (trackH - thumbH);
-      scrollThumb.style.top = `${thumbTop}px`;
-    }
-  }
-
-  // Button: Sanft zum Anfang der Tafel springen
-  if (btnScrollTop) {
-    btnScrollTop.addEventListener("click", () => {
-      const startPanY = panY;
-      const startPanX = panX;
-      const startScale = scale;
-      const startTime = performance.now();
-      const duration = 250;
-
-      function anim(time) {
-        const progress = Math.min(1, (time - startTime) / duration);
-        const ease = 1 - Math.pow(1 - progress, 3);
-        panY = startPanY * (1 - ease);
-        panX = startPanX * (1 - ease);
-        scale = startScale + (1.0 - startScale) * ease;
-        updateViewportPan();
-        updateZoomUI();
-        if (progress < 1) {
-          requestAnimationFrame(anim);
-        } else {
-          panY = 0;
-          panX = 0;
-          scale = 1.0;
-          updateViewportPan();
-          updateZoomUI();
-        }
-      }
-      requestAnimationFrame(anim);
-    });
-  }
-
-  // Mac Trackpad & Mausrad-Scrolling (Pinch-to-Zoom & Pan)
-  function handleWheel(e) {
-    e.preventDefault();
-    if (e.ctrlKey) {
-      // 2-Finger Trackpad Pinch on macOS (Chrome, Firefox, Safari)
-      const rect = viewport.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-      const zoomFactor = Math.exp(-e.deltaY * 0.01);
-      setZoomLevel(scale * zoomFactor, cx, cy);
-    } else {
-      panY -= e.deltaY;
-      panX -= e.deltaX;
-      if (scale <= 1.01) {
-        panX = 0;
-        if (panY > 0) panY = 0;
-      }
-      updateViewportPan();
-    }
-  }
-
-  viewport.addEventListener("wheel", handleWheel, { passive: false });
-  inkCanvas.addEventListener("wheel", handleWheel, { passive: false });
-
-  // 4. Geometry Math for Object Eraser (Stroke Hit-Testing)
-  function distToSegment(px, py, x1, y1, x2, y2) {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const lenSq = dx * dx + dy * dy;
-    if (lenSq === 0) {
-      const sx = px - x1;
-      const sy = py - y1;
-      return Math.sqrt(sx * sx + sy * sy);
-    }
-    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
-    t = Math.max(0, Math.min(1, t));
-    const cx = x1 + t * dx;
-    const cy = y1 + t * dy;
-    const ex = px - cx;
-    const ey = py - cy;
-    return Math.sqrt(ex * ex + ey * ey);
-  }
-
-  function strokeHitsPoint(stroke, px, py, radius) {
-    if (!stroke.points || stroke.points.length === 0) return false;
-    const threshold = radius + (stroke.width || 3) / 2;
-
-    // Fast Bounding Box check
-    if (stroke.bbox) {
-      if (px < stroke.bbox.minX - threshold || px > stroke.bbox.maxX + threshold ||
-          py < stroke.bbox.minY - threshold || py > stroke.bbox.maxY + threshold) {
-        return false;
-      }
-    }
-
-    const pts = stroke.points;
-    if (pts.length === 1) {
-      const dx = px - pts[0].x;
-      const dy = py - pts[0].y;
-      return (dx * dx + dy * dy) <= (threshold * threshold);
-    }
-
-    for (let i = 0; i < pts.length - 1; i++) {
-      if (distToSegment(px, py, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y) <= threshold) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // 5. Tool Styles Setup
-  function applyToolStyle(ctx, tool, color, baseWidth) {
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    if (tool === "pixel_eraser" || tool === "eraser") {
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.strokeStyle = "rgba(0,0,0,1)";
-      ctx.lineWidth = baseWidth * 5;
-    } else if (tool === "highlighter") {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = baseWidth * 3.5;
-    } else {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1.0;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = baseWidth;
-    }
-  }
-
-  function redrawAllStrokes() {
-    inkCtx.save();
-    inkCtx.setTransform(1, 0, 0, 1, 0, 0);
-    inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
-    inkCtx.restore();
-
-    for (let i = 0; i < strokes.length; i++) {
-      drawStoredStroke(strokes[i]);
-    }
-  }
-
-  function renderStrokeToContext(ctx, stroke) {
-    if (!stroke.points || stroke.points.length === 0) return;
-
-    ctx.save();
-    applyToolStyle(ctx, stroke.tool, stroke.color, stroke.width);
-
-    const pts = stroke.points;
-    if (pts.length === 1) {
-      ctx.beginPath();
-      ctx.arc(pts[0].x, pts[0].y, Math.max(1, stroke.width / 2), 0, Math.PI * 2);
-      ctx.fillStyle = (stroke.tool === "pixel_eraser" || stroke.tool === "eraser") ? "#000" : stroke.color;
-      ctx.fill();
-    } else if (pts.length === 2) {
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      ctx.lineTo(pts[1].x, pts[1].y);
-      ctx.stroke();
-    } else {
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let j = 1; j < pts.length - 1; j++) {
-        const midX = (pts[j].x + pts[j + 1].x) * 0.5;
-        const midY = (pts[j].y + pts[j + 1].y) * 0.5;
-        ctx.quadraticCurveTo(pts[j].x, pts[j].y, midX, midY);
-      }
-      const last = pts[pts.length - 1];
-      ctx.lineTo(last.x, last.y);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-  }
-
-  function drawStoredStroke(stroke) {
-    renderStrokeToContext(inkCtx, stroke);
-  }
-
-  // 6. Ultra-Fluid Live Drawing Loop
-  function drawLiveSegment(pt) {
-    if (!lastPoint) {
-      lastPoint = pt;
-      return;
-    }
-
-    let targetWidth;
-    if (currentTool === "pixel_eraser" || currentTool === "eraser") {
-      targetWidth = (currentBaseWidth * 5) / scale;
-    } else if (currentTool === "highlighter") {
-      targetWidth = (currentBaseWidth * 3.5) / scale;
-    } else {
-      targetWidth = Math.max(1.0, (currentBaseWidth * (0.35 + pt.pressure * 1.3)) / scale);
-    }
-    currentSmoothWidth = currentSmoothWidth * 0.6 + targetWidth * 0.4;
-
-    inkCtx.lineWidth = currentSmoothWidth;
-    inkCtx.beginPath();
-    inkCtx.moveTo(lastPoint.x, lastPoint.y);
-    inkCtx.lineTo(pt.x, pt.y);
-    inkCtx.stroke();
-
-    lastPoint = pt;
-  }
-
-  function checkAndEraseObjectsAtPoint(pt) {
-    const radius = Math.max(16, (currentBaseWidth * 4) / scale);
-    let hitAny = false;
-
-    for (let i = strokes.length - 1; i >= 0; i--) {
-      if (strokeHitsPoint(strokes[i], pt.x, pt.y, radius)) {
-        const removed = strokes.splice(i, 1)[0];
-        dragDeletedItems.push({ stroke: removed, index: i });
-        hitAny = true;
-      }
-    }
-
-    if (hitAny) {
-      redrawAllStrokes();
-    }
-  }
-
-  // 7. Pointer Events Handling
-  let activeDraggingCard = null;
-
-  function handlePointerDown(e) {
-    e.preventDefault();
-
-    if (e.pointerType === "touch") {
-      activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-      // Sobald 2 Finger aufliegen -> kein Zeichnen, Zwei-Finger-Scroll übernimmt
-      if (activeTouches.size >= 2) {
-        isTwoFingerPanning = true;
-        if (activeDraggingCard) {
-          activeDraggingCard = null;
-        }
-        if (isDrawing) {
-          isDrawing = false;
-          currentStroke = null;
-          lastPoint = null;
-          redrawAllStrokes();
-        }
-        return;
-      }
-    }
-
-    if (isTwoFingerPanning) return;
-
-    // Prüfen, ob der Klick/Touch auf interaktive Elemente einer Aufgabenkarte trifft
-    if (typeof document.elementsFromPoint === "function") {
-      const elementsUnder = document.elementsFromPoint(e.clientX, e.clientY) || [];
-      const closeBtn = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-close-btn"));
-      if (closeBtn) {
-        closeBtn.click();
-        return;
-      }
-
-      const hintBtn = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-hint-btn"));
-      if (hintBtn) {
-        hintBtn.click();
-        return;
-      }
-
-      const checkBtn = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-check-btn"));
-      if (checkBtn) {
-        checkBtn.click();
-        return;
-      }
-
-      const taskHeader = elementsUnder.find(el => el.classList && el.classList.contains("wb-task-header"));
-      if (taskHeader && !elementsUnder.some(el => el.classList && el.classList.contains("wb-task-close-btn"))) {
-        const card = taskHeader.closest(".wb-task-card");
-        const exId = card ? card.id.replace("wb-exercise-", "") : null;
-        const ex = exercises.find(item => item.id === exId);
-        if (card && ex) {
-          activeDraggingCard = {
-            card,
-            ex,
-            pointerId: e.pointerId,
-            startScreenX: e.clientX,
-            startScreenY: e.clientY,
-            startPosX: ex.pos_x || 60,
-            startPosY: ex.pos_y || 80
-          };
-          card.style.zIndex = "10";
-          try {
-            inkCanvas.setPointerCapture(e.pointerId);
-          } catch (_) {}
-          return;
-        }
-      }
-    }
-
-    // Im Pencil-Modus wird 1 einzelner Touch ignoriert
-    if (e.pointerType === "touch" && penOnlyMode) {
-      return;
-    }
-
-    if (activePointerId !== null && activePointerId !== e.pointerId) return;
-
-    activePointerId = e.pointerId;
-    try {
-      inkCanvas.setPointerCapture(e.pointerId);
-    } catch (_) {}
-
-    // Barge-In: Sprachausgabe sofort stoppen, sobald die Schülerin den Stift ansetzt
-    stopTutorSpeech();
-
-    isDrawing = true;
-    const pt = getEventPoint(e);
-
-    // Strikte Begrenzung im Buchseiten-Modus: Kein Malen außerhalb der Buchseite!
-    if (isBookPageMode && docUnderlayImg) {
-      const dx = docUnderlayImg.offsetLeft || 0;
-      const dy = docUnderlayImg.offsetTop || 0;
-      const dw = docUnderlayImg.offsetWidth || docUnderlayImg.naturalWidth;
-      const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
-      if (dw > 0 && dh > 0) {
-        if (pt.x < dx || pt.x > dx + dw || pt.y < dy || pt.y > dy + dh) {
-          isDrawing = false;
-          activePointerId = null;
-          try {
-            if (inkCanvas.hasPointerCapture(e.pointerId)) {
-              inkCanvas.releasePointerCapture(e.pointerId);
-            }
-          } catch (_) {}
-          return;
-        }
-      }
-    }
-
-    lastPoint = pt;
-    lastMidPoint = pt;
-    const strokeWidth = currentBaseWidth / scale;
-    currentSmoothWidth = strokeWidth;
-
-    if (currentTool === "object_eraser") {
-      dragDeletedItems = [];
-      checkAndEraseObjectsAtPoint(pt);
-      return;
-    }
-
-    currentStroke = {
-      tool: currentTool,
-      color: currentColor,
-      width: strokeWidth,
-      points: [pt]
-    };
-
-    applyToolStyle(inkCtx, currentTool, currentColor, strokeWidth);
-
-    inkCtx.beginPath();
-    const isEraser = currentTool === "pixel_eraser" || currentTool === "eraser";
-    const dotRadius = isEraser ? (strokeWidth * 2.5) : Math.max(0.5, strokeWidth / 2);
-    inkCtx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
-    inkCtx.fillStyle = isEraser ? "#000" : currentColor;
-    inkCtx.fill();
-  }
-
-  function handlePointerMove(e) {
-    e.preventDefault();
-
-    if (activeDraggingCard) {
-      if (e.pointerId !== activeDraggingCard.pointerId) return;
-      const dx = (e.clientX - activeDraggingCard.startScreenX) / scale;
-      const dy = (e.clientY - activeDraggingCard.startScreenY) / scale;
-      const newX = Math.round(activeDraggingCard.startPosX + dx);
-      const newY = Math.round(Math.max(20, activeDraggingCard.startPosY + dy));
-      activeDraggingCard.card.style.left = `${newX}px`;
-      activeDraggingCard.card.style.top = `${newY}px`;
-      return;
-    }
-
-    // Wenn zwei Finger auf dem Glas liegen, zeichnen wir nicht
-    if (isTwoFingerPanning) return;
-    if (!isDrawing) return;
-    if (activePointerId !== null && e.pointerId !== activePointerId) return;
-    if (penOnlyMode && e.pointerType === "touch") return;
-
-    const events = (e.getCoalescedEvents && e.getCoalescedEvents().length > 0)
-      ? e.getCoalescedEvents()
-      : [e];
-
-    if (currentTool === "object_eraser") {
-      for (let i = 0; i < events.length; i++) {
-        const pt = getEventPoint(events[i]);
-        checkAndEraseObjectsAtPoint(pt);
-      }
-      return;
-    }
-
-    if (!currentStroke || !lastPoint || !lastMidPoint) return;
-
-    inkCtx.beginPath();
-    inkCtx.moveTo(lastMidPoint.x, lastMidPoint.y);
-    for (let i = 0; i < events.length; i++) {
-      const pt = getEventPoint(events[i]);
-      if (isBookPageMode && docUnderlayImg) {
-        const dx = docUnderlayImg.offsetLeft || 0;
-        const dy = docUnderlayImg.offsetTop || 0;
-        const dw = docUnderlayImg.offsetWidth || docUnderlayImg.naturalWidth;
-        const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
-        if (dw > 0 && dh > 0) {
-          pt.x = Math.max(dx, Math.min(dx + dw, pt.x));
-          pt.y = Math.max(dy, Math.min(dy + dh, pt.y));
-        }
-      }
-      currentStroke.points.push(pt);
-
-      const midX = (lastPoint.x + pt.x) * 0.5;
-      const midY = (lastPoint.y + pt.y) * 0.5;
-      inkCtx.quadraticCurveTo(lastPoint.x, lastPoint.y, midX, midY);
-
-      lastPoint = pt;
-      lastMidPoint = { x: midX, y: midY };
-    }
-    inkCtx.stroke();
-  }
-
-  function handlePointerUp(e) {
-    e.preventDefault();
-
-    if (activeDraggingCard) {
-      if (e.pointerId === activeDraggingCard.pointerId) {
-        const dragging = activeDraggingCard;
-        activeDraggingCard = null;
-        try {
-          inkCanvas.releasePointerCapture(e.pointerId);
-        } catch (_) {}
-        dragging.card.style.zIndex = "2";
-        const dx = (e.clientX - dragging.startScreenX) / scale;
-        const dy = (e.clientY - dragging.startScreenY) / scale;
-        dragging.ex.pos_x = Math.round(dragging.startPosX + dx);
-        dragging.ex.pos_y = Math.round(Math.max(20, dragging.startPosY + dy));
-        if (currentSession) {
-          try {
-            fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${dragging.ex.id}/position`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ pos_x: dragging.ex.pos_x, pos_y: dragging.ex.pos_y })
-            }).catch(console.warn);
-          } catch (err) {
-            console.warn("Fehler beim Speichern der Aufgabenposition:", err);
-          }
-        }
-      }
-      return;
-    }
-
-    if (e.pointerType === "touch") {
-      activeTouches.delete(e.pointerId);
-      if (activeTouches.size < 2) {
-        isTwoFingerPanning = false;
-      }
-    }
-
-    if (isTwoFingerPanning) return;
-    if (activePointerId !== null && e.pointerId !== activePointerId) return;
-
-    if (currentTool === "object_eraser") {
-      if (dragDeletedItems.length > 0) {
-        undoStack.push({ type: "delete_strokes", items: dragDeletedItems });
-        redoStack = [];
-        scheduleAutoSave();
-      }
-      dragDeletedItems = [];
-    } else if (isDrawing && currentStroke && currentStroke.points.length > 0) {
-      currentStroke.bbox = computeBoundingBox(currentStroke.points);
-      strokes.push(currentStroke);
-      undoStack.push({ type: "add_stroke", stroke: currentStroke });
-      redoStack = [];
-      if (!isBookPageMode) {
-        sendCanvasUpdate([currentStroke]);
-      }
-      scheduleAutoSave();
-    }
-
-    try {
-      if (activePointerId !== null && inkCanvas.hasPointerCapture(e.pointerId)) {
-        inkCanvas.releasePointerCapture(e.pointerId);
-      }
-    } catch (_) {}
-
-    if (lastMidPoint && lastPoint && (lastMidPoint.x !== lastPoint.x || lastMidPoint.y !== lastPoint.y)) {
-      inkCtx.beginPath();
-      inkCtx.moveTo(lastMidPoint.x, lastMidPoint.y);
-      inkCtx.lineTo(lastPoint.x, lastPoint.y);
-      inkCtx.stroke();
-    }
-
-    isDrawing = false;
-    activePointerId = null;
-    currentStroke = null;
-    lastPoint = null;
-    lastMidPoint = null;
-  }
-
-  // Pointer Event-Listener mit passive: false für e.preventDefault()
-  inkCanvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
-  inkCanvas.addEventListener("pointermove", handlePointerMove, { passive: false });
-  inkCanvas.addEventListener("pointerup", handlePointerUp, { passive: false });
-  inkCanvas.addEventListener("pointercancel", handlePointerUp, { passive: false });
-
-  // 100% Unterdrückung des iOS Safari 'Teilen...' Menüs und nativer Gesten
-  const blockNativeGesture = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  inkCanvas.addEventListener("contextmenu", blockNativeGesture, { capture: true });
-  viewport.addEventListener("contextmenu", blockNativeGesture, { capture: true });
-  document.addEventListener("contextmenu", (e) => {
-    if (!e.target.closest("input, textarea")) {
-      e.preventDefault();
-    }
-  }, { capture: true });
-
-  // Globale Unterdrückung von iOS Safari Textselektion & 'Teilen...'-Callouts
-  document.addEventListener("selectstart", (e) => {
-    if (!e.target.closest("input, textarea")) {
-      e.preventDefault();
-    }
-  }, { capture: true });
-
-  document.addEventListener("selectionchange", () => {
-    const activeEl = document.activeElement;
-    if (!activeEl || (!activeEl.matches("input, textarea") && !activeEl.isContentEditable)) {
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0) {
-        sel.removeAllRanges();
-      }
-    }
-  });
-
-  // 2-Finger Mac Safari Trackpad Pinch-to-Zoom
-  let gestureStartScale = 1.0;
-  const handleGestureStart = (e) => {
-    e.preventDefault();
-    gestureStartScale = scale;
-  };
-  const handleGestureChange = (e) => {
-    e.preventDefault();
-    const rect = viewport.getBoundingClientRect();
-    const cx = (typeof e.clientX === "number" && e.clientX > 0) ? (e.clientX - rect.left) : (rect.width / 2);
-    const cy = (typeof e.clientY === "number" && e.clientY > 0) ? (e.clientY - rect.top) : (rect.height / 2);
-    setZoomLevel(gestureStartScale * e.scale, cx, cy);
-  };
-  const handleGestureEnd = (e) => {
-    e.preventDefault();
-  };
-
-  inkCanvas.addEventListener("gesturestart", handleGestureStart, { passive: false, capture: true });
-  inkCanvas.addEventListener("gesturechange", handleGestureChange, { passive: false, capture: true });
-  inkCanvas.addEventListener("gestureend", handleGestureEnd, { passive: false, capture: true });
-  viewport.addEventListener("gesturestart", handleGestureStart, { passive: false, capture: true });
-  viewport.addEventListener("gesturechange", handleGestureChange, { passive: false, capture: true });
-  viewport.addEventListener("gestureend", handleGestureEnd, { passive: false, capture: true });
-
-  viewport.addEventListener("touchstart", (e) => {
-    if (!e.target.closest(".wb-floating-toolbar, button, select, input, textarea")) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-
-  // 1:1 Physikalisches Zwei-Finger-Pinch-to-Zoom & Pan (Touch Events)
-  let touchStartDist = null;
-  let touchStartScale = 1.0;
-  let pinchVirtualX = null;
-  let pinchVirtualY = null;
-
-  inkCanvas.addEventListener("touchstart", (e) => {
-    // IMMER e.preventDefault(), um WebKit Edit-Menu ('Teilen...') bei schnellem Stiftansetzen zu blockieren
-    e.preventDefault();
-    if (e.touches.length === 2) {
-      isTwoFingerPanning = true;
-      if (isDrawing) {
-        isDrawing = false;
-        currentStroke = null;
-        lastPoint = null;
-        redrawAllStrokes();
-      }
-      const rect = inkCanvas.getBoundingClientRect();
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const cx = (t1.clientX + t2.clientX) / 2 - rect.left;
-      const cy = (t1.clientY + t2.clientY) / 2 - rect.top;
-      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-
-      touchStartDist = dist;
-      touchStartScale = scale;
-
-      pinchVirtualX = (cx - panX) / scale;
-      pinchVirtualY = (cy - panY) / scale;
-    }
-  }, { passive: false, capture: true });
-
-  inkCanvas.addEventListener("touchmove", (e) => {
-    e.preventDefault();
-    if (e.touches.length === 2 && touchStartDist !== null) {
-      const rect = inkCanvas.getBoundingClientRect();
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const cx = (t1.clientX + t2.clientX) / 2 - rect.left;
-      const cy = (t1.clientY + t2.clientY) / 2 - rect.top;
-      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-
-      // Pinch Zoom
-      if (touchStartDist > 15) {
-        const ratio = dist / touchStartDist;
-        scale = Math.max(1.0, Math.min(3.5, touchStartScale * ratio));
-      }
-
-      let newPanX = cx - pinchVirtualX * scale;
-      let newPanY = cy - pinchVirtualY * scale;
-
-      if (scale <= 1.01) {
-        scale = 1.0;
-        newPanX = 0;
-        newPanY = Math.min(0, newPanY);
-      } else {
-        const maxPanX = rect.width * 0.5;
-        const minPanX = -rect.width * (scale - 0.5);
-        newPanX = Math.max(minPanX, Math.min(maxPanX, newPanX));
-        newPanY = Math.min(80 * scale, newPanY);
-      }
-
-      panX = newPanX;
-      panY = newPanY;
-
-      updateViewportPan();
-      updateZoomUI();
-    }
-  }, { passive: false, capture: true });
-
-  inkCanvas.addEventListener("touchend", (e) => {
-    e.preventDefault();
-    if (e.touches.length < 2) {
-      touchStartDist = null;
-      pinchVirtualX = null;
-      pinchVirtualY = null;
-      isTwoFingerPanning = false;
-    }
-  }, { passive: false, capture: true });
-
-  inkCanvas.addEventListener("touchcancel", (e) => {
-    e.preventDefault();
-    touchStartDist = null;
-    pinchVirtualX = null;
-    pinchVirtualY = null;
-    isTwoFingerPanning = false;
-  }, { passive: false, capture: true });
 
   // 8. KI-Overlay Visualisierung
   function drawOverlayActions(actions) {
-    overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
+    overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
 
-    const boardW = overlayCanvas.width / dpr;
-    const boardH = overlayCanvas.height / dpr;
+    const boardW = overlayCanvas.width / surface.dpr;
+    const boardH = overlayCanvas.height / surface.dpr;
 
     actions.forEach(item => {
       if (item.action === "highlight_box" && item.coords) {
@@ -937,11 +121,11 @@
         let h = item.coords.h || 60;
 
         if (item.coords.x_pct !== undefined) {
-          if (lastCaptureBounds) {
-            x = lastCaptureBounds.minX + (item.coords.x_pct / 100) * lastCaptureBounds.width;
-            y = lastCaptureBounds.minY + (item.coords.y_pct / 100) * lastCaptureBounds.height;
-            w = (item.coords.w_pct / 100) * lastCaptureBounds.width;
-            h = (item.coords.h_pct / 100) * lastCaptureBounds.height;
+          if (surface.lastCaptureBounds) {
+            x = surface.lastCaptureBounds.minX + (item.coords.x_pct / 100) * surface.lastCaptureBounds.width;
+            y = surface.lastCaptureBounds.minY + (item.coords.y_pct / 100) * surface.lastCaptureBounds.height;
+            w = (item.coords.w_pct / 100) * surface.lastCaptureBounds.width;
+            h = (item.coords.h_pct / 100) * surface.lastCaptureBounds.height;
           } else {
             x = (item.coords.x_pct / 100) * boardW;
             y = (item.coords.y_pct / 100) * boardH;
@@ -976,12 +160,12 @@
         overlayCtx.fillText(item.latex || "Hinweis des KI-Tutors", coords.x + 6, coords.y + 4);
         overlayCtx.restore();
       } else if (item.action === "clear") {
-        overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
+        overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
       }
     });
 
     setTimeout(() => {
-      overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
+      overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
     }, 14000);
   }
 
@@ -1040,10 +224,10 @@
     const viewH = viewport.clientHeight || 768;
 
     // Aktueller Bildschirmausschnitt in Weltkoordinaten
-    const viewLeft = -panX / scale;
-    const viewTop = -panY / scale;
-    const viewRight = (-panX + viewW) / scale;
-    const viewBottom = (-panY + viewH) / scale;
+    const viewLeft = -surface.panX / surface.scale;
+    const viewTop = -surface.panY / surface.scale;
+    const viewRight = (-surface.panX + viewW) / surface.scale;
+    const viewBottom = (-surface.panY + viewH) / surface.scale;
 
     // Gesamten Tafelbereich berechnen (von y=0 ganz oben bis ganz unten)
     let minWorldX = 0;
@@ -1052,8 +236,8 @@
     let maxWorldY = Math.max(viewH, viewBottom);
 
     // Alle Striche der Tafel einbeziehen
-    for (let i = 0; i < strokes.length; i++) {
-      const s = strokes[i];
+    for (let i = 0; i < surface.strokes.length; i++) {
+      const s = surface.strokes[i];
       if (s.bbox) {
         if (s.bbox.minX < minWorldX) minWorldX = s.bbox.minX;
         if (s.bbox.maxX > maxWorldX) maxWorldX = s.bbox.maxX;
@@ -1062,7 +246,7 @@
     }
 
     // Unterlage (Arbeitsblatt/Dokument) einbeziehen
-    if (isUnderlayVisible && docUnderlayImg && docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
+    if (surface.isUnderlayVisible && docUnderlayImg && docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
       const uRight = (docUnderlayImg.offsetLeft || 0) + (docUnderlayImg.offsetWidth || 0);
       const uBottom = (docUnderlayImg.offsetTop || 0) + (docUnderlayImg.offsetHeight || 0);
       if (uRight > maxWorldX) maxWorldX = uRight;
@@ -1070,8 +254,8 @@
     }
 
     // Aufgaben-Karten von Luna einbeziehen
-    if (exercises && exercises.length > 0) {
-      for (const ex of exercises) {
+    if (surface.exercises && surface.exercises.length > 0) {
+      for (const ex of surface.exercises) {
         const exEl = document.getElementById(`wb-exercise-${ex.id}`);
         const cW = exEl ? exEl.offsetWidth : 440;
         const cH = exEl ? exEl.offsetHeight : 280;
@@ -1089,7 +273,7 @@
     const captureWidth = Math.max(800, maxWorldX - minWorldX);
     const captureHeight = Math.max(600, maxWorldY - minWorldY);
 
-    lastCaptureBounds = {
+    surface.lastCaptureBounds = {
       minX: minWorldX,
       minY: minWorldY,
       width: captureWidth,
@@ -1126,7 +310,7 @@
     octx.fillRect(minWorldX, minWorldY, captureWidth, captureHeight);
 
     // 2. Dokumenten-Vorlage einzeichnen falls aktiv
-    if (isUnderlayVisible && docUnderlayImg && docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
+    if (surface.isUnderlayVisible && docUnderlayImg && docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
       try {
         const dx = docUnderlayImg.offsetLeft || 0;
         const dy = docUnderlayImg.offsetTop || 0;
@@ -1139,9 +323,9 @@
     }
 
     // 2.5 Aufgaben-Karten von Luna in den Snapshot einzeichnen (VOR den Schriftzügen, damit die Striche über der Aufgabe sichtbar sind)
-    if (exercises && exercises.length > 0) {
-      for (let i = 0; i < exercises.length; i++) {
-        const ex = exercises[i];
+    if (surface.exercises && surface.exercises.length > 0) {
+      for (let i = 0; i < surface.exercises.length; i++) {
+        const ex = surface.exercises[i];
         const exEl = document.getElementById(`wb-exercise-${ex.id}`);
         const cW = exEl ? exEl.offsetWidth : 440;
         const cH = exEl ? exEl.offsetHeight : 280;
@@ -1206,12 +390,12 @@
     }
 
     // 3. Alle Striche der Schülerin in voller Höhe einzeichnen (liegt über den Aufgabenkarten)
-    for (let i = 0; i < strokes.length; i++) {
-      renderStrokeToContext(octx, strokes[i]);
+    for (let i = 0; i < surface.strokes.length; i++) {
+      surface.renderStrokeToContext(octx, surface.strokes[i]);
     }
 
     // 4. Feiner Indikator für Theas aktuellen Bildschirmausschnitt
-    const isScrolledOrZoomed = Math.abs(panY) > 20 || Math.abs(panX) > 20 || scale > 1.05 || captureHeight > viewH * 1.25;
+    const isScrolledOrZoomed = Math.abs(surface.panY) > 20 || Math.abs(surface.panX) > 20 || surface.scale > 1.05 || captureHeight > viewH * 1.25;
     if (isScrolledOrZoomed) {
       octx.save();
       octx.strokeStyle = isChalk ? "rgba(251, 191, 36, 0.65)" : "rgba(37, 99, 235, 0.65)";
@@ -1244,7 +428,7 @@
   }
 
   async function saveBookPageAnnotationsNow() {
-    if (!isBookPageMode || !bookPageContext || !docUnderlayImg) return;
+    if (!surface.isBookPageMode || !bookPageContext || !docUnderlayImg) return;
     clearTimeout(bookPageSaveDebounceTimer);
     bookPageSaveDebounceTimer = null;
     setBookDocSaveStatus("saving");
@@ -1255,7 +439,7 @@
     const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
     if (dw === 0 || dh === 0) return;
 
-    const normalizedStrokes = strokes.map(s => ({
+    const normalizedStrokes = surface.strokes.map(s => ({
       id: s.id,
       tool: s.tool,
       color: s.color,
@@ -1298,11 +482,11 @@
   }
 
   async function loadBookPageAnnotations() {
-    if (!isBookPageMode || !bookPageContext || !docUnderlayImg) return;
-    strokes = [];
-    undoStack = [];
-    redoStack = [];
-    redrawAllStrokes();
+    if (!surface.isBookPageMode || !bookPageContext || !docUnderlayImg) return;
+    surface.strokes = [];
+    surface.undoStack = [];
+    surface.redoStack = [];
+    surface.redrawAllStrokes();
 
     const dx = docUnderlayImg.offsetLeft || 0;
     const dy = docUnderlayImg.offsetTop || 0;
@@ -1321,7 +505,7 @@
           try { loaded = JSON.parse(data.strokes_json) || []; } catch (_) {}
         }
 
-        strokes = loaded.map(s => ({
+        surface.strokes = loaded.map(s => ({
           id: s.id || ("str_" + Date.now() + "_" + Math.floor(Math.random() * 10000)),
           tool: s.tool || "pen",
           color: s.color || "#2563eb",
@@ -1337,7 +521,7 @@
             };
           })
         }));
-        redrawAllStrokes();
+        surface.redrawAllStrokes();
         setBookDocSaveStatus("saved");
       }
     } catch (err) {
@@ -1346,18 +530,18 @@
   }
 
   function scheduleAutoSave() {
-    if (isBookPageMode) {
+    if (surface.isBookPageMode) {
       scheduleBookPageAutoSave();
       return;
     }
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(async () => {
-      if (!currentSession || isBookPageMode) return;
+      if (!surface.currentSession || surface.isBookPageMode) return;
       try {
         const payload = {
-          board_state_json: JSON.stringify(strokes)
+          board_state_json: JSON.stringify(surface.strokes)
         };
-        await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/state`, {
+        await apiFetch(`/api/v1/whiteboard/sessions/${surface.currentSession.id}/state`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -1449,13 +633,13 @@
 
   // 10. WebSocket Verbindung
   function connectTutorWebSocket() {
-    if (!currentSession) return;
+    if (!surface.currentSession) return;
     if (tutorSocket) {
       tutorSocket.close();
     }
 
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${proto}//${window.location.host}/ws/tutor/${currentSession.id}`;
+    const wsUrl = `${proto}//${window.location.host}/ws/tutor/${surface.currentSession.id}`;
 
     try {
       tutorSocket = new WebSocket(wsUrl);
@@ -1497,21 +681,21 @@
 
   // 11. Toolbar Event-Handler (Apple PencilKit Design: Tools, Dot-Größen, Farb- & Muster-Swatches)
   function setTool(tool) {
-    currentTool = tool;
+    surface.currentTool = tool;
     document.querySelectorAll(".wb-tool-btn").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.tool === tool);
     });
   }
 
   function setSize(size) {
-    currentBaseWidth = parseFloat(size);
+    surface.currentBaseWidth = parseFloat(size);
     document.querySelectorAll(".wb-dot-btn").forEach(btn => {
-      btn.classList.toggle("active", parseFloat(btn.dataset.size) === currentBaseWidth);
+      btn.classList.toggle("active", parseFloat(btn.dataset.size) === surface.currentBaseWidth);
     });
   }
 
   function setColor(color) {
-    currentColor = color;
+    surface.currentColor = color;
     document.querySelectorAll(".wb-color-swatch").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.color.toLowerCase() === color.toLowerCase());
     });
@@ -1519,7 +703,7 @@
     document.querySelectorAll(".wb-dot").forEach(dot => {
       dot.style.backgroundColor = color;
     });
-    if (currentTool === "pixel_eraser" || currentTool === "object_eraser" || currentTool === "eraser") {
+    if (surface.currentTool === "pixel_eraser" || surface.currentTool === "object_eraser" || surface.currentTool === "eraser") {
       setTool("pen");
     }
   }
@@ -1561,11 +745,11 @@
 
   if (btnPenOnly) {
     btnPenOnly.addEventListener("click", () => {
-      penOnlyMode = !penOnlyMode;
-      btnPenOnly.classList.toggle("active", penOnlyMode);
+      surface.penOnlyMode = !surface.penOnlyMode;
+      btnPenOnly.classList.toggle("active", surface.penOnlyMode);
       const penLabel = document.getElementById("wb-pen-label");
-      if (penLabel) penLabel.textContent = penOnlyMode ? "Pencil" : "Touch";
-      btnPenOnly.title = penOnlyMode
+      if (penLabel) penLabel.textContent = surface.penOnlyMode ? "Pencil" : "Touch";
+      btnPenOnly.title = surface.penOnlyMode
         ? "Apple Pencil aktiv (Handfläche wird ignoriert)"
         : "Touch-Modus aktiv (Finger und Stift zeichnen)";
     });
@@ -1573,66 +757,66 @@
 
   if (btnUndo) {
     btnUndo.addEventListener("click", () => {
-      if (undoStack.length === 0) return;
-      const action = undoStack.pop();
+      if (surface.undoStack.length === 0) return;
+      const action = surface.undoStack.pop();
 
       if (action.type === "add_stroke") {
-        const idx = strokes.lastIndexOf(action.stroke);
+        const idx = surface.strokes.lastIndexOf(action.stroke);
         if (idx !== -1) {
-          strokes.splice(idx, 1);
+          surface.strokes.splice(idx, 1);
         }
-        redoStack.push(action);
+        surface.redoStack.push(action);
       } else if (action.type === "delete_strokes") {
         for (let i = action.items.length - 1; i >= 0; i--) {
           const item = action.items[i];
-          strokes.splice(item.index, 0, item.stroke);
+          surface.strokes.splice(item.index, 0, item.stroke);
         }
-        redoStack.push(action);
+        surface.redoStack.push(action);
       } else if (action.type === "clear") {
-        strokes = [...action.previous];
-        redoStack.push(action);
+        surface.strokes = [...action.previous];
+        surface.redoStack.push(action);
       }
 
-      redrawAllStrokes();
+      surface.redrawAllStrokes();
       scheduleAutoSave();
     });
   }
 
   if (btnRedo) {
     btnRedo.addEventListener("click", () => {
-      if (redoStack.length === 0) return;
-      const action = redoStack.pop();
+      if (surface.redoStack.length === 0) return;
+      const action = surface.redoStack.pop();
 
       if (action.type === "add_stroke") {
-        strokes.push(action.stroke);
-        undoStack.push(action);
+        surface.strokes.push(action.stroke);
+        surface.undoStack.push(action);
       } else if (action.type === "delete_strokes") {
         action.items.forEach(item => {
-          const idx = strokes.indexOf(item.stroke);
+          const idx = surface.strokes.indexOf(item.stroke);
           if (idx !== -1) {
-            strokes.splice(idx, 1);
+            surface.strokes.splice(idx, 1);
           }
         });
-        undoStack.push(action);
+        surface.undoStack.push(action);
       } else if (action.type === "clear") {
-        strokes = [];
-        undoStack.push(action);
+        surface.strokes = [];
+        surface.undoStack.push(action);
       }
 
-      redrawAllStrokes();
+      surface.redrawAllStrokes();
       scheduleAutoSave();
     });
   }
 
   if (btnClear) {
     btnClear.addEventListener("click", () => {
-      if (strokes.length === 0) return;
+      if (surface.strokes.length === 0) return;
       if (confirm("Möchtest du die gesamte Tafel leeren?")) {
-        undoStack.push({ type: "clear", previous: [...strokes] });
-        redoStack = [];
-        strokes = [];
-        redrawAllStrokes();
-        overlayCtx.clearRect(0, 0, overlayCanvas.width / dpr, overlayCanvas.height / dpr);
+        surface.undoStack.push({ type: "clear", previous: [...surface.strokes] });
+        surface.redoStack = [];
+        surface.strokes = [];
+        surface.redrawAllStrokes();
+        overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
         scheduleAutoSave();
       }
     });
@@ -1667,7 +851,7 @@
       const matId = materialSelect.value;
       if (!matId) {
         await closeDocument();
-      } else if (!(isBookPageMode && bookPageContext && bookPageContext.materialId === matId)) {
+      } else if (!(surface.isBookPageMode && bookPageContext && bookPageContext.materialId === matId)) {
         await openMaterialDocument(matId, subjectSelect.value);
       }
     }));
@@ -1676,7 +860,7 @@
   // Vorlagen-Pager Buttons
   if (btnDocPrev) {
     btnDocPrev.addEventListener("click", async () => {
-      if (isBookPageMode && bookPageContext && bookPageContext.page > 1) {
+      if (surface.isBookPageMode && bookPageContext && bookPageContext.page > 1) {
         await saveBookPageAnnotationsNow();
         bookPageContext.page--;
         const p = bookPageContext.page;
@@ -1690,7 +874,7 @@
   }
   if (btnDocNext) {
     btnDocNext.addEventListener("click", async () => {
-      if (isBookPageMode && bookPageContext && bookPageContext.page < (bookPageContext.pageCount || 1)) {
+      if (surface.isBookPageMode && bookPageContext && bookPageContext.page < (bookPageContext.pageCount || 1)) {
         await saveBookPageAnnotationsNow();
         bookPageContext.page++;
         const p = bookPageContext.page;
@@ -1709,7 +893,7 @@
 
   if (btnReturnToBook) {
     btnReturnToBook.addEventListener("click", queued(async () => {
-      if (!isBookPageMode || !bookPageContext) return;
+      if (!surface.isBookPageMode || !bookPageContext) return;
       const retPage = bookPageContext.page;
       const subjectId = bookPageContext.subjectId || subjectSelect.value;
       await saveBookPageAnnotationsNow();
@@ -1751,10 +935,10 @@
   // KI-Tutor fragen (Snapshot an Vision + OpenAI TTS Sprachausgabe)
   if (btnRequestHint) {
     btnRequestHint.addEventListener("click", async () => {
-      if (!currentSession) return;
+      if (!surface.currentSession) return;
       stopTutorSpeech();
 
-      if (strokes.length === 0 && !isUnderlayVisible) {
+      if (surface.strokes.length === 0 && !surface.isUnderlayVisible) {
         playTutorSpeech(null, "Deine Tafel ist noch ganz leer. Schreib mir gerne eine Aufgabe oder deinen Rechenschritt auf!");
         return;
       }
@@ -1770,7 +954,7 @@
 
       try {
         const snapshot = captureBoardSnapshot();
-        const res = await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/ask-tutor`, {
+        const res = await apiFetch(`/api/v1/whiteboard/sessions/${surface.currentSession.id}/ask-tutor`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1807,7 +991,7 @@
   if (btnFullscreen) {
     btnFullscreen.addEventListener("click", () => {
       document.body.classList.toggle("wb-fullscreen-mode");
-      setTimeout(resizeCanvases, 100);
+      setTimeout(surface.resizeCanvases, 100);
     });
   }
 
@@ -1826,7 +1010,7 @@
     } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "h") {
       setTool("highlighter");
     } else if (!e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "e") {
-      if (currentTool === "pixel_eraser") {
+      if (surface.currentTool === "pixel_eraser") {
         setTool("object_eraser");
       } else {
         setTool("pixel_eraser");
@@ -2042,10 +1226,10 @@
         e.stopPropagation();
         if (confirm("Möchtest du diese Aufgabe von der Tafel entfernen?")) {
           card.remove();
-          exercises = exercises.filter(item => item.id !== ex.id);
-          if (currentSession) {
+          surface.exercises = surface.exercises.filter(item => item.id !== ex.id);
+          if (surface.currentSession) {
             try {
-              await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}`, {
+              await apiFetch(`/api/v1/whiteboard/sessions/${surface.currentSession.id}/exercises/${ex.id}`, {
                 method: "DELETE"
               });
             } catch (err) {}
@@ -2073,7 +1257,7 @@
   }
 
   async function checkClozeBlanks(card, ex) {
-    if (!currentSession) return;
+    if (!surface.currentSession) return;
     const checkBtn = card.querySelector(`#btn-check-${ex.id}`);
     const progressEl = card.querySelector(`#cloze-progress-${ex.id}`);
     if (!checkBtn) return;
@@ -2103,10 +1287,10 @@
 
         const screenLeft = rect.left - inkRect.left;
         const screenTop = rect.top - inkRect.top;
-        const vx = (screenLeft - panX) / scale;
-        const vy = (screenTop - panY) / scale;
-        const vw = rect.width / scale;
-        const vh = rect.height / scale;
+        const vx = (screenLeft - surface.panX) / surface.scale;
+        const vy = (screenTop - surface.panY) / surface.scale;
+        const vw = rect.width / surface.scale;
+        const vh = rect.height / surface.scale;
 
         const padding = 12;
         const cropX = vx - padding;
@@ -2114,7 +1298,7 @@
         const cropW = vw + padding * 2;
         const cropH = vh + padding * 2;
 
-        const overlappingStrokes = strokes.filter(s => {
+        const overlappingStrokes = surface.strokes.filter(s => {
           if (!s.points || s.points.length === 0) return false;
           return s.points.some(p => p.x >= cropX && p.x <= cropX + cropW && p.y >= cropY && p.y <= cropY + cropH);
         });
@@ -2136,7 +1320,7 @@
         cropCtx.translate(-cropX, -cropY);
 
         for (const s of overlappingStrokes) {
-          renderStrokeToContext(cropCtx, s);
+          surface.renderStrokeToContext(cropCtx, s);
         }
         cropCtx.restore();
 
@@ -2144,7 +1328,7 @@
         items.push({ blank_id: bid, crop_image_base64: cropB64 });
       }
 
-      const res = await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}/check-blanks`, {
+      const res = await apiFetch(`/api/v1/whiteboard/sessions/${surface.currentSession.id}/exercises/${ex.id}/check-blanks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2220,8 +1404,8 @@
 
     header.addEventListener("pointermove", (e) => {
       if (!isDragging) return;
-      const dx = (e.clientX - startScreenX) / scale;
-      const dy = (e.clientY - startScreenY) / scale;
+      const dx = (e.clientX - startScreenX) / surface.scale;
+      const dy = (e.clientY - startScreenY) / surface.scale;
       const newX = Math.round(startPosX + dx);
       const newY = Math.round(Math.max(20, startPosY + dy));
       card.style.left = `${newX}px`;
@@ -2234,15 +1418,15 @@
       isDragging = false;
       try { header.releasePointerCapture(e.pointerId); } catch (err) {}
       card.style.zIndex = "4";
-      const dx = (e.clientX - startScreenX) / scale;
-      const dy = (e.clientY - startScreenY) / scale;
+      const dx = (e.clientX - startScreenX) / surface.scale;
+      const dy = (e.clientY - startScreenY) / surface.scale;
       ex.pos_x = Math.round(startPosX + dx);
       ex.pos_y = Math.round(Math.max(20, startPosY + dy));
       e.stopPropagation();
 
-      if (currentSession) {
+      if (surface.currentSession) {
         try {
-          await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}/position`, {
+          await apiFetch(`/api/v1/whiteboard/sessions/${surface.currentSession.id}/exercises/${ex.id}/position`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ pos_x: ex.pos_x, pos_y: ex.pos_y })
@@ -2257,7 +1441,7 @@
   function renderAllExercises() {
     if (!tasksLayer) return;
     tasksLayer.innerHTML = "";
-    exercises.forEach(ex => {
+    surface.exercises.forEach(ex => {
       const el = createExerciseCardElement(ex);
       tasksLayer.appendChild(el);
     });
@@ -2268,7 +1452,7 @@
     try {
       const res = await apiFetch(`/api/v1/whiteboard/sessions/${sessionId}/exercises`);
       if (res.ok) {
-        exercises = await res.json();
+        surface.exercises = await res.json();
         renderAllExercises();
       }
     } catch (err) {
@@ -2300,10 +1484,10 @@
 
   if (btnExerciseSubmit) {
     btnExerciseSubmit.addEventListener("click", async () => {
-      if (!currentSession) {
+      if (!surface.currentSession) {
         await createNewSession();
       }
-      if (!currentSession) return;
+      if (!surface.currentSession) return;
 
       const exType = exerciseTypeSelect ? exerciseTypeSelect.value : "auto";
       const topicText = exerciseTopicInput ? exerciseTopicInput.value.trim() : "";
@@ -2316,10 +1500,10 @@
       try {
         // Gute Platzierung ermitteln: rechts neben dem aktuellen Bildschirmausschnitt oder oben
         const viewW = viewport.clientWidth || 1024;
-        const initialX = Math.round(Math.max(60, (-panX / scale) + (viewW / scale) * 0.45));
-        const initialY = Math.round(Math.max(80, (-panY / scale) + 60));
+        const initialX = Math.round(Math.max(60, (-surface.panX / surface.scale) + (viewW / surface.scale) * 0.45));
+        const initialY = Math.round(Math.max(80, (-surface.panY / surface.scale) + 60));
 
-        const res = await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/generate`, {
+        const res = await apiFetch(`/api/v1/whiteboard/sessions/${surface.currentSession.id}/exercises/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2336,7 +1520,7 @@
 
         if (res.ok) {
           const newEx = await res.json();
-          exercises.push(newEx);
+          surface.exercises.push(newEx);
           const cardEl = createExerciseCardElement(newEx);
           if (tasksLayer) tasksLayer.appendChild(cardEl);
 
@@ -2384,32 +1568,32 @@
 
   function updateBoardTitle() {
     if (!boardTitleEl) return;
-    if (isBookPageMode && bookPageContext) {
+    if (surface.isBookPageMode && bookPageContext) {
       boardTitleEl.textContent = bookPageContext.title || "Dokument";
     } else {
-      boardTitleEl.textContent = currentSession ? (currentSession.title || "Tafel") : "Tafel";
+      boardTitleEl.textContent = surface.currentSession ? (surface.currentSession.title || "Tafel") : "Tafel";
     }
   }
 
   function applyBoard(board) {
-    currentSession = board;
+    surface.currentSession = board;
     let loaded = [];
     try {
       loaded = JSON.parse(board.board_state_json || "[]") || [];
     } catch (e) {
       loaded = [];
     }
-    strokes = Array.isArray(loaded) ? loaded : [];
-    strokes.forEach(s => {
-      if (!s.bbox && s.points) s.bbox = computeBoundingBox(s.points);
+    surface.strokes = Array.isArray(loaded) ? loaded : [];
+    surface.strokes.forEach(s => {
+      if (!s.bbox && s.points) s.bbox = surface.computeBoundingBox(s.points);
     });
-    undoStack = [];
-    redoStack = [];
-    exercises = [];
+    surface.undoStack = [];
+    surface.redoStack = [];
+    surface.exercises = [];
     if (tasksLayer) tasksLayer.innerHTML = "";
     if (subjectSelect && board.subject_id) subjectSelect.value = board.subject_id;
-    panY = 0;
-    updateViewportPan();
+    surface.panY = 0;
+    surface.updateViewportPan();
     updateBoardTitle();
     loadSessionExercises(board.id);
     connectTutorWebSocket();
@@ -2417,7 +1601,7 @@
 
   // Vorschaubild der ganzen Tafel (Liste und KI-Name), unabhängig vom sichtbaren Ausschnitt
   function renderBoardThumbnail() {
-    const inked = strokes.filter(s => s.points && s.points.length && s.tool !== "pixel_eraser" && s.tool !== "eraser");
+    const inked = surface.strokes.filter(s => s.points && s.points.length && s.tool !== "pixel_eraser" && s.tool !== "eraser");
     if (inked.length === 0) return null;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     inked.forEach(s => s.points.forEach(p => {
@@ -2437,7 +1621,7 @@
     ink.height = H;
     const inkLayer = ink.getContext("2d");
     inkLayer.setTransform(k, 0, 0, k, (W - w * k) / 2 - minX * k, (H - h * k) / 2 - minY * k);
-    strokes.forEach(s => renderStrokeToContext(inkLayer, s));
+    surface.strokes.forEach(s => surface.renderStrokeToContext(inkLayer, s));
 
     const out = document.createElement("canvas");
     out.width = W;
@@ -2451,13 +1635,13 @@
 
   async function saveBoardNow(withThumbnail) {
     clearTimeout(saveDebounceTimer);
-    if (!currentSession || isBookPageMode) return;
-    const payload = { board_state_json: JSON.stringify(strokes) };
+    if (!surface.currentSession || surface.isBookPageMode) return;
+    const payload = { board_state_json: JSON.stringify(surface.strokes) };
     if (withThumbnail) {
       const thumb = renderBoardThumbnail();
       if (thumb) payload.snapshot_data_url = thumb;
     }
-    const res = await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/state`, {
+    const res = await apiFetch(`/api/v1/whiteboard/sessions/${surface.currentSession.id}/state`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -2466,11 +1650,11 @@
   }
 
   async function closeCurrentBoard() {
-    if (!currentSession) return;
-    const board = currentSession;
-    const empty = strokes.length === 0;
+    if (!surface.currentSession) return;
+    const board = surface.currentSession;
+    const empty = surface.strokes.length === 0;
     await saveBoardNow(true);  // scheitert das Speichern, bleibt die Tafel offen
-    currentSession = null;
+    surface.currentSession = null;
     const closing = apiFetch(`/api/v1/boards/${board.id}/close`, { method: "POST", keepalive: true }).catch(() => {});
     // Leere Tafeln verwirft der Server sofort – abwarten, damit sie nicht wieder auftauchen.
     // Sonst nicht warten: den Namen vergibt die KI im Hintergrund.
@@ -2478,24 +1662,24 @@
   }
 
   function exitDocumentMode() {
-    isBookPageMode = false;
+    surface.isBookPageMode = false;
     bookPageContext = null;
     clearTimeout(bookPageSaveDebounceTimer);
-    isUnderlayVisible = false;
+    surface.isUnderlayVisible = false;
     updateUnderlayVisibility();
     if (btnReturnToBook) btnReturnToBook.style.display = "none";
     if (docSaveStatus) docSaveStatus.style.display = "none";
     if (btnDocClose) btnDocClose.style.display = "inline-block";
     if (materialSelect) materialSelect.value = "";
-    strokes = [];
-    undoStack = [];
-    redoStack = [];
-    redrawAllStrokes();
+    surface.strokes = [];
+    surface.undoStack = [];
+    surface.redoStack = [];
+    surface.redrawAllStrokes();
     updateBoardTitle();
   }
 
   async function leaveCurrent() {
-    if (isBookPageMode) {
+    if (surface.isBookPageMode) {
       await saveBookPageAnnotationsNow();
       exitDocumentMode();
     } else {
@@ -2513,14 +1697,14 @@
   }
 
   async function openBoard(boardId) {
-    if (!isBookPageMode && currentSession && currentSession.id === boardId) return;
+    if (!surface.isBookPageMode && surface.currentSession && surface.currentSession.id === boardId) return;
     await leaveCurrent();
     applyBoard(await apiJson(`/api/v1/boards/${boardId}/open`, { method: "POST" }));
   }
 
   async function openLastBoard(subjectId) {
     // Schon die Tafel dieses Fachs offen? Dann bleibt sie offen.
-    if (!isBookPageMode && currentSession && subjectId && currentSession.subject_id === subjectId) return;
+    if (!surface.isBookPageMode && surface.currentSession && subjectId && surface.currentSession.subject_id === subjectId) return;
     await leaveCurrent();
     const query = subjectId ? `?subject_id=${encodeURIComponent(subjectId)}` : "";
     const last = await apiJson(`/api/v1/boards/last${query}`);
@@ -2534,12 +1718,12 @@
   // Dokument auf der Tafel: Notizen pro Seite, Zeichnen nur auf der Seite
   async function openDocument({ materialId, page = 1, pageCount = 1, title = "Dokument", subjectId = null, badge = "📄 Dokument", returnToBook = false }) {
     await leaveCurrent();
-    isBookPageMode = true;
+    surface.isBookPageMode = true;
     bookPageContext = { materialId, page, pageCount, title, subjectId };
-    strokes = [];
-    undoStack = [];
-    redoStack = [];
-    redrawAllStrokes();
+    surface.strokes = [];
+    surface.undoStack = [];
+    surface.redoStack = [];
+    surface.redrawAllStrokes();
     if (tasksLayer) tasksLayer.innerHTML = "";
 
     if (subjectId && subjectSelect && subjectSelect.value !== subjectId) {
@@ -2552,14 +1736,14 @@
     updateBoardTitle();
 
     // Standard-Farbe auf Blau stellen, falls Weiß aktiv ist (damit auf weißer Seite lesbar)
-    if (currentColor === "#f8fafc" || currentColor === "#ffffff") {
+    if (surface.currentColor === "#f8fafc" || surface.currentColor === "#ffffff") {
       setColor("#38bdf8");
     }
 
     // Viewport zurücksetzen
-    panX = 0;
-    panY = 0;
-    scale = 1.0;
+    surface.panX = 0;
+    surface.panY = 0;
+    surface.scale = 1.0;
 
     // Topbar anpassen
     if (docTopbar) docTopbar.style.display = "flex";
@@ -2572,17 +1756,17 @@
     if (btnDocClose) btnDocClose.style.display = returnToBook ? "none" : "inline-block";
 
     // Underlay anzeigen
-    isUnderlayVisible = true;
+    surface.isUnderlayVisible = true;
     if (docUnderlay) docUnderlay.style.display = "block";
 
     const targetSrc = `/api/v1/materials/${materialId}/preview?page=${page}`;
     docUnderlayImg.onload = () => {
-      updateViewportPan();
+      surface.updateViewportPan();
       loadBookPageAnnotations();
     };
     docUnderlayImg.src = targetSrc;
     if (docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) {
-      updateViewportPan();
+      surface.updateViewportPan();
       loadBookPageAnnotations();
     }
   }
@@ -2601,7 +1785,7 @@
   }
 
   async function closeDocument() {
-    if (!isBookPageMode) return;
+    if (!surface.isBookPageMode) return;
     const subjectId = (bookPageContext && bookPageContext.subjectId) || subjectSelect.value;
     await saveBookPageAnnotationsNow();
     exitDocumentMode();
@@ -2632,7 +1816,7 @@
   function createBoardListItem(b) {
     const item = document.createElement("div");
     item.className = "wb-boards-item";
-    if (!isBookPageMode && currentSession && currentSession.id === b.id) item.classList.add("active");
+    if (!surface.isBookPageMode && surface.currentSession && surface.currentSession.id === b.id) item.classList.add("active");
 
     const thumb = document.createElement(b.has_thumbnail ? "img" : "div");
     thumb.className = "wb-boards-thumb";
@@ -2696,9 +1880,9 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: name.trim().slice(0, 60) })
       });
-      if (currentSession && currentSession.id === b.id) {
-        currentSession.title = updated.title;
-        currentSession.title_source = updated.title_source;
+      if (surface.currentSession && surface.currentSession.id === b.id) {
+        surface.currentSession.title = updated.title;
+        surface.currentSession.title_source = updated.title_source;
         updateBoardTitle();
       }
     } catch (err) {
@@ -2709,10 +1893,10 @@
 
   const archiveBoard = queued(async (b) => {
     if (!confirm(`„${b.title || "Tafel"}“ archivieren? Die Tafel verschwindet aus der Liste.`)) return;
-    const isCurrent = !isBookPageMode && currentSession && currentSession.id === b.id;
+    const isCurrent = !surface.isBookPageMode && surface.currentSession && surface.currentSession.id === b.id;
     if (isCurrent) {
       await saveBoardNow(true);
-      currentSession = null;
+      surface.currentSession = null;
     }
     await apiJson(`/api/v1/boards/${b.id}/archive`, { method: "POST" });
     if (isCurrent) await openLastBoard(subjectSelect.value);
@@ -2777,7 +1961,7 @@
   };
 
   setTimeout(() => {
-    resizeCanvases();
+    surface.resizeCanvases();
     queued(initSession)();
   }, 150);
 
