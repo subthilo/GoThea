@@ -156,9 +156,9 @@ def pre_analyze_upload(
 
     # 1. Intelligente KI-Analyse (falls OpenAI konfiguriert). Ein fixiertes Fach (Upload von der
     #    Fachseite) bleibt bestehen; Titel, Art, Zusammenfassung und ggf. Thema kommen von der KI.
-    from backend.app.config import OPENAI_API_KEY
+    from backend.app.services import llm
     hint_subject = db.query(Subject).filter_by(id=subject_id_hint).first() if subject_id_hint else None
-    if OPENAI_API_KEY:
+    if llm.is_available():
         try:
             from backend.app.services.document_analyzer import analyze_document_content
             ai_res = analyze_document_content(

@@ -76,10 +76,10 @@ def test_needs_extraction_rules():
 
 def test_queue_rules(monkeypatch):
     service = pe.PageExtractionService()
-    monkeypatch.setattr(pe, "OPENAI_API_KEY", "")
+    monkeypatch.setattr("backend.app.config.OPENAI_API_KEY", "")
     service.queue_material("mat_a")
     assert service._queue.empty()
-    monkeypatch.setattr(pe, "OPENAI_API_KEY", "sk-fake")
+    monkeypatch.setattr("backend.app.config.OPENAI_API_KEY", "sk-fake")
     monkeypatch.setattr(pe, "BOOK_EXTRACTION_INTERVAL_SECONDS", 0)
     service.queue_material("mat_book_ch01", pe.PRIORITY_BOOK_BACKFILL)
     assert service._queue.empty()                                               # Buch-Nachholen abgeschaltet
@@ -91,7 +91,7 @@ def test_queue_rules(monkeypatch):
 def test_book_chapters_are_processed_one_page_at_a_time(db_session, tmp_path, monkeypatch):
     chapter = _material(db_session, "mat_ch", _pdf(tmp_path / "ch.pdf", 3), 3, kind="Buchauszug", parent_id="mat_b")
     model = FakeModel()
-    monkeypatch.setattr(pe, "OPENAI_API_KEY", "sk-fake")
+    monkeypatch.setattr("backend.app.config.OPENAI_API_KEY", "sk-fake")
     monkeypatch.setattr(pe, "_ask_model", model)
     monkeypatch.setattr(pe, "BOOK_EXTRACTION_INTERVAL_SECONDS", 0.01)
     service = pe.PageExtractionService()

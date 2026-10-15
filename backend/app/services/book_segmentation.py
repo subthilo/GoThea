@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.services.document_kinds import NEVER_BOOK_KINDS, normalize_kind
 from backend.app.prompts.book_toc import BOOK_TOC_SYSTEM_PROMPT
-from backend.app.services.llm import chat_params
+from backend.app.services import llm
 from backend.app.models.material import Material
 from backend.app.models.taxonomy import Topic
 
@@ -1039,16 +1039,12 @@ def extract_chapters_with_ai(file_path: Path, total_pages: int, title_hint: str 
     Analysiert die ersten Seiten eines Schulbuchs (Inhaltsverzeichnis) via OpenAI.
     Unterstützt sowohl digitale Texte als auch eingescannte Bildseiten (Vision).
     """
-    from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
-    if not OPENAI_API_KEY or not file_path.exists():
+    from backend.app.config import OPENAI_MODEL
+    if not llm.is_available() or not file_path.exists():
         return []
 
     try:
-        import json
-        from openai import OpenAI
         from backend.app.services.material_ingestion import render_material_page_as_image, prepare_image_base64_for_vision
-
-        client = OpenAI(api_key=OPENAI_API_KEY)
 
         reader = pypdf.PdfReader(str(file_path))
         toc_text = ""
@@ -1099,15 +1095,7 @@ def extract_chapters_with_ai(file_path: Path, total_pages: int, title_hint: str 
                 {"role": "user", "content": user_content}
             ]
 
-        response = client.chat.completions.create(**chat_params(
-            OPENAI_MODEL,
-            temperature=0.1,
-            messages=messages,
-            response_format={"type": "json_object"}
-        ))
-
-        content = response.choices[0].message.content or "{}"
-        data = json.loads(content)
+        data = llm.chat_json(messages, purpose="Buch-Inhaltsverzeichnis", model=OPENAI_MODEL, temperature=0.1)
         raw_chaps = data.get("chapters", [])
         if not isinstance(raw_chaps, list) or len(raw_chaps) < 1:
             return []

@@ -115,7 +115,7 @@ def test_import_timetable_writes_slots(client, db_session, tmp_path):
     })
     mock_client.chat.completions.create.return_value = MagicMock(choices=[choice])
 
-    with patch("backend.app.services.timetable_analyzer.OPENAI_API_KEY", "sk-fake"), \
+    with patch("backend.app.config.OPENAI_API_KEY", "sk-fake"), \
          patch("openai.OpenAI", return_value=mock_client), \
          patch("backend.app.services.timetable_analyzer.render_material_page_as_image", return_value=(img.read_bytes(), "image/png")), \
          open(img, "rb") as f:

@@ -95,9 +95,15 @@ def isolated_parent_auth(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def disable_openai_in_tests(monkeypatch):
-    """Verhindert echte OpenAI API-Aufrufe während der Standard-Test-Suite."""
-    monkeypatch.setattr("backend.app.services.document_analyzer.OPENAI_API_KEY", None)
-    monkeypatch.setattr("backend.app.services.timetable_analyzer.OPENAI_API_KEY", None)
+    """Verhindert echte OpenAI API-Aufrufe während der Standard-Test-Suite.
+
+    Tests, die KI-Antworten brauchen, setzen backend.app.config.OPENAI_API_KEY und ersetzen openai.OpenAI.
+    """
+    from backend.app.services import llm
+    monkeypatch.setattr("backend.app.config.OPENAI_API_KEY", "")
+    llm.reset_client()
+    yield
+    llm.reset_client()
 
 
 

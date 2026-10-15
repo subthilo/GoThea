@@ -127,7 +127,7 @@ def test_automatic_extension_keeps_existing_topic_names(db_session, monkeypatch)
         db_session.delete(t)
     db_session.add(Topic(id="top_known", subject_id="sub_physics", name="Masse und Gewichtskraft", area="Mechanik", grade_level=7))
     db_session.commit()
-    monkeypatch.setattr(btc, "OPENAI_API_KEY", "sk-fake")
+    monkeypatch.setattr("backend.app.config.OPENAI_API_KEY", "sk-fake")
     monkeypatch.setattr(btc, "_ask_model", _fake_catalog)
 
     plan = btc.extend_catalog_for_subject(db_session, "sub_physics")
@@ -139,5 +139,5 @@ def test_automatic_extension_keeps_existing_topic_names(db_session, monkeypatch)
 
 
 def test_extension_is_skipped_without_api_key(db_session, monkeypatch):
-    monkeypatch.setattr(btc, "OPENAI_API_KEY", "")
+    monkeypatch.setattr("backend.app.config.OPENAI_API_KEY", "")
     assert btc.extend_catalog_for_subject(db_session, "sub_physics") is None

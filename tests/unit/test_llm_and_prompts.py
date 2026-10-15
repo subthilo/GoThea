@@ -40,7 +40,7 @@ def test_document_analysis_uses_analysis_model_and_page_count(db_session, tmp_pa
     pdf = _blank_pdf(tmp_path / "lehrbuch.pdf", 42)
     mock_client = _mock_openai({"fach": "Mathematik", "dokumentart": "Buch"})
 
-    with patch("backend.app.services.document_analyzer.OPENAI_API_KEY", "sk-fake"), \
+    with patch("backend.app.config.OPENAI_API_KEY", "sk-fake"), \
          patch("backend.app.services.document_analyzer.OPENAI_ANALYSIS_MODEL", "gpt-4o-mini"), \
          patch("openai.OpenAI", return_value=mock_client):
         from backend.app.services.document_analyzer import analyze_document_content
@@ -111,7 +111,7 @@ def test_small_documents_are_analyzed_page_by_page_with_signals(db_session, tmp_
         "fach": "Biologie", "dokumentart": "Hefterseite", "inhaltlicher_titel": "Verhütungsmittel",
         "loesungsseiten": [2, "2", "x"], "von_schuelerin_bearbeitet": False, "von_lehrkraft_bewertet": "ja",
     })
-    with patch("backend.app.services.document_analyzer.OPENAI_API_KEY", "sk-fake"), \
+    with patch("backend.app.config.OPENAI_API_KEY", "sk-fake"), \
          patch("openai.OpenAI", return_value=mock_client):
         from backend.app.services.document_analyzer import analyze_document_content
         result = analyze_document_content(db_session, pdf, "")

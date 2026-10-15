@@ -45,7 +45,7 @@ def test_openai_analyzer_integration(db_session, tmp_path):
     })
     mock_response.choices = [mock_choice]
 
-    with patch("backend.app.services.document_analyzer.OPENAI_API_KEY", "sk-fakekey"):
+    with patch("backend.app.config.OPENAI_API_KEY", "sk-fakekey"):
         with patch("openai.OpenAI") as mock_openai_cls:
             mock_client = MagicMock()
             mock_openai_cls.return_value = mock_client

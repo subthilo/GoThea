@@ -1,6 +1,6 @@
 import re
 import io
-import json
+import logging
 import base64
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -8,8 +8,8 @@ from typing import Optional, Dict, Any, List, Tuple
 from PIL import Image
 from sqlalchemy.orm import Session
 
-from backend.app.config import OPENAI_API_KEY, OPENAI_ANALYSIS_MODEL
-from backend.app.services.llm import chat_params
+from backend.app.config import OPENAI_ANALYSIS_MODEL
+from backend.app.services import llm
 from backend.app.services.document_kinds import dossier_for_kind, normalize_kind
 from backend.app.services.topic_catalog import build_catalog_text, resolve_topic
 from backend.app.models import Subject, Topic
@@ -25,6 +25,8 @@ from backend.app.services.timetable_analyzer import (
     get_or_create_organisation_subject,
     is_timetable_document
 )
+
+logger = logging.getLogger(__name__)
 
 def predict_subject_and_topic(
     db: Session,
@@ -196,16 +198,12 @@ def query_openai_analyzer(
     file_path: Path,
     extracted_text: str,
     mime_type: str,
-    api_key: str,
     model_name: str,
     original_filename: Optional[str] = None,
     topic_catalog: str = ""
 ) -> Optional[Dict[str, Any]]:
     """Fragt OpenAI nach Fach, Thema, Dokumentart, Titel und Zusammenfassung."""
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-
         effective_name = original_filename or file_path.name
         page_count = get_pdf_page_count(file_path, mime_type)
         clean_text = (extracted_text or "").strip()
@@ -227,20 +225,13 @@ def query_openai_analyzer(
             {"role": "user", "content": user_content}
         ]
 
-        response = client.chat.completions.create(**chat_params(
-            model_name,
-            temperature=0.1,
-            messages=messages,
-            response_format={"type": "json_object"}
-        ))
-
-        parsed = json.loads(response.choices[0].message.content or "{}")
-        usage = getattr(response, "usage", None)
-        if usage is not None and isinstance(getattr(usage, "prompt_tokens", None), int):
-            parsed["_usage"] = {"prompt_tokens": usage.prompt_tokens, "completion_tokens": usage.completion_tokens}
+        reply = llm.chat(messages, purpose="Dokumentanalyse", model=model_name, temperature=0.1, json_mode=True)
+        parsed = reply.json()
+        if reply.prompt_tokens is not None:
+            parsed["_usage"] = {"prompt_tokens": reply.prompt_tokens, "completion_tokens": reply.completion_tokens}
         return parsed
     except Exception as e:
-        print(f"Warnung: OpenAI Inhaltsanalyse fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
+        logger.warning(f"KI-Inhaltsanalyse fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
         return None
 
 
@@ -254,17 +245,16 @@ def analyze_document_content(
 ) -> DocumentAnalysisResult:
     """
     Zentrale Analysefunktion für Dokumente aus der Inbox oder dem Upload.
-    Verwendet KI-Inhaltsanalyse falls OPENAI_API_KEY konfiguriert ist,
+    Verwendet KI-Inhaltsanalyse falls ein OpenAI-Schlüssel konfiguriert ist,
     sonst robusten Heuristik-Fallback.
     """
     effective_name = original_filename or file_path.name
     raw_ai_data = None
-    if OPENAI_API_KEY:
+    if llm.is_available():
         raw_ai_data = query_openai_analyzer(
             file_path=file_path,
             extracted_text=extracted_text,
             mime_type=mime_type,
-            api_key=OPENAI_API_KEY,
             model_name=OPENAI_ANALYSIS_MODEL,
             original_filename=effective_name,
             topic_catalog=build_catalog_text(db)

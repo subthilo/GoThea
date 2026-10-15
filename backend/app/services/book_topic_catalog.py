@@ -10,12 +10,12 @@ from typing import Callable, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
+from backend.app.config import OPENAI_MODEL
 from backend.app.models.material import Material
 from backend.app.models.taxonomy import Subject, Topic, TopicBookRef
 from backend.app.prompts.book_topic_catalog import BOOK_TOPIC_CATALOG_SYSTEM_PROMPT
 from backend.app.services.document_kinds import BUCH
-from backend.app.services.llm import chat_params
+from backend.app.services import llm
 from backend.app.services.topic_consolidation import IS_BOOK_OR_CHAPTER, merge_topics
 from backend.app.services.topic_plans import fingerprint
 
@@ -109,18 +109,15 @@ def validate_catalog(groups: List[CatalogGroup], sections: Dict[str, BookSection
 
 
 def _ask_model(payload: dict) -> dict:
-    from openai import OpenAI
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    response = client.chat.completions.create(**chat_params(
-        OPENAI_MODEL,
+    return llm.chat_json(
+        purpose="Buch-Themenkatalog",
+        model=OPENAI_MODEL,
         temperature=0.1,
         messages=[
             {"role": "system", "content": BOOK_TOPIC_CATALOG_SYSTEM_PROMPT},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
         ],
-        response_format={"type": "json_object"},
-    ))
-    return json.loads(response.choices[0].message.content or "{}")
+    )
 
 
 def plan_catalog(db: Session, subject: Subject, ask: Optional[Callable[[dict], dict]] = None) -> CatalogPlan:
@@ -181,7 +178,7 @@ def catalog_plan_from_dict(data: dict) -> CatalogPlan:
 def extend_catalog_for_subject(db: Session, subject_id: str) -> Optional[CatalogPlan]:
     """Nach dem Segmentieren eines neuen Buchs: Katalog des Fachs neu aufbauen, ohne bestehende
     Themen umzubenennen (Thea soll ihre Themen wiederfinden)."""
-    if not OPENAI_API_KEY:
+    if not llm.is_available():
         return None
     subject = db.get(Subject, subject_id)
     if subject is None:

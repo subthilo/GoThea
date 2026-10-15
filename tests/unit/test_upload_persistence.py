@@ -25,7 +25,7 @@ def test_ai_created_topic_survives_end_of_pre_analysis_request(tmp_path):
                "dokumentart": "Arbeitsblatt", "inhaltlicher_titel": "Verhütungsmittel"}
 
     pre_analysis = Session()
-    with patch("backend.app.services.document_analyzer.OPENAI_API_KEY", "sk-fake"), \
+    with patch("backend.app.config.OPENAI_API_KEY", "sk-fake"), \
          patch("backend.app.services.document_analyzer.query_openai_analyzer", return_value=ai_data):
         result = analyze_document_content(pre_analysis, pdf, "", "application/pdf")
     pre_analysis.close()  # Request-Ende ohne weiteres commit

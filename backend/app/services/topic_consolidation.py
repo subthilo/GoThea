@@ -9,14 +9,14 @@ from typing import Dict, List, Optional
 from sqlalchemy import not_, or_
 from sqlalchemy.orm import Session
 
-from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
+from backend.app.config import OPENAI_MODEL
 from backend.app.models.dossier import Dossier
 from backend.app.models.material import Material
 from backend.app.models.taxonomy import Subject, Topic, TopicBookRef
 from backend.app.models.whiteboard import TutorSession
 from backend.app.prompts.topic_consolidation import TOPIC_CONSOLIDATION_SYSTEM_PROMPT
 from backend.app.services.document_kinds import BUCH, BUCHAUSZUG
-from backend.app.services.llm import chat_params
+from backend.app.services import llm
 from backend.app.services.topic_plans import fingerprint
 
 logger = logging.getLogger(__name__)
@@ -49,18 +49,15 @@ def _usage_count(db: Session, topic_id: str) -> int:
 
 
 def _ask_model(payload: dict) -> dict:
-    from openai import OpenAI
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    response = client.chat.completions.create(**chat_params(
-        OPENAI_MODEL,
+    return llm.chat_json(
+        purpose="Themen-Zusammenführung",
+        model=OPENAI_MODEL,
         temperature=0.1,
         messages=[
             {"role": "system", "content": TOPIC_CONSOLIDATION_SYSTEM_PROMPT},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
         ],
-        response_format={"type": "json_object"},
-    ))
-    return json.loads(response.choices[0].message.content or "{}")
+    )
 
 
 def _has_book_refs(db: Session, topic_id: str) -> bool:

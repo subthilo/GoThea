@@ -18,12 +18,12 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from sqlalchemy.orm import Session
 
-from backend.app.config import BOOK_EXTRACTION_INTERVAL_SECONDS, OPENAI_API_KEY, OPENAI_MODEL, SHARED_DATA_DIR
+from backend.app.config import BOOK_EXTRACTION_INTERVAL_SECONDS, OPENAI_MODEL, SHARED_DATA_DIR
 from backend.app.models.material import Material
 from backend.app.models.material_page import MaterialPage
 from backend.app.prompts.page_extraction import PAGE_EXTRACTION_SYSTEM_PROMPT
 from backend.app.services.document_kinds import BUCH, STUNDENPLAN
-from backend.app.services.llm import chat_params
+from backend.app.services import llm
 
 logger = logging.getLogger(__name__)
 
@@ -91,10 +91,9 @@ def _normalize(raw: dict) -> dict:
 
 
 def _ask_model(image_b64: str) -> dict:
-    from openai import OpenAI
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    response = client.chat.completions.create(**chat_params(
-        OPENAI_MODEL,
+    return llm.chat_json(
+        purpose="Seiten-Erschließung",
+        model=OPENAI_MODEL,
         temperature=0,
         messages=[
             {"role": "system", "content": PAGE_EXTRACTION_SYSTEM_PROMPT},
@@ -103,9 +102,7 @@ def _ask_model(image_b64: str) -> dict:
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}", "detail": "high"}},
             ]},
         ],
-        response_format={"type": "json_object"},
-    ))
-    return json.loads(response.choices[0].message.content or "{}")
+    )
 
 
 def extract_page_content(path: Path, mime_type: str, page: int, material_id: Optional[str] = None,
@@ -115,7 +112,7 @@ def extract_page_content(path: Path, mime_type: str, page: int, material_id: Opt
     cached = load_cached(key)
     if cached is not None:
         return cached
-    if not OPENAI_API_KEY and ask is None:
+    if not llm.is_available() and ask is None:
         return None
 
     from backend.app.services.material_ingestion import prepare_image_base64_for_vision
@@ -194,7 +191,7 @@ class PageExtractionService:
         self._session_factory = None
 
     def queue_material(self, material_id: str, priority: int = PRIORITY_DOCUMENT) -> None:
-        if not OPENAI_API_KEY:
+        if not llm.is_available():
             return
         if priority == PRIORITY_BOOK_BACKFILL and BOOK_EXTRACTION_INTERVAL_SECONDS <= 0:
             return
@@ -205,7 +202,7 @@ class PageExtractionService:
         self._queue.put((priority, next(self._counter), material_id))
 
     def start(self, session_factory) -> None:
-        if not OPENAI_API_KEY or (self._thread and self._thread.is_alive()):
+        if not llm.is_available() or (self._thread and self._thread.is_alive()):
             return
         self._session_factory = session_factory
         self._stop.clear()

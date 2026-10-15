@@ -17,7 +17,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pypdf import PdfReader  # noqa: E402
 
-from backend.app.config import OPENAI_API_KEY  # noqa: E402
 from backend.app.services.document_analyzer import query_openai_analyzer  # noqa: E402
 from backend.app.services.document_kinds import normalize_kind  # noqa: E402
 from backend.app.services.page_renderer import page_renderer  # noqa: E402
@@ -36,7 +35,7 @@ def evaluate(model: str, cases: list) -> dict:
     print(f"\n=== {model} ===")
     for case in cases:
         path = Path(case["file"])
-        raw = query_openai_analyzer(path, extract_text(path), "application/pdf", OPENAI_API_KEY, model, path.name)
+        raw = query_openai_analyzer(path, extract_text(path), "application/pdf", model, path.name)
         if not raw:
             stats["failed"] += 1
             print(f"  FEHLER   {path.name}")

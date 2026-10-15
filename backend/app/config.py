@@ -20,6 +20,13 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 # der Messung (scripts/eval_document_classification.py) schlechter klassifizierte und für
 # Seitenbilder ein Vielfaches an Tokens verbrauchte.
 OPENAI_ANALYSIS_MODEL = os.getenv("OPENAI_ANALYSIS_MODEL", OPENAI_MODEL)
+# Sprachausgabe (bisher fest im Code: tts-1 mit Stimme nova)
+OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "tts-1")
+OPENAI_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "nova")
+# Zeitlimit pro Versuch und Wiederholungen bei Netz-/Serverfehlern; Standard = bisheriges Verhalten
+# der OpenAI-Bibliothek. Erst anhand von logs/llm_usage.jsonl (Dauer pro Zweck) verschärfen.
+OPENAI_TIMEOUT_SECONDS = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "600"))
+OPENAI_MAX_RETRIES = int(os.getenv("OPENAI_MAX_RETRIES", "2"))
 
 # Hintergrund-Worker (Seiten-Renderer, Übungs-Pool) beim App-Start; in Tests abgeschaltet
 BACKGROUND_WORKERS_ENABLED = os.getenv("GOTHEA_BACKGROUND_WORKERS", "1") != "0"

@@ -1,5 +1,4 @@
 import re
-import json
 import uuid
 import logging
 from pathlib import Path
@@ -7,9 +6,9 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 
-from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
+from backend.app.config import OPENAI_MODEL
 from backend.app.prompts.timetable import TIMETABLE_SYSTEM_PROMPT
-from backend.app.services.llm import chat_params
+from backend.app.services import llm
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.dossier import Dossier
 from backend.app.models.material import Material
@@ -555,18 +554,13 @@ def query_openai_timetable_analyzer(
     file_path: Path,
     extracted_text: str,
     mime_type: str,
-    api_key: str,
-    model_name: str = "gpt-4o-mini"
+    model_name: str
 ) -> Dict[str, Any]:
     """
     Analysiert einen Stundenplan (Scan, Foto oder PDF) mittels OpenAI.
     Extrahiert alle Schulfächer, die Klasse und die Struktur.
     """
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-
-
         if extracted_text and len(extracted_text.strip()) >= 80:
             user_content = f"Dateiname: {file_path.name}\n\nTextinhalt:\n{extracted_text[:4000]}"
             messages = [
@@ -587,14 +581,7 @@ def query_openai_timetable_analyzer(
                 }
             ]
 
-        response = client.chat.completions.create(**chat_params(
-            model_name,
-            temperature=0.1,
-            messages=messages,
-            response_format={"type": "json_object"}
-        ))
-        content = response.choices[0].message.content or "{}"
-        return json.loads(content)
+        return llm.chat_json(messages, purpose="Stundenplan-Analyse", model=model_name, temperature=0.1)
     except Exception as e:
         logger.warning(f"Fehler bei OpenAI-Stundenplananalyse: {e}")
         return {}
@@ -685,12 +672,11 @@ def process_and_import_timetable(
 
     # 1. Analyse durchführen
     analysis_data = {}
-    if OPENAI_API_KEY:
+    if llm.is_available():
         analysis_data = query_openai_timetable_analyzer(
             file_path=file_path,
             extracted_text=extracted_text,
             mime_type=mime_type,
-            api_key=OPENAI_API_KEY,
             # Stundenpläne werden selten importiert, das Raster-Lesen ist aber anspruchsvoll -> Hauptmodell
             model_name=OPENAI_MODEL
         )
