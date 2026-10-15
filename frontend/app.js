@@ -647,6 +647,15 @@ function switchToTab(tabName) {
   if (btn) btn.click();
 }
 
+// Höhe der (sticky) Kopfzeile für darunter klebende Leisten bereitstellen
+(function trackHeaderHeight() {
+  const header = document.querySelector(".header");
+  if (!header || typeof ResizeObserver === "undefined") return;
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty("--app-header-height", `${header.offsetHeight}px`);
+  }).observe(header);
+})();
+
 // Vollbild-Modi (fixierte Seite ohne Scrollen) gelten nur für Stundenplan und Tafel.
 // Jede Ansicht, die einen Tab aktiviert, muss diese Funktion aufrufen.
 function applyTabViewModes(tabName) {
