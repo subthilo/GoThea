@@ -1,6 +1,13 @@
 """Tafel-Verwaltung im Browser: Wer etwas anderes öffnet oder beginnt, schließt die aktuelle Tafel –
 gespeichert, mit Vorschaubild – und kann sie aus der Liste wieder öffnen. Tafeln gehören zu ihrem Fach."""
-from tests.e2e.board_helpers import DRAW_JS, INK_PIXELS_JS, _draw_and_capture_save, _line, _open_board
+from tests.e2e.board_helpers import (
+    DRAW_JS,
+    INK_PIXELS_JS,
+    _draw_and_capture_save,
+    _line,
+    _open_board,
+    upload_document,
+)
 
 
 def _pixels(page):
@@ -77,26 +84,6 @@ def test_empty_boards_are_discarded_when_left(app_page):
     assert app_page.problems.errors == []
 
 
-def _upload_note(page, title, subject_id, pages=2):
-    import io
-    from urllib.parse import urljoin
-
-    from pypdf import PdfWriter
-    writer = PdfWriter()
-    for _ in range(pages):
-        writer.add_blank_page(width=300, height=420)
-    buf = io.BytesIO()
-    writer.write(buf)
-    base = page.url
-    pre = page.request.post(urljoin(base, "/api/v1/materials/pre-analyze"), multipart={
-        "file": {"name": "mitschrift.pdf", "mimeType": "application/pdf", "buffer": buf.getvalue()}})
-    assert pre.ok
-    conf = page.request.post(urljoin(base, "/api/v1/materials/confirm"), data={
-        "upload_token": pre.json()["upload_token"], "subject_id": subject_id, "title": title, "kind": "Mitschrift"})
-    assert conf.ok
-    return conf.json()["id"]
-
-
 def _draw_on_document_page(page):
     """Zeichnet mitten auf die Dokumentseite und wartet, bis die Seiten-Notiz gespeichert ist."""
     box = page.evaluate("""() => {
@@ -126,7 +113,7 @@ def test_opening_a_note_from_another_subject_does_not_carry_the_board(app_page):
     _draw_and_capture_save(app_page, _line(200, 520, 420, 560))
     math_pixels = _pixels(app_page)
 
-    note_id = _upload_note(app_page, "Zellatmung", "sub_bio")
+    note_id = upload_document(app_page, "Zellatmung", "sub_bio")
     with app_page.expect_response(lambda r: "/pages/1/annotations" in r.url and r.request.method == "GET"):
         app_page.evaluate("(id) => window.openMaterialOnWhiteboard(id, 'sub_bio')", note_id)
     app_page.wait_for_timeout(200)

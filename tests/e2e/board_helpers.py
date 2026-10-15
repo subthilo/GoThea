@@ -49,3 +49,24 @@ def _draw_and_capture_save(page, pts, **kw):
         _draw(page, pts, **kw)
     assert resp.value.ok
     return json.loads(json.loads(resp.value.request.post_data)["board_state_json"])
+
+
+def upload_document(page, title, subject_id, pages=2, kind="Mitschrift"):
+    """Lädt ein leeres PDF über die API hoch (ohne KI) und liefert die Material-ID."""
+    import io
+    from urllib.parse import urljoin
+
+    from pypdf import PdfWriter
+    writer = PdfWriter()
+    for _ in range(pages):
+        writer.add_blank_page(width=300, height=420)
+    buf = io.BytesIO()
+    writer.write(buf)
+    base = page.url
+    pre = page.request.post(urljoin(base, "/api/v1/materials/pre-analyze"), multipart={
+        "file": {"name": "mitschrift.pdf", "mimeType": "application/pdf", "buffer": buf.getvalue()}})
+    assert pre.ok
+    conf = page.request.post(urljoin(base, "/api/v1/materials/confirm"), data={
+        "upload_token": pre.json()["upload_token"], "subject_id": subject_id, "title": title, "kind": kind})
+    assert conf.ok
+    return conf.json()["id"]
