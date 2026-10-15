@@ -2244,6 +2244,7 @@ async function handleBatchFileUpload(files) {
     : null;
 
   let successCount = 0;
+  const failures = [];
   const total = files.length;
 
   for (let i = 0; i < total; i++) {
@@ -2272,7 +2273,8 @@ async function handleBatchFileUpload(files) {
       });
 
       if (!preRes.ok) {
-        console.error(`Fehler bei der Voranalyse von ${file.name}`);
+        const err = await preRes.json().catch(() => ({}));
+        failures.push(`${file.name}: ${err.detail || `Voranalyse fehlgeschlagen (HTTP ${preRes.status})`}`);
         continue;
       }
 
@@ -2283,7 +2285,7 @@ async function handleBatchFileUpload(files) {
         topic_id: preData.predicted_topic_id || null,
         title: preData.predicted_title || file.name,
         kind: preData.predicted_kind || "Arbeitsblatt",
-        summary: null
+        summary: preData.preview_snippet || null
       };
 
       const confRes = await fetch("/api/v1/materials/confirm", {
@@ -2295,18 +2297,29 @@ async function handleBatchFileUpload(files) {
       if (confRes.ok) {
         successCount++;
       } else {
-        console.error(`Fehler beim Speichern von ${file.name}`);
+        const err = await confRes.json().catch(() => ({}));
+        failures.push(`${file.name}: ${err.detail || `Speichern fehlgeschlagen (HTTP ${confRes.status})`}`);
       }
     } catch (e) {
-      console.error(`Upload-Fehler bei ${file.name}:`, e);
+      failures.push(`${file.name}: ${e.message || "Netzwerkfehler"}`);
     }
   }
 
   if (pFill) pFill.style.width = "100%";
   if (spinnerText) {
-    spinnerText.textContent = `✅ ${successCount} von ${total} Dokumenten erfolgreich hochgeladen!`;
+    spinnerText.textContent = failures.length
+      ? `⚠️ ${successCount} von ${total} Dokumenten hochgeladen – ${failures.length} fehlgeschlagen`
+      : `✅ ${successCount} von ${total} Dokumenten erfolgreich hochgeladen!`;
   }
   if (pStat) {
+    if (failures.length) {
+      // Fehler sichtbar lassen, nicht automatisch schließen
+      pStat.innerHTML = failures.map((f) => `<div>❌ ${escapeHtml(f)}</div>`).join("");
+      await loadMaterials();
+      await loadUploadsHistory();
+      if (currentDetailSubjectId) await loadSubjectMaterials(currentDetailSubjectId);
+      return;
+    }
     pStat.textContent = targetSub
       ? `Alle Dokumente wurden zu ${targetSub.name} hinzugefügt.`
       : "Alle Dokumente wurden erfolgreich verarbeitet.";

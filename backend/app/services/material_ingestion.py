@@ -111,6 +111,23 @@ def extract_pdf_data(file_bytes: bytes) -> Tuple[int, str]:
     except Exception:
         return 1, ""
 
+def cleanup_temp_uploads(max_age_hours: int = 24) -> int:
+    """Entfernt voranalysierte, aber nie bestätigte Uploads."""
+    import time
+    cutoff = time.time() - max_age_hours * 3600
+    removed = 0
+    for f in TEMP_UPLOADS_DIR.glob("upl_*"):
+        try:
+            if f.stat().st_mtime < cutoff:
+                f.unlink()
+                removed += 1
+        except OSError:
+            pass
+    if removed:
+        logger.info(f"🧹 {removed} unbestätigte Uploads aus temp_uploads entfernt.")
+    return removed
+
+
 def pre_analyze_upload(
     db: Session,
     filename: str,

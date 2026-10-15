@@ -328,7 +328,9 @@ def analyze_document_content(
                     standard_competencies=f"Automatisch erkannt: {oberthema}"
                 )
                 db.add(topic)
-                db.flush()
+                # Dauerhaft speichern: Die Voranalyse (eigener Request) schlägt die ID vor,
+                # bestätigt wird erst im nächsten Request -> nur flush() würde verworfen
+                db.commit()
 
         topic_id = topic.id if topic else None
         topic_name = topic.name if topic else (oberthema or None)

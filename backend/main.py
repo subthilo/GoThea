@@ -47,6 +47,9 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
+    from backend.app.services.material_ingestion import cleanup_temp_uploads
+    cleanup_temp_uploads()
+
     # 3. Hintergrund-Seiten-Renderer starten & alle Materialien einreihen
     from backend.app.services.page_renderer import page_renderer
     page_renderer.start()
