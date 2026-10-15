@@ -4,7 +4,6 @@ import io
 import os
 from pathlib import Path
 
-import pytest
 from pypdf import PdfWriter
 
 from backend.app.models.material import Material
@@ -34,7 +33,6 @@ def _pages(db, material_id):
     return [(r.page_number, r.text) for r in rows]
 
 
-@pytest.mark.xfail(reason="wird im nächsten Commit behoben", strict=True)
 def test_reorder_moves_and_drops_extracted_pages(db_session):
     mat = _material_with_pages(db_session, ["A", "B", "C"])
     material_ingestion.reorder_material_pages(db_session, mat.id, [3, 1])
@@ -45,7 +43,6 @@ def test_reorder_moves_and_drops_extracted_pages(db_session):
     assert db_session.get(Material, mat.id).extracted_text == "--- Seite 1 ---\nC\n\n--- Seite 2 ---\nA"
 
 
-@pytest.mark.xfail(reason="wird im nächsten Commit behoben", strict=True)
 def test_merge_takes_over_extracted_pages_and_queues_the_rest(db_session, monkeypatch):
     from backend.app.services import page_extraction
     queued = []
@@ -60,7 +57,6 @@ def test_merge_takes_over_extracted_pages_and_queues_the_rest(db_session, monkey
     assert queued[-1] == merged.id
 
 
-@pytest.mark.xfail(reason="wird im nächsten Commit behoben", strict=True)
 def test_file_hash_notices_a_rewrite_within_the_same_second(tmp_path):
     f = tmp_path / "doc.pdf"
     f.write_bytes(b"eins")

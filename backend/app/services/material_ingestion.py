@@ -522,7 +522,9 @@ def merge_materials(db: Session, request: MaterialMergeRequest) -> Material:
     writer = PdfWriter()
     all_texts: List[str] = []
 
+    page_offsets: Dict[str, int] = {}  # Material-ID -> Seiten davor im neuen Dokument
     for mat in materials:
+        page_offsets[mat.id] = len(writer.pages)
         mat_path = Path(mat.file_path)
         if mat.mime_type == "application/pdf" or mat_path.suffix.lower() == ".pdf":
             reader = PdfReader(str(mat_path))
@@ -583,6 +585,8 @@ def merge_materials(db: Session, request: MaterialMergeRequest) -> Material:
             )
             db.add(chunk)
 
+    _take_over_extracted_pages(db, new_material, materials, page_offsets)
+
     # Optional: Quelldokumente löschen
     if request.delete_sources:
         for m in materials:
@@ -601,14 +605,29 @@ def merge_materials(db: Session, request: MaterialMergeRequest) -> Material:
 
     db.commit()
     db.refresh(new_material)
-
-    try:
-        from backend.app.services.page_renderer import page_renderer
-        page_renderer.queue_material(new_material.id, new_material.file_path, new_material.mime_type, new_material.page_count)
-    except Exception as e:
-        logger.warning(f"Vorrendern von {new_material.id} nicht eingereiht: {e}")
-
+    queue_background_processing(new_material)  # erschließt nur noch Seiten ohne übernommenen Inhalt
     return new_material
+
+
+def _take_over_extracted_pages(db: Session, target: Material, sources: List[Material], page_offsets: Dict[str, int]) -> None:
+    """Übernimmt die erschlossenen Seiten der Quellen (gleicher Inhalt, keine neue KI-Anfrage)."""
+    from backend.app.models.material_page import MaterialPage
+    from backend.app.services.page_extraction import content_key, refresh_material_text
+    target_path = Path(target.file_path)
+    copied = 0
+    for src in sources:
+        for row in db.query(MaterialPage).filter_by(material_id=src.id).all():
+            page = page_offsets[src.id] + row.page_number
+            db.add(MaterialPage(
+                material_id=target.id, page_number=page, content_key=content_key(target_path, page),
+                text=row.text, tasks_json=row.tasks_json, has_handwriting=row.has_handwriting,
+                has_teacher_marks=row.has_teacher_marks, is_solution_page=row.is_solution_page,
+                legibility=row.legibility, model=row.model,
+            ))
+            copied += 1
+    if copied:
+        db.flush()
+        refresh_material_text(db, target)
 
 def reorder_material_pages(db: Session, material_id: str, page_order: List[int]) -> Material:
     """
@@ -658,25 +677,19 @@ def reorder_material_pages(db: Session, material_id: str, page_order: List[int])
         except Exception:
             pass
 
-    # Synchronisiere PageAnnotations: Altes p -> Neues new_idx
+    # Notizen und erschlossene Seiten wandern mit ihrer Seite mit (alte Seite -> neue Position)
     from backend.app.models.annotation import PageAnnotation
-    existing_annotations = db.query(PageAnnotation).filter_by(material_id=material.id).all()
-    if existing_annotations:
-        ann_by_old_page = {ann.page_number: ann for ann in existing_annotations}
-        # Lösche zuerst temporär oder verschiebe Seiten, um Unique Index Kollisionen zu vermeiden
-        for ann in existing_annotations:
-            ann.page_number = -ann.page_number
+    from backend.app.models.material_page import MaterialPage
+    from backend.app.services.page_extraction import content_key, refresh_material_text
+    _renumber_page_rows(db, db.query(PageAnnotation).filter_by(material_id=material.id).all(), page_order)
+    pages = db.query(MaterialPage).filter_by(material_id=material.id).all()
+    if pages:
+        _renumber_page_rows(db, pages, page_order)
+        for row in pages:
+            if row.page_number > 0:
+                row.content_key = content_key(mat_path, row.page_number)
         db.flush()
-
-        for new_idx, old_page in enumerate(page_order, start=1):
-            if old_page in ann_by_old_page:
-                ann_by_old_page[old_page].page_number = new_idx
-
-        # Annotations von nicht übernommenen Seiten löschen
-        kept_old_pages = set(page_order)
-        for old_page, ann in ann_by_old_page.items():
-            if old_page not in kept_old_pages:
-                db.delete(ann)
+        refresh_material_text(db, material)
 
     db.commit()
     db.refresh(material)
@@ -688,6 +701,24 @@ def reorder_material_pages(db: Session, material_id: str, page_order: List[int])
         logger.warning(f"Vorrendern von {material.id} nicht eingereiht: {e}")
 
     return material
+
+
+def _renumber_page_rows(db: Session, rows: List[Any], page_order: List[int]) -> None:
+    """Setzt page_number seitenweise neu (page_order[i] = alte Seite an Position i+1) und löscht
+    Zeilen nicht übernommener Seiten. Erst negativ parken, sonst kollidiert der eindeutige Index."""
+    if not rows:
+        return
+    by_old_page = {row.page_number: row for row in rows}
+    for row in rows:
+        row.page_number = -row.page_number
+    db.flush()
+    for new_idx, old_page in enumerate(page_order, start=1):
+        if old_page in by_old_page:
+            by_old_page[old_page].page_number = new_idx
+    kept = set(page_order)
+    for old_page, row in by_old_page.items():
+        if old_page not in kept:
+            db.delete(row)
 
 
 

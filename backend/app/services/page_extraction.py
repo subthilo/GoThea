@@ -37,7 +37,8 @@ _sha_lock = threading.Lock()
 
 
 def file_sha256(path: Path) -> str:
-    key = (str(path), int(path.stat().st_mtime))
+    st = path.stat()
+    key = (str(path), st.st_size, st.st_mtime_ns)  # neu geschriebene Dateien sicher erkennen
     with _sha_lock:
         if key in _sha_cache:
             return _sha_cache[key]
