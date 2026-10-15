@@ -185,6 +185,10 @@ class ExercisePoolManager:
 
     def trigger_background_replenish(self, subject_id: Optional[str], exercise_type: str = "fill_in_the_blank"):
         """Weckt den Hintergrund-Worker oder startet einen Ad-Hoc-Thread."""
+        from backend.app.config import EXERCISE_POOL_ENABLED
+        if not EXERCISE_POOL_ENABLED:
+            # Vorrat abgeschaltet: keine Nachproduktion, auch nicht ad hoc
+            return
         self._wake_event.set()
         if not (self._worker_thread and self._worker_thread.is_alive()):
             # Falls der permanente Service nicht läuft (z.B. in isolierten Tests), Fallback-Thread starten

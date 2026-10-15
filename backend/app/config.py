@@ -24,6 +24,10 @@ OPENAI_ANALYSIS_MODEL = os.getenv("OPENAI_ANALYSIS_MODEL", OPENAI_MODEL)
 # Hintergrund-Worker (Seiten-Renderer, Übungs-Pool) beim App-Start; in Tests abgeschaltet
 BACKGROUND_WORKERS_ENABLED = os.getenv("GOTHEA_BACKGROUND_WORKERS", "1") != "0"
 
+# Übungs-Vorrat (Vorproduktion von Übungen + Audio per OpenAI). Standard: aus, bis Tutor und
+# Übungserzeugung neu gebaut sind. Betrifft NICHT Seiten-Erschließung und Renderer.
+EXERCISE_POOL_ENABLED = os.getenv("GOTHEA_EXERCISE_POOL", "0") == "1"
+
 # Umgebung: "staging" oder "production" (Default: "staging" für Sicherheit)
 APP_ENV = os.getenv("APP_ENV", "staging").lower()
 IS_STAGING = APP_ENV == "staging"

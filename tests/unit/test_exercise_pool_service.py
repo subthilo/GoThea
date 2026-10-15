@@ -96,3 +96,14 @@ def test_start_stop_lifecycle(tmp_path):
 
     mgr.stop()
     assert not mgr._worker_thread.is_alive()
+
+
+def test_replenish_does_nothing_while_pool_disabled(tmp_path, monkeypatch):
+    # Abgeschalteter Vorrat darf auch ad hoc keine Übungen (= OpenAI-Aufrufe) nachproduzieren
+    monkeypatch.setattr("backend.app.config.EXERCISE_POOL_ENABLED", False)
+    mgr = ExercisePoolManager(storage_dir=tmp_path)
+    called = []
+    monkeypatch.setattr(mgr, "_replenish_single_key", lambda *a: called.append(a))
+    mgr.trigger_background_replenish("sub_math", "math_problem")
+    assert called == []
+    assert not mgr._wake_event.is_set()

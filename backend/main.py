@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
     from backend.app.services.material_ingestion import cleanup_temp_uploads
     cleanup_temp_uploads()
 
-    from backend.app.config import BACKGROUND_WORKERS_ENABLED
+    from backend.app.config import BACKGROUND_WORKERS_ENABLED, EXERCISE_POOL_ENABLED
     from backend.app.services.page_renderer import page_renderer
     from backend.app.services.exercise_pool_service import exercise_pool_manager
     from backend.app.services.page_extraction import page_extraction_service
@@ -61,8 +61,9 @@ async def lifespan(app: FastAPI):
         # 3. Hintergrund-Seiten-Renderer starten & alle Materialien einreihen
         page_renderer.start()
         page_renderer.queue_all_database_materials(SessionLocal)
-        # 4. Hintergrund-Übungsspeicher starten (kontinuierliches Vorrendern aller Übungsarten)
-        exercise_pool_manager.start(SessionLocal)
+        # 4. Hintergrund-Übungsspeicher (kontinuierliches Vorrendern aller Übungsarten), nur wenn eingeschaltet
+        if EXERCISE_POOL_ENABLED:
+            exercise_pool_manager.start(SessionLocal)
 
     yield
 
