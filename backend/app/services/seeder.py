@@ -127,6 +127,9 @@ def seed_database(db: Session):
     # 2. Fächer und Themen für 7. Klasse Brandenburg
     for s_data in INITIAL_SUBJECTS:
         subject = db.query(Subject).filter(Subject.id == s_data["id"]).first()
+        # Start-Themen nur für neu angelegte Fächer: danach wird der Themenkatalog aus Theas
+        # Dokumenten aufgebaut und zusammengeführt; gelöschte Platzhalter sollen nicht wiederkommen
+        is_new_subject = subject is None
         if not subject:
             subject = Subject(
                 id=s_data["id"],
@@ -140,7 +143,7 @@ def seed_database(db: Session):
             db.add(subject)
             db.flush()
 
-        for t_name, grade, rlp_code, comp in s_data["topics"]:
+        for t_name, grade, rlp_code, comp in (s_data["topics"] if is_new_subject else []):
             topic = db.query(Topic).filter(
                 Topic.subject_id == subject.id,
                 Topic.grade_level == grade,

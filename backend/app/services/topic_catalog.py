@@ -4,24 +4,11 @@ Themenbereich darüber (z. B. "Mechanik"). Die Dokumentanalyse wählt aus diesem
 statt pro Dokument neue Themen zu erfinden.
 """
 import uuid
-from typing import Dict, Optional, Set
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from backend.app.models.taxonomy import Subject, Topic
-
-
-def protected_topic_names() -> Dict[str, Set[str]]:
-    """Lehrplan-Themen aus den Seed-Listen. Der Seeder legt sie bei jedem Start wieder an,
-    deshalb dürfen sie beim Zusammenführen weder umbenannt noch gelöscht werden."""
-    from backend.app.services.seeder import INITIAL_SUBJECTS
-    from backend.app.services.timetable_analyzer import CANONICAL_SUBJECTS
-
-    protected: Dict[str, Set[str]] = {}
-    for entry in list(INITIAL_SUBJECTS) + list(CANONICAL_SUBJECTS.values()):
-        for topic in entry.get("topics", []):
-            protected.setdefault(entry["id"], set()).add(topic[0])
-    return protected
 
 
 def build_catalog_text(db: Session) -> str:

@@ -10,8 +10,9 @@ nicht zu grob (nicht "Mechanik").
 
 Regeln:
 - Jede Themen-ID aus der Eingabe muss in GENAU EINER Gruppe vorkommen.
-- Themen, die mit "geschützt" markiert sind, behalten ihren Namen: Enthält eine Gruppe ein geschütztes Thema,
-  ist ihr Name EXAKT dieser Name. Lege NIE zwei geschützte Themen in dieselbe Gruppe.
+- Fasse nur zusammen, was wirklich dieselbe Unterrichtseinheit ist. Zu grobe Themen (z. B. "Mechanik: Kräfte & Masse")
+  sind KEIN Sammelbecken: Ordne ihre Dokumente lieber den passenden mittleren Themen zu, indem du die Themen-ID
+  des groben Themas in die Gruppe legst, die den Inhalt am besten trifft.
 - Jede Gruppe bekommt einen 'bereich' (übergeordneter Themenbereich, z. B. "Mechanik", "Wärmelehre",
   "Algebra", "Grammatik", "Wortschatz"). Verwende für gleiche Bereiche exakt gleiche Schreibweise.
 - Gruppennamen sind innerhalb des Fachs eindeutig.
