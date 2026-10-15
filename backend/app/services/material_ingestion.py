@@ -383,11 +383,11 @@ def confirm_and_save_material(
 
     from backend.app.services.timetable_analyzer import (
         is_timetable_document,
+        get_or_create_organisation_dossier,
         get_or_create_organisation_subject,
         heuristic_timetable_analyzer,
         sync_subjects_to_database,
     )
-    from backend.app.models.dossier import Dossier
 
     is_tt = (
         request.kind == "Stundenplan"
@@ -420,32 +420,8 @@ def confirm_and_save_material(
         if not save_summary:
             save_summary = f"Stundenplan mit {len(erkannte)} erkannten Schulfächern."
 
-        # Dossier 'Stundenplan & Organisation' zuordnen oder erstellen
         if not save_dossier_id:
-            dossier = (
-                db.query(Dossier)
-                .filter(
-                    (Dossier.subject_id == orga_sub.id) | (Dossier.title == "Stundenplan & Organisation")
-                )
-                .first()
-            )
-            if not dossier:
-                dossier = Dossier(
-                    id=f"dos_{uuid.uuid4().hex[:8]}",
-                    user_id="usr_thea",
-                    subject_id=orga_sub.id,
-                    title="Stundenplan & Organisation",
-                    kind="organisation",
-                    color_code=orga_sub.color_code,
-                    icon="📁",
-                    description="Organisatorische Dokumente und Stundenpläne"
-                )
-                db.add(dossier)
-                db.flush()
-            else:
-                if dossier.subject_id != orga_sub.id:
-                    dossier.subject_id = orga_sub.id
-            save_dossier_id = dossier.id
+            save_dossier_id = get_or_create_organisation_dossier(db).id
 
     dossier_order = request.dossier_order or (next_dossier_order(db, save_dossier_id) if save_dossier_id else 1)
 

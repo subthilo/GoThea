@@ -413,6 +413,31 @@ def get_or_create_organisation_subject(db: Session) -> Subject:
     return sub
 
 
+ORGANISATION_DOSSIER_TITLE = "Stundenplan & Organisation"
+
+
+def get_or_create_organisation_dossier(db: Session, user_id: str = "usr_thea") -> Dossier:
+    """Holt oder erstellt die Mappe 'Stundenplan & Organisation' (immer beim Fach Organisation)."""
+    orga_sub = get_or_create_organisation_subject(db)
+    dossier = db.query(Dossier).filter_by(title=ORGANISATION_DOSSIER_TITLE).first()
+    if not dossier:
+        dossier = Dossier(
+            id=f"dos_{uuid.uuid4().hex[:8]}",
+            user_id=user_id,
+            subject_id=orga_sub.id,
+            title=ORGANISATION_DOSSIER_TITLE,
+            kind="organisation",
+            color_code=orga_sub.color_code,
+            icon="📅",
+            description="Stundenpläne, Schultermine und organisatorische Übersichten"
+        )
+        db.add(dossier)
+        db.flush()
+    elif dossier.subject_id != orga_sub.id:
+        dossier.subject_id = orga_sub.id
+    return dossier
+
+
 def is_timetable_document(
     filename: str = "",
     text: str = "",
@@ -695,25 +720,7 @@ def process_and_import_timetable(
     orga_sub = get_or_create_organisation_subject(db)
     primary_sub_id = orga_sub.id
 
-    dossier = db.query(Dossier).filter_by(
-        user_id=user_id,
-        kind="organisation",
-        title="Stundenplan & Organisation"
-    ).first()
-
-    if not dossier:
-        dossier = Dossier(
-            id=f"dos_{uuid.uuid4().hex[:8]}",
-            user_id=user_id,
-            subject_id=primary_sub_id,
-            title="Stundenplan & Organisation",
-            kind="organisation",
-            color_code="#6366f1",
-            icon="📅",
-            description="Stundenpläne, Schultermine und organisatorische Übersichten"
-        )
-        db.add(dossier)
-        db.flush()
+    dossier = get_or_create_organisation_dossier(db, user_id=user_id)
 
     # 4. Physische Datei dauerhaft speichern
     mat_id = f"mat_{uuid.uuid4().hex[:8]}"
