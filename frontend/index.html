@@ -12,27 +12,27 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/css/base.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/whiteboard.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/materials.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/whiteboard_tasks.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/inbox.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/timetable.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/books.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/reader.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/uploads.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/subject_detail.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/material_dialogs.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/cloze.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/scores.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/exercise_view.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/parent_mode.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/themes.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/dashboard_header.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/gamification.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/desk.css?v=12.0">
-  <link rel="stylesheet" href="/static/css/boards.css?v=12.0">
+  <link rel="stylesheet" href="/static/css/base.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/whiteboard.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/materials.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/whiteboard_tasks.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/inbox.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/timetable.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/responsive.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/books.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/reader.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/uploads.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/subject_detail.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/material_dialogs.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/cloze.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/scores.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/exercise_view.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/parent_mode.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/themes.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/dashboard_header.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/gamification.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/desk.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/boards.css?v={{v}}">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -1045,662 +1045,48 @@
     </main>
   </div>
 
-  <!-- Modal: Neue Prüfung -->
-  <div id="modal-test" class="modal-backdrop" style="display: none;">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3>➕ Neue Prüfung eintragen</h3>
-        <button class="modal-close" id="btn-close-test-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Schulfach</label>
-          <select id="input-test-subject" class="input-field">
-            <!-- Dynamisch aus aktuellen Fächern -->
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Prüfungsart</label>
-          <select id="input-test-kind" class="input-field">
-            <option value="Klassenarbeit" selected>Klassenarbeit (10 Tage Countdown)</option>
-            <option value="Test">Test / Leistungskontrolle (5 Tage Countdown)</option>
-            <option value="Klausur">Klausur (14 Tage Countdown)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Prüfungsdatum</label>
-          <input type="date" id="input-test-date" class="input-field">
-        </div>
-        <div class="form-group">
-          <label>Themen / Notiz</label>
-          <input type="text" id="input-test-note" class="input-field" placeholder="z. B. Rationale Zahlen, Bruchrechnung">
-        </div>
-        <button id="btn-submit-test" class="btn-primary">Prüfung speichern & Countdown starten</button>
-      </div>
-    </div>
-  </div>
+  <!-- include: dialogs/test.html -->
 
-  <!-- Modal: Sperrtag -->
-  <div id="modal-block" class="modal-backdrop" style="display: none;">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3>🚫 Sperrtag eintragen (Freier Tag)</h3>
-        <button class="modal-close" id="btn-close-block-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p class="subtitle" style="margin-bottom: 14px;">An Sperrtagen plant der Algorithmus keine Lerneinheiten ein.</p>
-        <div class="form-group">
-          <label>Datum</label>
-          <input type="date" id="input-block-date" class="input-field">
-        </div>
-        <div class="form-group">
-          <label>Typ</label>
-          <select id="input-block-type" class="input-field">
-            <option value="all" selected>Ganzer Tag frei (kein Lernen)</option>
-          </select>
-        </div>
-        <button id="btn-submit-block" class="btn-primary">Sperrtag speichern</button>
-      </div>
-    </div>
-  </div>
+  <!-- include: dialogs/block.html -->
 
-  <!-- Modal: Material hochladen (2-Stufen Human-in-the-Loop) -->
-  <div id="modal-material" class="modal-backdrop" style="display: none;">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 id="modal-material-title">📄 Dokument hinzufügen</h3>
-        <button class="modal-close" id="btn-close-material-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <!-- Stufe 1: Upload & Dateiwahl -->
-        <div id="mat-step-upload">
-          <p class="subtitle" id="mat-modal-subtitle" style="margin-bottom: 16px;">
-            Lade ein Schulbuch, ein Arbeitsblatt, eine Mitschrift oder einen Test hoch.
-          </p>
-          <div class="mat-dropzone" id="mat-dropzone">
-            <span class="mat-dropzone-icon">📥</span>
-            <div class="mat-dropzone-text" id="mat-dropzone-text">Datei hierher ziehen oder tippen</div>
-            <div class="mat-dropzone-sub" id="mat-dropzone-sub">PDF oder Foto (Mehrfachauswahl möglich)</div>
-            <input type="file" id="mat-file-input" accept="application/pdf,image/*" style="display: none;" multiple>
-            <button type="button" class="btn-secondary-sm" id="btn-trigger-file" style="margin-top: 10px;">📎 Datei(en) auswählen</button>
-          </div>
-          <div id="mat-upload-spinner" style="display: none; text-align: center; padding: 24px;">
-            <div class="mat-spinner"></div>
-            <p id="mat-spinner-text" style="margin-top: 12px; color: var(--accent-light); font-weight: 600;">Analysiere Dokument...</p>
-            <div id="mat-batch-progress-bar" style="display: none; width: 100%; max-width: 340px; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; margin: 14px auto 6px; overflow: hidden;">
-              <div id="mat-batch-progress-fill" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
-            </div>
-            <p id="mat-batch-status" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;"></p>
-          </div>
-        </div>
+  <!-- include: dialogs/material_upload.html -->
 
-        <!-- Stufe 2: Human-in-the-Loop Bestätigungsdialog -->
-        <div id="mat-step-confirm" style="display: none;">
-          <div class="mat-preview-card" id="mat-preview-card">
-            <div class="mat-preview-header">
-              <span id="mat-preview-icon" style="font-size: 1.6rem;">📄</span>
-              <div style="flex: 1; overflow: hidden;">
-                <div id="mat-preview-filename" style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">dateiname.pdf</div>
-                <div class="mat-preview-meta" id="mat-preview-meta" style="font-size: 0.8rem; color: var(--text-secondary);">0 Seiten • 0 KB</div>
-              </div>
-            </div>
-            <div class="mat-preview-snippet" id="mat-preview-snippet" style="display: none;"></div>
-          </div>
+  <!-- include: dialogs/material_viewer.html -->
 
-          <div class="form-group" id="group-confirm-subject">
-            <label id="lbl-confirm-subject">Schulfach *</label>
-            <select id="mat-confirm-subject" class="input-field"></select>
-            <div id="mat-fixed-subject-badge" style="display: none; font-size: 0.8rem; color: var(--accent-light); margin-top: 4px; font-weight: 500;">🔒 Aus aktuellem Fach geöffnet (fest zugeordnet)</div>
-          </div>
-          <div class="form-group">
-            <label>Thema (Lehrplan E)</label>
-            <select id="mat-confirm-topic" class="input-field">
-              <option value="">-- Kein spezifisches Thema --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Titel des Materials *</label>
-            <input type="text" id="mat-confirm-title" class="input-field" placeholder="z. B. Pflanzenzelle Übung">
-          </div>
-          <div class="form-group">
-            <label>Dokumentenart</label>
-            <select id="mat-confirm-kind" class="input-field">
-              <option value="Arbeitsblatt">Arbeitsblatt</option>
-              <option value="Mitschrift">Mitschrift (handschriftlich)</option>
-              <option value="Buch">Schulbuch / Arbeitsheft</option>
-              <option value="Buchauszug">Buchauszug (Kapitel / Seiten)</option>
-              <option value="Test">Test / Diktat / bewertete Leistung</option>
-              <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
-              <option value="Vokabelliste">Vokabelliste</option>
-              <option value="Sonstiges">Sonstiges</option>
-              <option value="Stundenplan">Stundenplan</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Notiz / Zusammenfassung (optional)</label>
-            <input type="text" id="mat-confirm-summary" class="input-field" placeholder="z. B. Für Klassenarbeit am 24.10.">
-          </div>
+  <!-- include: dialogs/timetable_result.html -->
 
-          <div class="modal-actions-row" style="display: flex; gap: 12px; margin-top: 20px;">
-            <button type="button" id="btn-back-material-step" class="btn-secondary-sm" style="flex: 1;">Zurück</button>
-            <button type="button" id="btn-submit-material" class="btn-primary" style="flex: 2;">Bestätigen & Speichern</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- include: dialogs/timetable_slot.html -->
 
-  <!-- Modal: Dokumenten-Viewer Popup -->
-  <div id="modal-material-viewer" class="modal-backdrop" style="display: none;">
-    <div class="modal-box modal-box-large">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-          <span style="font-size: 1.4rem;">📄</span>
-          <div style="overflow: hidden;">
-            <h3 id="viewer-doc-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.15rem;">Dokumententitel</h3>
-            <span id="viewer-doc-badge" class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light);">Fach • Thema</span>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <!-- Zoom Steuerung (Maximal 100% Volle Breite, stufenlos rauszoomen) -->
-          <div class="viewer-zoom-controls">
-            <button type="button" id="btn-viewer-zoom-out" class="btn-viewer-tool" title="Rauszoomen (–10%)">➖</button>
-            <span id="viewer-zoom-label" class="viewer-zoom-label" title="Zoom auf 100% zurücksetzen">100%</span>
-            <button type="button" id="btn-viewer-zoom-in" class="btn-viewer-tool" title="Reinzoomen (+10%, max. 100%)">➕</button>
-            <div class="viewer-tool-divider"></div>
-            <button type="button" id="btn-viewer-fit-page" class="btn-viewer-tool" title="Ganze Seite einpassen (ohne Scrollen)">📄 Seite</button>
-            <button type="button" id="btn-viewer-fit-width" class="btn-viewer-tool" title="Volle Breite (100%)">↔️ Breite</button>
-          </div>
+  <!-- include: dialogs/material_edit.html -->
 
-          <button id="btn-viewer-reorder-pages" class="btn-secondary-sm parent-only" style="display: flex; align-items: center; gap: 6px;" title="Seitenreihenfolge ändern & verwalten">
-            <span>📑</span>
-            <span>Seiten ordnen</span>
-          </button>
-          <button id="btn-viewer-open-wb" class="btn-primary-sm" style="display: flex; align-items: center; gap: 6px;">
-            <span>📖</span>
-            <span>Im Reader öffnen</span>
-          </button>
-          <a id="btn-viewer-download" href="#" target="_blank" download class="btn-secondary-sm" title="Originaldatei herunterladen">⬇️</a>
-          <button class="modal-close" id="btn-close-viewer-modal">&times;</button>
-        </div>
-      </div>
-      <div class="modal-body viewer-modal-body">
-        <div id="viewer-pager-bar" style="display: none; align-items: center; justify-content: center; gap: 16px; margin-bottom: 10px; flex-shrink: 0;">
-          <button id="btn-viewer-prev-page" class="btn-secondary-sm">◀ Vorherige Seite</button>
-          <span id="viewer-page-label" style="font-size: 0.9rem; font-weight: 600;">Seite 1 / 1</span>
-          <button id="btn-viewer-next-page" class="btn-secondary-sm">Nächste Seite ▶</button>
-        </div>
-        <div id="viewer-content-container" class="viewer-content-container">
-          <div id="viewer-loading-spinner" class="viewer-spinner-overlay" style="display: none;">
-            <div class="inbox-spinner" style="width: 38px; height: 38px; margin: 0 auto 10px auto; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--accent-light);"></div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Seite wird gerendert...</div>
-          </div>
-          <img id="viewer-img" class="viewer-img-fullwidth" alt="Vorschau" title="Klicken für Ganzseiten-Ansicht">
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- include: dialogs/reorder_pages.html -->
 
-  <!-- Modal: Stundenplan Import Ergebnis -->
-  <div id="modal-timetable-result" class="modal-backdrop" style="display: none;">
-    <div class="modal-box" style="max-width: 520px;">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.5rem;">📅</span>
-          <div>
-            <h3 id="tt-modal-title" style="margin: 0; font-size: 1.2rem;">Stundenplan importieren</h3>
-            <span class="subtitle" style="font-size: 0.8rem; margin: 0;">Automatische Fächererkennung via KI</span>
-          </div>
-        </div>
-        <button class="modal-close" id="btn-close-timetable-modal">&times;</button>
-      </div>
-      <div class="modal-body" id="tt-modal-body">
-        <!-- Progress State -->
-        <div id="tt-loading-state" style="text-align: center; padding: 24px 12px; display: none;">
-          <div class="inbox-spinner" style="margin: 0 auto 16px auto; width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--accent-light);"></div>
-          <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem; margin-bottom: 6px;">Stundenplan wird analysiert...</div>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">OpenAI Vision & Heuristik scannen Fächerkürzel und gleichen sie mit dem Brandenburger Lehrplan ab.</p>
-        </div>
+  <!-- include: dialogs/merge_materials.html -->
 
-        <!-- Result State -->
-        <div id="tt-result-state" style="display: none;">
-          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #10b981; font-size: 0.95rem;">
-              <span>✅</span>
-              <span id="tt-result-status-title">Stundenplan erfolgreich eingelesen!</span>
-            </div>
-            <div id="tt-result-doc-name" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
-              Dokument als „Stundenplan & Organisation“ abgelegt.
-            </div>
-          </div>
+  <!-- include: dialogs/cloze_trainer.html -->
 
-          <div style="margin-bottom: 14px;">
-            <label style="display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">
-              Neu angelegte oder aktivierte Schulfächer:
-            </label>
-            <div id="tt-added-subjects-list" style="display: flex; flex-wrap: wrap; gap: 6px;">
-              <!-- Dynamic pills -->
-            </div>
-          </div>
-
-          <div style="margin-bottom: 18px;">
-            <label style="display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">
-              Alle erkannten Fächer im Stundenplan:
-            </label>
-            <div id="tt-all-subjects-list" style="display: flex; flex-wrap: wrap; gap: 6px;">
-              <!-- Dynamic pills -->
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: flex-end;">
-            <button type="button" id="btn-tt-confirm-close" class="btn-primary" style="width: 100%;">Super, weiter!</button>
-          </div>
-        </div>
-
-        <!-- Error State -->
-        <div id="tt-error-state" style="display: none; text-align: center; padding: 16px;">
-          <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">⚠️</span>
-          <div style="font-weight: 600; color: #ef4444; margin-bottom: 6px;" id="tt-error-title">Fehler beim Import</div>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;" id="tt-error-detail">Das Dokument konnte nicht verarbeitet werden.</p>
-          <button type="button" id="btn-tt-error-close" class="btn-secondary-sm" style="width: 100%;">Schließen</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Stundenplan Fach-Detail & Schnellzugriff -->
-  <div id="modal-tt-slot-detail" class="modal-backdrop" style="display: none;">
-    <div class="modal-box" style="max-width: 420px; border-radius: 20px;">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span id="tt-slot-modal-icon" class="tt-slot-modal-squircle">
-            <img src="/static/Icons/Bücher.svg" class="btn-sm-svg" style="width: 24px; height: 24px;" alt="">
-          </span>
-          <div>
-            <h3 id="tt-slot-modal-title" style="margin: 0; font-size: 1.18rem;">Mathematik</h3>
-            <span id="tt-slot-modal-time" class="subtitle" style="font-size: 0.8rem; margin: 0;">1. & 2. Stunde • 07:45 – 09:15</span>
-          </div>
-        </div>
-        <button class="modal-close" id="btn-close-tt-slot-modal" title="Schließen">&times;</button>
-      </div>
-      <div class="modal-body" style="padding-top: 6px;">
-        <div class="tt-slot-info-card">
-          <div class="tt-slot-info-row">
-            <span class="tt-slot-info-label">Raum:</span>
-            <span class="tt-slot-info-val" id="tt-slot-modal-room">Raum 303</span>
-          </div>
-          <div class="tt-slot-info-row">
-            <span class="tt-slot-info-label">Lehrkraft:</span>
-            <span class="tt-slot-info-val" id="tt-slot-modal-teacher">Hr. HORN</span>
-          </div>
-          <div class="tt-slot-info-row">
-            <span class="tt-slot-info-label">Turnus:</span>
-            <span class="tt-slot-info-val" id="tt-slot-modal-week">Beide Wochen</span>
-          </div>
-          <div class="tt-slot-info-row" id="tt-slot-modal-note-row" style="display: none;">
-            <span class="tt-slot-info-label">Notiz:</span>
-            <span class="tt-slot-info-val" id="tt-slot-modal-note"></span>
-          </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 18px;">
-          <button id="btn-tt-goto-materials" class="btn-primary" style="justify-content: center; gap: 8px; padding: 11px 16px;">
-            <img src="/static/Icons/Bücher.svg" class="btn-sm-svg" alt="">
-            <span>Fachseite & Mediathek</span>
-          </button>
-          <button id="btn-tt-goto-whiteboard" class="btn-secondary" style="justify-content: center; gap: 8px; width: 100%;">
-            <img src="/static/Icons/Tafel.svg" class="btn-sm-svg" alt="">
-            <span>Tafel für dieses Fach öffnen</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Dokument anpassen (Fach, Thema, Titel, Art) -->
-  <div id="modal-edit-material" class="modal-backdrop" style="display: none;">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3>✏️ Dokument anpassen</h3>
-        <button class="modal-close" id="btn-close-edit-material-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="edit-mat-id">
-        <div class="form-group">
-          <label>Titel des Materials *</label>
-          <input type="text" id="edit-mat-title" class="input-field" placeholder="z. B. Pflanzenzelle Übung">
-        </div>
-        <div class="form-group">
-          <label>Schulfach *</label>
-          <select id="edit-mat-subject" class="input-field"></select>
-        </div>
-        <div class="form-group">
-          <label>Thema (Lehrplan E)</label>
-          <select id="edit-mat-topic" class="input-field">
-            <option value="">-- Kein spezifisches Thema --</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Dokumentenart</label>
-          <select id="edit-mat-kind" class="input-field">
-            <option value="Arbeitsblatt">Arbeitsblatt</option>
-            <option value="Mitschrift">Mitschrift (handschriftlich)</option>
-            <option value="Buch">Schulbuch / Arbeitsheft</option>
-            <option value="Buchauszug">Buchauszug (Kapitel / Seiten)</option>
-            <option value="Test">Test / Diktat / bewertete Leistung</option>
-            <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
-            <option value="Vokabelliste">Vokabelliste</option>
-            <option value="Sonstiges">Sonstiges</option>
-            <option value="Stundenplan">Stundenplan</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Notiz / Zusammenfassung (optional)</label>
-          <input type="text" id="edit-mat-summary" class="input-field" placeholder="z. B. Für Klassenarbeit am 24.10.">
-        </div>
-
-        <div class="modal-actions-row" style="display: flex; gap: 12px; margin-top: 20px;">
-          <button type="button" id="btn-cancel-edit-material" class="btn-secondary-sm" style="flex: 1;">Abbrechen</button>
-          <button type="button" id="btn-save-edit-material" class="btn-primary" style="flex: 2;">Änderungen speichern</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Seitenreihenfolge ändern & Seiten verwalten -->
-  <div id="modal-reorder-pages" class="modal-backdrop" style="display: none;">
-    <div class="modal-box modal-box-large">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-          <span style="font-size: 1.4rem;">📑</span>
-          <div style="overflow: hidden;">
-            <h3 id="reorder-doc-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.15rem;">Seiten verwalten</h3>
-            <span class="subtitle" style="font-size: 0.8rem; margin: 0;">Reihenfolge mit ◀ / ▶ anpassen oder überflüssige Seiten mit 🗑️ entfernen</span>
-          </div>
-        </div>
-        <button class="modal-close" id="btn-close-reorder-modal">&times;</button>
-      </div>
-      <div class="modal-body reorder-modal-body">
-        <input type="hidden" id="reorder-mat-id">
-        <div class="reorder-toolbar-row">
-          <div id="reorder-summary-badge" class="reorder-summary-badge">4 Seiten aktiv</div>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" id="btn-reorder-reset" class="btn-secondary-sm" title="Ursprüngliche Reihenfolge wiederherstellen">↺ Zurücksetzen</button>
-            <button type="button" id="btn-save-reorder-pages" class="btn-primary-sm">💾 Neue Reihenfolge speichern</button>
-          </div>
-        </div>
-        <div id="reorder-pages-grid" class="reorder-pages-grid">
-          <!-- Dynamisch mit Seitenkarten befüllt -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Dokumente zusammenführen -->
-  <div id="modal-merge-materials" class="modal-backdrop" style="display: none;">
-    <div class="modal-box modal-box-large">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-          <span style="font-size: 1.4rem;">🔗</span>
-          <div>
-            <h3 style="font-size: 1.2rem; margin: 0;">Dokumente zusammenführen</h3>
-            <span class="subtitle" style="font-size: 0.8rem; margin: 0;">Mehrere Dokumente in gewünschter Reihenfolge zu einem einzigen PDF verbinden</span>
-          </div>
-        </div>
-        <button class="modal-close" id="btn-close-merge-modal">&times;</button>
-      </div>
-      <div class="modal-body merge-modal-body">
-        <div class="merge-layout-grid">
-          <!-- Linke Spalte: Dokumentauswahl -->
-          <div class="merge-col-select">
-            <div class="merge-col-header">
-              <label style="font-weight: 600; font-size: 0.9rem;">1. Dokumente auswählen</label>
-              <select id="merge-filter-subject" class="input-field" style="padding: 4px 8px; font-size: 0.82rem; max-width: 170px;">
-                <option value="all">Alle Fächer</option>
-              </select>
-            </div>
-            <div id="merge-available-list" class="merge-docs-list">
-              <!-- Dynamische Liste mit Checkboxen -->
-            </div>
-          </div>
-
-          <!-- Rechte Spalte: Reihenfolge & Ziel-Metadaten -->
-          <div class="merge-col-target">
-            <div class="merge-col-header">
-              <label style="font-weight: 600; font-size: 0.9rem;">2. Reihenfolge festlegen (<span id="merge-selected-count">0</span>)</label>
-            </div>
-            <div id="merge-order-list" class="merge-order-list">
-              <div class="merge-empty-state">Wähle links mindestens 2 Dokumente aus</div>
-            </div>
-
-            <div class="merge-meta-form" style="margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 12px;">
-              <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; display: block;">3. Neues Dokument benennen</label>
-              <div class="form-group" style="margin-bottom: 10px;">
-                <label style="font-size: 0.82rem;">Titel des neuen Dokuments *</label>
-                <input type="text" id="merge-target-title" class="input-field" placeholder="z. B. Zusammenfassung Thema X">
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                <div class="form-group" style="margin-bottom: 0;">
-                  <label style="font-size: 0.82rem;">Schulfach *</label>
-                  <select id="merge-target-subject" class="input-field"></select>
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                  <label style="font-size: 0.82rem;">Thema</label>
-                  <select id="merge-target-topic" class="input-field">
-                    <option value="">-- Kein Thema --</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-group" style="margin-bottom: 10px;">
-                <label style="font-size: 0.82rem;">Dokumentenart</label>
-                <select id="merge-target-kind" class="input-field">
-                  <option value="Arbeitsblatt">Arbeitsblatt</option>
-                  <option value="Mitschrift">Mitschrift (handschriftlich)</option>
-                  <option value="Buch">Schulbuch / Arbeitsheft</option>
-                  <option value="Buchauszug">Buchauszug (Kapitel / Seiten)</option>
-                  <option value="Test">Test / Diktat / bewertete Leistung</option>
-                  <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
-                  <option value="Vokabelliste">Vokabelliste</option>
-                  <option value="Sonstiges">Sonstiges</option>
-                </select>
-              </div>
-              <label class="merge-checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; margin-bottom: 14px;">
-                <input type="checkbox" id="merge-delete-sources" checked>
-                <span>Originaldokumente nach dem Verbinden löschen</span>
-              </label>
-
-              <button type="button" id="btn-submit-merge" class="btn-primary" style="width: 100%; justify-content: center;">
-                <span>🔗 Dokumente zusammenführen</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Dedizierte Vollbild-Ansicht für Übungen (kein Overlay, voller Fokus) -->
-  <div id="modal-cloze-trainer" class="exercise-fullscreen-arena" style="display: none;">
-    <div class="exercise-arena-container">
-      <div class="exercise-arena-header cloze-trainer-header">
-        <div class="cloze-header-left">
-          <button type="button" class="btn-back-to-subject" id="btn-exercise-back-to-subject" title="Zurück zur Fach-Übersicht (nicht ausgefüllte Teile werden nicht gewertet)">
-            <span>← Zurück zu</span>
-            <strong id="cloze-back-subject-name">Fach</strong>
-          </button>
-          <div class="cloze-luna-avatar" id="cloze-luna-avatar">✨</div>
-          <div class="cloze-header-titles">
-            <div class="cloze-header-title-row">
-              <h3 id="cloze-modal-title">Lückentext-Übung</h3>
-              <span class="badge-grade" id="cloze-modal-subject"></span>
-              <span class="badge-source-doc" id="cloze-modal-doc-source" style="display: none;"></span>
-              <span class="badge-adaptive-level" id="cloze-adaptive-level-badge" title="Aktuelle adaptive Schwierigkeitsstufe"></span>
-            </div>
-            <p id="cloze-modal-topic" class="subtitle">Lerneinheit</p>
-          </div>
-        </div>
-
-        <div class="cloze-header-right">
-          <!-- Zoom Controls: Alles im Blick vs. Reinzoomen -->
-          <div class="cloze-zoom-controls" id="cloze-zoom-controls" title="Größe anpassen (Kompakt / Reinzoomen)">
-            <button type="button" class="cloze-zoom-btn" id="btn-cloze-zoom-out" title="Verkleinern (Alles im Blick)">−</button>
-            <span class="cloze-zoom-label" id="cloze-zoom-label">100%</span>
-            <button type="button" class="cloze-zoom-btn" id="btn-cloze-zoom-in" title="Vergrößern (Reinzoomen)">+</button>
-          </div>
-
-          <!-- Modus-Umschalter: Stift (Schreiben) vs. Ziehen -->
-          <div class="cloze-mode-toggle" id="cloze-mode-toggle" title="Eingabemodus wählen">
-            <button type="button" class="cloze-mode-btn active" data-mode="handwrite" id="btn-mode-handwrite">
-              <span>✍️</span>
-              <span>Stift (Schreiben)</span>
-            </button>
-            <button type="button" class="cloze-mode-btn" data-mode="drag" id="btn-mode-drag">
-              <span>🖐️</span>
-              <span>Ziehen</span>
-            </button>
-          </div>
-
-          <!-- Schwierigkeitsgrad: Mit Wörtern vs. Ohne Wörter -->
-          <div class="cloze-difficulty-toggle" id="cloze-difficulty-toggle" title="Hilfestellung: Wortspeicher anzeigen oder ausblenden">
-            <button type="button" class="cloze-diff-btn active" data-diff="with_words" id="btn-diff-with-words" title="Wortspeicher anzeigen (Einfacher)">
-              <span>💡</span>
-              <span>Mit Wörtern</span>
-            </button>
-            <button type="button" class="cloze-diff-btn" data-diff="without_words" id="btn-diff-without-words" title="Freies Schreiben ohne Wortspeicher (Schwerer)">
-              <span>🎯</span>
-              <span>Ohne Wörter</span>
-            </button>
-          </div>
-          <button class="modal-close" id="btn-close-cloze-modal" title="Schließen" style="display: none;">&times;</button>
-        </div>
-      </div>
-
-      <!-- Luna Banner / Feedback Alert -->
-      <div class="exercise-arena-banner cloze-luna-banner" id="cloze-luna-banner">
-        <div class="cloze-luna-pulse-dot" id="cloze-luna-pulse-dot"></div>
-        <span class="cloze-luna-banner-icon">💬</span>
-        <span class="cloze-luna-banner-text" id="cloze-luna-banner-text">Fülle die Lücken aus. Klicke danach auf "Gemeinsam durchgehen", dann lese ich dir den Text vor!</span>
-      </div>
-
-      <!-- Main Body -->
-      <div class="exercise-arena-body cloze-trainer-body" id="cloze-trainer-body">
-        <!-- Loading State -->
-        <div class="cloze-loading-state" id="cloze-loading-state" style="display: none;">
-          <div class="cloze-spinner-owl">✨</div>
-          <div style="margin-top: 12px; font-weight: 600; font-size: 1.05rem;" id="cloze-loading-text">Luna bereitet deine Übung vor...</div>
-          <p style="margin: 6px 0 0; font-size: 0.85rem; color: var(--text-secondary);">Unterrichtsmaterialien werden analysiert und Satz-Audio vorgerendert</p>
-        </div>
-
-        <!-- Exercise Content -->
-        <div class="cloze-exercise-content" id="cloze-exercise-content">
-          <!-- Text Container with Sentences & Blanks -->
-          <div class="cloze-sentences-container" id="cloze-sentences-container">
-            <!-- Dynamisch befüllte Sätze -->
-          </div>
-
-          <!-- Word Bank (Chips) for Drag & Drop / Click -->
-          <div class="cloze-wordbank-container" id="cloze-wordbank-container">
-            <div class="cloze-wordbank-header">
-              <span style="font-weight: 600; font-size: 0.88rem;">📦 Wortspeicher (Wort antippen oder in die Lücke ziehen):</span>
-            </div>
-            <div class="cloze-wordbank-chips" id="cloze-wordbank-chips">
-              <!-- Dynamisch befüllte Wortkarten -->
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer Actions -->
-      <div class="exercise-arena-footer cloze-trainer-footer">
-        <div class="cloze-footer-stats">
-          <span id="cloze-progress-badge" class="badge-minutes">0 / 0 ausgefüllt</span>
-          <span id="cloze-status-hint" style="font-size: 0.82rem; color: var(--text-secondary); margin-left: 8px;"></span>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <button type="button" class="btn-secondary" id="btn-cloze-clear" title="Alle Eingaben löschen">
-            <span>🔄</span>
-            <span>Zurücksetzen</span>
-          </button>
-          <button type="button" class="btn-primary btn-cloze-review" id="btn-cloze-review">
-            <span id="cloze-review-btn-icon">🚀</span>
-            <span id="cloze-review-btn-label">Gemeinsam durchgehen</span>
-          </button>
-          <button type="button" class="btn-primary btn-cloze-next" id="btn-cloze-next" style="display: none;" title="Direkt die nächste Übung starten">
-            <span>➡️</span>
-            <span>Nächste Übung</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Eltern-PIN Eingabe (Apple-Design) -->
-  <div id="modal-parent-pin" class="modal-backdrop" style="display: none;">
-    <div class="modal-box modal-box-pin">
-      <div class="modal-header modal-header-pin">
-        <div class="pin-header-content">
-          <div class="pin-icon-squircle">
-            <img src="/static/Icons/Erwachsener.svg" class="pin-svg-icon" alt="Eltern">
-          </div>
-          <div>
-            <h3 class="pin-title">Eltern-Modus</h3>
-            <span class="pin-subtitle">Einstellungen & Verwaltung freischalten</span>
-          </div>
-        </div>
-        <button class="modal-close" id="btn-close-parent-pin-modal" title="Schließen">&times;</button>
-      </div>
-      <div class="modal-body pin-modal-body">
-        <p class="pin-intro-text">
-          Gib die Eltern-PIN ein, um geschützte Verwaltungs- und Einstellungsfunktionen freizuschalten.
-        </p>
-
-        <div class="pin-field-wrapper">
-          <label for="input-parent-pin" class="pin-label">Eltern-PIN</label>
-          <div class="pin-input-container">
-            <input type="password" id="input-parent-pin" class="input-field input-pin-large" maxlength="8" inputmode="numeric" placeholder="••••" autocomplete="off">
-            <button type="button" id="btn-toggle-pin-visibility" class="btn-pin-eye" title="PIN anzeigen oder verbergen">
-              <svg id="pin-eye-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div id="parent-pin-default-hint" class="parent-pin-default-pill" style="display: none;">
-          Standard-PIN bei Erstnutzung: <strong>1234</strong>
-        </div>
-
-        <div id="parent-pin-error" class="parent-pin-error" style="display: none;"></div>
-
-        <div class="pin-modal-actions">
-          <button type="button" id="btn-cancel-parent-pin" class="btn-secondary btn-pin-action">Abbrechen</button>
-          <button type="button" id="btn-submit-parent-pin" class="btn-primary btn-pin-action">Freischalten</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- include: dialogs/parent_pin.html -->
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/js/api.js?v=1.0"></script>
-  <script src="/static/js/app_state.js?v=12.0"></script>
-  <script src="/static/js/parent_mode.js?v=12.0"></script>
-  <script src="/static/js/theme.js?v=12.0"></script>
-  <script src="/static/js/gamification.js?v=12.0"></script>
-  <script src="/static/js/navigation.js?v=12.0"></script>
-  <script src="/static/js/taxonomy.js?v=12.0"></script>
-  <script src="/static/js/subject_detail.js?v=12.0"></script>
-  <script src="/static/js/profile_status.js?v=12.0"></script>
-  <script src="/static/js/planner.js?v=12.0"></script>
-  <script src="/static/js/uploads.js?v=12.0"></script>
-  <script src="/static/js/viewer.js?v=12.0"></script>
-  <script src="/static/js/material_edit.js?v=12.0"></script>
-  <script src="/static/js/timetable.js?v=12.0"></script>
-  <script src="/static/js/books.js?v=12.0"></script>
-  <script src="/static/js/reader_notes.js?v=12.0"></script>
-  <script src="/static/js/init.js?v=12.0"></script>
-  <script src="/static/whiteboard.js?v=8.1"></script>
-  <script src="/static/cloze_trainer.js?v=2.7"></script>
+  <script src="/static/js/api.js?v={{v}}"></script>
+  <script src="/static/js/app_state.js?v={{v}}"></script>
+  <script src="/static/js/parent_mode.js?v={{v}}"></script>
+  <script src="/static/js/theme.js?v={{v}}"></script>
+  <script src="/static/js/gamification.js?v={{v}}"></script>
+  <script src="/static/js/navigation.js?v={{v}}"></script>
+  <script src="/static/js/taxonomy.js?v={{v}}"></script>
+  <script src="/static/js/subject_detail.js?v={{v}}"></script>
+  <script src="/static/js/profile_status.js?v={{v}}"></script>
+  <script src="/static/js/planner.js?v={{v}}"></script>
+  <script src="/static/js/uploads.js?v={{v}}"></script>
+  <script src="/static/js/viewer.js?v={{v}}"></script>
+  <script src="/static/js/material_edit.js?v={{v}}"></script>
+  <script src="/static/js/timetable.js?v={{v}}"></script>
+  <script src="/static/js/books.js?v={{v}}"></script>
+  <script src="/static/js/reader_notes.js?v={{v}}"></script>
+  <script src="/static/js/init.js?v={{v}}"></script>
+  <script src="/static/whiteboard.js?v={{v}}"></script>
+  <script src="/static/cloze_trainer.js?v={{v}}"></script>
 </body>
 </html>

@@ -1,0 +1,34 @@
+  <!-- Modal: Neue Prüfung -->
+  <div id="modal-test" class="modal-backdrop" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>➕ Neue Prüfung eintragen</h3>
+        <button class="modal-close" id="btn-close-test-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Schulfach</label>
+          <select id="input-test-subject" class="input-field">
+            <!-- Dynamisch aus aktuellen Fächern -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prüfungsart</label>
+          <select id="input-test-kind" class="input-field">
+            <option value="Klassenarbeit" selected>Klassenarbeit (10 Tage Countdown)</option>
+            <option value="Test">Test / Leistungskontrolle (5 Tage Countdown)</option>
+            <option value="Klausur">Klausur (14 Tage Countdown)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prüfungsdatum</label>
+          <input type="date" id="input-test-date" class="input-field">
+        </div>
+        <div class="form-group">
+          <label>Themen / Notiz</label>
+          <input type="text" id="input-test-note" class="input-field" placeholder="z. B. Rationale Zahlen, Bruchrechnung">
+        </div>
+        <button id="btn-submit-test" class="btn-primary">Prüfung speichern & Countdown starten</button>
+      </div>
+    </div>
+  </div>

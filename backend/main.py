@@ -3,11 +3,12 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from backend.app.database import engine, Base, SessionLocal, ensure_schema_migrations
 import backend.app.models  # noqa: F401  (registriert alle Tabellen für create_all)
 from backend.app.services.seeder import seed_database
+from backend.app.services.frontend_page import render_index
 from backend.app.routers.profile import router as profile_router
 from backend.app.routers.taxonomy import router as taxonomy_router
 from backend.app.routers.env import router as env_router
@@ -90,9 +91,9 @@ if FRONTEND_DIR.exists():
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def get_index():
-    index_file = FRONTEND_DIR / "index.html"
-    return FileResponse(
-        index_file,
+    # Startseite aus index.html + Dialog-Dateien, mit aktueller Version der Frontend-Dateien
+    return HTMLResponse(
+        render_index(FRONTEND_DIR),
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",

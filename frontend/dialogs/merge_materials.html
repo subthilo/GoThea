@@ -1,0 +1,82 @@
+  <!-- Modal: Dokumente zusammenführen -->
+  <div id="modal-merge-materials" class="modal-backdrop" style="display: none;">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+          <span style="font-size: 1.4rem;">🔗</span>
+          <div>
+            <h3 style="font-size: 1.2rem; margin: 0;">Dokumente zusammenführen</h3>
+            <span class="subtitle" style="font-size: 0.8rem; margin: 0;">Mehrere Dokumente in gewünschter Reihenfolge zu einem einzigen PDF verbinden</span>
+          </div>
+        </div>
+        <button class="modal-close" id="btn-close-merge-modal">&times;</button>
+      </div>
+      <div class="modal-body merge-modal-body">
+        <div class="merge-layout-grid">
+          <!-- Linke Spalte: Dokumentauswahl -->
+          <div class="merge-col-select">
+            <div class="merge-col-header">
+              <label style="font-weight: 600; font-size: 0.9rem;">1. Dokumente auswählen</label>
+              <select id="merge-filter-subject" class="input-field" style="padding: 4px 8px; font-size: 0.82rem; max-width: 170px;">
+                <option value="all">Alle Fächer</option>
+              </select>
+            </div>
+            <div id="merge-available-list" class="merge-docs-list">
+              <!-- Dynamische Liste mit Checkboxen -->
+            </div>
+          </div>
+
+          <!-- Rechte Spalte: Reihenfolge & Ziel-Metadaten -->
+          <div class="merge-col-target">
+            <div class="merge-col-header">
+              <label style="font-weight: 600; font-size: 0.9rem;">2. Reihenfolge festlegen (<span id="merge-selected-count">0</span>)</label>
+            </div>
+            <div id="merge-order-list" class="merge-order-list">
+              <div class="merge-empty-state">Wähle links mindestens 2 Dokumente aus</div>
+            </div>
+
+            <div class="merge-meta-form" style="margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+              <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; display: block;">3. Neues Dokument benennen</label>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-size: 0.82rem;">Titel des neuen Dokuments *</label>
+                <input type="text" id="merge-target-title" class="input-field" placeholder="z. B. Zusammenfassung Thema X">
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="font-size: 0.82rem;">Schulfach *</label>
+                  <select id="merge-target-subject" class="input-field"></select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="font-size: 0.82rem;">Thema</label>
+                  <select id="merge-target-topic" class="input-field">
+                    <option value="">-- Kein Thema --</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-size: 0.82rem;">Dokumentenart</label>
+                <select id="merge-target-kind" class="input-field">
+                  <option value="Arbeitsblatt">Arbeitsblatt</option>
+                  <option value="Mitschrift">Mitschrift (handschriftlich)</option>
+                  <option value="Buch">Schulbuch / Arbeitsheft</option>
+                  <option value="Buchauszug">Buchauszug (Kapitel / Seiten)</option>
+                  <option value="Test">Test / Diktat / bewertete Leistung</option>
+                  <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
+                  <option value="Vokabelliste">Vokabelliste</option>
+                  <option value="Sonstiges">Sonstiges</option>
+                </select>
+              </div>
+              <label class="merge-checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; margin-bottom: 14px;">
+                <input type="checkbox" id="merge-delete-sources" checked>
+                <span>Originaldokumente nach dem Verbinden löschen</span>
+              </label>
+
+              <button type="button" id="btn-submit-merge" class="btn-primary" style="width: 100%; justify-content: center;">
+                <span>🔗 Dokumente zusammenführen</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

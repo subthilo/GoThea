@@ -1,0 +1,46 @@
+  <!-- Modal: Eltern-PIN Eingabe (Apple-Design) -->
+  <div id="modal-parent-pin" class="modal-backdrop" style="display: none;">
+    <div class="modal-box modal-box-pin">
+      <div class="modal-header modal-header-pin">
+        <div class="pin-header-content">
+          <div class="pin-icon-squircle">
+            <img src="/static/Icons/Erwachsener.svg" class="pin-svg-icon" alt="Eltern">
+          </div>
+          <div>
+            <h3 class="pin-title">Eltern-Modus</h3>
+            <span class="pin-subtitle">Einstellungen & Verwaltung freischalten</span>
+          </div>
+        </div>
+        <button class="modal-close" id="btn-close-parent-pin-modal" title="Schließen">&times;</button>
+      </div>
+      <div class="modal-body pin-modal-body">
+        <p class="pin-intro-text">
+          Gib die Eltern-PIN ein, um geschützte Verwaltungs- und Einstellungsfunktionen freizuschalten.
+        </p>
+
+        <div class="pin-field-wrapper">
+          <label for="input-parent-pin" class="pin-label">Eltern-PIN</label>
+          <div class="pin-input-container">
+            <input type="password" id="input-parent-pin" class="input-field input-pin-large" maxlength="8" inputmode="numeric" placeholder="••••" autocomplete="off">
+            <button type="button" id="btn-toggle-pin-visibility" class="btn-pin-eye" title="PIN anzeigen oder verbergen">
+              <svg id="pin-eye-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="parent-pin-default-hint" class="parent-pin-default-pill" style="display: none;">
+          Standard-PIN bei Erstnutzung: <strong>1234</strong>
+        </div>
+
+        <div id="parent-pin-error" class="parent-pin-error" style="display: none;"></div>
+
+        <div class="pin-modal-actions">
+          <button type="button" id="btn-cancel-parent-pin" class="btn-secondary btn-pin-action">Abbrechen</button>
+          <button type="button" id="btn-submit-parent-pin" class="btn-primary btn-pin-action">Freischalten</button>
+        </div>
+      </div>
+    </div>
+  </div>

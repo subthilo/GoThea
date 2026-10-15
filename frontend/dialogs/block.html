@@ -1,0 +1,23 @@
+  <!-- Modal: Sperrtag -->
+  <div id="modal-block" class="modal-backdrop" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🚫 Sperrtag eintragen (Freier Tag)</h3>
+        <button class="modal-close" id="btn-close-block-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="subtitle" style="margin-bottom: 14px;">An Sperrtagen plant der Algorithmus keine Lerneinheiten ein.</p>
+        <div class="form-group">
+          <label>Datum</label>
+          <input type="date" id="input-block-date" class="input-field">
+        </div>
+        <div class="form-group">
+          <label>Typ</label>
+          <select id="input-block-type" class="input-field">
+            <option value="all" selected>Ganzer Tag frei (kein Lernen)</option>
+          </select>
+        </div>
+        <button id="btn-submit-block" class="btn-primary">Sperrtag speichern</button>
+      </div>
+    </div>
+  </div>

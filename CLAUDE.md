@@ -16,7 +16,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - Größere KI-Umbauten **messen statt raten**: `scripts/eval_document_classification.py` (Soll-Daten liegen außerhalb des Repos).
 - Frontend: Syntax-Check ohne Node per `osascript -l JavaScript -e '…new Function(src)…'`; dazu Browser-Smoke-Tests in `tests/e2e/` (Playwright/WebKit, iPad-Querformat, eigener Testserver; schlagen bei JS-Fehlern, Konsolen-Fehlern und API-Fehlern fehl). Einrichtung: `.venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m playwright install webkit`. Bedienung mit Pencil/Touch testet weiterhin der Nutzer – das ehrlich sagen.
 - Python-Lint: `.venv/bin/ruff check` (nur Pyflakes-Regeln, `ruff.toml`) muss sauber bleiben. Absichtliche Nur-Import-Zeilen mit `# noqa: F401` und Begründung markieren.
-- Nach Frontend-Änderungen den Cache-Buster in `index.html` erhöhen (`app.js?v=…`, `style.css?v=…`).
+- Cache-Buster: `index.html` trägt `?v={{v}}`, der Server setzt beim Ausliefern eine Version aus Größe/Änderungszeit aller .js/.css ein (`services/frontend_page.py`) – nichts von Hand hochzählen. Dialoge stehen in `frontend/dialogs/` und werden über `<!-- include: dialogs/….html -->` eingesetzt.
 
 ## Umgebungen
 

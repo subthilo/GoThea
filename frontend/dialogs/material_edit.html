@@ -1,0 +1,49 @@
+  <!-- Modal: Dokument anpassen (Fach, Thema, Titel, Art) -->
+  <div id="modal-edit-material" class="modal-backdrop" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✏️ Dokument anpassen</h3>
+        <button class="modal-close" id="btn-close-edit-material-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-mat-id">
+        <div class="form-group">
+          <label>Titel des Materials *</label>
+          <input type="text" id="edit-mat-title" class="input-field" placeholder="z. B. Pflanzenzelle Übung">
+        </div>
+        <div class="form-group">
+          <label>Schulfach *</label>
+          <select id="edit-mat-subject" class="input-field"></select>
+        </div>
+        <div class="form-group">
+          <label>Thema (Lehrplan E)</label>
+          <select id="edit-mat-topic" class="input-field">
+            <option value="">-- Kein spezifisches Thema --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Dokumentenart</label>
+          <select id="edit-mat-kind" class="input-field">
+            <option value="Arbeitsblatt">Arbeitsblatt</option>
+            <option value="Mitschrift">Mitschrift (handschriftlich)</option>
+            <option value="Buch">Schulbuch / Arbeitsheft</option>
+            <option value="Buchauszug">Buchauszug (Kapitel / Seiten)</option>
+            <option value="Test">Test / Diktat / bewertete Leistung</option>
+            <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
+            <option value="Vokabelliste">Vokabelliste</option>
+            <option value="Sonstiges">Sonstiges</option>
+            <option value="Stundenplan">Stundenplan</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notiz / Zusammenfassung (optional)</label>
+          <input type="text" id="edit-mat-summary" class="input-field" placeholder="z. B. Für Klassenarbeit am 24.10.">
+        </div>
+
+        <div class="modal-actions-row" style="display: flex; gap: 12px; margin-top: 20px;">
+          <button type="button" id="btn-cancel-edit-material" class="btn-secondary-sm" style="flex: 1;">Abbrechen</button>
+          <button type="button" id="btn-save-edit-material" class="btn-primary" style="flex: 2;">Änderungen speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,48 @@
+  <!-- Modal: Stundenplan Fach-Detail & Schnellzugriff -->
+  <div id="modal-tt-slot-detail" class="modal-backdrop" style="display: none;">
+    <div class="modal-box" style="max-width: 420px; border-radius: 20px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span id="tt-slot-modal-icon" class="tt-slot-modal-squircle">
+            <img src="/static/Icons/Bücher.svg" class="btn-sm-svg" style="width: 24px; height: 24px;" alt="">
+          </span>
+          <div>
+            <h3 id="tt-slot-modal-title" style="margin: 0; font-size: 1.18rem;">Mathematik</h3>
+            <span id="tt-slot-modal-time" class="subtitle" style="font-size: 0.8rem; margin: 0;">1. & 2. Stunde • 07:45 – 09:15</span>
+          </div>
+        </div>
+        <button class="modal-close" id="btn-close-tt-slot-modal" title="Schließen">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 6px;">
+        <div class="tt-slot-info-card">
+          <div class="tt-slot-info-row">
+            <span class="tt-slot-info-label">Raum:</span>
+            <span class="tt-slot-info-val" id="tt-slot-modal-room">Raum 303</span>
+          </div>
+          <div class="tt-slot-info-row">
+            <span class="tt-slot-info-label">Lehrkraft:</span>
+            <span class="tt-slot-info-val" id="tt-slot-modal-teacher">Hr. HORN</span>
+          </div>
+          <div class="tt-slot-info-row">
+            <span class="tt-slot-info-label">Turnus:</span>
+            <span class="tt-slot-info-val" id="tt-slot-modal-week">Beide Wochen</span>
+          </div>
+          <div class="tt-slot-info-row" id="tt-slot-modal-note-row" style="display: none;">
+            <span class="tt-slot-info-label">Notiz:</span>
+            <span class="tt-slot-info-val" id="tt-slot-modal-note"></span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 18px;">
+          <button id="btn-tt-goto-materials" class="btn-primary" style="justify-content: center; gap: 8px; padding: 11px 16px;">
+            <img src="/static/Icons/Bücher.svg" class="btn-sm-svg" alt="">
+            <span>Fachseite & Mediathek</span>
+          </button>
+          <button id="btn-tt-goto-whiteboard" class="btn-secondary" style="justify-content: center; gap: 8px; width: 100%;">
+            <img src="/static/Icons/Tafel.svg" class="btn-sm-svg" alt="">
+            <span>Tafel für dieses Fach öffnen</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
