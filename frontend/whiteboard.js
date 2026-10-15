@@ -1516,14 +1516,15 @@
             }
           }
           await loadSessionExercises(data.id);
+          // Nur hier verbinden: createNewSession() verbindet selbst (ein zweiter Aufruf würde
+          // den gerade aufgebauten Socket wieder schließen)
+          connectTutorWebSocket();
         } else {
           await createNewSession();
         }
       } else {
         await createNewSession();
       }
-
-      connectTutorWebSocket();
     } catch (e) {
       console.error("Fehler beim Initialisieren der Sitzung:", e);
     }
