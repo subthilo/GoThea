@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Dashboard iPadOS Header & Compact Status Capsule
+   ========================================================================== */
+.dash-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* Glassmorphism iPad Status Capsule */
+.dash-stats-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30, 41, 59, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 16px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.capsule-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+
+.capsule-chip:hover {
+  transform: translateY(-1px);
+}
+
+.capsule-chip.chip-level {
+  gap: 8px;
+}
+
+.capsule-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.capsule-svg-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(0.92);
+  transition: transform 0.15s ease;
+}
+
+.capsule-chip:hover .capsule-svg-icon {
+  transform: scale(1.15);
+  filter: brightness(0) invert(1);
+}
+
+.capsule-level-label {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--accent-light);
+  white-space: nowrap;
+}
+
+.capsule-progress-track {
+  width: 54px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.capsule-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+.capsule-xp-mini {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.capsule-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 0 2px;
+}
+
+.capsule-val {
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* Fallback/Legacy level bar wrapper hide */
+.gamification-level-bar-card {
+  display: none !important;
+}
+

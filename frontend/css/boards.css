@@ -1,0 +1,182 @@
+/* ==========================================================================
+   Tafel-Verwaltung: Tafel-Knopf mit Liste (Tafel) und Abschnitt "Tafeln" (Fachseite)
+   ========================================================================== */
+.wb-boards-anchor {
+  position: relative;
+}
+
+.wb-boards-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wb-board-title {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-boards-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(420px, 80vw);
+  max-height: 60vh;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.wb-boards-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.wb-boards-panel-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.wb-boards-list {
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.wb-boards-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.wb-boards-item:hover,
+.wb-boards-item.active {
+  background: var(--bg-card-hover);
+}
+
+.wb-boards-item.active {
+  box-shadow: inset 0 0 0 1px var(--border-active);
+}
+
+.wb-boards-thumb {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #121620;
+  border: 1px solid var(--border-color);
+}
+
+.wb-boards-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wb-boards-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-boards-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.wb-boards-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.wb-boards-icon-btn {
+  min-width: 36px;
+  min-height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.wb-boards-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.wb-boards-empty {
+  padding: 18px 12px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.subject-boards-section {
+  margin-top: 28px;
+}
+
+.subject-boards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.subject-board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  text-align: left;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.subject-board-card:hover {
+  background: var(--bg-card-hover);
+}
+
+.subject-board-card .subject-board-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #121620;
+  border: 1px solid var(--border-color);
+}
+
+.subject-board-thumb-new {
+  font-size: 2rem;
+  color: var(--text-secondary);
+}
+
+.subject-board-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subject-board-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}

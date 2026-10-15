@@ -1,0 +1,81 @@
+/* ==========================================================================
+   iPad Responsive Anpassungen für Landscape & Portrait
+   ========================================================================== */
+@media (max-height: 780px) {
+  body.timetable-zen-mode .app-container {
+    padding: max(4px, env(safe-area-inset-top)) 10px max(4px, env(safe-area-inset-bottom)) 10px !important;
+  }
+  body.timetable-zen-mode .header {
+    padding-bottom: 2px !important;
+    gap: 8px !important;
+  }
+  body.timetable-zen-mode .dock-tab {
+    width: 38px !important;
+    height: 38px !important;
+  }
+  body.timetable-zen-mode .dock-tab-icon-wrap {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  .tt-compact-topbar {
+    height: 28px !important;
+    margin-bottom: 3px !important;
+  }
+  .tt-topbar-title {
+    font-size: 0.92rem !important;
+  }
+  .tt-seg-btn {
+    padding: 2px 8px !important;
+    font-size: 0.72rem !important;
+  }
+  .timetable-grid {
+    grid-template-rows: 20px repeat(9, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 860px) {
+  body.timetable-zen-mode .header .brand .badge-grade {
+    display: none;
+  }
+  body.timetable-zen-mode .header-right-group .parent-pill-text {
+    display: none;
+  }
+  body.timetable-zen-mode .header-right-group .btn-parent-pill {
+    padding: 4px 8px !important;
+  }
+  .tt-compact-topbar .tt-topbar-actions span {
+    display: none;
+  }
+  .tt-compact-topbar .tt-topbar-actions button {
+    padding: 3px 8px !important;
+  }
+}
+
+/* Slot Detail Modal */
+.tt-slot-info-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tt-slot-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88rem;
+}
+
+.tt-slot-info-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.tt-slot-info-val {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+

@@ -1,0 +1,573 @@
+/* ==============================================================================
+   STUNDENPLAN WIDGET & GRID STYLING
+   ============================================================================== */
+
+/* Dashboard Stundenplan-Card */
+.dash-timetable-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+}
+
+.dash-tt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.dash-tt-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-tt-icon {
+  font-size: 2rem;
+  background: rgba(99, 102, 241, 0.15);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.dash-tt-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dash-tt-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.dash-tt-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-tt-week-pill {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--accent-light);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.dash-tt-slots-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.dash-tt-slot-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: transform 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.dash-tt-slot-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dash-tt-slot-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dash-tt-slot-subject {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.dash-tt-slot-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.dash-tt-empty {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: 12px 0;
+  grid-column: 1 / -1;
+}
+
+/* ==========================================================================
+   Stundenplan (iPadOS Vollbild-Ansicht - Absolut Null Scrollen, Fit-to-Screen)
+   ========================================================================== */
+html:has(body.timetable-zen-mode),
+html.timetable-zen-mode,
+body.timetable-zen-mode {
+  height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body.timetable-zen-mode .staging-banner {
+  display: none !important;
+}
+
+body.timetable-zen-mode .app-container {
+  height: 100% !important;
+  max-height: 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: max(6px, env(safe-area-inset-top)) 12px max(8px, env(safe-area-inset-bottom)) 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+
+body.timetable-zen-mode .header {
+  flex-shrink: 0 !important;
+  flex-wrap: nowrap !important;
+  /* Seite ist fixiert: kein sticky-Ausgleich nötig */
+  position: relative !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  padding-bottom: 6px !important;
+  margin-bottom: 0 !important;
+  gap: 10px !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+body.timetable-zen-mode .content {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  padding-top: 4px !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Timetable Tab Pane: nur anzeigen wenn .active */
+.tab-pane.tt-page-pane,
+.tt-page-pane {
+  display: none;
+}
+
+#tab-timetable:not(.active),
+.tt-page-pane:not(.active) {
+  display: none !important;
+}
+
+.tab-pane.tt-page-pane.active,
+.tt-page-pane.active,
+#tab-timetable.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Schlanke Kopfzeile (alles in einer Zeile) */
+.tt-compact-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 32px;
+  margin-bottom: 4px;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box;
+}
+
+.tt-topbar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tt-topbar-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.tt-topbar-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.tt-class-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent-light);
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  padding: 1px 7px;
+  border-radius: 999px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Turnus Segmented Control */
+.tt-segmented-control {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(18, 21, 28, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  padding: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.tt-seg-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.tt-seg-btn:hover {
+  color: var(--text-primary);
+}
+
+.tt-seg-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+.tt-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-sm-svg {
+  width: 12px;
+  height: 12px;
+  filter: brightness(0) invert(1);
+  vertical-align: -2px;
+}
+
+/* Das vollflächige Raster (100% Höhe & Breite, absolut ohne Scrollbalken) */
+.timetable-grid-wrapper {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: rgba(18, 21, 28, 0.7);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box !important;
+}
+
+.timetable-grid {
+  display: grid !important;
+  grid-template-columns: 44px repeat(5, minmax(0, 1fr)) !important;
+  grid-template-rows: 22px repeat(9, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+/* Header-Zellen (Tage & Zeit) */
+.tt-grid-header {
+  padding: 0 3px;
+  font-size: clamp(0.7rem, 1.1vh, 0.78rem);
+  font-weight: 700;
+  text-align: center;
+  background: rgba(30, 41, 59, 0.95);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  white-space: nowrap;
+}
+
+.tt-grid-header:last-child {
+  border-right: none;
+}
+
+.tt-corner-header {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tt-grid-header.today {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.28) 0%, rgba(30, 41, 59, 0.95) 100%);
+  color: var(--accent-light);
+  border-bottom-color: var(--accent);
+}
+
+.tt-today-badge {
+  font-size: 0.58rem;
+  background: var(--accent);
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Zeit-Spalte (links) */
+.tt-time-cell {
+  background: rgba(20, 27, 45, 0.9);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  padding: 1px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+
+.timetable-grid > div:nth-last-child(-n+6) {
+  border-bottom: none;
+}
+
+.tt-period-num {
+  font-size: clamp(0.68rem, 1.2vh, 0.74rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.tt-period-time {
+  font-size: clamp(0.5rem, 0.95vh, 0.58rem);
+  color: var(--text-muted);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* Unterrichts-Zellen */
+.tt-slot-cell {
+  background: rgba(15, 23, 42, 0.25);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  padding: 1px 2px;
+  position: relative;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+
+.tt-slot-cell:nth-child(6n) {
+  border-right: none;
+}
+
+.tt-slot-cell.today-col {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+/* Slot Card (Einzelne Unterrichtsstunde - Passt sich dynamisch der Zeilenhöhe an) */
+.tt-lesson-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  padding: 1px 4px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  transition: all 0.15s ease;
+  position: relative;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+
+.tt-lesson-card:hover {
+  transform: translateY(-1px);
+  background: rgba(40, 53, 76, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.tt-lesson-top {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.tt-slot-svg {
+  width: 12px;
+  height: 12px;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.tt-lesson-name {
+  font-size: clamp(0.68rem, 1.25vh, 0.78rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
+}
+
+.tt-lesson-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  overflow: hidden;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.tt-lesson-room {
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0 3px;
+  border-radius: 2px;
+  font-size: clamp(0.56rem, 1vh, 0.63rem);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.tt-lesson-teacher {
+  font-size: clamp(0.56rem, 1vh, 0.63rem);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1;
+}
+
+.tt-lesson-break {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-left: 1px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-muted);
+  padding: 2px;
+  cursor: default;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box !important;
+  border-radius: 5px;
+}
+
+.tt-break-svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0.55;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+}
+
+.tt-break-label {
+  font-size: clamp(0.6rem, 1.1vh, 0.68rem);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-cell-empty {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.08);
+  font-size: 0.72rem;
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+

@@ -1,0 +1,348 @@
+/* ==========================================================================
+   Konzept 1: Theas iPad-Desk (Moderne Kachel- & SVG-Icon-Architektur)
+   ========================================================================== */
+
+/* Parent / Profile Pill Icon */
+.pill-svg-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(0.92);
+  vertical-align: middle;
+}
+
+/* Dashboard: Stundenplan Header & Slot Cards */
+.dash-tt-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-tt-header-svg {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(0.95);
+}
+
+.dash-tt-slot-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  user-select: none;
+}
+
+.dash-tt-slot-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dash-tt-slot-card:active {
+  transform: scale(0.98);
+}
+
+.dash-tt-slot-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dash-tt-slot-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.dash-tt-slot-svg {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(0.95);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dash-tt-slot-card:hover .dash-tt-slot-svg {
+  transform: scale(1.12);
+}
+
+.dash-tt-slot-time {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dash-tt-slot-subject {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.dash-tt-slot-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.dash-tt-badge-room {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dash-tt-badge-teacher {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Quick-Actions redundant styles removed in favor of top icon dock */
+
+/* Kompakte Statuszeile */
+.dash-stats-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: 4px 6px;
+}
+
+.dash-stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.stat-mini-svg {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(0.85);
+}
+
+/* Upgrade für Subject App Tiles (iPadOS Springboard) */
+.subject-tile-icon-wrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.subject-card:hover .subject-tile-icon-wrap,
+.subject-app-tile:hover .subject-tile-icon-wrap {
+  transform: scale(1.08);
+}
+
+.subject-tile-svg {
+  width: 44px;
+  height: 44px;
+  filter: brightness(0) invert(0.95);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.subject-tile-name {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* Fach-Detailseite: Hero Icon & 3 Große Touch-Aktionskarten */
+.subject-hero-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.subject-hero-svg {
+  width: 44px;
+  height: 44px;
+  filter: brightness(0) invert(0.95);
+}
+
+.subject-action-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 18px 0 24px;
+}
+
+@media (max-width: 640px) {
+  .subject-action-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.subject-action-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 22px;
+  padding: 24px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.subject-action-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.subject-action-card:active {
+  transform: scale(0.95);
+}
+
+.subject-action-card .action-card-icon-wrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-accent-tafel .action-card-icon-wrap {
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.card-accent-exercise .action-card-icon-wrap {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.card-accent-upload .action-card-icon-wrap {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.subject-action-card:hover .action-card-icon-wrap {
+  transform: scale(1.08);
+}
+
+.action-card-svg {
+  width: 44px;
+  height: 44px;
+  filter: brightness(0) invert(0.95);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.subject-action-card:hover .action-card-svg {
+  transform: scale(1.08);
+}
+
+.action-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Material Filter-Pills mit SVGs */
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-pill-svg {
+  width: 17px;
+  height: 17px;
+  filter: brightness(0) invert(0.85);
+  transition: transform 0.2s ease, filter 0.2s ease;
+  vertical-align: middle;
+}
+
+.filter-pill:hover .filter-pill-svg {
+  transform: scale(1.08);
+  filter: brightness(0) invert(1);
+}
+
+.filter-pill.active .filter-pill-svg {
+  filter: brightness(0) invert(1);
+}
+
+/* Timetable Raster SVGs */
+.tt-lesson-name-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.tt-slot-svg {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(0.95);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.tt-lesson-card:hover .tt-slot-svg {
+  transform: scale(1.15);
+}
+
+.tt-break-svg {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(0.95);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+

@@ -1,0 +1,156 @@
+/* ==========================================================================
+   Fach-Detailseite (Mediathek & Materialien)
+   ========================================================================== */
+.subject-detail-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  padding: 10px 0;
+  /* Bleibt direkt unter der Kopfzeile stehen (Höhe wird per JS in --app-header-height gesetzt) */
+  position: sticky;
+  top: var(--app-header-height, 0px);
+  z-index: 40;
+  background-color: var(--bg-primary);
+}
+
+.subject-breadcrumb {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.subject-hero-card {
+  background: linear-gradient(135deg, rgba(24, 28, 38, 0.95), rgba(15, 18, 25, 0.9));
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 26px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+  flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.subject-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.subject-hero-icon {
+  font-size: 2.8rem;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.subject-hero-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.subject-hero-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 6px 0 0;
+}
+
+.subject-hero-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Einklappbare Themen-Leiste */
+.subject-topics-bar {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  margin-top: 18px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.subject-topics-bar-header {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+}
+
+.subject-topics-bar-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.toggle-arrow {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.subject-topics-chips {
+  padding: 10px 18px 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.subject-topic-chip {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 5px 12px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Dashboard Subject Card Hover Action */
+.subject-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.subject-card-action-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-light);
+  opacity: 0.85;
+  transition: all 0.15s ease;
+}
+
+.subject-card:hover .subject-card-action-hint {
+  opacity: 1.0;
+  transform: translateX(3px);
+}
+
