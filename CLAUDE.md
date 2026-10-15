@@ -61,6 +61,8 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - SQLAlchemy-Sessions laufen mit `autoflush=False`: vor Abfragen auf eben hinzugefügte Objekte `db.flush()`.
 - Daten, die eine Voranalyse anlegt und ein späterer Request nutzt, müssen **committet** werden (sonst 404 beim Bestätigen).
 - Der Seeder legt Start-Themen nur für **neu angelegte** Fächer an (gelöschte Platzhalter kommen nicht zurück).
+- **Pencil/Zeichenkern (`whiteboard.js`, auch vom Buch-Leser für Anmerkungen genutzt) ist fragil und mühsam erarbeitet:** darf besser, auf keinen Fall schlechter werden. Nur unverändert verschieben; Änderungen am Schreibverhalten als eigene, einzeln getestete Commits, vom Nutzer auf dem iPad geprüft. Dazu gehören auch die iOS-relevanten CSS-Regeln (`touch-action`, `user-select`, `-webkit-touch-callout`).
+- Staging und Produktion teilen auf dem Pi **denselben Code-Ordner** (`~/GoThea`), nur die Daten sind getrennt: Jedes Deploy (auch `-f`) erreicht sofort Thea.
 - Stundenplan und Tafel nutzen Zen-Modi (fixierte Seite ohne Scrollen). Jede Ansicht, die einen Tab aktiviert, muss `applyTabViewModes()` aufrufen.
 - Endpunkte, die Inhalte inkl. Lösungen liefern, bleiben im Eltern-Modus, bis Lösungen serverseitig verborgen werden.
 - Tests (`tests/conftest.py`): temporäres `DATA_DIR`/`SHARED_DATA_DIR`, leerer API-Key, keine Hintergrund-Worker, frische In-Memory-DB pro Test. `client` und `strict_client` nie im selben Test (teilen sich die Dependency-Overrides). Suite läuft in ~15 s (davon ~9 s Browser-Tests; ohne Playwright werden sie übersprungen).
