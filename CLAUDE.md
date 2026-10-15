@@ -10,7 +10,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
   ```bash
   .venv/bin/pytest -q > /tmp/out.txt 2>&1; rc=$?; tail -1 /tmp/out.txt; [ $rc -eq 0 ] && git commit ...
   ```
-- Deploy: `./deploy.sh all` (führt Tests aus, rsync auf den Pi, startet beide Dienste neu). Reine Frontend-Änderungen: `./deploy.sh -f` (ohne Neustart). Kein `git push`, solange nicht ausdrücklich gewünscht.
+- Deploy: `./deploy.sh` = **Staging** (Standard; Tests, rsync, Neustart, wartet auf `/api/health`). Zu Thea erst mit `./deploy.sh prod` bzw. `all`, nachdem es auf Staging lief. Reine Frontend-Änderungen: `-f` (ohne Neustart, gilt fürs gewählte Ziel). Kein `git push`, solange nicht ausdrücklich gewünscht.
 - Thematisch getrennte Commits; die Commit-Nachricht erklärt das **Warum**.
 - Riskante oder unumkehrbare Aktionen auf dem Pi (Daten löschen, Prod anfassen) vorher bestätigen lassen. Neues erst auf **Staging** erproben.
 - Größere KI-Umbauten **messen statt raten**: `scripts/eval_document_classification.py` (Soll-Daten liegen außerhalb des Repos).
@@ -20,17 +20,17 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 
 ## Umgebungen
 
-| | Port | Daten | Dienst |
-|---|---|---|---|
-| Produktion | 8000 | `data/prod/` | `gothea.service` |
-| Staging | 8001 | `data/staging/` | `gothea-staging.service` |
+| | Port | Code auf dem Pi | Daten | Dienst |
+|---|---|---|---|---|
+| Produktion | 8000 | `~/GoThea` | `~/GoThea/data/prod/` | `gothea.service` |
+| Staging | 8001 | `~/GoThea-staging` (eigene `.venv`) | `~/GoThea/data/staging/` (Pfade in `~/GoThea-staging/.env`) | `gothea-staging.service` |
 
-- Pi: `pi@192.168.1.135`, Code in `~/GoThea`, Logs: `sudo journalctl -u gothea-staging -f`.
+- Pi: `pi@192.168.1.135`, Logs: `sudo journalctl -u gothea-staging -f`.
 - `data/`, `inbox/`, `experiments/` werden beim Deploy nicht synchronisiert. `.env` (API-Key, `OPENAI_MODEL`) liegt nur auf dem Pi bzw. lokal in `experiments/openai_study/.env`.
 - `data/shared/` gehört beiden Umgebungen (inhaltsadressierter Cache der Seiten-Erschließung).
 - **Hintergrund-Worker:** Seiten-Erschließung und Renderer müssen immer laufen (sie füllen die Datenbank, Grundlage für den Tutor) – `GOTHEA_BACKGROUND_WORKERS` nie dafür abschalten. Der Übungs-Vorrat hat einen eigenen Schalter `GOTHEA_EXERCISE_POOL` (Standard aus, bis Tutor/Übungen neu gebaut sind).
 - Backups vor größeren Eingriffen: `~/GoThea-backups/` auf dem Pi.
-- Skripte auf dem Pi: `cd ~/GoThea && APP_ENV=staging .venv/bin/python scripts/<name>.py`.
+- Skripte auf dem Pi: Staging `cd ~/GoThea-staging && .venv/bin/python scripts/<name>.py` (die `.env` dort setzt Umgebung und Datenpfade); Produktion `cd ~/GoThea && APP_ENV=production .venv/bin/python scripts/<name>.py`.
 
 ## Architektur
 
@@ -62,7 +62,6 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - Daten, die eine Voranalyse anlegt und ein späterer Request nutzt, müssen **committet** werden (sonst 404 beim Bestätigen).
 - Der Seeder legt Start-Themen nur für **neu angelegte** Fächer an (gelöschte Platzhalter kommen nicht zurück).
 - **Pencil/Zeichenkern (`whiteboard.js`, auch vom Buch-Leser für Anmerkungen genutzt) ist fragil und mühsam erarbeitet:** darf besser, auf keinen Fall schlechter werden. Nur unverändert verschieben; Änderungen am Schreibverhalten als eigene, einzeln getestete Commits, vom Nutzer auf dem iPad geprüft. Dazu gehören auch die iOS-relevanten CSS-Regeln (`touch-action`, `user-select`, `-webkit-touch-callout`).
-- Staging und Produktion teilen auf dem Pi **denselben Code-Ordner** (`~/GoThea`), nur die Daten sind getrennt: Jedes Deploy (auch `-f`) erreicht sofort Thea.
 - Stundenplan und Tafel nutzen Zen-Modi (fixierte Seite ohne Scrollen). Jede Ansicht, die einen Tab aktiviert, muss `applyTabViewModes()` aufrufen.
 - Endpunkte, die Inhalte inkl. Lösungen liefern, bleiben im Eltern-Modus, bis Lösungen serverseitig verborgen werden.
 - Tests (`tests/conftest.py`): temporäres `DATA_DIR`/`SHARED_DATA_DIR`, leerer API-Key, keine Hintergrund-Worker, frische In-Memory-DB pro Test. `client` und `strict_client` nie im selben Test (teilen sich die Dependency-Overrides). Suite läuft in ~15 s (davon ~9 s Browser-Tests; ohne Playwright werden sie übersprungen).

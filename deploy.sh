@@ -1,8 +1,12 @@
 #!/bin/bash
 set -e
 
+# Staging und Produktion haben auf dem Pi je einen eigenen Code-Ordner:
+#   staging -> /home/pi/GoThea-staging (Port 8001)   prod -> /home/pi/GoThea (Port 8000)
+# Standard ist staging: Neues erreicht Thea erst mit einem ausdrücklichen "prod" oder "all".
+
 # Parameter & Optionen auswerten
-TARGET_ENV="all"
+TARGET_ENV="staging"
 SKIP_TESTS=0
 INSTALL_DEPS=0
 QUICK_FRONTEND=0
@@ -23,7 +27,7 @@ for arg in "$@"; do
             ;;
         *)
             echo "Unbekannter Parameter: $arg"
-            echo "Verwendung: ./deploy.sh [prod|staging|all] [--skip-tests|-n] [--frontend|-f] [--deps|-d]"
+            echo "Verwendung: ./deploy.sh [staging|prod|all] [--skip-tests|-n] [--frontend|-f] [--deps|-d]"
             exit 1
             ;;
     esac
@@ -35,13 +39,24 @@ fi
 
 PI_USER="pi"
 PI_HOST="192.168.1.135"
-REMOTE_DIR="/home/$PI_USER/GoThea"
+
+case "$TARGET_ENV" in
+    staging) TARGETS="staging" ;;
+    prod)    TARGETS="prod" ;;
+    all)     TARGETS="staging prod" ;;
+esac
+
+remote_dir() { [ "$1" = "prod" ] && echo "/home/$PI_USER/GoThea" || echo "/home/$PI_USER/GoThea-staging"; }
+service_name() { [ "$1" = "prod" ] && echo "gothea" || echo "gothea-staging"; }
+service_port() { [ "$1" = "prod" ] && echo "8000" || echo "8001"; }
 
 # Schneller Frontend-Sync (nur statische Dateien kopieren, keine Tests, kein Service-Neustart)
 if [ "$QUICK_FRONTEND" -eq 1 ]; then
-    echo "⚡ [Frontend-Deploy] Synchronisiere 'frontend/' mit Pi ($PI_HOST)..."
-    rsync -avz ./frontend/ "$PI_USER@$PI_HOST:$REMOTE_DIR/frontend/"
-    echo "✅ Frontend blitzschnell synchronisiert! (Kein Service-Restart nötig)"
+    for t in $TARGETS; do
+        echo "⚡ [Frontend-Deploy → $t] Synchronisiere 'frontend/' nach $(remote_dir "$t")..."
+        rsync -avz ./frontend/ "$PI_USER@$PI_HOST:$(remote_dir "$t")/frontend/"
+    done
+    echo "✅ Frontend synchronisiert ($TARGET_ENV, kein Service-Restart nötig)"
     exit 0
 fi
 
@@ -58,33 +73,46 @@ else
     echo "✅ Alle Tests erfolgreich bestanden!"
 fi
 
-# 2. Synchronisieren
-echo "🚀 [2/4] Synchronisiere Code mit Raspberry Pi ($PI_HOST)..."
-rsync -avz --delete \
-  --exclude '.git' \
-  --exclude '.venv' \
-  --exclude '__pycache__' \
-  --exclude '*.pyc' \
-  --exclude '.pytest_cache' \
-  --exclude '.coverage' \
-  --exclude '.DS_Store' \
-  --exclude '/data' \
-  --exclude '/data/**' \
-  --exclude '/experiments' \
-  --exclude '/experiments/**' \
-  --exclude '/inbox' \
-  --exclude '/inbox/**' \
-  --exclude '.env' \
-  --exclude '.requirements.md5' \
-  ./ "$PI_USER@$PI_HOST:$REMOTE_DIR/"
+for t in $TARGETS; do
+    DIR="$(remote_dir "$t")"
+    SERVICE="$(service_name "$t")"
+    PORT="$(service_port "$t")"
 
-# 3. Services auf dem Pi konfigurieren
-echo "⚙️  [3/4] Konfiguriere Services auf dem Pi für Target: $TARGET_ENV..."
-ssh "$PI_USER@$PI_HOST" bash -s "$TARGET_ENV" "$INSTALL_DEPS" << 'EOF'
+    # 2. Synchronisieren
+    echo "🚀 [2/4 → $t] Synchronisiere Code nach $DIR..."
+    rsync -avz --delete \
+      --exclude '.git' \
+      --exclude '.venv' \
+      --exclude '__pycache__' \
+      --exclude '*.pyc' \
+      --exclude '.pytest_cache' \
+      --exclude '.ruff_cache' \
+      --exclude '.coverage' \
+      --exclude '.DS_Store' \
+      --exclude '/data' \
+      --exclude '/data/**' \
+      --exclude '/experiments' \
+      --exclude '/experiments/**' \
+      --exclude '/inbox' \
+      --exclude '/inbox/**' \
+      --exclude '.env' \
+      --exclude '.requirements.md5' \
+      ./ "$PI_USER@$PI_HOST:$DIR/"
+
+    # 3. Dienst auf dem Pi einrichten und neu starten
+    echo "⚙️  [3/4 → $t] Konfiguriere und starte '$SERVICE' (Port $PORT)..."
+    ssh "$PI_USER@$PI_HOST" bash -s "$DIR" "$SERVICE" "$PORT" "$INSTALL_DEPS" << 'EOF'
 set -e
-TARGET="$1"
-INSTALL_DEPS="$2"
-cd /home/pi/GoThea
+DIR="$1"
+SERVICE="$2"
+PORT="$3"
+INSTALL_DEPS="$4"
+cd "$DIR"
+
+if [ ! -f ".env" ]; then
+    echo "❌ $DIR/.env fehlt (KI-Schlüssel; bei Staging auch DATA_DIR/INBOX_DIR). Abbruch, Dienst nicht angefasst."
+    exit 1
+fi
 
 # 1. Virtual Environment einrichten falls nötig
 if [ ! -d ".venv" ]; then
@@ -101,7 +129,7 @@ if [ -f ".requirements.md5" ]; then
 fi
 
 if [ "$INSTALL_DEPS" = "1" ] || [ "$CURRENT_REQ_HASH" != "$STORED_REQ_HASH" ]; then
-    echo "📦 Aktualisiere Abhängigkeiten auf dem Pi..."
+    echo "📦 Aktualisiere Abhängigkeiten..."
     .venv/bin/pip install --quiet --upgrade pip
     .venv/bin/pip install --quiet -r backend/requirements.txt
     echo "$CURRENT_REQ_HASH" > .requirements.md5
@@ -109,28 +137,25 @@ else
     echo "⚡ Python-Abhängigkeiten unverändert (Überspringe pip install)."
 fi
 
-# Verzeichnisse für getrennte Datenbanken anlegen
-mkdir -p data/prod data/staging
-
-# 3. Systemd Services aktualisieren
-sudo cp gothea.service /etc/systemd/system/gothea.service
-sudo cp gothea-staging.service /etc/systemd/system/gothea-staging.service
+# 3. Nur den eigenen Systemd-Dienst aktualisieren und neu starten
+sudo cp "$SERVICE.service" "/etc/systemd/system/$SERVICE.service"
 sudo systemctl daemon-reload
-sudo systemctl enable gothea.service gothea-staging.service
+sudo systemctl enable "$SERVICE.service"
+sudo systemctl restart "$SERVICE.service"
 
-if [ "$TARGET" == "staging" ]; then
-    sudo systemctl restart gothea-staging.service
-    echo "🔄 Service 'gothea-staging' (Port 8001) neu gestartet."
-elif [ "$TARGET" == "prod" ]; then
-    sudo systemctl restart gothea.service
-    echo "🔄 Service 'gothea' (Port 8000) neu gestartet."
-else
-    sudo systemctl restart gothea.service
-    sudo systemctl restart gothea-staging.service
-    echo "🔄 Beide Services (Port 8000 & 8001) neu gestartet."
-fi
+# 4. Warten, bis der Dienst antwortet
+for i in $(seq 1 30); do
+    if curl -sf "http://localhost:$PORT/api/health" > /dev/null; then
+        echo "🔄 '$SERVICE' läuft wieder (Port $PORT)."
+        exit 0
+    fi
+    sleep 1
+done
+echo "❌ '$SERVICE' antwortet nach 30 s nicht. Logs: sudo journalctl -u $SERVICE -n 50"
+exit 1
 EOF
+done
 
-echo "✅ [4/4] Deployment abgeschlossen!"
+echo "✅ [4/4] Deployment abgeschlossen ($TARGET_ENV)!"
 echo "👉 🟢 PRODUKTION (geschützte Daten): http://$PI_HOST:8000"
 echo "👉 🟡 STAGING    (Test-Spielwiese):  http://$PI_HOST:8001"
