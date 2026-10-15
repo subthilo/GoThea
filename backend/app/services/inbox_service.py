@@ -7,11 +7,9 @@ from pathlib import Path
 from typing import Optional, List
 from sqlalchemy.orm import Session
 
-from backend.app.services.document_kinds import ARBEITSBLATT, BUCHAUSZUG
 from backend.app.config import INBOX_DIR, MATERIALS_DIR
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.dossier import Dossier
-from backend.app.models.material import Material, MaterialChunk
 from backend.app.schemas.inbox import (
     InboxFileItem,
     InboxStatusResponse,
@@ -20,8 +18,11 @@ from backend.app.schemas.inbox import (
     InboxProcessResult,
 )
 from backend.app.services.material_ingestion import (
-    extract_pdf_data,
-    chunk_text,
+    apply_book_rule,
+    next_dossier_order,
+    queue_background_processing,
+    read_document,
+    store_material,
 )
 from backend.app.services.document_analyzer import analyze_document_content
 
@@ -167,26 +168,16 @@ def process_single_inbox_file(
     6. Gibt Zusammenfassung zurück
     """
     target_mat_dir = materials_dir or MATERIALS_DIR
-    target_mat_dir.mkdir(parents=True, exist_ok=True)
 
     if not file_path.exists():
         raise FileNotFoundError(f"Datei nicht gefunden: {file_path}")
 
     file_bytes = file_path.read_bytes()
-    file_size = len(file_bytes)
-    if file_size == 0:
+    if not file_bytes:
         raise ValueError("Datei ist leer (0 Bytes).")
 
     ext = file_path.suffix.lower()
-    is_pdf = ext == ".pdf"
-
-    if is_pdf:
-        page_count, extracted_text = extract_pdf_data(file_bytes)
-        mime_type = "application/pdf"
-    else:
-        page_count = 1
-        extracted_text = ""
-        mime_type = "image/png" if ext == ".png" else "image/jpeg"
+    page_count, extracted_text, mime_type = read_document(file_bytes, ext)
 
     # KI-Inhaltsanalyse & automatische Umbenennung
     analysis = analyze_document_content(
@@ -197,14 +188,11 @@ def process_single_inbox_file(
     )
 
     title = analysis.title
-    kind = analysis.kind
-    dossier_title = analysis.dossier_title
-    dossier_kind = analysis.dossier_kind
-
-    if is_pdf and page_count >= 20 and kind in (ARBEITSBLATT, BUCHAUSZUG):
-        kind = "Buch"
-        dossier_title = f"Lehrbuch: {title}"
-        dossier_kind = "lehrbuch"
+    kind = apply_book_rule(analysis.kind, ext == ".pdf", page_count)
+    if kind != analysis.kind:
+        dossier_title, dossier_kind = f"Lehrbuch: {title}", "lehrbuch"
+    else:
+        dossier_title, dossier_kind = analysis.dossier_title, analysis.dossier_kind
 
     subject_id = analysis.subject_id
     topic_id = analysis.topic_id
@@ -221,75 +209,27 @@ def process_single_inbox_file(
         kind=dossier_kind
     )
 
-    # Nächste dossier_order ermitteln
-    existing_count = db.query(Material).filter_by(dossier_id=dossier.id).count()
-    dossier_order = existing_count + 1
-
-    # Physische Datei atomar nach materials/ verschieben
-    mat_id = f"mat_{uuid.uuid4().hex[:8]}"
-    perm_filename = f"{mat_id}{ext}"
-    perm_path = target_mat_dir / perm_filename
-    shutil.move(str(file_path), str(perm_path))
-
-    # Material-Datensatz in DB anlegen
-    material = Material(
-        id=mat_id,
+    material = store_material(
+        db, file_path, target_mat_dir,
+        suffix=ext,
+        file_size=len(file_bytes),
+        mime_type=mime_type,
+        page_count=page_count,
+        extracted_text=extracted_text,
         user_id=user_id,
         subject_id=subject_id,
         topic_id=topic_id,
         dossier_id=dossier.id,
-        dossier_order=dossier_order,
+        dossier_order=next_dossier_order(db, dossier.id),
         title=title,
         kind=kind,
         filename=analysis.normalized_filename,
-        file_path=str(perm_path),
-        file_size=file_size,
-        mime_type=mime_type,
-        page_count=page_count,
-        extracted_text=extracted_text or None,
         summary=analysis.summary or f"Automatisch aus Inbox verarbeitet in Mappe '{dossier.title}'",
         solution_pages_json=json.dumps(analysis.solution_pages) if analysis.solution_pages else None,
         worked_on_paper=analysis.worked_on_paper,
-        teacher_graded=analysis.teacher_graded
+        teacher_graded=analysis.teacher_graded,
     )
-    db.add(material)
-    db.flush()
-
-    # Text-Chunking für RAG / Volltextsuche
-    if extracted_text:
-        chunks_data = chunk_text(extracted_text)
-        for cd in chunks_data:
-            chunk = MaterialChunk(
-                material_id=material.id,
-                chunk_index=cd["chunk_index"],
-                content=cd["content"],
-                chunk_type=cd["chunk_type"],
-                page_number=cd["page_number"]
-            )
-            db.add(chunk)
-
-    db.commit()
-    db.refresh(material)
-
-    # Vorrendern: Bücher nur die ersten Seiten (Kapitel folgen nach der Segmentierung), sonst alles
-    try:
-        from backend.app.services.book_segmentation import is_candidate_book
-        from backend.app.services.material_ingestion import pre_cache_material_pages
-        pages = 3 if is_candidate_book(material) else material.page_count
-        pre_cache_material_pages(material.id, material.file_path, material.mime_type, max_pages=pages)
-    except Exception as e:
-        logger.warning(f"Inbox: Vorrendern von {material.id} fehlgeschlagen: {e}")
-
-    # Automatische Buchsegmentierung im Hintergrund anstoßen (falls Schulbuch)
-    try:
-        from backend.app.services.book_segmentation import is_candidate_book, trigger_background_book_segmentation
-        if is_candidate_book(material):
-            trigger_background_book_segmentation(material.id)
-        else:
-            from backend.app.services.page_extraction import page_extraction_service
-            page_extraction_service.queue_material(material.id)
-    except Exception as e:
-        logger.error(f"Inbox: Segmentierung/Erschließung für {material.id} nicht eingereiht: {e}", exc_info=True)
+    queue_background_processing(material)
 
     return ProcessedItemDetail(
         material_id=material.id,

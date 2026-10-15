@@ -128,6 +128,90 @@ def cleanup_temp_uploads(max_age_hours: int = 24) -> int:
     return removed
 
 
+# ---------------------------------------------------------------------------
+# Gemeinsame Bausteine für Web-Upload und Inbox
+# ---------------------------------------------------------------------------
+BOOK_MIN_PAGES = 20
+
+
+def read_document(file_bytes: bytes, ext: str) -> Tuple[int, str, str]:
+    """Seitenzahl, PDF-Text und MIME-Typ einer Datei (Bilder: 1 Seite, kein Text)."""
+    if ext.lower() == ".pdf":
+        page_count, extracted_text = extract_pdf_data(file_bytes)
+        return page_count, extracted_text, "application/pdf"
+    return 1, "", "image/png" if ext.lower() == ".png" else "image/jpeg"
+
+
+def apply_book_rule(kind: str, is_pdf: bool, page_count: int) -> str:
+    """Lange PDFs, die als Arbeitsblatt oder Buchauszug erkannt wurden, sind Bücher."""
+    if is_pdf and page_count >= BOOK_MIN_PAGES and kind in (ARBEITSBLATT, BUCHAUSZUG):
+        return "Buch"
+    return kind
+
+
+def next_dossier_order(db: Session, dossier_id: str) -> int:
+    return db.query(Material).filter_by(dossier_id=dossier_id).count() + 1
+
+
+def store_material(
+    db: Session,
+    source: Path,
+    materials_dir: Path,
+    suffix: str,
+    file_size: int,
+    mime_type: str,
+    page_count: int,
+    extracted_text: str,
+    **fields: Any,
+) -> Material:
+    """Verschiebt die Datei als <Material-ID><suffix> nach materials_dir, legt das Material samt
+    Text-Abschnitten an und committet. ``fields`` sind die übrigen Spalten (Fach, Titel, Art …)."""
+    materials_dir.mkdir(parents=True, exist_ok=True)
+    mat_id = f"mat_{uuid.uuid4().hex[:8]}"
+    perm_path = materials_dir / f"{mat_id}{suffix}"
+    shutil.move(str(source), str(perm_path))
+    fields.setdefault("filename", perm_path.name)
+
+    material = Material(
+        id=mat_id,
+        file_path=str(perm_path),
+        file_size=file_size,
+        mime_type=mime_type,
+        page_count=page_count,
+        extracted_text=extracted_text or None,
+        **fields,
+    )
+    db.add(material)
+    db.flush()
+    for cd in chunk_text(extracted_text):
+        db.add(MaterialChunk(material_id=material.id, **cd))
+    db.commit()
+    db.refresh(material)
+    return material
+
+
+def queue_background_processing(material: Material) -> None:
+    """Bücher: erste Seiten rendern und in Kapitel zerlegen (die Kapitel werden danach erschlossen).
+    Alles andere: alle Seiten rendern und die Seiten-Erschließung einreihen."""
+    from backend.app.services.book_segmentation import is_candidate_book, trigger_background_book_segmentation
+    from backend.app.services.page_renderer import page_renderer
+
+    is_book = is_candidate_book(material)
+    try:
+        pages = 3 if is_book else material.page_count
+        page_renderer.queue_material(material.id, material.file_path, material.mime_type, pages)
+    except Exception as e:
+        logger.warning(f"Vorrendern von {material.id} nicht eingereiht: {e}")
+    try:
+        if is_book:
+            trigger_background_book_segmentation(material.id)
+        else:
+            from backend.app.services.page_extraction import page_extraction_service
+            page_extraction_service.queue_material(material.id)
+    except Exception as e:
+        logger.error(f"Segmentierung/Erschließung für {material.id} nicht eingereiht: {e}", exc_info=True)
+
+
 def pre_analyze_upload(
     db: Session,
     filename: str,
@@ -170,8 +254,7 @@ def pre_analyze_upload(
                 ai_kind = ai_res.kind
                 if hint_subject and ai_kind == "Stundenplan":
                     ai_kind = predicted_kind
-                if is_pdf and page_count >= 20 and ai_kind in (ARBEITSBLATT, BUCHAUSZUG):
-                    ai_kind = "Buch"
+                ai_kind = apply_book_rule(ai_kind, is_pdf, page_count)
                 preview_snippet = ai_res.summary or ((extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None))
                 return PreAnalysisResponse(
                     upload_token=upload_token,
@@ -221,8 +304,7 @@ def pre_analyze_upload(
                 best_t_score = t_score
                 predicted_topic_id = top.id
 
-    if is_pdf and page_count >= 20 and predicted_kind in (ARBEITSBLATT, BUCHAUSZUG):
-        predicted_kind = "Buch"
+    predicted_kind = apply_book_rule(predicted_kind, is_pdf, page_count)
     if not subject_id_hint:
         from backend.app.services.timetable_analyzer import is_timetable_document, get_or_create_organisation_subject
         if predicted_kind == "Stundenplan" or is_timetable_document(filename, extracted_text):
@@ -291,28 +373,13 @@ def confirm_and_save_material(
     db: Session,
     request: MaterialConfirmRequest
 ) -> Material:
-    MATERIALS_DIR.mkdir(parents=True, exist_ok=True)
     matching_files = list(TEMP_UPLOADS_DIR.glob(f"{request.upload_token}.*"))
     if not matching_files:
         raise ValueError(f"Upload-Token '{request.upload_token}' nicht gefunden oder abgelaufen.")
 
     temp_path = matching_files[0]
-    ext = temp_path.suffix
     file_bytes = temp_path.read_bytes()
-    file_size = len(file_bytes)
-
-    if ext.lower() == ".pdf":
-        page_count, extracted_text = extract_pdf_data(file_bytes)
-        mime_type = "application/pdf"
-    else:
-        page_count = 1
-        extracted_text = ""
-        mime_type = "image/png" if ext.lower() == ".png" else "image/jpeg"
-
-    mat_id = f"mat_{uuid.uuid4().hex[:8]}"
-    perm_filename = f"{mat_id}{ext}"
-    perm_path = MATERIALS_DIR / perm_filename
-    shutil.move(str(temp_path), str(perm_path))
+    page_count, extracted_text, mime_type = read_document(file_bytes, temp_path.suffix)
 
     from backend.app.services.timetable_analyzer import (
         is_timetable_document,
@@ -345,7 +412,7 @@ def confirm_and_save_material(
             save_title = f"Stundenplan: {save_title}"
 
         # Erkannte Fächer auslesen und in DB synchronisieren
-        tt_info = heuristic_timetable_analyzer(perm_path, extracted_text)
+        tt_info = heuristic_timetable_analyzer(temp_path, extracted_text)
         erkannte = tt_info.get("erkannte_faecher", [])
         if erkannte:
             sync_subjects_to_database(db, erkannte)
@@ -380,65 +447,29 @@ def confirm_and_save_material(
                     dossier.subject_id = orga_sub.id
             save_dossier_id = dossier.id
 
-    # Nächste dossier_order ermitteln
-    dossier_order = request.dossier_order or 1
-    if save_dossier_id and not request.dossier_order:
-        existing_count = db.query(Material).filter_by(dossier_id=save_dossier_id).count()
-        dossier_order = existing_count + 1
+    dossier_order = request.dossier_order or (next_dossier_order(db, save_dossier_id) if save_dossier_id else 1)
 
-    material = Material(
-        id=mat_id,
+    material = store_material(
+        db, temp_path, MATERIALS_DIR,
+        suffix=temp_path.suffix,
+        file_size=len(file_bytes),
+        mime_type=mime_type,
+        page_count=page_count,
+        extracted_text=extracted_text,
         user_id="usr_thea",
         subject_id=save_subject_id,
         topic_id=save_topic_id,
         title=save_title,
         kind=save_kind,
-        filename=perm_filename,
-        file_path=str(perm_path),
-        file_size=file_size,
-        mime_type=mime_type,
-        page_count=page_count,
-        extracted_text=extracted_text or None,
         summary=save_summary,
         dossier_id=save_dossier_id,
         dossier_order=dossier_order,
         parent_id=request.parent_id,
         solution_pages_json=json.dumps(request.solution_pages) if request.solution_pages else None,
         worked_on_paper=request.worked_on_paper,
-        teacher_graded=request.teacher_graded
+        teacher_graded=request.teacher_graded,
     )
-    db.add(material)
-    db.flush()
-
-    if extracted_text:
-        chunks_data = chunk_text(extracted_text)
-        for cd in chunks_data:
-            chunk = MaterialChunk(
-                material_id=material.id,
-                chunk_index=cd["chunk_index"],
-                content=cd["content"],
-                chunk_type=cd["chunk_type"],
-                page_number=cd["page_number"]
-            )
-            db.add(chunk)
-
-    db.commit()
-    db.refresh(material)
-
-    # Bücher werden segmentiert und dann über ihre Kapitel vorgerendert; sonst alle Seiten rendern
-    try:
-        from backend.app.services.book_segmentation import is_candidate_book, trigger_background_book_segmentation
-        from backend.app.services.page_renderer import page_renderer
-        if is_candidate_book(material):
-            page_renderer.queue_material(material.id, material.file_path, material.mime_type, 3)
-            trigger_background_book_segmentation(material.id)
-        else:
-            page_renderer.queue_material(material.id, material.file_path, material.mime_type, material.page_count)
-            from backend.app.services.page_extraction import page_extraction_service
-            page_extraction_service.queue_material(material.id)
-    except Exception as e:
-        logger.error(f"Segmentierung/Erschließung für {material.id} nicht eingereiht: {e}", exc_info=True)
-
+    queue_background_processing(material)
     return material
 
 def render_material_page_as_image(

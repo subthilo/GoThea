@@ -153,7 +153,7 @@ def test_inbox_large_pdf_becomes_a_book_in_a_textbook_folder(db_session, tmp_pat
 
 
 def test_inbox_file_gets_chunks_signals_and_extraction(db_session, tmp_path, queued, monkeypatch):
-    monkeypatch.setattr(inbox_service, "extract_pdf_data", lambda b: (2, "Merke: Zellen\n\nAufgabe 1: Zeichne?"))
+    monkeypatch.setattr(material_ingestion, "extract_pdf_data", lambda b: (2, "Merke: Zellen\n\nAufgabe 1: Zeichne?"))
     monkeypatch.setattr(inbox_service, "analyze_document_content",
                         lambda **k: _ai_result(normalized_filename="Bio_Zellen.pdf"))
     f = _inbox_file(tmp_path, "scan.pdf", _pdf(2))
