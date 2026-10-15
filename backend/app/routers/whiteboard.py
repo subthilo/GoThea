@@ -104,6 +104,7 @@ def update_session_state(session_id: str, payload: TutorSessionUpdateState, db: 
         raise HTTPException(status_code=404, detail=f"Sitzung '{session_id}' nicht gefunden.")
 
     session.board_state_json = payload.board_state_json
+    session.updated_at = datetime.utcnow()
     if payload.snapshot_data_url is not None:
         session.snapshot_data_url = payload.snapshot_data_url
     if payload.summary_notes is not None:

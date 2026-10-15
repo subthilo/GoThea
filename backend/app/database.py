@@ -59,6 +59,20 @@ def ensure_schema_migrations(target_engine):
                 from backend.app.services.document_kinds import LEGACY_KINDS
                 for legacy, current in LEGACY_KINDS.items():
                     conn.execute(text("UPDATE materials SET kind = :new WHERE kind = :old"), {"new": current, "old": legacy})
+        res = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='tutor_sessions';")).fetchone()
+        if res:
+            session_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(tutor_sessions);")).fetchall()]
+            for col_name, col_def in [
+                ("updated_at", "DATETIME"),
+                ("last_opened_at", "DATETIME"),
+                ("title_source", "TEXT NOT NULL DEFAULT 'auto'"),
+                ("archived_at", "DATETIME"),
+            ]:
+                if col_name not in session_cols:
+                    try:
+                        conn.execute(text(f"ALTER TABLE tutor_sessions ADD COLUMN {col_name} {col_def};"))
+                    except Exception as e:
+                        logger.warning(f"Migration: Spalte tutor_sessions.{col_name} nicht angelegt: {e}")
         res = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='topics';")).fetchone()
         if res:
             topic_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(topics);")).fetchall()]
