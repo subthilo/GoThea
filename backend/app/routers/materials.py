@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.config import DATA_DIR
 from backend.app.database import get_db
-from backend.app.models.material import Material, MaterialChunk
+from backend.app.models.material import Material
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.schemas.material import (
     PreAnalysisResponse,

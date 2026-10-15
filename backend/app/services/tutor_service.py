@@ -339,7 +339,7 @@ def generate_board_exercise(
     Generiert eine interaktive Übungsaufgabe (Lückentext, Rechenaufgabe, Musterbeispiel,
     Physik-Diagramm, Formel-Herleitung oder Textfrage) für das Whiteboard.
     """
-    tutor_speech = f"Hier ist eine spannende Übungsaufgabe für dich. Schau sie dir in Ruhe an!"
+    tutor_speech = "Hier ist eine spannende Übungsaufgabe für dich. Schau sie dir in Ruhe an!"
     audio_b64 = None
     data = None
 

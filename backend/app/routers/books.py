@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -9,10 +9,8 @@ from backend.app.models.taxonomy import Subject, Topic
 from backend.app.schemas.book import BookOverviewRead, BookDetailRead, BookChapterRead
 from backend.app.services.book_segmentation import (
     auto_detect_and_segment_book,
-    auto_segment_if_known,
     trigger_background_book_segmentation,
     is_segmentation_running,
-    segment_book_material,
     get_chapter_sections,
     get_all_book_sections,
 )

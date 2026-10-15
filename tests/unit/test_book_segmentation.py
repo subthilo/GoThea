@@ -1,9 +1,5 @@
-import os
-import tempfile
 from pathlib import Path
 import pypdf
-import pytest
-from sqlalchemy.orm import Session
 
 from backend.app.models.material import Material
 from backend.app.services.book_segmentation import (
@@ -11,8 +7,6 @@ from backend.app.services.book_segmentation import (
     extract_chapters_from_pdf_outline,
     auto_segment_if_known,
     auto_detect_and_segment_book,
-    segment_book_material,
-    trigger_background_book_segmentation,
     get_chapter_sections,
     get_all_book_sections,
     FUNDAMENTE_MATHE_7_CHAPTERS,

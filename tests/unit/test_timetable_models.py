@@ -1,7 +1,5 @@
-import pytest
 from backend.app.models.timetable import TimetableSlot
 from backend.app.models.taxonomy import Subject
-from backend.app.models.user import User
 
 def test_create_timetable_slot_model(db_session):
     sub = db_session.query(Subject).filter_by(id="sub_math").first()

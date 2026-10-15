@@ -1,14 +1,10 @@
 import json
 from unittest.mock import MagicMock, patch
-from pathlib import Path
-import pytest
-from backend.app.models.taxonomy import Subject, Topic
+from backend.app.models.taxonomy import Topic
 from backend.app.services.document_analyzer import (
     analyze_document_content,
-    query_openai_analyzer,
     clean_title_from_filename,
-    sanitize_filename_part,
-    detect_kind_from_filename_and_text
+    sanitize_filename_part
 )
 
 def test_clean_title_and_sanitize():

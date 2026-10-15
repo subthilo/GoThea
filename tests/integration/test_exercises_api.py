@@ -1,6 +1,5 @@
 import json
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 def test_phrase_pool_api(client):
     res = client.get("/api/v1/exercises/phrases/error_interjections")

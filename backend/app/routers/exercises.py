@@ -1,11 +1,10 @@
-from datetime import datetime
 import json
 import base64
 import logging
-from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from backend.app.config import OPENAI_API_KEY
 from backend.app.database import get_db

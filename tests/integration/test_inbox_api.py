@@ -1,4 +1,4 @@
-from backend.app.config import INBOX_DIR, MATERIALS_DIR
+from backend.app.config import INBOX_DIR
 from tests.unit.test_inbox_service import create_sample_pdf_bytes
 
 def test_get_inbox_status_api(client):

@@ -1,6 +1,4 @@
 import json
-import pytest
-from pathlib import Path
 from backend.app.services.exercise_pool_service import ExercisePoolManager
 
 def test_canonical_subject_keys(tmp_path):

@@ -1,4 +1,3 @@
-import pytest
 from pathlib import Path
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.dossier import Dossier
@@ -7,8 +6,7 @@ from backend.app.services.timetable_analyzer import (
     match_subject_to_canonical,
     sync_subjects_to_database,
     heuristic_timetable_analyzer,
-    process_and_import_timetable,
-    CANONICAL_SUBJECTS
+    process_and_import_timetable
 )
 
 def test_match_subject_to_canonical():
@@ -31,7 +29,6 @@ def test_match_subject_to_canonical():
 
 def test_sync_subjects_adds_new_subjects_and_topics(db_session):
     # Vorher: nur Initial-Subjects
-    initial_count = db_session.query(Subject).count()
     assert db_session.query(Subject).filter_by(name="Chemie").first() is None
     assert db_session.query(Subject).filter_by(name="WAT / Wirtschaft").first() is None
 

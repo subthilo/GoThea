@@ -1,6 +1,6 @@
 import math
 from datetime import datetime, date, timedelta
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
 
 from backend.app.models.test import Test

@@ -1,0 +1,5 @@
+# Lint-Prüfung: .venv/bin/ruff check   (nur Pyflakes-Regeln: ungenutzte Importe/Variablen, echte Fehler)
+extend-exclude = ["experiments", "data", "inbox"]
+
+[lint]
+select = ["F"]

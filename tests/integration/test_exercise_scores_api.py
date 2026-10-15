@@ -1,4 +1,3 @@
-import pytest
 
 
 def test_submit_exercise_result_and_scores_api(client):

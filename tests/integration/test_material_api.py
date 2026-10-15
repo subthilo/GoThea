@@ -60,7 +60,7 @@ def test_pre_analyze_and_confirm_workflow(client):
     mat_id = mat["id"]
 
     # 3. Liste abrufen (gefiltert nach Biologie)
-    res_list = client.get(f"/api/v1/materials?subject_id=sub_bio")
+    res_list = client.get("/api/v1/materials?subject_id=sub_bio")
     assert res_list.status_code == 200
     materials = res_list.json()
     assert any(m["id"] == mat_id for m in materials)

@@ -6,8 +6,7 @@ from pypdf import PdfWriter
 from backend.app.services.page_renderer import (
     PageRenderingService,
     PRIORITY_LIVE,
-    PRIORITY_PREFETCH,
-    PRIORITY_BACKGROUND
+    PRIORITY_PREFETCH
 )
 
 def create_sample_pdf(tmp_path: Path, pages: int = 3) -> Path:

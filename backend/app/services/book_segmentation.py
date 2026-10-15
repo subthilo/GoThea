@@ -7,7 +7,6 @@ from typing import List, Dict, Any, Optional, Set
 import pypdf
 from sqlalchemy.orm import Session
 
-from backend.app.config import MATERIALS_DIR
 from backend.app.services.document_kinds import NEVER_BOOK_KINDS, normalize_kind
 from backend.app.prompts.book_toc import BOOK_TOC_SYSTEM_PROMPT
 from backend.app.services.llm import chat_params

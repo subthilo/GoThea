@@ -15,6 +15,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - Riskante oder unumkehrbare Aktionen auf dem Pi (Daten löschen, Prod anfassen) vorher bestätigen lassen. Neues erst auf **Staging** erproben.
 - Größere KI-Umbauten **messen statt raten**: `scripts/eval_document_classification.py` (Soll-Daten liegen außerhalb des Repos).
 - Frontend: Syntax-Check ohne Node per `osascript -l JavaScript -e '…new Function(src)…'`; dazu Browser-Smoke-Tests in `tests/e2e/` (Playwright/WebKit, iPad-Querformat, eigener Testserver; schlagen bei JS-Fehlern, Konsolen-Fehlern und API-Fehlern fehl). Einrichtung: `.venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m playwright install webkit`. Bedienung mit Pencil/Touch testet weiterhin der Nutzer – das ehrlich sagen.
+- Python-Lint: `.venv/bin/ruff check` (nur Pyflakes-Regeln, `ruff.toml`) muss sauber bleiben. Absichtliche Nur-Import-Zeilen mit `# noqa: F401` und Begründung markieren.
 - Nach Frontend-Änderungen den Cache-Buster in `index.html` erhöhen (`app.js?v=…`, `style.css?v=…`).
 
 ## Umgebungen
@@ -69,7 +70,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 Erledigt (Okt 2026): Dokumentarten + Neu-Einordnung, Themenkatalog aus Büchern, Seiten-Erschließung (läuft auf Staging; Bücher werden über Nacht nachgeholt), Stundenplan-Import, Test-Isolation, Renderer-Aufräumen.
 
 Vereinbarte Reihenfolge:
-1. **Aufräumen** (vor neuer Oberfläche): `frontend/app.js` (~5.100 Z.) und `style.css` (~8.200 Z.) in Module aufteilen, Dialoge aus `index.html` lösen; dafür zuerst einen einfachen automatischen Browser-Test (z. B. Playwright) für die Hauptansichten aufsetzen. Kapiteltabellen aus `book_segmentation.py` in Datendateien. ~58 ungenutzte Importe/Variablen. README (Testanzahl, Modellnamen) aktualisieren.
+1. **Aufräumen** (vor neuer Oberfläche): `frontend/app.js` (~5.100 Z.) und `style.css` (~8.200 Z.) in Module aufteilen, Dialoge aus `index.html` lösen; dafür zuerst einen einfachen automatischen Browser-Test (z. B. Playwright) für die Hauptansichten aufsetzen. Kapiteltabellen aus `book_segmentation.py` in Datendateien. README (Testanzahl, Modellnamen) aktualisieren.
 2. **Arbeitsblatt-Ablauf** komplett (siehe Konzepte), danach Arbeitsheft-Seiten, Tests & Arbeiten (inkl. Stärken/Schwächen), Mitschriften, Hefte mit PDF-Export, Vokabellisten.
 3. **Tutor** an die Seiten-Erschließung anbinden (voller Materialzugriff).
 4. Übernahme Staging → Produktion per Skript mit Sicherung (Erschließungen werden über `data/shared/` ohnehin wiederverwendet).

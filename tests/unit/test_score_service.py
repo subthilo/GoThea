@@ -1,10 +1,8 @@
-import pytest
 from datetime import datetime, timedelta
 from backend.app.models.exercise_score import ExerciseScore
 from backend.app.services.score_service import (
     calculate_adaptive_difficulty,
     record_exercise_result,
-    get_adaptive_difficulty,
     get_subject_scores_summary
 )
 

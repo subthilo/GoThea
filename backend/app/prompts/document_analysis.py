@@ -3,7 +3,7 @@ Prompts und Schemata für die intelligente Dokumenten-Analyse (Material-Ingestio
 Wird sowohl für Web-Uploads als auch für die Samba-Inbox genutzt.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 CANONICAL_SUBJECT_NAMES: List[str] = [
     "Mathematik",

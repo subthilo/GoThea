@@ -1,4 +1,3 @@
-import pytest
 from backend.app.services.tutor_service import clean_text_for_speech
 
 

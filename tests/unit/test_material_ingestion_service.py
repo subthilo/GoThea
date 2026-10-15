@@ -1,9 +1,7 @@
-import pytest
 from backend.app.services.material_ingestion import (
     clean_title_from_filename,
     detect_kind_from_filename_and_text,
     chunk_text,
-    classify_chunk,
 )
 
 def test_clean_title_from_filename():

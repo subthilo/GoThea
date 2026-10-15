@@ -4,8 +4,6 @@ import re
 import json
 import uuid
 import shutil
-import subprocess
-import tempfile
 from pathlib import Path
 from typing import Optional, Tuple, List, Dict, Any
 import base64
@@ -24,7 +22,6 @@ from backend.app.schemas.material import (
     MaterialConfirmRequest,
     MaterialUpdateRequest,
     MaterialMergeRequest,
-    MaterialReorderPagesRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -509,7 +506,6 @@ def update_material(db: Session, material_id: str, request: MaterialUpdateReques
         material.title = request.title.strip()
 
     if request.kind is not None and request.kind.strip():
-        old_kind = material.kind
         new_kind = request.kind.strip()
         material.kind = new_kind
 

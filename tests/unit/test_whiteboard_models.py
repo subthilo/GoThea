@@ -1,5 +1,3 @@
-import pytest
-from datetime import datetime
 from backend.app.models.whiteboard import TutorSession
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.test import Test

@@ -1,5 +1,4 @@
 import io
-from pathlib import Path
 import pytest
 from pypdf import PdfWriter
 from sqlalchemy import create_engine
@@ -14,7 +13,6 @@ from backend.app.services.inbox_service import (
     is_valid_inbox_file,
     get_inbox_files,
     get_inbox_status,
-    quarantine_file,
     process_single_inbox_file,
     process_all_inbox_files,
 )

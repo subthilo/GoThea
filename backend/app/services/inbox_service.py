@@ -1,14 +1,13 @@
 import json
-import os
 import shutil
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List
 from sqlalchemy.orm import Session
 
 from backend.app.services.document_kinds import ARBEITSBLATT, BUCHAUSZUG
-from backend.app.config import INBOX_DIR, INBOX_ERRORS_DIR, MATERIALS_DIR
+from backend.app.config import INBOX_DIR, MATERIALS_DIR
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.dossier import Dossier
 from backend.app.models.material import Material, MaterialChunk
@@ -20,13 +19,10 @@ from backend.app.schemas.inbox import (
     InboxProcessResult,
 )
 from backend.app.services.material_ingestion import (
-    clean_title_from_filename,
-    detect_kind_from_filename_and_text,
     extract_pdf_data,
     chunk_text,
-    SUBJECT_KEYWORDS,
 )
-from backend.app.services.document_analyzer import analyze_document_content, predict_subject_and_topic
+from backend.app.services.document_analyzer import analyze_document_content
 
 SUPPORTED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
 IGNORED_PATTERNS = {".ds_store", ".localized", "thumbs.db"}
@@ -180,7 +176,6 @@ def process_single_inbox_file(
 
     ext = file_path.suffix.lower()
     is_pdf = ext == ".pdf"
-    filename = file_path.name
 
     if is_pdf:
         page_count, extracted_text = extract_pdf_data(file_bytes)

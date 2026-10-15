@@ -1,14 +1,12 @@
-import os
 import json
 import logging
 import random
 import threading
-import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
-from backend.app.config import EXERCISE_POOL_DIR, CLOZE_POOL_DIR, OPENAI_API_KEY
+from backend.app.config import EXERCISE_POOL_DIR, CLOZE_POOL_DIR
 from backend.app.models.taxonomy import Subject
 from backend.app.models.material import Material
 from backend.app.services.tutor_service import generate_board_exercise, normalize_cloze_content

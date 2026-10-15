@@ -1,4 +1,3 @@
-import pytest
 from backend.app.services.phrase_pool_service import PhrasePoolManager
 
 def test_phrase_pool_manager_basic(tmp_path):

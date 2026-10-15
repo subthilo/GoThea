@@ -6,7 +6,6 @@ from backend.app.services.score_service import (
     calculate_exercise_rewards,
     get_level_info,
     calculate_streak_days,
-    get_gamification_overview,
     record_exercise_result
 )
 

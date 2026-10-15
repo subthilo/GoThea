@@ -1,4 +1,3 @@
-import os
 import re
 import io
 import json
@@ -13,7 +12,7 @@ from backend.app.config import OPENAI_API_KEY, OPENAI_ANALYSIS_MODEL
 from backend.app.services.llm import chat_params
 from backend.app.services.document_kinds import dossier_for_kind, normalize_kind
 from backend.app.services.topic_catalog import build_catalog_text, resolve_topic
-from backend.app.models import Subject, Topic, Dossier, Material
+from backend.app.models import Subject, Topic
 from backend.app.services.material_ingestion import (
     render_material_page_as_image,
     clean_title_from_filename,
@@ -149,7 +148,6 @@ def prepare_image_base64_for_vision(image_bytes: bytes, mime_type: str = "image/
 from backend.app.prompts.document_analysis import (
     DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
     build_analysis_user_prompt,
-    build_page_count_line,
 )
 
 
