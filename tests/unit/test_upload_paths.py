@@ -113,7 +113,6 @@ def test_confirm_of_a_book_renders_first_pages_and_segments(db_session, queued):
     assert queued == {"render": [(mat.id, 3)], "segment": [mat.id], "extract": []}
 
 
-@pytest.mark.xfail(reason="dossier_order ist im Schema mit 1 vorbelegt, die Zählung greift nie", strict=True)
 def test_confirm_of_a_timetable_files_it_under_organisation(db_session, queued):
     first = _confirm(db_session, "plan.pdf", kind="Stundenplan", title="Klasse 7b")
     second = _confirm(db_session, "plan2.pdf", kind="Stundenplan", title="Stundenplan neu")

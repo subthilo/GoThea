@@ -23,7 +23,7 @@ class MaterialConfirmRequest(BaseModel):
     subject_id: str
     topic_id: Optional[str] = None
     dossier_id: Optional[str] = None
-    dossier_order: Optional[int] = 1
+    dossier_order: Optional[int] = None  # leer: nächste freie Position in der Mappe
     parent_id: Optional[str] = None
     title: str
     kind: str = "Arbeitsblatt"
