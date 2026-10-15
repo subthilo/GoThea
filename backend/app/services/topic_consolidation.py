@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
 from backend.app.models.dossier import Dossier
 from backend.app.models.material import Material
-from backend.app.models.taxonomy import Subject, Topic
+from backend.app.models.taxonomy import Subject, Topic, TopicBookRef
 from backend.app.models.whiteboard import TutorSession
 from backend.app.prompts.topic_consolidation import TOPIC_CONSOLIDATION_SYSTEM_PROMPT
 from backend.app.services.document_kinds import BUCH, BUCHAUSZUG
@@ -20,7 +20,7 @@ from backend.app.services.llm import chat_params
 
 logger = logging.getLogger(__name__)
 
-TOPIC_REFERENCES = (Material, Dossier, TutorSession)
+TOPIC_REFERENCES = (Material, Dossier, TutorSession, TopicBookRef)
 # Bücher und ihre Kapitel umfassen viele Unterrichtseinheiten -> kein Thema auf mittlerer Ebene.
 # Kapitel erkennt man am Buch (parent_id), nicht an der Art (Kapiteltabellen setzen z. B. "Lösungsheft").
 IS_BOOK_OR_CHAPTER = or_(Material.kind.in_((BUCH, BUCHAUSZUG)), Material.parent_id.isnot(None))
@@ -43,7 +43,7 @@ class ConsolidationPlan:
 
 
 def _usage_count(db: Session, topic_id: str) -> int:
-    count = sum(db.query(model).filter_by(topic_id=topic_id).count() for model in (Dossier, TutorSession))
+    count = sum(db.query(model).filter_by(topic_id=topic_id).count() for model in (Dossier, TutorSession, TopicBookRef))
     return count + db.query(Material).filter(Material.topic_id == topic_id, not_(IS_BOOK_OR_CHAPTER)).count()
 
 
@@ -114,6 +114,15 @@ def plan_for_subject(db: Session, subject: Subject, ask=_ask_model) -> Consolida
     return plan
 
 
+def merge_topics(db: Session, target: Topic, others: List[Topic]) -> None:
+    """Hängt alle Verweise der anderen Themen auf das Zielthema um und löscht die anderen."""
+    for other in others:
+        for model in TOPIC_REFERENCES:
+            db.query(model).filter_by(topic_id=other.id).update({"topic_id": target.id})
+        db.delete(other)
+    db.flush()
+
+
 def apply_plan(db: Session, plan: ConsolidationPlan) -> None:
     if plan.error:
         raise ValueError(plan.error)
@@ -123,13 +132,7 @@ def apply_plan(db: Session, plan: ConsolidationPlan) -> None:
         topics = [db.get(Topic, tid) for tid in group.topic_ids]
         target = next((t for t in topics if t.name.strip().lower() == group.name.lower()), None) or topics[0]
         target.area = group.area or target.area
-        for other in topics:
-            if other.id == target.id:
-                continue
-            for model in TOPIC_REFERENCES:
-                db.query(model).filter_by(topic_id=other.id).update({"topic_id": target.id})
-            db.delete(other)
-        db.flush()
+        merge_topics(db, target, [t for t in topics if t.id != target.id])
         if target.name != group.name:
             target.name = group.name
     for tid in plan.delete_unused:

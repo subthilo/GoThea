@@ -36,3 +36,19 @@ class Topic(Base):
     __table_args__ = (
         UniqueConstraint("subject_id", "grade_level", "name", name="uq_topic_subject_grade_name"),
     )
+
+
+class TopicBookRef(Base):
+    """Wo ein Thema im Schulbuch steht: Abschnitt eines Buchkapitels mit Seitenbereich."""
+    __tablename__ = "topic_book_refs"
+
+    id = Column(String, primary_key=True, default=lambda: f"tbr_{uuid.uuid4().hex[:8]}")
+    topic_id = Column(String, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False)
+    material_id = Column(String, ForeignKey("materials.id", ondelete="CASCADE"), nullable=False)  # Buchkapitel
+    section_title = Column(String, nullable=False)
+    start_page = Column(Integer, nullable=False)   # Seite im Kapitel-PDF (1-basiert)
+    end_page = Column(Integer, nullable=False)
+    book_page = Column(Integer, nullable=True)     # gedruckte Buchseite des Abschnittsbeginns
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    topic = relationship("Topic", backref="book_refs")
