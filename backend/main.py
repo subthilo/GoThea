@@ -50,19 +50,21 @@ async def lifespan(app: FastAPI):
     from backend.app.services.material_ingestion import cleanup_temp_uploads
     cleanup_temp_uploads()
 
-    # 3. Hintergrund-Seiten-Renderer starten & alle Materialien einreihen
+    from backend.app.config import BACKGROUND_WORKERS_ENABLED
     from backend.app.services.page_renderer import page_renderer
-    page_renderer.start()
-    page_renderer.queue_all_database_materials(SessionLocal)
-
-    # 4. Hintergrund-Übungsspeicher starten (kontinuierliches Vorrendern aller Übungsarten)
     from backend.app.services.exercise_pool_service import exercise_pool_manager
-    exercise_pool_manager.start(SessionLocal)
+    if BACKGROUND_WORKERS_ENABLED:
+        # 3. Hintergrund-Seiten-Renderer starten & alle Materialien einreihen
+        page_renderer.start()
+        page_renderer.queue_all_database_materials(SessionLocal)
+        # 4. Hintergrund-Übungsspeicher starten (kontinuierliches Vorrendern aller Übungsarten)
+        exercise_pool_manager.start(SessionLocal)
 
     yield
 
-    exercise_pool_manager.stop()
-    page_renderer.stop()
+    if BACKGROUND_WORKERS_ENABLED:
+        exercise_pool_manager.stop()
+        page_renderer.stop()
 
 app = FastAPI(title="GoThea Multimodale Lernzentrale", lifespan=lifespan)
 

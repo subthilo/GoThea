@@ -18,3 +18,10 @@ def test_old_database_gets_new_columns_and_current_kinds(tmp_path):
     assert {"solution_pages_json", "worked_on_paper", "teacher_graded"} <= cols
     assert kinds == {"m1": "Mitschrift", "m2": "Klassenarbeit", "m3": "Test"}
     engine.dispose()
+
+
+def test_tests_are_isolated_from_real_data_and_openai():
+    from backend.app import config
+    assert "gothea_test_" in str(config.DATA_DIR)
+    assert config.OPENAI_API_KEY == ""
+    assert config.BACKGROUND_WORKERS_ENABLED is False

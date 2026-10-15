@@ -21,6 +21,9 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 # Seitenbilder ein Vielfaches an Tokens verbrauchte.
 OPENAI_ANALYSIS_MODEL = os.getenv("OPENAI_ANALYSIS_MODEL", OPENAI_MODEL)
 
+# Hintergrund-Worker (Seiten-Renderer, Übungs-Pool) beim App-Start; in Tests abgeschaltet
+BACKGROUND_WORKERS_ENABLED = os.getenv("GOTHEA_BACKGROUND_WORKERS", "1") != "0"
+
 # Umgebung: "staging" oder "production" (Default: "staging" für Sicherheit)
 APP_ENV = os.getenv("APP_ENV", "staging").lower()
 IS_STAGING = APP_ENV == "staging"

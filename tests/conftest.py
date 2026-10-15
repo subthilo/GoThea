@@ -1,3 +1,16 @@
+import os
+import shutil
+import tempfile
+
+# Tests laufen nie gegen echte Daten, nie gegen die OpenAI-API und ohne Hintergrund-Worker.
+# Muss vor dem ersten Import aus backend gesetzt werden (config liest die Umgebung beim Import;
+# load_dotenv überschreibt bereits gesetzte Variablen nicht).
+_TEST_DATA_DIR = tempfile.mkdtemp(prefix="gothea_test_")
+os.environ["DATA_DIR"] = _TEST_DATA_DIR
+os.environ["INBOX_DIR"] = os.path.join(_TEST_DATA_DIR, "inbox")
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["GOTHEA_BACKGROUND_WORKERS"] = "0"
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
@@ -86,3 +99,7 @@ def disable_openai_in_tests(monkeypatch):
     monkeypatch.setattr("backend.app.services.timetable_analyzer.OPENAI_API_KEY", None)
 
 
+
+
+def pytest_sessionfinish(session, exitstatus):
+    shutil.rmtree(_TEST_DATA_DIR, ignore_errors=True)
