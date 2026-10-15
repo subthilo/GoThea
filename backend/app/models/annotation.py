@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, Index
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 from backend.app.database import Base
 
 class PageAnnotation(Base):
@@ -14,7 +14,8 @@ class PageAnnotation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    material = relationship("Material", backref="page_annotations")
+    # Mit dem Dokument löschen (ohne Kaskade versuchte SQLAlchemy, material_id zu leeren → Fehler)
+    material = relationship("Material", backref=backref("page_annotations", cascade="all, delete-orphan"))
 
     __table_args__ = (
         Index("idx_annotations_mat_page", "material_id", "page_number", unique=True),

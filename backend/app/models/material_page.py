@@ -2,7 +2,7 @@ from datetime import datetime
 import uuid
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from backend.app.database import Base
 
@@ -24,7 +24,8 @@ class MaterialPage(Base):
     model = Column(String, nullable=True)
     extracted_at = Column(DateTime, default=datetime.utcnow)
 
-    material = relationship("Material", backref="pages")
+    # Mit dem Dokument löschen (ohne Kaskade versuchte SQLAlchemy, material_id zu leeren → Fehler)
+    material = relationship("Material", backref=backref("pages", cascade="all, delete-orphan"))
 
     __table_args__ = (
         Index("idx_material_pages_unique", "material_id", "page_number", unique=True),
