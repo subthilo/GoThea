@@ -24,7 +24,8 @@ from backend.app.services.timetable_analyzer import (
     sync_subjects_to_database,
     heuristic_timetable_analyzer,
     get_or_create_organisation_subject,
-    is_timetable_document
+    is_timetable_document,
+    ORGANISATION_DOSSIER_TITLE,
 )
 
 logger = logging.getLogger(__name__)
@@ -162,155 +163,132 @@ def analyze_document_content(
         )
 
     if raw_ai_data and isinstance(raw_ai_data, dict):
-        # 0. Zuerst prüfen, ob es sich um einen Stundenplan handelt
-        if is_timetable_document(effective_name, extracted_text, raw_ai_data):
-            orga_sub = get_or_create_organisation_subject(db)
-            kind = "Stundenplan"
-            title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(effective_name)
-            if "stundenplan" not in title.lower():
-                title = f"Stundenplan: {title}"
-
-            erkannte = raw_ai_data.get("erkannte_faecher") or []
-            if not erkannte:
-                tt_info = heuristic_timetable_analyzer(file_path, extracted_text)
-                erkannte = tt_info.get("erkannte_faecher", [])
-            if erkannte:
-                sync_subjects_to_database(db, erkannte)
-
-            safe_title = sanitize_filename_part(title)
-            ext = file_path.suffix.lower() or ".pdf"
-            norm_name = raw_ai_data.get("normierter_dateiname") or f"Organisation_Stundenplan_{safe_title}{ext}"
-            summary = raw_ai_data.get("zusammenfassung") or f"Stundenplan mit {len(erkannte)} erkannten Schulfächern."
-
-            return DocumentAnalysisResult(
-                subject_id=orga_sub.id,
-                subject_name=orga_sub.name,
-                topic_id=None,
-                topic_name="Stundenplan",
-                kind=kind,
-                title=title,
-                normalized_filename=norm_name,
-                dossier_title="Stundenplan & Organisation",
-                dossier_kind="organisation",
-                summary=summary
-            )
+        return _result_from_ai(db, raw_ai_data, file_path, effective_name, extracted_text)
+    return _result_from_heuristics(db, file_path, effective_name, extracted_text)
 
 
-        # 1. Fach zuordnen
-        fach_str = (raw_ai_data.get("fach") or "").strip().lower()
-        subject = None
-        # Direkt in DB nach Fachname suchen (z.B. "Mathematik", "Biologie", "Physik")
-        for s in db.query(Subject).all():
-            if s.name.lower() in fach_str or (fach_str and fach_str in s.name.lower()):
-                subject = s
-                break
-        if not subject:
-            subject_id = SUBJECT_NAME_TO_ID.get(fach_str)
-            if not subject_id:
-                for key, sid in SUBJECT_NAME_TO_ID.items():
-                    if key in fach_str:
-                        subject_id = sid
-                        break
-            if subject_id:
-                subject = db.query(Subject).filter_by(id=subject_id).first()
-        if not subject:
-            # Fallback über Vorhersage
-            pred_sub_id, _ = predict_subject_and_topic(db, effective_name, extracted_text)
-            subject = db.query(Subject).filter_by(id=pred_sub_id).first()
-        if not subject:
-            subject = db.query(Subject).first()
+def _extension(effective_name: str, file_path: Path) -> str:
+    return Path(effective_name).suffix.lower() or file_path.suffix.lower() or ".pdf"
 
-        subject_id = subject.id if subject else "sub_math"
 
-        # 2. Thema aus dem Katalog übernehmen oder (mittlere Ebene) neu anlegen
-        oberthema = (raw_ai_data.get("oberthema") or "").strip()
-        topic = resolve_topic(db, subject_id, oberthema, raw_ai_data.get("themenbereich"))
+def _timetable_result(
+    db: Session,
+    title: str,
+    recognised_subjects: List[str],
+    ext: str,
+    normalized_filename: Optional[str] = None,
+    summary: Optional[str] = None,
+) -> DocumentAnalysisResult:
+    """Stundenpläne gehören immer zum Fach Organisation; erkannte Fächer werden angelegt."""
+    if recognised_subjects:
+        sync_subjects_to_database(db, recognised_subjects)
+    orga_sub = get_or_create_organisation_subject(db)
+    if "stundenplan" not in title.lower():
+        title = f"Stundenplan: {title}"
+    return DocumentAnalysisResult(
+        subject_id=orga_sub.id,
+        subject_name=orga_sub.name,
+        topic_id=None,
+        topic_name="Stundenplan",
+        kind="Stundenplan",
+        title=title,
+        normalized_filename=normalized_filename or f"Organisation_Stundenplan_{sanitize_filename_part(title)}{ext}",
+        dossier_title=ORGANISATION_DOSSIER_TITLE,
+        dossier_kind="organisation",
+        summary=summary or f"Stundenplan mit {len(recognised_subjects)} erkannten Schulfächern.",
+    )
 
-        topic_id = topic.id if topic else None
-        topic_name = topic.name if topic else (oberthema or None)
 
-        # 3. Dokumentart
-        kind = normalize_kind(raw_ai_data.get("dokumentart"))
+def _subject_from_ai_name(db: Session, fach: str, effective_name: str, extracted_text: str) -> Optional[Subject]:
+    """Fach zum Namen, den die KI nennt: Fachname in der DB, dann Kurz-/Altnamen, dann Heuristik."""
+    fach = fach.strip().lower()
+    for s in db.query(Subject).all():
+        if s.name.lower() in fach or (fach and fach in s.name.lower()):
+            return s
+    subject_id = SUBJECT_NAME_TO_ID.get(fach) or next(
+        (sid for key, sid in SUBJECT_NAME_TO_ID.items() if key in fach), None)
+    subject = db.query(Subject).filter_by(id=subject_id).first() if subject_id else None
+    if not subject:
+        pred_sub_id, _ = predict_subject_and_topic(db, effective_name, extracted_text)
+        subject = db.query(Subject).filter_by(id=pred_sub_id).first()
+    return subject or db.query(Subject).first()
 
-        # Falls Stundenplan: Fächer in DB synchronisieren
-        if kind == "Stundenplan":
-            erkannte = raw_ai_data.get("erkannte_faecher") or []
-            if erkannte:
-                sync_subjects_to_database(db, erkannte)
 
-        # 4. Titel & normierter Dateiname
-        title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(effective_name)
-        norm_name = raw_ai_data.get("normierter_dateiname") or ""
-        if not norm_name or not norm_name.endswith(".pdf"):
-            ext = Path(effective_name).suffix.lower() or file_path.suffix.lower() or ".pdf"
-            safe_fach = sanitize_filename_part(subject.name if subject else "Fach")
-            safe_thema = sanitize_filename_part(topic_name or "Allgemein")
-            safe_kind = sanitize_filename_part(kind)
-            safe_title = sanitize_filename_part(title)
-            norm_name = f"{safe_fach}_{safe_thema}_{safe_kind}_{safe_title}{ext}"
+def _result_from_ai(
+    db: Session,
+    raw_ai_data: Dict[str, Any],
+    file_path: Path,
+    effective_name: str,
+    extracted_text: str,
+) -> DocumentAnalysisResult:
+    ext = _extension(effective_name, file_path)
+    title = raw_ai_data.get("inhaltlicher_titel") or clean_title_from_filename(effective_name)
 
-        # 5. Mappe bestimmen
-        dossier_title, dossier_kind = dossier_for_kind(kind, title, topic_name or subject.name, subject.name)
+    if is_timetable_document(effective_name, extracted_text, raw_ai_data):
+        recognised = raw_ai_data.get("erkannte_faecher") or \
+            heuristic_timetable_analyzer(file_path, extracted_text).get("erkannte_faecher", [])
+        return _timetable_result(db, title, recognised, ext,
+                                 normalized_filename=raw_ai_data.get("normierter_dateiname"),
+                                 summary=raw_ai_data.get("zusammenfassung"))
 
-        summary = raw_ai_data.get("zusammenfassung")
+    subject = _subject_from_ai_name(db, raw_ai_data.get("fach") or "", effective_name, extracted_text)
+    subject_id = subject.id if subject else "sub_math"
 
-        return DocumentAnalysisResult(
-            subject_id=subject_id,
-            subject_name=subject.name if subject else "Allgemein",
-            topic_id=topic_id,
-            topic_name=topic_name,
-            kind=kind,
-            title=title,
-            normalized_filename=norm_name,
-            dossier_title=dossier_title,
-            dossier_kind=dossier_kind,
-            summary=summary,
-            solution_pages=parse_page_list(raw_ai_data.get("loesungsseiten")),
-            worked_on_paper=_as_bool(raw_ai_data.get("von_schuelerin_bearbeitet")),
-            teacher_graded=_as_bool(raw_ai_data.get("von_lehrkraft_bewertet")),
-        )
+    # Thema aus dem Katalog übernehmen oder (mittlere Ebene) neu anlegen
+    oberthema = (raw_ai_data.get("oberthema") or "").strip()
+    topic = resolve_topic(db, subject_id, oberthema, raw_ai_data.get("themenbereich"))
+    topic_id = topic.id if topic else None
+    topic_name = topic.name if topic else (oberthema or None)
 
-    # Heuristik-Fallback wenn keine KI verfügbar ist
+    kind = normalize_kind(raw_ai_data.get("dokumentart"))
+    if kind == "Stundenplan" and raw_ai_data.get("erkannte_faecher"):
+        sync_subjects_to_database(db, raw_ai_data["erkannte_faecher"])
+
+    norm_name = raw_ai_data.get("normierter_dateiname") or ""
+    if not norm_name.endswith(".pdf"):
+        norm_name = "_".join(sanitize_filename_part(part) for part in (
+            subject.name if subject else "Fach", topic_name or "Allgemein", kind, title)) + ext
+
+    dossier_title, dossier_kind = dossier_for_kind(kind, title, topic_name or subject.name, subject.name)
+    return DocumentAnalysisResult(
+        subject_id=subject_id,
+        subject_name=subject.name if subject else "Allgemein",
+        topic_id=topic_id,
+        topic_name=topic_name,
+        kind=kind,
+        title=title,
+        normalized_filename=norm_name,
+        dossier_title=dossier_title,
+        dossier_kind=dossier_kind,
+        summary=raw_ai_data.get("zusammenfassung"),
+        solution_pages=parse_page_list(raw_ai_data.get("loesungsseiten")),
+        worked_on_paper=_as_bool(raw_ai_data.get("von_schuelerin_bearbeitet")),
+        teacher_graded=_as_bool(raw_ai_data.get("von_lehrkraft_bewertet")),
+    )
+
+
+def _result_from_heuristics(
+    db: Session,
+    file_path: Path,
+    effective_name: str,
+    extracted_text: str,
+) -> DocumentAnalysisResult:
+    ext = _extension(effective_name, file_path)
     if is_timetable_document(effective_name, extracted_text):
-        kind = "Stundenplan"
         tt_info = heuristic_timetable_analyzer(file_path, extracted_text)
-        if tt_info.get("erkannte_faecher"):
-            sync_subjects_to_database(db, tt_info["erkannte_faecher"])
         title = tt_info.get("titel") or clean_title_from_filename(effective_name)
-        if "stundenplan" not in title.lower():
-            title = f"Stundenplan: {title}"
-        orga_sub = get_or_create_organisation_subject(db)
-        safe_title = sanitize_filename_part(title)
-        ext = Path(effective_name).suffix.lower() or file_path.suffix.lower() or ".pdf"
-        norm_name = f"Organisation_Stundenplan_{safe_title}{ext}"
-        return DocumentAnalysisResult(
-            subject_id=orga_sub.id,
-            subject_name=orga_sub.name,
-            topic_id=None,
-            topic_name="Stundenplan",
-            kind=kind,
-            title=title,
-            normalized_filename=norm_name,
-            dossier_title="Stundenplan & Organisation",
-            dossier_kind="organisation",
-            summary=f"Stundenplan mit {len(tt_info.get('erkannte_faecher', []))} erkannten Schulfächern."
-        )
-    else:
-        subject_id, topic_id = predict_subject_and_topic(db, effective_name, extracted_text)
-        subject = db.query(Subject).filter_by(id=subject_id).first()
-        topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
+        return _timetable_result(db, title, tt_info.get("erkannte_faecher", []), ext)
 
-        kind = normalize_kind(detect_kind_from_filename_and_text(effective_name, extracted_text))
-        title = clean_title_from_filename(effective_name)
+    subject_id, topic_id = predict_subject_and_topic(db, effective_name, extracted_text)
+    subject = db.query(Subject).filter_by(id=subject_id).first()
+    topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
 
-        safe_fach = sanitize_filename_part(subject.name if subject else "Fach")
-        safe_title = sanitize_filename_part(title)
-        ext = Path(effective_name).suffix.lower() or file_path.suffix.lower() or ".pdf"
-        norm_name = f"{safe_fach}_{safe_title}{ext}"
+    kind = normalize_kind(detect_kind_from_filename_and_text(effective_name, extracted_text))
+    title = clean_title_from_filename(effective_name)
+    norm_name = f"{sanitize_filename_part(subject.name if subject else 'Fach')}_{sanitize_filename_part(title)}{ext}"
 
-        subject_label = subject.name if subject else "Schule"
-        dossier_title, dossier_kind = dossier_for_kind(kind, title, topic.name if topic else subject_label, subject_label)
-
+    subject_label = subject.name if subject else "Schule"
+    dossier_title, dossier_kind = dossier_for_kind(kind, title, topic.name if topic else subject_label, subject_label)
     return DocumentAnalysisResult(
         subject_id=subject_id,
         subject_name=subject.name if subject else "Allgemein",
