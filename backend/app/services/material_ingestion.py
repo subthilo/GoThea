@@ -436,6 +436,8 @@ def confirm_and_save_material(
             trigger_background_book_segmentation(material.id)
         else:
             page_renderer.queue_material(material.id, material.file_path, material.mime_type, material.page_count)
+            from backend.app.services.page_extraction import page_extraction_service
+            page_extraction_service.queue_material(material.id)
     except Exception:
         pass
 

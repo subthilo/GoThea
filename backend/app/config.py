@@ -36,6 +36,14 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = DATA_DIR / "app_data.db"
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
+# Gemeinsam für Staging und Produktion: inhaltsadressierte Ergebnisse (z. B. Seiten-Erschließung),
+# damit dieselbe Datei nicht in beiden Umgebungen erneut per KI verarbeitet wird
+SHARED_DATA_DIR = Path(os.getenv("SHARED_DATA_DIR", str(PROJECT_ROOT / "data" / "shared")))
+SHARED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Langsames Nachholen der Buch-Erschließung im Hintergrund (Sekunden zwischen zwei Buchseiten, 0 = aus)
+BOOK_EXTRACTION_INTERVAL_SECONDS = float(os.getenv("GOTHEA_BOOK_EXTRACTION_INTERVAL", "20"))
+
 MATERIALS_DIR = DATA_DIR / "materials"
 MATERIALS_DIR.mkdir(parents=True, exist_ok=True)
 

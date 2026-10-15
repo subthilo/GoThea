@@ -160,6 +160,14 @@ Zusätzlich liefert die Analyse drei Signale, die am Material gespeichert werden
 
 Neu-Einordnung bestehender Dokumente: `scripts/reanalyze_materials.py` (Fach bleibt unverändert, Bücher verlieren ihre Kapitel nur bei ausdrücklich anderer Dokumentart).
 
+### Seiteninhalt-Erschließung (`services/page_extraction.py`)
+
+Jede Seite wird einmalig per KI transkribiert und als `material_pages`-Eintrag gespeichert: vollständiger Text in Markdown, Handschrift der Schülerin als «S: …», Korrekturen/Punkte/Noten der Lehrkraft als «L: …», Abbildungen als [Abbildung: …], dazu die Aufgaben der Seite und Kennzeichen (Handschrift, Korrekturen, Lösungsseite, Lesbarkeit). Der Gesamttext landet in `materials.extracted_text` (Grundlage für Tutor und Suche).
+
+* **Reihenfolge:** Neue Dokumente sofort nach Upload/Inbox; Buchkapitel gedrosselt im Hintergrund (`GOTHEA_BOOK_EXTRACTION_INTERVAL`, Standard 20 s pro Seite, `0` = aus), seitenweise, sodass neue Dokumente immer vorgehen. Beim Start werden alle noch nicht erschlossenen Seiten eingereiht.
+* **Einmal für beide Umgebungen:** Ergebnisse liegen zusätzlich inhaltsadressiert (SHA-256 der Datei + Seite) in `data/shared/page_extractions/`. Dieselbe Datei – auch später in Produktion hochgeladen – wird nicht erneut per KI verarbeitet.
+* **Abruf:** `GET /api/v1/materials/{id}/pages/{page}/content` (Eltern-Modus, solange Lösungsseiten für Thea noch nicht serverseitig verborgen werden) erschließt eine fehlende Seite bei Bedarf sofort.
+
 ### Modell-Allokation
 
 * **Dokumentanalyse:** `OPENAI_ANALYSIS_MODEL`, Standard = Hauptmodell (`OPENAI_MODEL`). In der Messung mit `scripts/eval_document_classification.py` an 24 echten Dokumenten erreichte `gpt-6-luna` 24/24 korrekte Dokumentarten, `gpt-4o-mini` 19/24 bei rund 15-fachem Token-Verbrauch für Seitenbilder.

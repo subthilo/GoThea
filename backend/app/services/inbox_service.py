@@ -287,6 +287,9 @@ def process_single_inbox_file(
         from backend.app.services.book_segmentation import is_candidate_book, trigger_background_book_segmentation
         if is_candidate_book(material):
             trigger_background_book_segmentation(material.id)
+        else:
+            from backend.app.services.page_extraction import page_extraction_service
+            page_extraction_service.queue_material(material.id)
     except Exception:
         pass
 

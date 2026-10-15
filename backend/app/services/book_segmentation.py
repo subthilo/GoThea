@@ -904,8 +904,10 @@ def _refresh_rendered_pages(chapters: List[Material], outdated_ids: List[str]) -
         from backend.app.services.page_renderer import page_renderer
         if outdated_ids:
             page_renderer.purge_material_cache(outdated_ids)
+        from backend.app.services.page_extraction import PRIORITY_BOOK_BACKFILL, page_extraction_service
         for chap in chapters:
             page_renderer.queue_material(chap.id, chap.file_path, chap.mime_type, chap.page_count)
+            page_extraction_service.queue_material(chap.id, PRIORITY_BOOK_BACKFILL)
     except Exception as e:
         logger.warning(f"Kapitel konnten nicht zum Vorrendern eingereiht werden: {e}")
 

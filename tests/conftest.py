@@ -8,6 +8,7 @@ import tempfile
 _TEST_DATA_DIR = tempfile.mkdtemp(prefix="gothea_test_")
 os.environ["DATA_DIR"] = _TEST_DATA_DIR
 os.environ["INBOX_DIR"] = os.path.join(_TEST_DATA_DIR, "inbox")
+os.environ["SHARED_DATA_DIR"] = os.path.join(_TEST_DATA_DIR, "shared")
 os.environ["OPENAI_API_KEY"] = ""
 os.environ["GOTHEA_BACKGROUND_WORKERS"] = "0"
 

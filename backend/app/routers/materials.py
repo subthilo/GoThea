@@ -217,6 +217,44 @@ def get_material_detail(
         chunks=mat.chunks
     )
 
+@router.get("/{material_id}/pages/{page}/content", dependencies=[Depends(require_parent)])
+def get_page_content(
+    material_id: str,
+    page: int,
+    extract: bool = True,
+    db: Session = Depends(get_db)
+):
+    """
+    Erschlossener Inhalt einer Seite (Transkription, Aufgaben, Handschrift, Korrekturen).
+    Fehlt die Seite noch, wird sie bei extract=true sofort erschlossen.
+    Nur im Eltern-Modus, solange Lösungsseiten für Thea noch nicht serverseitig verborgen werden.
+    """
+    from backend.app.models.material_page import MaterialPage
+    from backend.app.services.page_extraction import extract_material
+
+    mat = db.query(Material).filter_by(id=material_id).first()
+    if not mat:
+        raise HTTPException(status_code=404, detail="Material nicht gefunden.")
+    if page < 1 or page > max(1, mat.page_count or 1):
+        raise HTTPException(status_code=404, detail="Seite existiert nicht.")
+    row = db.query(MaterialPage).filter_by(material_id=mat.id, page_number=page).first()
+    if row is None and extract:
+        extract_material(db, mat, [page])
+        row = db.query(MaterialPage).filter_by(material_id=mat.id, page_number=page).first()
+    if row is None:
+        raise HTTPException(status_code=409, detail="Seite ist noch nicht erschlossen.")
+    return {
+        "material_id": mat.id,
+        "page": page,
+        "text": row.text,
+        "tasks": json.loads(row.tasks_json) if row.tasks_json else [],
+        "has_handwriting": row.has_handwriting,
+        "has_teacher_marks": row.has_teacher_marks,
+        "is_solution_page": row.is_solution_page,
+        "legibility": row.legibility,
+        "extracted_at": row.extracted_at,
+    }
+
 @router.get("/{material_id}/file")
 def get_material_file(
     material_id: str,

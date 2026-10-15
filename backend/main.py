@@ -11,6 +11,7 @@ from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.dossier import Dossier
 from backend.app.models.material import Material, MaterialChunk
 from backend.app.models.annotation import PageAnnotation
+from backend.app.models.material_page import MaterialPage  # noqa: F401
 from backend.app.models.timetable import TimetableSlot
 from backend.app.models.whiteboard import TutorSession, TutorMessage, TutorExercise
 from backend.app.services.seeder import seed_database
@@ -53,7 +54,10 @@ async def lifespan(app: FastAPI):
     from backend.app.config import BACKGROUND_WORKERS_ENABLED
     from backend.app.services.page_renderer import page_renderer
     from backend.app.services.exercise_pool_service import exercise_pool_manager
+    from backend.app.services.page_extraction import page_extraction_service
     if BACKGROUND_WORKERS_ENABLED:
+        # 5. Seiten-Erschließung: neue Dokumente sofort, Buchkapitel gedrosselt im Hintergrund
+        page_extraction_service.start(SessionLocal)
         # 3. Hintergrund-Seiten-Renderer starten & alle Materialien einreihen
         page_renderer.start()
         page_renderer.queue_all_database_materials(SessionLocal)
@@ -63,6 +67,7 @@ async def lifespan(app: FastAPI):
     yield
 
     if BACKGROUND_WORKERS_ENABLED:
+        page_extraction_service.stop()
         exercise_pool_manager.stop()
         page_renderer.stop()
 
