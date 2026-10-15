@@ -14,12 +14,15 @@ from backend.app.models.material import Material
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.whiteboard import TutorSession
 from backend.app.prompts.topic_consolidation import TOPIC_CONSOLIDATION_SYSTEM_PROMPT
+from backend.app.services.document_kinds import BUCH, BUCHAUSZUG
 from backend.app.services.llm import chat_params
 from backend.app.services.topic_catalog import protected_topic_names
 
 logger = logging.getLogger(__name__)
 
 TOPIC_REFERENCES = (Material, Dossier, TutorSession)
+# Bücher und Kapitel umfassen viele Unterrichtseinheiten -> kein Thema auf mittlerer Ebene
+BOOK_KINDS = (BUCH, BUCHAUSZUG)
 
 
 @dataclass
@@ -39,7 +42,8 @@ class ConsolidationPlan:
 
 
 def _usage_count(db: Session, topic_id: str) -> int:
-    return sum(db.query(model).filter_by(topic_id=topic_id).count() for model in TOPIC_REFERENCES)
+    count = sum(db.query(model).filter_by(topic_id=topic_id).count() for model in (Dossier, TutorSession))
+    return count + db.query(Material).filter(Material.topic_id == topic_id, Material.kind.notin_(BOOK_KINDS)).count()
 
 
 def _ask_model(payload: dict) -> dict:
@@ -101,7 +105,8 @@ def plan_for_subject(db: Session, subject: Subject, ask=_ask_model) -> Consolida
                 "name": t.name,
                 "bereich": t.area,
                 "geschützt": t.name in protected,
-                "dokumente": [m.title for m in db.query(Material).filter_by(topic_id=t.id).limit(6)],
+                "dokumente": [m.title for m in db.query(Material).filter(
+                    Material.topic_id == t.id, Material.kind.notin_(BOOK_KINDS)).limit(6)],
             }
             for t in used.values()
         ],
@@ -120,6 +125,8 @@ def plan_for_subject(db: Session, subject: Subject, ask=_ask_model) -> Consolida
 def apply_plan(db: Session, plan: ConsolidationPlan) -> None:
     if plan.error:
         raise ValueError(plan.error)
+    db.query(Material).filter(Material.subject_id == plan.subject_id, Material.kind.in_(BOOK_KINDS)) \
+        .update({"topic_id": None}, synchronize_session=False)
     protected = protected_topic_names().get(plan.subject_id, set())
     for group in plan.groups:
         topics = [db.get(Topic, tid) for tid in group.topic_ids]

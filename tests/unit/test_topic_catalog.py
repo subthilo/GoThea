@@ -76,3 +76,19 @@ def test_consolidation_merges_references_and_drops_unused(db_session):
     renamed = db_session.get(Topic, "top_other")
     assert renamed.name == "Hookesches Gesetz" and renamed.area == "Mechanik"
     assert db_session.get(Topic, seed.id).name == protected
+
+
+def test_book_topics_do_not_count_and_are_cleared(db_session):
+    chapter_topic = _topic(db_session, "top_chapter", "Register & Nachschlagen")
+    book = Material(id="mat_book", user_id="usr_thea", subject_id="sub_physics", topic_id=chapter_topic.id,
+                    title="Physik plus", kind="Buch", filename="b.pdf", file_path="/tmp/b.pdf")
+    db_session.add(book)
+    db_session.commit()
+
+    subject = db_session.get(Subject, "sub_physics")
+    plan = tc.plan_for_subject(db_session, subject, ask=lambda payload: {"themen": [
+        {"name": t["name"], "bereich": "Mechanik", "ids": [t["id"]]} for t in payload["themen"]]})
+    assert "top_chapter" in plan.delete_unused
+    tc.apply_plan(db_session, plan)
+    assert db_session.get(Material, "mat_book").topic_id is None
+    assert db_session.get(Topic, "top_chapter") is None
