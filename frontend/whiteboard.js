@@ -38,7 +38,6 @@
 
   // Unterlagen- & Arbeitsblatt-Elemente
   const materialSelect = document.getElementById("wb-material-select");
-  const btnToggleUnderlay = document.getElementById("btn-wb-toggle-underlay");
   const docUnderlay = document.getElementById("wb-doc-underlay");
   const docUnderlayImg = document.getElementById("wb-doc-underlay-img");
   const docTopbar = document.getElementById("wb-doc-topbar");
@@ -55,8 +54,6 @@
   let tutorAudioEnabled = true;
 
   let currentSubjectMaterialsList = [];
-  let activeMaterial = null;
-  let activeMaterialPage = 1;
   let isUnderlayVisible = false;
 
   // Modus: Buchseite auf der Tafel beschreiben
@@ -1388,7 +1385,6 @@
 
     materialSelect.innerHTML = `<option value="">Freies Üben (ohne Vorlage)</option>`;
     if (currentSubjectMaterialsList.length === 0) {
-      clearWhiteboardMaterial();
       return;
     }
 
@@ -1419,69 +1415,13 @@
         materialSelect.appendChild(optgroup);
       }
     });
-
-    if (activeMaterial) {
-      materialSelect.value = activeMaterial.id;
-    }
   }
 
-  function setWhiteboardMaterial(material, page = 1, showUnderlay = true) {
-    activeMaterial = material;
-    activeMaterialPage = Math.max(1, Math.min(page, material.page_count || 1));
-    if (materialSelect) {
-      materialSelect.value = material.id;
-    }
-    if (btnToggleUnderlay) {
-      btnToggleUnderlay.style.display = "inline-block";
-    }
-
-    if (showUnderlay) {
-      isUnderlayVisible = true;
-      renderUnderlayPage();
-    }
-    updateUnderlayVisibility();
-  }
-
-  function clearWhiteboardMaterial() {
-    activeMaterial = null;
-    activeMaterialPage = 1;
-    isUnderlayVisible = false;
-    if (materialSelect) materialSelect.value = "";
-    if (btnToggleUnderlay) btnToggleUnderlay.style.display = "none";
-    updateUnderlayVisibility();
-  }
-
-  function renderUnderlayPage() {
-    if (!activeMaterial || !docUnderlayImg) return;
-    const p = activeMaterialPage;
-    docUnderlayImg.src = `/api/v1/materials/${activeMaterial.id}/preview?page=${p}`;
-
-    if (docBadge) docBadge.textContent = activeMaterial.kind || "Vorlage";
-    if (docTitle) docTitle.textContent = activeMaterial.title || "Dokument";
-    if (docPageInfo) docPageInfo.textContent = `Seite ${p} / ${activeMaterial.page_count || 1}`;
-
-    if (btnDocPrev) btnDocPrev.disabled = p <= 1;
-    if (btnDocNext) btnDocNext.disabled = p >= (activeMaterial.page_count || 1);
-  }
-
+  // Dokument-Unterlage und ihre Kopfleiste ausblenden (Ende des Dokumentmodus)
   function updateUnderlayVisibility() {
     if (!docUnderlay || !docTopbar) return;
-    if (isUnderlayVisible && activeMaterial) {
-      docUnderlay.style.display = "block";
-      docTopbar.style.display = "flex";
-      if (btnToggleUnderlay) {
-        btnToggleUnderlay.textContent = "🙈 Ausblenden";
-        btnToggleUnderlay.classList.add("active");
-      }
-      updateViewportPan();
-    } else {
-      docUnderlay.style.display = "none";
-      docTopbar.style.display = "none";
-      if (btnToggleUnderlay) {
-        btnToggleUnderlay.textContent = "📄 Vorlage";
-        btnToggleUnderlay.classList.remove("active");
-      }
-    }
+    docUnderlay.style.display = "none";
+    docTopbar.style.display = "none";
   }
 
   async function initSession() {
@@ -1733,14 +1673,6 @@
     }));
   }
 
-  // Underlay Ein-/Ausblenden Button
-  if (btnToggleUnderlay) {
-    btnToggleUnderlay.addEventListener("click", () => {
-      isUnderlayVisible = !isUnderlayVisible;
-      updateUnderlayVisibility();
-    });
-  }
-
   // Vorlagen-Pager Buttons
   if (btnDocPrev) {
     btnDocPrev.addEventListener("click", async () => {
@@ -1753,11 +1685,6 @@
         if (btnDocNext) btnDocNext.disabled = p >= bookPageContext.pageCount;
         docUnderlayImg.src = `/api/v1/materials/${bookPageContext.materialId}/preview?page=${p}`;
         loadBookPageAnnotations();
-        return;
-      }
-      if (activeMaterial && activeMaterialPage > 1) {
-        activeMaterialPage--;
-        renderUnderlayPage();
       }
     });
   }
@@ -1772,11 +1699,6 @@
         if (btnDocNext) btnDocNext.disabled = p >= bookPageContext.pageCount;
         docUnderlayImg.src = `/api/v1/materials/${bookPageContext.materialId}/preview?page=${p}`;
         loadBookPageAnnotations();
-        return;
-      }
-      if (activeMaterial && activeMaterialPage < (activeMaterial.page_count || 1)) {
-        activeMaterialPage++;
-        renderUnderlayPage();
       }
     });
   }
@@ -1854,7 +1776,7 @@
           body: JSON.stringify({
             image_base64: snapshot,
             audio_enabled: tutorAudioEnabled,
-            material_id: activeMaterial ? activeMaterial.id : null
+            material_id: null
           })
         });
 
@@ -2357,9 +2279,6 @@
   // Modal Handlers
   function openExerciseModal() {
     if (!exerciseModal) return;
-    if (activeMaterial && exerciseTopicInput) {
-      exerciseTopicInput.placeholder = `z. B. ${activeMaterial.title}`;
-    }
     exerciseModal.style.display = "flex";
   }
 
@@ -2408,7 +2327,7 @@
             topic_name: topicText || null,
             difficulty: diff,
             custom_prompt: promptText || null,
-            material_id: activeMaterial ? activeMaterial.id : null,
+            material_id: null,
             audio_enabled: tutorAudioEnabled,
             pos_x: initialX,
             pos_y: initialY
@@ -2651,7 +2570,6 @@
     if (btnDocPrev) btnDocPrev.disabled = page <= 1;
     if (btnDocNext) btnDocNext.disabled = page >= pageCount;
     if (btnDocClose) btnDocClose.style.display = returnToBook ? "none" : "inline-block";
-    if (btnToggleUnderlay) btnToggleUnderlay.style.display = "none";
 
     // Underlay anzeigen
     isUnderlayVisible = true;
