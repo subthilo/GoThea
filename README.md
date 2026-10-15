@@ -184,8 +184,9 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 * **Dynamische Taxonomie:** Vollständige CRUD-Schnittstelle für Fächer (Farben, Icons) und Themen.
 
 ### 7. Staging- vs. Produktions-Umgebung auf dem Pi
-* **Port 8000 (Produktion):** Persistente Echtdaten der Schülerin (`data/prod/app_data.db`, `inbox/prod`).
-* **Port 8001 (Staging):** Isolierte Testumgebung (`data/staging/app_data.db`, `inbox/staging`) mit Ein-Klick-Reset-Funktion und Dummy-Daten-Generierung.
+* **Port 8000 (Produktion):** Code in `~/GoThea`, Echtdaten der Schülerin in `data/prod/` (Dienst `gothea`).
+* **Port 8001 (Staging):** Eigener Code-Ordner `~/GoThea-staging`, Daten in `data/staging/` (Dienst `gothea-staging`), mit Reset und Dummy-Daten. Neues läuft immer zuerst hier.
+* **`data/shared/`** gehört beiden: Cache der Seiten-Erschließung (nach Datei-Prüfsumme und Seite).
 
 ---
 
@@ -194,14 +195,13 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 | Bereich | Technologie | Beschreibung / Zweck |
 | :--- | :--- | :--- |
 | **Backend Framework** | **Python 3.9+ / FastAPI** | Asynchrones, hochperformantes REST- und WebSocket-Backend |
-| **KI / Multimodal Ingestion** | **OpenAI `gpt-4o-mini` (Vision)** | Schnelle Bild- & Textanalyse von Scans, Titelerkennung, JSON-Mode |
-| **KI / Didaktischer Tutor** | **`gpt-6-luna` & `gpt-6.1-sol`** | Sokratischer Live-Tutor (iPad Whiteboard / Audio) & Tafel-Diagnose |
+| **KI** | **OpenAI (Modell per `OPENAI_MODEL`, auf dem Pi `gpt-6-luna`)** | Dokument-Analyse, Seiten-Erschließung (Vision), Inhaltsverzeichnisse, Tutor; einziger Zugang über `services/llm.py` mit Kostenprotokoll |
 | **Datenbank** | **SQLite (WAL-Modus)** | Lokale Edge-Datenbank, latenzarm, ausfallsicher, zero-maintenance |
 | **ORM** | **SQLAlchemy 2.0** | Typisierte Datenbankmodelle (`materials`, `dossiers`, `timetable_slots`, `taxonomy`) |
 | **PDF Rendering** | **Poppler `pdftoppm`** | Natives C-Tool auf Linux/Pi für ultraschnelles Seiten-Rendering |
-| **Frontend Core** | **HTML5 / Vanilla JavaScript (ES6+)** | Leichtgewichtig, frameworklos für maximale iPadOS-Safari-Performance |
+| **Frontend Core** | **HTML5 / Vanilla JavaScript (ES6+)** | Ohne Build: klassische Skripte je Bereich, Dialoge serverseitig eingesetzt |
 | **Styling** | **Modern Vanilla CSS** | HSL-Farbsystem, dynamisches Theme, iOS Human Interface Design |
-| **Testsuite** | **pytest / pytest-cov** | 82 Unit- & Integrationstests mit 87% Code Coverage |
+| **Testsuite** | **pytest, Playwright (WebKit), ruff** | Unit-, Integrations- und Browser-Tests (iPad-Querformat, Pencil-Referenz) |
 | **Deployment** | **systemd & Bash (`deploy.sh`)** | Dual-Service-Management auf Raspberry Pi OS (Staging & Prod) |
 
 ---
@@ -212,35 +212,40 @@ Das Herzstück der Interaktion zwischen Schüler und KI auf dem Whiteboard:
 GoThea/
 ├── backend/
 │   ├── app/
-│   │   ├── models/            # SQLAlchemy ORM (User, Test, Material, Whiteboard, Taxonomy)
-│   │   ├── routers/           # REST-Endpunkte (Profile, Planner, Materials, Whiteboard, Env)
-│   │   ├── schemas/           # Pydantic DTOs & Validierung
-│   │   ├── services/          # Business-Logik (Planner, Material-Ingestion, Seeder)
-│   │   ├── config.py          # Umgebungs-Konfiguration (Prod vs. Staging)
-│   │   └── database.py        # SQLite Engine & Session-Handling
-│   ├── main.py                # FastAPI-Applikation & Lifespan Event-Handling
-│   └── requirements.txt       # Python-Abhängigkeiten (bereinigt für ARM 32/64-Bit)
-├── frontend/
-│   ├── index.html             # Single-Page-App Shell & Tab-Navigation
-│   ├── style.css              # Globales Styling & iPad-Optimierungen
-│   ├── app.js                 # App-State, Router, Material-Viewer & Modals
-│   └── whiteboard.js          # Canvas-Engine, Touch/Pencil, Zoom, Underlay & Tools
-├── docs/                      # Vollständige modulare technische Dokumentation
-│   ├── 01_architecture/       # Systemübersicht, Datenbank-DDL, Security
-│   ├── 02_modules/            # Detailkonzepte (Whiteboard, Planner, Materials, Tutor)
-│   ├── 03_api_specs/          # REST API & WebSocket Spezifikationen
-│   ├── 04_test_reports/       # Iterative Testberichte & Code Coverage
-│   ├── index.md               # Dokumentations-Index
-│   └── systemarchitektur_gothea.md # Umfassendes Gesamtdokument
+│   │   ├── models/            # SQLAlchemy-Modelle (Material, Seiten, Notizen, Tafeln, Taxonomie …)
+│   │   ├── routers/           # REST-Endpunkte
+│   │   ├── schemas/           # Pydantic-Modelle
+│   │   ├── services/          # Fachlogik, u. a.:
+│   │   │   ├── llm.py                 #   einziger Zugang zur OpenAI-API (Protokoll, Fehler, Wiederholungen)
+│   │   │   ├── material_ingestion.py  #   Upload: Voranalyse, Speichern, Hintergrund-Aufträge, Bearbeiten
+│   │   │   ├── inbox_service.py       #   Inbox-Ordner → Materialien (gleiche Bausteine wie der Upload)
+│   │   │   ├── document_analyzer.py   #   KI-Einordnung (Art, Fach, Thema, Titel, Signale)
+│   │   │   ├── document_heuristics.py #   Einordnung ohne KI (Rückfall)
+│   │   │   ├── page_extraction.py     #   Seiten-Erschließung (Grundlage für den Tutor)
+│   │   │   ├── book_segmentation.py   #   Bücher → Kapitel
+│   │   │   └── frontend_page.py       #   setzt index.html aus Teilen zusammen, Cache-Version
+│   │   ├── prompts/           # alle KI-Prompts
+│   │   ├── book_tables/       # bekannte Inhaltsverzeichnisse (JSON)
+│   │   ├── config.py          # Pfade und Schalter aus der Umgebung
+│   │   └── database.py        # Engine, schlanke Spalten-Migrationen
+│   ├── main.py                # FastAPI-App, Lifespan (Migrationen, Seeder, Hintergrund-Worker)
+│   └── requirements.txt
+├── frontend/                  # ohne Build, klassische Skripte in fester Ladereihenfolge
+│   ├── index.html             # Seitengerüst und Tabs; Dialoge über <!-- include: … -->
+│   ├── dialogs/               # Dialoge (vom Server eingesetzt)
+│   ├── js/                    # api.js (Backend-Zugang), ink_core.js (Zeichenkern), je Bereich eine Datei
+│   ├── css/                   # Stile je Bereich (Reihenfolge = Kaskade)
+│   ├── whiteboard.js          # Tafel (nutzt den Zeichenkern)
+│   └── cloze_trainer.js       # Lückentext-Übung
+├── scripts/                   # Pflege-Skripte (Neu-Einordnung, Themenkatalog, Klassifizierungs-Messung)
 ├── tests/
-│   ├── integration/           # Integrationstests für alle REST-APIs & WebSockets
-│   ├── unit/                  # Unit-Tests für Algorithmen & ORM-Modelle
-│   └── conftest.py            # Pytest Fixtures & Test-Datenbank Setup
-├── deploy.sh                  # One-Click Deployment-Script für Raspberry Pi
-├── gothea.service             # Systemd-Konfiguration für Produktion (Port 8000)
-├── gothea-staging.service     # Systemd-Konfiguration für Staging (Port 8001)
-├── pytest.ini                 # Test-Konfiguration
-└── README.md                  # Dieses Dokument
+│   ├── unit/, integration/    # pytest
+│   └── e2e/                   # Browser-Tests (Playwright/WebKit, iPad-Querformat)
+├── docs/                      # ältere, modulare Dokumentation (teils überholt)
+├── deploy.sh                  # Deploy auf den Pi (Standard: Staging)
+├── gothea.service             # systemd, Produktion (Port 8000)
+├── gothea-staging.service     # systemd, Staging (Port 8001)
+└── CLAUDE.md                  # aktuelle Arbeitsgrundlage: Architektur, Stolperfallen, Stand
 ```
 
 ---
@@ -262,14 +267,18 @@ cd GoThea
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Abhängigkeiten installieren
-pip install -r backend/requirements.txt
+# Abhängigkeiten installieren (inkl. Browser-Tests und Lint)
+pip install -r requirements-dev.txt
+python -m playwright install webkit
 ```
 
 ### 3. Tests ausführen
 ```bash
-# Gesamte Testsuite mit Coverage-Report ausführen
-pytest --cov=backend/app tests/ -v
+# Gesamte Testsuite (ohne Playwright werden die Browser-Tests übersprungen)
+pytest -q
+
+# Lint (nur Pyflakes-Regeln)
+ruff check
 ```
 
 ### 4. Lokalen Entwicklungsserver starten
@@ -283,17 +292,13 @@ Anschließend die Web-App im Browser öffnen: **`http://localhost:8000`**
 
 ## 🍓 Deployment auf dem Raspberry Pi
 
-Das Projekt verfügt über ein automatisiertes Deployment-Script (`deploy.sh`), das vor jedem Rollout lokal die Testsuite erzwingt und den Code anschließend per SSH/rsync auf den Raspberry Pi überträgt.
+`deploy.sh` führt lokal die Tests aus, überträgt den Code per rsync, startet den Dienst neu und wartet auf `/api/health`. Daten (`data/`), `inbox/` und `experiments/` werden nicht übertragen.
 
 ```bash
-# Beide Umgebungen (Produktion & Staging) aktualisieren
-./deploy.sh all
-
-# Nur die Staging-Testumgebung aktualisieren
-./deploy.sh staging
-
-# Nur die Produktionsumgebung aktualisieren
-./deploy.sh prod
+./deploy.sh            # Staging (Standard)
+./deploy.sh prod       # Produktion – erst, wenn es auf Staging lief
+./deploy.sh all        # beide
+./deploy.sh -f         # nur Frontend-Dateien, ohne Neustart (gilt fürs gewählte Ziel)
 ```
 
 ### Zugriff im Heimnetzwerk:
