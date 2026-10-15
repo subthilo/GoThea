@@ -1,6 +1,5 @@
 import io
 import os
-import re
 import json
 import uuid
 import shutil
@@ -24,6 +23,13 @@ from backend.app.schemas.material import (
     MaterialMergeRequest,
 )
 
+from backend.app.services.document_heuristics import (
+    clean_title_from_filename,
+    detect_kind_from_filename_and_text,
+    predict_subject,
+    predict_topic,
+)
+
 logger = logging.getLogger(__name__)
 
 def prepare_image_base64_for_vision(image_bytes: bytes, mime_type: str = "image/png") -> str:
@@ -40,61 +46,6 @@ def prepare_image_base64_for_vision(image_bytes: bytes, mime_type: str = "image/
     except Exception:
         return base64.b64encode(image_bytes).decode("utf-8")
 
-
-SUBJECT_KEYWORDS: Dict[str, List[str]] = {
-    "sub_math": ["mathe", "mathematik", "bruch", "brüche", "rational", "zahlen", "gleichung", "geometrie", "dreieck", "rechnen", "term", "dreisatz", "proportional", "prozent"],
-    "sub_bio": ["bio", "biologie", "zelle", "mikroskop", "pflanze", "tier", "organell", "ökosystem", "chloroplast", "vakuole", "fotosynthese", "blattaufbau"],
-    "sub_german": ["deutsch", "gedicht", "lyrik", "grammatik", "aufsatz", "inhaltsangabe", "satzbau", "ballade", "rechtschreibung", "kommasetzung", "erörterung"],
-    "sub_english": ["englisch", "english", "vocabulary", "grammar", "tense", "present", "past", "words", "unit", "text", "reading", "simple past", "progressive"],
-    "sub_geo": ["geografie", "geographie", "erdkunde", "karte", "kontinent", "klima", "ozean", "vulkan", "erde", "landschaft", "tektonik"],
-    "sub_history": ["geschichte", "antike", "mittelalter", "rom", "griechenland", "ägypten", "ritter", "kaiser", "quelle", "neuzeit", "feudalismus"],
-    "sub_physics": ["physik", "kraft", "optik", "licht", "spiegel", "geschwindigkeit", "energie", "magnet", "hebel", "akustik", "wärme"],
-    "sub_chemie": ["chemie", "stoff", "reaktion", "atom", "molekül", "säure", "lauge", "teilchenmodell", "dichte", "aggregatzustand"],
-    "sub_informatik": ["informatik", "computer", "algorithmus", "programmieren", "scratch", "python", "daten", "binär"],
-    "sub_pb": ["politische bildung", "politik", "demokratie", "grundgesetz", "wahlen", "gesellschaft", "bundestag"],
-    "sub_kunst": ["kunst", "zeichnen", "malen", "perspektive", "farben", "künstler", "skizze"],
-    "sub_musik": ["musik", "noten", "tonleiter", "instrument", "komponist", "rhythmus", "orchester"],
-    "sub_sport": ["sport", "bewegung", "regeln", "leichtathletik", "turnen", "training"],
-    "sub_wat": ["wat", "wirtschaft", "arbeit", "technik", "beruf", "werkstoff", "holz", "metall"],
-    "sub_ler": ["ler", "ethik", "religion", "philosophie", "werte", "glaube"],
-    "sub_franzoesisch": ["französisch", "franzoesisch", "vocabulaire", "grammaire", "français"],
-    "sub_orga": ["stundenplan", "wochenplan", "timetable", "organisation", "termine", "schulwoche", "ferien"],
-}
-
-def clean_title_from_filename(filename: str) -> str:
-    base = Path(filename).stem
-    cleaned = re.sub(r"[_\-\.]+", " ", base)
-    words = cleaned.strip().split()
-    return " ".join(w.capitalize() for w in words) if words else "Unbenanntes Material"
-
-def sanitize_filename_part(text: str) -> str:
-    """Wandelt Umlaute und Sonderzeichen für saubere Dateinamen um."""
-    replacements = {
-        "ä": "ae", "ö": "oe", "ü": "ue",
-        "Ä": "Ae", "Ö": "Oe", "Ü": "Ue",
-        "ß": "ss"
-    }
-    for orig, rep in replacements.items():
-        text = text.replace(orig, rep)
-    cleaned = re.sub(r"[^a-zA-Z0-9_\-]+", "_", text)
-    return cleaned.strip("_")
-
-
-
-def detect_kind_from_filename_and_text(filename: str, text: str) -> str:
-    lower_f = filename.lower()
-    lower_t = text.lower()
-    if any(k in lower_f or k in lower_t for k in ["stundenplan", "wochenplan", "timetable"]):
-        return "Stundenplan"
-    if any(k in lower_f or k in lower_t for k in ["heft", "notiz", "mitschrift", "hefter"]):
-        return "Hefterseite"
-    if any(k in lower_f or k in lower_t for k in ["buch", "lehrbuch", "seite", "kapitel"]):
-        return "Buchauszug"
-    if any(k in lower_f or k in lower_t for k in ["klassenarbeit", "klausur"]):
-        return "Klassenarbeit"
-    if any(k in lower_f or k in lower_t for k in ["test", "probe", "kontrolle", "uebungszettel"]):
-        return "Test"
-    return "Arbeitsblatt"
 
 def extract_pdf_data(file_bytes: bytes) -> Tuple[int, str]:
     try:
@@ -212,6 +163,49 @@ def queue_background_processing(material: Material) -> None:
         logger.error(f"Segmentierung/Erschließung für {material.id} nicht eingereiht: {e}", exc_info=True)
 
 
+def _snippet(text: str) -> Optional[str]:
+    return (text[:280] + "...") if len(text) > 280 else (text or None)
+
+
+def _pre_analysis_with_ai(
+    db: Session,
+    temp_path: Path,
+    extracted_text: str,
+    hint_subject: Optional[Subject],
+    fallback_kind: str,
+    is_pdf: bool,
+    **common: Any,
+) -> Optional[PreAnalysisResponse]:
+    """KI-Einordnung; None, wenn sie nichts Brauchbares liefert. Ein fixiertes Fach (Upload von der
+    Fachseite) bleibt bestehen; Titel, Art, Zusammenfassung und ggf. Thema kommen von der KI."""
+    from backend.app.services.document_analyzer import analyze_document_content
+    try:
+        ai_res = analyze_document_content(db, temp_path, extracted_text, common["mime_type"],
+                                          original_filename=common["filename"])
+    except Exception as e:
+        logger.warning(f"KI-Vorabanalyse im Web-Upload fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
+        return None
+    if not ai_res or not ai_res.subject_id:
+        return None
+
+    subject_matches = not hint_subject or ai_res.subject_id == hint_subject.id
+    kind = ai_res.kind
+    if hint_subject and kind == "Stundenplan":
+        kind = fallback_kind
+    return PreAnalysisResponse(
+        **common,
+        predicted_subject_id=hint_subject.id if hint_subject else ai_res.subject_id,
+        predicted_topic_id=ai_res.topic_id if subject_matches else None,
+        predicted_title=ai_res.title,
+        predicted_kind=apply_book_rule(kind, is_pdf, common["page_count"]),
+        preview_snippet=ai_res.summary or _snippet(extracted_text),
+        extracted_text=extracted_text or None,
+        solution_pages=ai_res.solution_pages,
+        worked_on_paper=ai_res.worked_on_paper,
+        teacher_graded=ai_res.teacher_graded,
+    )
+
+
 def pre_analyze_upload(
     db: Session,
     filename: str,
@@ -219,116 +213,52 @@ def pre_analyze_upload(
     content_type: str,
     subject_id_hint: Optional[str] = None
 ) -> PreAnalysisResponse:
+    """Legt den Upload unter einem Token ab und schlägt Fach, Thema, Titel und Art vor
+    (mit KI, sonst heuristisch). Gespeichert wird erst bei der Bestätigung."""
     TEMP_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     upload_token = f"upl_{uuid.uuid4().hex[:12]}"
     ext = Path(filename).suffix or (".pdf" if "pdf" in content_type else ".png")
-    temp_filename = f"{upload_token}{ext}"
-    temp_path = TEMP_UPLOADS_DIR / temp_filename
+    temp_path = TEMP_UPLOADS_DIR / f"{upload_token}{ext}"
     temp_path.write_bytes(file_bytes)
 
     is_pdf = "pdf" in content_type.lower() or ext.lower() == ".pdf"
-    if is_pdf:
-        page_count, extracted_text = extract_pdf_data(file_bytes)
-    else:
-        page_count = 1
-        extracted_text = ""
+    page_count, extracted_text = extract_pdf_data(file_bytes) if is_pdf else (1, "")
+    common = dict(upload_token=upload_token, filename=filename, file_size=len(file_bytes),
+                  mime_type=content_type, page_count=page_count)
 
-    corpus = f"{filename} {extracted_text}".lower()
-    predicted_subject_id: Optional[str] = None
-    predicted_topic_id: Optional[str] = None
-    predicted_title: str = clean_title_from_filename(filename)
-    predicted_kind: str = normalize_kind(detect_kind_from_filename_and_text(filename, extracted_text), default=ARBEITSBLATT)
-
-    # 1. Intelligente KI-Analyse (falls OpenAI konfiguriert). Ein fixiertes Fach (Upload von der
-    #    Fachseite) bleibt bestehen; Titel, Art, Zusammenfassung und ggf. Thema kommen von der KI.
-    from backend.app.services import llm
+    heuristic_kind = normalize_kind(detect_kind_from_filename_and_text(filename, extracted_text), default=ARBEITSBLATT)
     hint_subject = db.query(Subject).filter_by(id=subject_id_hint).first() if subject_id_hint else None
+
+    from backend.app.services import llm
     if llm.is_available():
-        try:
-            from backend.app.services.document_analyzer import analyze_document_content
-            ai_res = analyze_document_content(
-                db, temp_path, extracted_text, content_type, original_filename=filename
-            )
-            if ai_res and ai_res.subject_id:
-                subject_matches = not hint_subject or ai_res.subject_id == hint_subject.id
-                ai_kind = ai_res.kind
-                if hint_subject and ai_kind == "Stundenplan":
-                    ai_kind = predicted_kind
-                ai_kind = apply_book_rule(ai_kind, is_pdf, page_count)
-                preview_snippet = ai_res.summary or ((extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None))
-                return PreAnalysisResponse(
-                    upload_token=upload_token,
-                    filename=filename,
-                    file_size=len(file_bytes),
-                    mime_type=content_type,
-                    page_count=page_count,
-                    predicted_subject_id=hint_subject.id if hint_subject else ai_res.subject_id,
-                    predicted_topic_id=ai_res.topic_id if subject_matches else None,
-                    predicted_title=ai_res.title,
-                    predicted_kind=ai_kind,
-                    preview_snippet=preview_snippet,
-                    extracted_text=extracted_text or None,
-                    solution_pages=ai_res.solution_pages,
-                    worked_on_paper=ai_res.worked_on_paper,
-                    teacher_graded=ai_res.teacher_graded,
-                )
-        except Exception as e:
-            logger.warning(f"KI-Vorabanalyse im Web-Upload fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
+        ai_response = _pre_analysis_with_ai(db, temp_path, extracted_text, hint_subject, heuristic_kind,
+                                            is_pdf, **common)
+        if ai_response:
+            return ai_response
 
-    # 2. Heuristik-Fallback (Offline oder mit festem Fach-Hint)
-    if hint_subject:
-        predicted_subject_id = hint_subject.id
-    else:
-        best_score = 0
-        all_subjects = db.query(Subject).all()
-        subject_map = {s.id: s for s in all_subjects}
+    # Heuristik (ohne KI oder wenn die KI nichts liefert)
+    corpus = f"{filename} {extracted_text}".lower()
+    predicted_subject_id = hint_subject.id if hint_subject else predict_subject(db, corpus)
+    predicted_topic_id = predict_topic(db, predicted_subject_id, corpus) if predicted_subject_id else None
+    predicted_title = clean_title_from_filename(filename)
+    predicted_kind = apply_book_rule(heuristic_kind, is_pdf, page_count)
 
-        for sub_id, keywords in SUBJECT_KEYWORDS.items():
-            score = sum(1 for kw in keywords if kw in corpus)
-            if sub_id in subject_map and subject_map[sub_id].name.lower() in corpus:
-                score += 3
-            if score > best_score:
-                best_score = score
-                predicted_subject_id = sub_id
-
-        if not predicted_subject_id and all_subjects:
-            predicted_subject_id = all_subjects[0].id
-
-    if predicted_subject_id:
-        topics = db.query(Topic).filter_by(subject_id=predicted_subject_id).all()
-        best_t_score = 0
-        for top in topics:
-            t_words = [w.lower() for w in top.name.split() if len(w) > 3]
-            t_score = sum(1 for w in t_words if w in corpus)
-            if t_score > best_t_score:
-                best_t_score = t_score
-                predicted_topic_id = top.id
-
-    predicted_kind = apply_book_rule(predicted_kind, is_pdf, page_count)
     if not subject_id_hint:
         from backend.app.services.timetable_analyzer import is_timetable_document, get_or_create_organisation_subject
         if predicted_kind == "Stundenplan" or is_timetable_document(filename, extracted_text):
             predicted_kind = "Stundenplan"
-            orga_sub = get_or_create_organisation_subject(db)
-            predicted_subject_id = orga_sub.id
+            predicted_subject_id = get_or_create_organisation_subject(db).id
             predicted_topic_id = None
             if "stundenplan" not in predicted_title.lower():
                 predicted_title = f"Stundenplan: {predicted_title}"
 
-    preview_snippet = (extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None)
-
-
     return PreAnalysisResponse(
-        upload_token=upload_token,
-        filename=filename,
-        file_size=len(file_bytes),
-        mime_type=content_type,
-        page_count=page_count,
+        **common,
         predicted_subject_id=predicted_subject_id,
         predicted_topic_id=predicted_topic_id,
         predicted_title=predicted_title,
         predicted_kind=predicted_kind,
-        preview_snippet=preview_snippet,
+        preview_snippet=_snippet(extracted_text),
         extracted_text=extracted_text or None
     )
 

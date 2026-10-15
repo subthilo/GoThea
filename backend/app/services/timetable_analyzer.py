@@ -12,9 +12,9 @@ from backend.app.services import llm
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.dossier import Dossier
 from backend.app.models.material import Material
+from backend.app.services.document_heuristics import sanitize_filename_part
 from backend.app.services.material_ingestion import (
     render_material_page_as_image,
-    sanitize_filename_part,
     prepare_image_base64_for_vision
 )
 

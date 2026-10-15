@@ -1,11 +1,7 @@
-import re
-import io
 import logging
-import base64
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Tuple
-from PIL import Image
+from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 
 from backend.app.config import OPENAI_ANALYSIS_MODEL
@@ -14,10 +10,15 @@ from backend.app.services.document_kinds import dossier_for_kind, normalize_kind
 from backend.app.services.topic_catalog import build_catalog_text, resolve_topic
 from backend.app.models import Subject, Topic
 from backend.app.services.material_ingestion import (
+    prepare_image_base64_for_vision,
     render_material_page_as_image,
+)
+from backend.app.services.document_heuristics import (
+    SUBJECT_NAME_TO_ID,
     clean_title_from_filename,
     detect_kind_from_filename_and_text,
-    SUBJECT_KEYWORDS,
+    predict_subject_and_topic,
+    sanitize_filename_part,
 )
 from backend.app.services.timetable_analyzer import (
     sync_subjects_to_database,
@@ -27,80 +28,6 @@ from backend.app.services.timetable_analyzer import (
 )
 
 logger = logging.getLogger(__name__)
-
-def predict_subject_and_topic(
-    db: Session,
-    filename: str,
-    text: str
-) -> Tuple[str, Optional[str]]:
-    """Heuristische Fach- und Themenprognose anhand von Dateinamen und extrahiertem Text."""
-    corpus = f"{filename} {text}".lower()
-    all_subjects = db.query(Subject).filter_by(is_active=True).all()
-    subject_map = {s.id: s for s in all_subjects}
-
-    best_subject_id = None
-    best_score = 0
-
-    for sub_id, keywords in SUBJECT_KEYWORDS.items():
-        score = sum(1 for kw in keywords if kw in corpus)
-        if sub_id in subject_map and subject_map[sub_id].name.lower() in corpus:
-            score += 3
-        if score > best_score:
-            best_score = score
-            best_subject_id = sub_id
-
-    if not best_subject_id and all_subjects:
-        best_subject_id = all_subjects[0].id
-
-    predicted_topic_id = None
-    if best_subject_id:
-        topics = db.query(Topic).filter_by(subject_id=best_subject_id).all()
-        best_t_score = 0
-        for top in topics:
-            t_words = top.name.lower().split()
-            t_score = sum(2 for w in t_words if len(w) > 3 and w in corpus)
-            if t_score > best_t_score:
-                best_t_score = t_score
-                predicted_topic_id = top.id
-
-    return best_subject_id or "sub_math", predicted_topic_id
-
-SUBJECT_NAME_TO_ID: Dict[str, str] = {
-    "mathematik": "sub_math",
-    "mathe": "sub_math",
-    "biologie": "sub_bio",
-    "bio": "sub_bio",
-    "deutsch": "sub_german",
-    "german": "sub_german",
-    "englisch": "sub_english",
-    "english": "sub_english",
-    "geschichte": "sub_history",
-    "history": "sub_history",
-    "geografie": "sub_geo",
-    "geographie": "sub_geo",
-    "erdkunde": "sub_geo",
-    "geo": "sub_geo",
-    "physik": "sub_physics",
-    "physics": "sub_physics",
-    "chemie": "sub_chemie",
-    "informatik": "sub_informatik",
-    "politische bildung": "sub_pb",
-    "pb": "sub_pb",
-    "kunst": "sub_kunst",
-    "musik": "sub_musik",
-    "sport": "sub_sport",
-    "ler": "sub_ler",
-    "wat": "sub_wat",
-    "französisch": "sub_franzoesisch",
-    "franzoesisch": "sub_franzoesisch",
-    "spanisch": "sub_spanisch",
-    "latein": "sub_latein",
-    "russisch": "sub_russisch",
-    "astronomie": "sub_astronomie",
-    "organisation": "sub_orga",
-    "stundenplan": "sub_orga",
-    "stundenplan & organisation": "sub_orga",
-}
 
 @dataclass
 class DocumentAnalysisResult:
@@ -117,34 +44,6 @@ class DocumentAnalysisResult:
     solution_pages: List[int] = field(default_factory=list)
     worked_on_paper: Optional[bool] = None
     teacher_graded: Optional[bool] = None
-
-
-def sanitize_filename_part(text: str) -> str:
-    """Wandelt Umlaute und Sonderzeichen für saubere Dateinamen um."""
-    replacements = {
-        "ä": "ae", "ö": "oe", "ü": "ue",
-        "Ä": "Ae", "Ö": "Oe", "Ü": "Ue",
-        "ß": "ss"
-    }
-    for orig, rep in replacements.items():
-        text = text.replace(orig, rep)
-    # Nur alphanumerische Zeichen und Unterstriche
-    cleaned = re.sub(r"[^a-zA-Z0-9_\-]+", "_", text)
-    return cleaned.strip("_")
-
-
-def prepare_image_base64_for_vision(image_bytes: bytes, mime_type: str = "image/png") -> str:
-    """Skaliert ein Bild auf max. 1600x1600 Pixel und liefert Base64-JPEG."""
-    try:
-        img = Image.open(io.BytesIO(image_bytes))
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-        img.thumbnail((1600, 1600))
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=85)
-        return base64.b64encode(buf.getvalue()).decode("utf-8")
-    except Exception:
-        return base64.b64encode(image_bytes).decode("utf-8")
 
 
 from backend.app.prompts.document_analysis import (
