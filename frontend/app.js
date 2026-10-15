@@ -647,6 +647,17 @@ function switchToTab(tabName) {
   if (btn) btn.click();
 }
 
+// Vollbild-Modi (fixierte Seite ohne Scrollen) gelten nur für Stundenplan und Tafel.
+// Jede Ansicht, die einen Tab aktiviert, muss diese Funktion aufrufen.
+function applyTabViewModes(tabName) {
+  const modes = { timetable: "timetable-zen-mode", whiteboard: "whiteboard-zen-mode" };
+  Object.entries(modes).forEach(([tab, cls]) => {
+    const on = tabName === tab;
+    document.documentElement.classList.toggle(cls, on);
+    document.body.classList.toggle(cls, on);
+  });
+}
+
 // Tab Navigation
 document.querySelectorAll(".nav-tab").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -666,21 +677,12 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
       checkInboxStatus();
       loadUploadsHistory();
     }
+    applyTabViewModes(btn.dataset.tab);
     if (btn.dataset.tab === "timetable") {
-      document.documentElement.classList.add("timetable-zen-mode");
-      document.body.classList.add("timetable-zen-mode");
       loadTimetable();
-    } else {
-      document.documentElement.classList.remove("timetable-zen-mode");
-      document.body.classList.remove("timetable-zen-mode");
     }
     if (btn.dataset.tab === "whiteboard") {
-      document.documentElement.classList.add("whiteboard-zen-mode");
-      document.body.classList.add("whiteboard-zen-mode");
       window.dispatchEvent(new Event("resize"));
-    } else {
-      document.documentElement.classList.remove("whiteboard-zen-mode");
-      document.body.classList.remove("whiteboard-zen-mode");
     }
     if (btn.dataset.tab === "books") {
       if (currentBooks.length === 0) {
@@ -967,6 +969,8 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   document.querySelectorAll(".nav-tab").forEach((b) => b.classList.remove("active"));
   const tabEl = document.getElementById("tab-subject-detail");
   if (tabEl) tabEl.classList.add("active");
+  document.body.classList.remove("reader-zen-mode");
+  applyTabViewModes("subject-detail");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
