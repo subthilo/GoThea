@@ -3,6 +3,7 @@ from sqlalchemy import text
 
 from backend.app.models.material import Material
 from backend.app.models.material_page import MaterialPage
+from backend.app.models.taxonomy import Topic, TopicBookRef
 from backend.app.services import material_search
 from backend.app.services.material_search import ensure_search_index, query_terms, search
 from backend.app.services.parent_auth import issue_token
@@ -124,3 +125,37 @@ def test_search_module_registers_index_for_new_databases():
 def test_snippet_drops_markdown_and_handwriting_marks():
     assert material_search.clean_snippet("## Kraft **1.5** «S: ⟦Hebel⟧ links» [Abbildung: Waage] | a |") == \
         "Kraft 1.5 ⟦Hebel⟧ links [Abbildung: Waage] a"
+
+
+def _book_with_toc(db):
+    _material(db, "mat_b", "Fundamente der Mathematik 7 – Ausgabe B Gymnasium", kind="Buch")
+    _material(db, "mat_b_ch01", "Kapitel 1: Zuordnungen", kind="Buchauszug", parent_id="mat_b", start_page=11,
+              pages=["Zuordnungen und Proportionalität"])  # erst Seite 1 erschlossen
+    _material(db, "mat_b_ch10", "Anhang & Lösungen", kind="Lösungsheft", parent_id="mat_b", start_page=279)
+    db.add(Topic(id="top_z", subject_id="sub_math", name="Proportionale Zuordnungen", grade_level=7))
+    db.add_all([
+        TopicBookRef(topic_id="top_z", material_id="mat_b_ch01", section_title="1.4 Dreisatz für proportionale Zuordnungen",
+                     start_page=16, end_page=19, book_page=26),
+        TopicBookRef(topic_id="top_z", material_id="mat_b_ch10", section_title="Lösungen zum Dreisatz",
+                     start_page=2, end_page=3, book_page=280),
+    ])
+    db.commit()
+
+
+def test_book_sections_from_the_table_of_contents_are_found_before_extraction(db_session):
+    _filler(db_session)
+    _book_with_toc(db_session)
+    hit = search(db_session, "Wie geht der Dreisatz?")[0]
+    assert (hit.source, hit.material_id, hit.page, hit.page_to, hit.book_id) == ("toc", "mat_b_ch01", 16, 19, "mat_b")
+    assert hit.label == "Fundamente der Mathematik 7, S. 26"
+    assert hit.section == "1.4 Dreisatz für proportionale Zuordnungen"
+    assert all(not h.is_solution for h in search(db_session, "Dreisatz"))
+    assert any(h.is_solution for h in search(db_session, "Dreisatz", include_solutions=True))
+
+
+def test_table_of_contents_index_follows_topic_renames(db_session):
+    _book_with_toc(db_session)
+    assert search(db_session, "Verhältnisrechnung") == []
+    db_session.get(Topic, "top_z").name = "Verhältnisrechnung"
+    db_session.commit()
+    assert [h.section for h in search(db_session, "Verhältnisrechnung")] == ["1.4 Dreisatz für proportionale Zuordnungen"]

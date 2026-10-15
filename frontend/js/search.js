@@ -57,7 +57,7 @@ async function runSearch(query) {
     btn.className = "search-hit";
     btn.innerHTML = `
       <div class="search-hit-label">${escapeHtml(hit.label)}</div>
-      <div class="search-hit-meta">${escapeHtml(hit.subject_name)} · ${escapeHtml(hit.kind)}${hit.is_solution ? " · Lösung" : ""}</div>
+      <div class="search-hit-meta">${escapeHtml(hit.subject_name)} · ${hit.source === "toc" ? "Abschnitt laut Inhaltsverzeichnis" : escapeHtml(hit.kind)}${hit.is_solution ? " · Lösung" : ""}</div>
       <div class="search-hit-snippet">${renderSnippet(hit.snippet)}</div>`;
     btn.addEventListener("click", () => openSearchHit(hit));
     li.appendChild(btn);

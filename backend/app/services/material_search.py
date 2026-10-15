@@ -16,6 +16,7 @@ from sqlalchemy import event, text
 from sqlalchemy.orm import Session
 
 from backend.app.models.material_page import MaterialPage
+from backend.app.models.taxonomy import TopicBookRef
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +52,41 @@ _REBUILD = """INSERT INTO page_search(rowid, material_id, page_number, title, su
   FROM material_pages p JOIN materials m ON m.id = p.material_id"""
 
 
+# Inhaltsverzeichnis der Bücher (Themenkatalog: Thema → Abschnitt eines Kapitels mit Seiten). Findet
+# Buchstellen, bevor ihre Seiten erschlossen sind, und deutsche Themennamen auch für französische Bücher.
+_TOC_DDL = [
+    """CREATE VIRTUAL TABLE IF NOT EXISTS toc_search USING fts5(
+         section_title, topic_name, area, tokenize = 'unicode61 remove_diacritics 2')""",
+    """CREATE TRIGGER IF NOT EXISTS toc_search_insert AFTER INSERT ON topic_book_refs BEGIN
+         INSERT INTO toc_search(rowid, section_title, topic_name, area)
+         SELECT new.rowid, new.section_title, t.name, coalesce(t.area, '') FROM topics t WHERE t.id = new.topic_id;
+       END""",
+    """CREATE TRIGGER IF NOT EXISTS toc_search_delete AFTER DELETE ON topic_book_refs BEGIN
+         DELETE FROM toc_search WHERE rowid = old.rowid;
+       END""",
+    """CREATE TRIGGER IF NOT EXISTS toc_search_update AFTER UPDATE ON topic_book_refs BEGIN
+         DELETE FROM toc_search WHERE rowid = old.rowid;
+         INSERT INTO toc_search(rowid, section_title, topic_name, area)
+         SELECT new.rowid, new.section_title, t.name, coalesce(t.area, '') FROM topics t WHERE t.id = new.topic_id;
+       END""",
+    """CREATE TRIGGER IF NOT EXISTS toc_search_topic AFTER UPDATE OF name, area ON topics BEGIN
+         UPDATE toc_search SET topic_name = new.name, area = coalesce(new.area, '')
+         WHERE rowid IN (SELECT rowid FROM topic_book_refs WHERE topic_id = new.id);
+       END""",
+]
+
+_TOC_REBUILD = """INSERT INTO toc_search(rowid, section_title, topic_name, area)
+  SELECT r.rowid, r.section_title, t.name, coalesce(t.area, '')
+  FROM topic_book_refs r JOIN topics t ON t.id = r.topic_id"""
+
+
 def _create_index(connection) -> None:
     for statement in _DDL:
+        connection.execute(text(statement))
+
+
+def _create_toc_index(connection) -> None:
+    for statement in _TOC_DDL:
         connection.execute(text(statement))
 
 
@@ -61,6 +95,12 @@ def _on_pages_table_created(target, connection, **kw):
     """Neue Datenbanken (auch in den Tests) bekommen den Index zusammen mit material_pages."""
     if connection.dialect.name == "sqlite":
         _create_index(connection)
+
+
+@event.listens_for(TopicBookRef.__table__, "after_create")
+def _on_book_refs_table_created(target, connection, **kw):
+    if connection.dialect.name == "sqlite":
+        _create_toc_index(connection)
 
 
 def ensure_search_index(engine) -> None:
@@ -76,6 +116,13 @@ def ensure_search_index(engine) -> None:
             conn.execute(text("DELETE FROM page_search"))
             conn.execute(text(_REBUILD))
             logger.info(f"🔍 Suchindex neu aufgebaut: {pages} Seiten.")
+        _create_toc_index(conn)
+        indexed = conn.execute(text("SELECT count(*) FROM toc_search")).scalar()
+        refs = conn.execute(text("SELECT count(*) FROM topic_book_refs")).scalar()
+        if indexed != refs:
+            conn.execute(text("DELETE FROM toc_search"))
+            conn.execute(text(_TOC_REBUILD))
+            logger.info(f"🔍 Inhaltsverzeichnis-Index neu aufgebaut: {refs} Abschnitte.")
 
 
 # ---------------------------------------------------------------------------
@@ -117,8 +164,13 @@ def query_terms(query: str) -> List[str]:
     return terms
 
 
-def _match_expression(terms: List[str]) -> str:
-    return " OR ".join(f'"{t}"*' for t in terms)
+def _match_expression(terms: List[str], all_terms: bool = False) -> str:
+    return (" AND " if all_terms else " OR ").join(f'"{t}"*' for t in terms)
+
+
+def short_book_title(title: str) -> str:
+    """„Deutschbuch Gymnasium 7 – Berlin, Brandenburg, …“ → „Deutschbuch Gymnasium 7“."""
+    return title.split(" – ")[0].strip() if title else title
 
 
 @dataclass
@@ -134,6 +186,9 @@ class SearchHit:
     book_page: Optional[int] = None  # Seitenzahl im gedruckten Buch (bei Buchkapiteln)
     book_id: Optional[str] = None    # Buch, zu dem das Kapitel gehört (zum Öffnen im Buch-Leser)
     is_solution: bool = False
+    source: str = "page"             # "page" = erschlossene Seite, "toc" = Abschnitt laut Inhaltsverzeichnis
+    section: Optional[str] = None    # Abschnitt im Buch (bei "toc")
+    page_to: Optional[int] = None    # letzte Seite des Abschnitts im Kapitel (bei "toc")
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -159,7 +214,7 @@ def clean_snippet(snippet: str) -> str:
 def _label(kind: str, title: str, page: int, page_count: int, book_title: Optional[str],
            book_page: Optional[int]) -> str:
     if book_title and book_page:
-        return f"{book_title}, S. {book_page}"
+        return f"{short_book_title(book_title)}, S. {book_page}"
     where = f", Seite {page}" if page_count and page_count > 1 else ""
     return f"{kind} „{title}“{where}"
 
@@ -188,29 +243,26 @@ TITLE_WEIGHT = 6.0
 SUMMARY_WEIGHT = 0.0
 
 
-def search(
-    db: Session,
-    query: str,
-    include_solutions: bool = False,
-    subject_id: Optional[str] = None,
-    kind: Optional[str] = None,
-    limit: int = 10,
-) -> List[SearchHit]:
-    """Durchsucht die erschlossenen Seiten. include_solutions nur im Eltern-Modus setzen."""
-    terms = query_terms(query)
-    if not terms:
-        return []
-    filters, params = "", {"match": _match_expression(terms), "w_title": TITLE_WEIGHT,
-                           "w_summary": SUMMARY_WEIGHT, "fetch": max(limit * 4, 40)}
-    if subject_id:
-        filters += " AND m.subject_id = :subject_id"
-        params["subject_id"] = subject_id
-    if kind:
-        filters += " AND m.kind = :kind"
-        params["kind"] = kind
+_TOC_SQL = """
+SELECT r.material_id, r.start_page, r.end_page, r.book_page, r.section_title, t.name AS topic_name,
+       ch.title, ch.kind, ch.subject_id, s.name AS subject_name, ch.parent_id, book.title AS book_title,
+       bm25(toc_search, 3.0, 1.0, 0.5) AS score
+FROM toc_search
+JOIN topic_book_refs r ON r.rowid = toc_search.rowid
+JOIN topics t ON t.id = r.topic_id
+JOIN materials ch ON ch.id = r.material_id
+JOIN subjects s ON s.id = ch.subject_id
+LEFT JOIN materials book ON book.id = ch.parent_id
+WHERE toc_search MATCH :match {filters}
+ORDER BY score
+LIMIT :fetch
+"""
 
+
+def _search_pages(db: Session, match: str, include_solutions: bool, filters: str, params: dict,
+                  limit: int) -> List[SearchHit]:
     hits: List[SearchHit] = []
-    for row in db.execute(text(_SEARCH_SQL.format(filters=filters)), params).mappings():
+    for row in db.execute(text(_SEARCH_SQL.format(filters=filters)), {**params, "match": match}).mappings():
         solution = _is_solution(row["kind"], row["page_number"], bool(row["is_solution_page"]),
                                 row["solution_pages_json"])
         if solution and not include_solutions:
@@ -233,3 +285,88 @@ def search(
         if len(hits) >= limit:
             break
     return hits
+
+
+def _search_toc(db: Session, match: str, include_solutions: bool, filters: str, params: dict,
+                limit: int) -> List[SearchHit]:
+    hits: List[SearchHit] = []
+    for row in db.execute(text(_TOC_SQL.format(filters=filters.replace("m.", "ch."))),
+                          {**params, "match": match}).mappings():
+        solution = "lösung" in f"{row['kind']} {row['section_title']}".lower()
+        if solution and not include_solutions:
+            continue
+        book = short_book_title(row["book_title"] or row["title"])
+        where = f"S. {row['book_page']}" if row["book_page"] else f"Kapitel „{row['title']}“"
+        hits.append(SearchHit(
+            material_id=row["material_id"],
+            page=row["start_page"],
+            title=row["title"],
+            kind=row["kind"],
+            subject_id=row["subject_id"],
+            subject_name=row["subject_name"],
+            label=f"{book}, {where}",
+            snippet=f"Inhaltsverzeichnis: {row['section_title']} (Thema: {row['topic_name']})",
+            book_page=row["book_page"],
+            book_id=row["parent_id"],
+            is_solution=solution,
+            source="toc",
+            section=row["section_title"],
+            page_to=row["end_page"],
+        ))
+        if len(hits) >= limit:
+            break
+    return hits
+
+
+# Wie Buchabschnitte (Inhaltsverzeichnis) und Seitentreffer gemischt werden. Gemessen an 19 Fragen
+# (17 mit Buchstelle), Kennzahl „richtige Buchstelle unter den ersten 3“: nur Seiten 6/17,
+# bis zu 2 Abschnitte zuerst 14/17, Abschnitte nur bei allen Suchwörtern 10/17.
+MERGE_MODE = "toc_first"
+TOC_FIRST_MAX = 2
+
+
+def _merge(pages: List[SearchHit], toc: List[SearchHit], limit: int) -> List[SearchHit]:
+    def covered(t: SearchHit) -> bool:  # eine Seite aus diesem Abschnitt steht schon weit oben
+        return any(p.material_id == t.material_id and t.page <= p.page <= (t.page_to or t.page)
+                   for p in pages[:3])
+    if MERGE_MODE == "pages":
+        merged = pages
+    elif MERGE_MODE == "interleave":
+        merged = [h for pair in zip(toc, pages) for h in pair] + toc[len(pages):] + pages[len(toc):]
+    elif MERGE_MODE == "toc_first_dedupe":
+        merged = [t for t in toc if not covered(t)][:TOC_FIRST_MAX] + pages
+    else:  # toc_first
+        shown = toc[:TOC_FIRST_MAX]
+        merged = shown + [p for p in pages if not any((p.material_id, p.page) == (t.material_id, t.page)
+                                                      for t in shown)]
+    return merged[:limit]
+
+
+def search(
+    db: Session,
+    query: str,
+    include_solutions: bool = False,
+    subject_id: Optional[str] = None,
+    kind: Optional[str] = None,
+    limit: int = 10,
+) -> List[SearchHit]:
+    """Durchsucht erschlossene Seiten und das Inhaltsverzeichnis der Bücher.
+    include_solutions nur im Eltern-Modus setzen."""
+    terms = query_terms(query)
+    if not terms:
+        return []
+    filters, params = "", {"w_title": TITLE_WEIGHT, "w_summary": SUMMARY_WEIGHT, "fetch": max(limit * 4, 40)}
+    if subject_id:
+        filters += " AND m.subject_id = :subject_id"
+        params["subject_id"] = subject_id
+    if kind:
+        filters += " AND m.kind = :kind"
+        params["kind"] = kind
+    match = _match_expression(terms)
+    pages = _search_pages(db, match, include_solutions, filters, params, limit)
+    # Im Inhaltsverzeichnis sind die Einträge kurz: ein einzelnes passendes Wort („Einheit“) ist oft
+    # Zufall. Daher zuerst alle Suchwörter verlangen, nur wenn das nichts findet, eines.
+    toc = _search_toc(db, _match_expression(terms, all_terms=True), include_solutions, filters, params, limit)
+    if not toc and len(terms) > 1:
+        toc = _search_toc(db, match, include_solutions, filters, params, limit)
+    return _merge(pages, toc, limit)
