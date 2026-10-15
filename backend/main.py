@@ -6,14 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from backend.app.database import engine, Base, SessionLocal, ensure_schema_migrations
-from backend.app.models.user import User
-from backend.app.models.taxonomy import Subject, Topic
-from backend.app.models.dossier import Dossier
-from backend.app.models.material import Material, MaterialChunk
-from backend.app.models.annotation import PageAnnotation
-from backend.app.models.material_page import MaterialPage  # noqa: F401
-from backend.app.models.timetable import TimetableSlot
-from backend.app.models.whiteboard import TutorSession, TutorMessage, TutorExercise
+import backend.app.models  # noqa: F401  (registriert alle Tabellen für create_all)
 from backend.app.services.seeder import seed_database
 from backend.app.routers.profile import router as profile_router
 from backend.app.routers.taxonomy import router as taxonomy_router
