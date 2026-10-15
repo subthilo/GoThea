@@ -295,9 +295,12 @@ function openChapter(ch, targetPage = 1) {
   const downloadBtn = document.getElementById("btn-book-download-pdf");
 
   if (titleSlim) {
-    const unitLabel = ch.chapter_number === 0 ? "Titelei" : `Einheit ${ch.chapter_number}`;
-    titleSlim.textContent = `${unitLabel}: ${ch.title}`;
-    titleSlim.title = `${unitLabel}: ${ch.title}`;
+    // Einzelne Dokumente (Mitschrift, Arbeitsblatt …) haben keine Kapitelnummer: nur der Titel
+    const unitLabel = ch.chapter_number === 0 ? "Titelei"
+      : (ch.chapter_number != null ? `Einheit ${ch.chapter_number}` : "");
+    const fullTitle = unitLabel ? `${unitLabel}: ${ch.title}` : ch.title;
+    titleSlim.textContent = fullTitle;
+    titleSlim.title = fullTitle;
   }
   if (counterSlim) {
     const absPage = ch.start_page + currentChapterPage - 1;

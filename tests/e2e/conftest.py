@@ -34,8 +34,14 @@ def parent_pin():
 
 
 @pytest.fixture(scope="session")
-def server_url():
-    data_dir = tempfile.mkdtemp(prefix="gothea_e2e_")
+def server_data_dir():
+    """Datenverzeichnis des Testservers (z. B. um erschlossene Seiten direkt anzulegen)."""
+    return tempfile.mkdtemp(prefix="gothea_e2e_")
+
+
+@pytest.fixture(scope="session")
+def server_url(server_data_dir):
+    data_dir = server_data_dir
     port = _free_port()
     env = {
         **os.environ,

@@ -83,9 +83,9 @@ def test_book_chapter_hits_name_the_printed_page(db_session):
     _material(db_session, "mat_book_ch06", "Kapitel 6: Flächen", kind="Buchauszug", parent_id="mat_book",
               start_page=195, pages=["Flächen", "Vierecke", "Rechtecke", "Flächeninhalt eines Dreiecks"])
     hit = search(db_session, "Flächeninhalt Dreieck")[0]
-    assert (hit.material_id, hit.page, hit.book_page) == ("mat_book_ch06", 4, 198)
+    assert (hit.material_id, hit.page, hit.book_page, hit.book_id) == ("mat_book_ch06", 4, 198, "mat_book")
     assert hit.label == "Fundamente der Mathematik 7, S. 198"
-    assert "[Flächeninhalt]" in hit.snippet
+    assert "⟦Flächeninhalt⟧" in hit.snippet
 
 
 def test_filters_and_labels(db_session):
@@ -119,3 +119,8 @@ def test_api_hides_solutions_without_parent_token(client, db_session):
 def test_search_module_registers_index_for_new_databases():
     # Der Index entsteht mit material_pages (after_create), Voraussetzung für alle Tests oben
     assert material_search._on_pages_table_created is not None
+
+
+def test_snippet_drops_markdown_and_handwriting_marks():
+    assert material_search.clean_snippet("## Kraft **1.5** «S: ⟦Hebel⟧ links» [Abbildung: Waage] | a |") == \
+        "Kraft 1.5 ⟦Hebel⟧ links [Abbildung: Waage] a"

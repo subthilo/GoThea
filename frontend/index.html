@@ -33,6 +33,7 @@
   <link rel="stylesheet" href="/static/css/gamification.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/desk.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/boards.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/search.css?v={{v}}">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -98,6 +99,11 @@
       </nav>
 
       <div class="header-right-group">
+        <button class="dock-tab" id="btn-open-search" type="button" title="In deinen Unterlagen suchen" aria-label="Suchen">
+          <span class="dock-tab-icon-wrap">
+            <img src="/static/Icons/Suche.svg" class="dock-icon" alt="Suchen">
+          </span>
+        </button>
         <div class="parent-mode-widget" id="parent-mode-widget">
           <button id="btn-parent-toggle" class="btn-parent-pill" type="button" title="Zwischen Thea-Modus und Eltern-Modus wechseln">
             <span class="parent-pill-icon" id="parent-pill-icon">
@@ -1063,6 +1069,8 @@
 
   <!-- include: dialogs/parent_pin.html -->
 
+  <!-- include: dialogs/search.html -->
+
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
   <script src="/static/js/api.js?v={{v}}"></script>
@@ -1081,6 +1089,7 @@
   <script src="/static/js/timetable.js?v={{v}}"></script>
   <script src="/static/js/books.js?v={{v}}"></script>
   <script src="/static/js/reader_notes.js?v={{v}}"></script>
+  <script src="/static/js/search.js?v={{v}}"></script>
   <script src="/static/js/init.js?v={{v}}"></script>
   <script src="/static/js/ink_core.js?v={{v}}"></script>
   <script src="/static/whiteboard.js?v={{v}}"></script>

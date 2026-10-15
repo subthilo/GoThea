@@ -30,6 +30,7 @@ async function initApp() {
   safeRun(setupSubjectDetailEvents, "setupSubjectDetailEvents");
   safeRun(setupUploadsPageEvents, "setupUploadsPageEvents");
   safeRun(initDashboardQuickActions, "initDashboardQuickActions");
+  safeRun(setupSearchEvents, "setupSearchEvents");
   safeRun(connectWebSocket, "connectWebSocket");
 }
 

@@ -149,7 +149,7 @@ function closeDocumentViewerModal() {
   activeViewerMaterial = null;
 }
 
-function openMaterialInReader(material) {
+function openMaterialInReader(material, page = 1) {
   switchToTab("books");
   const ch = {
     id: material.id,
@@ -160,7 +160,7 @@ function openMaterialInReader(material) {
     topic_name: material.topic_name || "Material",
     focus: material.summary || "Dokumentansicht mit handschriftlichen Notizen"
   };
-  openChapter(ch);
+  openChapter(ch, page);
 }
 
 if (btnCloseViewerModal) {

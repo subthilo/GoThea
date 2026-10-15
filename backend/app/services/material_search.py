@@ -130,8 +130,9 @@ class SearchHit:
     subject_id: str
     subject_name: str
     label: str                       # Fundstelle zum Vorlesen/Anzeigen, z. B. „Mathebuch S. 84“
-    snippet: str                     # Textausschnitt, Treffer in [ ]
+    snippet: str                     # Textausschnitt, Treffer zwischen ⟦ und ⟧
     book_page: Optional[int] = None  # Seitenzahl im gedruckten Buch (bei Buchkapiteln)
+    book_id: Optional[str] = None    # Buch, zu dem das Kapitel gehört (zum Öffnen im Buch-Leser)
     is_solution: bool = False
 
     def to_dict(self) -> Dict:
@@ -147,6 +148,14 @@ def _is_solution(kind: str, page: int, is_solution_page: bool, solution_pages_js
         return False
 
 
+# Markdown und Handschrift-Markierungen der Erschließung („## “, „**“, „«S: …»“) stören im Ausschnitt
+_SNIPPET_NOISE = re.compile(r"#{1,6}\s|\*\*|__|«[SL]:\s?|»|«|\|")
+
+
+def clean_snippet(snippet: str) -> str:
+    return " ".join(_SNIPPET_NOISE.sub(" ", snippet or "").split())
+
+
 def _label(kind: str, title: str, page: int, page_count: int, book_title: Optional[str],
            book_page: Optional[int]) -> str:
     if book_title and book_page:
@@ -157,8 +166,9 @@ def _label(kind: str, title: str, page: int, page_count: int, book_title: Option
 
 _SEARCH_SQL = """
 SELECT ps.material_id, ps.page_number, m.title, m.kind, m.subject_id, s.name AS subject_name,
-       m.page_count, m.start_page, m.solution_pages_json, mp.is_solution_page, parent.title AS book_title,
-       snippet(page_search, 4, '[', ']', ' … ', 16) AS snip,
+       m.page_count, m.start_page, m.solution_pages_json, mp.is_solution_page, m.parent_id,
+       parent.title AS book_title,
+       snippet(page_search, 4, '⟦', '⟧', ' … ', 16) AS snip,
        bm25(page_search, 0.0, 0.0, :w_title, :w_summary, 1.0) AS score
 FROM page_search ps
 JOIN material_pages mp ON mp.rowid = ps.rowid
@@ -215,8 +225,9 @@ def search(
             subject_name=row["subject_name"],
             label=_label(row["kind"], row["title"], row["page_number"], row["page_count"],
                          row["book_title"], book_page),
-            snippet=" ".join((row["snip"] or "").split()),
+            snippet=clean_snippet(row["snip"]),
             book_page=book_page,
+            book_id=row["parent_id"],
             is_solution=solution,
         ))
         if len(hits) >= limit:
