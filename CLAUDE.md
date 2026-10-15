@@ -14,7 +14,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - Thematisch getrennte Commits; die Commit-Nachricht erklärt das **Warum**.
 - Riskante oder unumkehrbare Aktionen auf dem Pi (Daten löschen, Prod anfassen) vorher bestätigen lassen. Neues erst auf **Staging** erproben.
 - Größere KI-Umbauten **messen statt raten**: `scripts/eval_document_classification.py` (Soll-Daten liegen außerhalb des Repos).
-- Frontend kann nur auf Syntax geprüft werden (kein Node): `osascript -l JavaScript -e '…new Function(src)…'`. Im Browser testet der Nutzer – das ehrlich sagen.
+- Frontend: Syntax-Check ohne Node per `osascript -l JavaScript -e '…new Function(src)…'`; dazu Browser-Smoke-Tests in `tests/e2e/` (Playwright/WebKit, iPad-Querformat, eigener Testserver; schlagen bei JS-Fehlern, Konsolen-Fehlern und API-Fehlern fehl). Einrichtung: `.venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m playwright install webkit`. Bedienung mit Pencil/Touch testet weiterhin der Nutzer – das ehrlich sagen.
 - Nach Frontend-Änderungen den Cache-Buster in `index.html` erhöhen (`app.js?v=…`, `style.css?v=…`).
 
 ## Umgebungen
@@ -62,7 +62,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - Der Seeder legt Start-Themen nur für **neu angelegte** Fächer an (gelöschte Platzhalter kommen nicht zurück).
 - Stundenplan und Tafel nutzen Zen-Modi (fixierte Seite ohne Scrollen). Jede Ansicht, die einen Tab aktiviert, muss `applyTabViewModes()` aufrufen.
 - Endpunkte, die Inhalte inkl. Lösungen liefern, bleiben im Eltern-Modus, bis Lösungen serverseitig verborgen werden.
-- Tests (`tests/conftest.py`): temporäres `DATA_DIR`/`SHARED_DATA_DIR`, leerer API-Key, keine Hintergrund-Worker, frische In-Memory-DB pro Test. `client` und `strict_client` nie im selben Test (teilen sich die Dependency-Overrides). Suite läuft in ~5 s.
+- Tests (`tests/conftest.py`): temporäres `DATA_DIR`/`SHARED_DATA_DIR`, leerer API-Key, keine Hintergrund-Worker, frische In-Memory-DB pro Test. `client` und `strict_client` nie im selben Test (teilen sich die Dependency-Overrides). Suite läuft in ~15 s (davon ~9 s Browser-Tests; ohne Playwright werden sie übersprungen).
 
 ## Stand & nächste Schritte
 
@@ -76,4 +76,4 @@ Vereinbarte Reihenfolge:
 
 **Tutor & Übungen werden neu gedacht** (eigene Session, „muss sauber sein und Spaß machen“). Der bisherige Code (`tutor_service.py`, Übungs-/Phrasen-Pool, Übungslogik in den Routern) ist ein früher Schnellschuss: beim Aufräumen einfrieren, nicht polieren. Das Aufräumen schafft stattdessen die Basis (zentrale KI-Schicht, modulares Frontend) und endet mit einer Bestandsaufnahme als Startpunkt.
 
-Bekannte offene Punkte: Tutor-WebSocket ist eine Attrappe; „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar.
+Bekannte offene Punkte: Tutor-WebSocket `/ws/tutor/…` ist eine Attrappe (`/ws` dagegen speist die Online-Anzeige); „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar.
