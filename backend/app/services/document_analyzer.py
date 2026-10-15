@@ -2,7 +2,6 @@ import os
 import re
 import io
 import json
-import uuid
 import base64
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -13,6 +12,7 @@ from sqlalchemy.orm import Session
 from backend.app.config import OPENAI_API_KEY, OPENAI_ANALYSIS_MODEL
 from backend.app.services.llm import chat_params
 from backend.app.services.document_kinds import dossier_for_kind, normalize_kind
+from backend.app.services.topic_catalog import build_catalog_text, resolve_topic
 from backend.app.models import Subject, Topic, Dossier, Material
 from backend.app.services.material_ingestion import (
     render_material_page_as_image,
@@ -200,7 +200,8 @@ def query_openai_analyzer(
     mime_type: str,
     api_key: str,
     model_name: str,
-    original_filename: Optional[str] = None
+    original_filename: Optional[str] = None,
+    topic_catalog: str = ""
 ) -> Optional[Dict[str, Any]]:
     """Fragt OpenAI nach Fach, Thema, Dokumentart, Titel und Zusammenfassung."""
     try:
@@ -212,7 +213,7 @@ def query_openai_analyzer(
         clean_text = (extracted_text or "").strip()
 
         # Seitenbilder sind immer dabei: Handschrift, Korrekturen und Lösungsseiten sieht man nur dort
-        user_content = [{"type": "text", "text": build_analysis_user_prompt(effective_name, clean_text, page_count)}]
+        user_content = [{"type": "text", "text": build_analysis_user_prompt(effective_name, clean_text, page_count, topic_catalog)}]
         for page_num in pages_to_analyze(page_count, mime_type):
             try:
                 img_bytes, img_mime = render_material_page_as_image(str(file_path), mime_type, page_num=page_num)
@@ -267,7 +268,8 @@ def analyze_document_content(
             mime_type=mime_type,
             api_key=OPENAI_API_KEY,
             model_name=OPENAI_ANALYSIS_MODEL,
-            original_filename=effective_name
+            original_filename=effective_name,
+            topic_catalog=build_catalog_text(db)
         )
 
     if raw_ai_data and isinstance(raw_ai_data, dict):
@@ -331,30 +333,9 @@ def analyze_document_content(
 
         subject_id = subject.id if subject else "sub_math"
 
-        # 2. Thema zuordnen oder dynamisch anlegen
+        # 2. Thema aus dem Katalog übernehmen oder (mittlere Ebene) neu anlegen
         oberthema = (raw_ai_data.get("oberthema") or "").strip()
-        topic = None
-        if oberthema:
-            topic = db.query(Topic).filter(
-                Topic.subject_id == subject_id,
-                Topic.name.ilike(f"%{oberthema}%")
-            ).first()
-
-            if not topic:
-                # Neues Thema für die 7. Klasse anlegen
-                new_top_id = f"top_{uuid.uuid4().hex[:8]}"
-                topic = Topic(
-                    id=new_top_id,
-                    subject_id=subject_id,
-                    name=oberthema,
-                    grade_level=7,
-                    rlp_level_code="E",
-                    standard_competencies=f"Automatisch erkannt: {oberthema}"
-                )
-                db.add(topic)
-                # Dauerhaft speichern: Die Voranalyse (eigener Request) schlägt die ID vor,
-                # bestätigt wird erst im nächsten Request -> nur flush() würde verworfen
-                db.commit()
+        topic = resolve_topic(db, subject_id, oberthema, raw_ai_data.get("themenbereich"))
 
         topic_id = topic.id if topic else None
         topic_name = topic.name if topic else (oberthema or None)

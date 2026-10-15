@@ -74,7 +74,11 @@ Du erhältst ein Dokument als Seitenbilder (jede Seite mit Trennzeile '--- Seite
    - 'von_schuelerin_bearbeitet': true, wenn die Schülerin Aufgaben bereits handschriftlich bearbeitet oder ausgefüllt hat.
    - 'von_lehrkraft_bewertet': true, wenn Korrekturen, Punkte oder Noten einer Lehrkraft zu sehen sind.
 
-4. 'oberthema': Konkretes Lehrplanthema der 7. Klasse Brandenburg, z. B. "Dreisatz & proportionale Zuordnungen", "Past Tenses", "Hookesches Gesetz", "Zahlen und Alter".
+4. 'oberthema' und 'themenbereich': Das Lehrplanthema auf MITTLERER Ebene (eine Unterrichtseinheit, die mehrere Stunden und Dokumente umfasst), z. B. "Hookesches Gesetz", "Masse und Gewichtskraft", "Proportionale Zuordnungen", "Past Tenses", "Zahlen und Alter".
+   - Wähle, wenn irgend möglich, ein Thema aus dem mitgelieferten THEMENKATALOG des gewählten Fachs und übernimm dessen Namen EXAKT (ohne die Angabe in eckigen Klammern).
+   - Nur wenn wirklich keines passt: Formuliere ein neues Thema auf derselben mittleren Ebene. NICHT zu fein (nicht "Hookesches Gesetz bei Gummibändern", sondern "Hookesches Gesetz") und NICHT zu grob (nicht "Mechanik" oder "Physik Klasse 7").
+   - 'themenbereich': Der übergeordnete Bereich des Themas, z. B. "Mechanik", "Wärmelehre", "Algebra", "Grammatik", "Wortschatz". Bei einem Thema aus dem Katalog den Bereich aus den eckigen Klammern übernehmen.
+   - Bei Büchern und Vokabellisten, die viele Themen umfassen: 'oberthema' leer lassen.
 
 5. 'inhaltlicher_titel': Sprechender, sauberer Titel ohne Dateiendung. Bei Büchern der echte Buchtitel vom Cover (z. B. "Biosphäre 7/8 Berlin/Brandenburg").
 
@@ -86,6 +90,7 @@ Antworte IMMER im validen JSON-Format:
 {
   "fach": "...",
   "oberthema": "...",
+  "themenbereich": "...",
   "dokumentart": "...",
   "inhaltlicher_titel": "...",
   "normierter_dateiname": "...",
@@ -102,10 +107,13 @@ def build_page_count_line(page_count: Optional[int]) -> str:
     return f"Seitenzahl des Dokuments: {page_count}\n" if page_count else ""
 
 
-def build_analysis_user_prompt(filename: str, extracted_text: str = "", page_count: Optional[int] = None) -> str:
-    """Erstellt den Benutzer-Prompt für Text-basierte Dokumentanalyse."""
+def build_analysis_user_prompt(filename: str, extracted_text: str = "", page_count: Optional[int] = None,
+                               topic_catalog: str = "") -> str:
+    """Erstellt den Benutzer-Prompt für die Dokumentanalyse (Seitenbilder folgen separat)."""
     clean_text = (extracted_text or "").strip()
+    catalog = f"THEMENKATALOG (vorhandene Themen je Fach, [Themenbereich]):\n{topic_catalog}\n\n" if topic_catalog else ""
     return (
+        f"{catalog}"
         f"Ursprünglicher Dateiname: {filename}\n"
         f"{build_page_count_line(page_count)}\n"
         f"Extrahierter Textauszug aus dem Dokument:\n"

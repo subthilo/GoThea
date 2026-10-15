@@ -55,6 +55,11 @@ def ensure_schema_migrations(target_engine):
                 from backend.app.services.document_kinds import LEGACY_KINDS
                 for legacy, current in LEGACY_KINDS.items():
                     conn.execute(text("UPDATE materials SET kind = :new WHERE kind = :old"), {"new": current, "old": legacy})
+        res = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='topics';")).fetchone()
+        if res:
+            topic_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(topics);")).fetchall()]
+            if "area" not in topic_cols:
+                conn.execute(text("ALTER TABLE topics ADD COLUMN area TEXT;"))
         conn.commit()
 
 def get_db():

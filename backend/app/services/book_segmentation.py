@@ -819,31 +819,10 @@ def segment_book_material(
 
         file_size = chap_path.stat().st_size if chap_path.exists() else 0
 
-        # 2. Topic verknüpfen
+        # 2. Thema verknüpfen: nur ein vorhandenes Thema übernehmen. Kapitel umfassen meist mehrere
+        #    Unterrichtseinheiten; eigene Kapitel-Themen würden den Themenkatalog verwässern.
         topic_name = spec.get("topic_name")
         matched_topic = topics_by_name.get(topic_name.lower()) if topic_name else None
-        if not matched_topic and topic_name:
-            target_topic_id = f"top_{book.subject_id}_{unit_num:02d}"
-            existing_top_by_id = db.query(Topic).filter_by(id=target_topic_id).first()
-            if existing_top_by_id:
-                matched_topic = existing_top_by_id
-            else:
-                import uuid
-                matched_topic = Topic(
-                    id=f"top_{book.subject_id}_{unit_num:02d}_{uuid.uuid4().hex[:6]}",
-                    subject_id=book.subject_id,
-                    name=topic_name,
-                    grade_level=7,
-                    rlp_level_code="E"
-                )
-                db.add(matched_topic)
-                try:
-                    db.flush()
-                except Exception:
-                    db.rollback()
-                    matched_topic = None
-            if matched_topic:
-                topics_by_name[topic_name.lower()] = matched_topic
 
         # 3. Material-Eintrag erstellen oder aktualisieren
         order = unit_num + 2  # Master ist meist Order 1
