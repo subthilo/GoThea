@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -20,6 +21,7 @@ from backend.app.services.timetable_slots import (
     describe_week_differences,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/timetable", tags=["Stundenplan"])
 
 def get_initial_thea_slots_data() -> List[Dict[str, Any]]:
@@ -91,8 +93,8 @@ def seed_timetable_slots_if_empty(db: Session, user_id: str = "usr_thea"):
         from backend.app.services.timetable_analyzer import sync_subjects_to_database
         needed_names = [item["name"] for item in slots_data if not item.get("is_break")]
         sync_subjects_to_database(db, needed_names)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Stundenplan: Fächer nicht synchronisiert: {e}")
 
     insert_timetable_slots(db, slots_data, user_id=user_id)
     db.commit()

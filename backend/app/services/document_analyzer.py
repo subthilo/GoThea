@@ -159,7 +159,8 @@ def get_pdf_page_count(file_path: Path, mime_type: str) -> Optional[int]:
     try:
         import pypdf
         return len(pypdf.PdfReader(str(file_path)).pages)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Seitenzahl von {file_path.name} nicht lesbar: {e}")
         return None
 
 
@@ -213,7 +214,8 @@ def query_openai_analyzer(
         for page_num in pages_to_analyze(page_count, mime_type):
             try:
                 img_bytes, img_mime = render_material_page_as_image(str(file_path), mime_type, page_num=page_num)
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Analyse ohne Bild von Seite {page_num} ({file_path.name}): {e}")
                 continue
             user_content.append({"type": "text", "text": f"--- Seite {page_num} ---"})
             user_content.append({

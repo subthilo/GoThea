@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.app.config import APP_ENV, IS_STAGING, DB_PATH
@@ -5,6 +7,7 @@ from backend.app.database import get_db, Base, engine
 from backend.app.services.seeder import seed_database
 from backend.app.services.parent_auth import require_parent
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["Environment"])
 
 @router.get("/env")
@@ -54,8 +57,8 @@ def reset_staging_database(db: Session = Depends(get_db)):
                     item.mkdir(parents=True, exist_ok=True)
                 elif item.is_file():
                     item.unlink(missing_ok=True)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Staging-Reset: Dateien nicht vollständig bereinigt: {e}")
 
     return {
         "status": "success",

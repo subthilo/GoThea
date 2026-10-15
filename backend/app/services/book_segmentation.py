@@ -1084,8 +1084,8 @@ def extract_chapters_with_ai(file_path: Path, total_pages: int, title_hint: str 
                         "type": "image_url",
                         "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}
                     })
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Inhaltsverzeichnis: Seite {p_num} nicht gerendert: {e}")
 
             if len(user_content) <= 1:
                 return []

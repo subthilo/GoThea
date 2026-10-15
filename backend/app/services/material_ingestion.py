@@ -107,7 +107,8 @@ def extract_pdf_data(file_bytes: bytes) -> Tuple[int, str]:
                 texts.append(t.strip())
         full_text = "\n\n".join(texts)
         return max(1, page_count), full_text
-    except Exception:
+    except Exception as e:
+        logger.warning(f"PDF nicht lesbar, behandle als 1 Seite ohne Text: {e}")
         return 1, ""
 
 def cleanup_temp_uploads(max_age_hours: int = 24) -> int:
@@ -435,8 +436,8 @@ def confirm_and_save_material(
             page_renderer.queue_material(material.id, material.file_path, material.mime_type, material.page_count)
             from backend.app.services.page_extraction import page_extraction_service
             page_extraction_service.queue_material(material.id)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Segmentierung/Erschließung für {material.id} nicht eingereiht: {e}", exc_info=True)
 
     return material
 
@@ -667,8 +668,8 @@ def merge_materials(db: Session, request: MaterialMergeRequest) -> Material:
     try:
         from backend.app.services.page_renderer import page_renderer
         page_renderer.queue_material(new_material.id, new_material.file_path, new_material.mime_type, new_material.page_count)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Vorrendern von {new_material.id} nicht eingereiht: {e}")
 
     return new_material
 
@@ -746,8 +747,8 @@ def reorder_material_pages(db: Session, material_id: str, page_order: List[int])
     try:
         from backend.app.services.page_renderer import page_renderer
         page_renderer.queue_material(material.id, material.file_path, material.mime_type, material.page_count)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Vorrendern von {material.id} nicht eingereiht: {e}")
 
     return material
 

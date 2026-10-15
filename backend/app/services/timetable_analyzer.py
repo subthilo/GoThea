@@ -667,8 +667,8 @@ def process_and_import_timetable(
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             page_count = len(doc)
             extracted_text = "\n".join(page.get_text() for page in doc)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Stundenplan-PDF nicht lesbar: {e}")
 
     # 1. Analyse durchführen
     analysis_data = {}
@@ -753,8 +753,8 @@ def process_and_import_timetable(
     try:
         from backend.app.services.material_ingestion import pre_cache_material_pages
         pre_cache_material_pages(material.id, material.file_path, material.mime_type, max_pages=1)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Stundenplan: erste Seite nicht vorgerendert: {e}")
 
     return TimetableImportResult(
         material_id=material.id,

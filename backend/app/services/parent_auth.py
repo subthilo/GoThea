@@ -10,6 +10,7 @@ Eltern-Modus: PIN-Verwaltung & signierte Freischalt-Tokens.
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 import time
@@ -21,6 +22,7 @@ from fastapi import Header, HTTPException
 from backend.app.config import DATA_DIR
 
 AUTH_FILE: Path = DATA_DIR / "parent_auth.json"
+logger = logging.getLogger(__name__)
 DEFAULT_PIN = os.getenv("GOTHEA_PARENT_PIN", "1234")
 TOKEN_TTL_SECONDS = int(os.getenv("GOTHEA_PARENT_TOKEN_TTL", "3600"))
 PBKDF2_ROUNDS = 120_000
@@ -43,8 +45,9 @@ def _load_store() -> dict:
             data = json.loads(AUTH_FILE.read_text(encoding="utf-8"))
             if all(k in data for k in ("salt", "pin_hash", "secret")):
                 return data
-        except Exception:
-            pass
+            logger.error("Eltern-PIN-Datei unvollständig – PIN wird auf den Standard zurückgesetzt")
+        except Exception as e:
+            logger.error(f"Eltern-PIN-Datei unlesbar ({e}) – PIN wird auf den Standard zurückgesetzt")
     salt = secrets.token_hex(16)
     data = {
         "salt": salt,

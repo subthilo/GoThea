@@ -1,6 +1,10 @@
+import logging
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
 from backend.app.config import DATABASE_URL
+
+logger = logging.getLogger(__name__)
 
 engine = create_engine(
     DATABASE_URL,
@@ -47,8 +51,8 @@ def ensure_schema_migrations(target_engine):
                 if col_name not in existing_cols:
                     try:
                         conn.execute(text(f"ALTER TABLE materials ADD COLUMN {col_name} {col_def};"))
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning(f"Migration: Spalte materials.{col_name} nicht angelegt: {e}")
 
             # Frühere Dokumentarten auf die heutigen abbilden (z. B. Hefterseite -> Mitschrift)
             if "kind" in existing_cols:

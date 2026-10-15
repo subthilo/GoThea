@@ -1,4 +1,5 @@
 import json
+import logging
 import shutil
 import uuid
 from datetime import datetime
@@ -23,6 +24,8 @@ from backend.app.services.material_ingestion import (
     chunk_text,
 )
 from backend.app.services.document_analyzer import analyze_document_content
+
+logger = logging.getLogger(__name__)
 
 SUPPORTED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
 IGNORED_PATTERNS = {".ds_store", ".localized", "thumbs.db"}
@@ -72,8 +75,8 @@ def get_inbox_status(inbox_dir: Optional[Path] = None) -> InboxStatusResponse:
                     modified_at=datetime.fromtimestamp(stat.st_mtime),
                 )
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Inbox: Datei {f.name} übersprungen: {e}")
 
     errors_dir = target_dir / "_errors"
     errors_count = 0
@@ -274,8 +277,8 @@ def process_single_inbox_file(
         from backend.app.services.material_ingestion import pre_cache_material_pages
         pages = 3 if is_candidate_book(material) else material.page_count
         pre_cache_material_pages(material.id, material.file_path, material.mime_type, max_pages=pages)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Inbox: Vorrendern von {material.id} fehlgeschlagen: {e}")
 
     # Automatische Buchsegmentierung im Hintergrund anstoßen (falls Schulbuch)
     try:
@@ -285,8 +288,8 @@ def process_single_inbox_file(
         else:
             from backend.app.services.page_extraction import page_extraction_service
             page_extraction_service.queue_material(material.id)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Inbox: Segmentierung/Erschließung für {material.id} nicht eingereiht: {e}", exc_info=True)
 
     return ProcessedItemDetail(
         material_id=material.id,
@@ -333,8 +336,8 @@ def process_all_inbox_files(
             err_msg = str(e)
             try:
                 quarantine_file(f, err_msg, inbox_dir=target_inbox)
-            except Exception:
-                pass
+            except Exception as qe:
+                logger.error(f"Inbox: {f.name} konnte nicht in Quarantäne ({qe}); ursprünglicher Fehler: {err_msg}")
             quarantined_items.append(QuarantinedItemDetail(filename=f.name, error_message=err_msg))
 
     return InboxProcessResult(
