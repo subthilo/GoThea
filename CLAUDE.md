@@ -27,6 +27,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - Pi: `pi@192.168.1.135`, Code in `~/GoThea`, Logs: `sudo journalctl -u gothea-staging -f`.
 - `data/`, `inbox/`, `experiments/` werden beim Deploy nicht synchronisiert. `.env` (API-Key, `OPENAI_MODEL`) liegt nur auf dem Pi bzw. lokal in `experiments/openai_study/.env`.
 - `data/shared/` gehört beiden Umgebungen (inhaltsadressierter Cache der Seiten-Erschließung).
+- **Hintergrund-Worker:** Seiten-Erschließung und Renderer müssen immer laufen (sie füllen die Datenbank, Grundlage für den Tutor) – `GOTHEA_BACKGROUND_WORKERS` nie dafür abschalten. Der Übungs-Vorrat hat einen eigenen Schalter `GOTHEA_EXERCISE_POOL` (Standard aus, bis Tutor/Übungen neu gebaut sind).
 - Backups vor größeren Eingriffen: `~/GoThea-backups/` auf dem Pi.
 - Skripte auf dem Pi: `cd ~/GoThea && APP_ENV=staging .venv/bin/python scripts/<name>.py`.
 
@@ -73,4 +74,6 @@ Vereinbarte Reihenfolge:
 3. **Tutor** an die Seiten-Erschließung anbinden (voller Materialzugriff).
 4. Übernahme Staging → Produktion per Skript mit Sicherung (Erschließungen werden über `data/shared/` ohnehin wiederverwendet).
 
-Bekannte offene Punkte: Tutor-WebSocket ist eine Attrappe; der Übungs-Pool-Generator läuft dauerhaft (auch auf Staging) und erzeugt laufend OpenAI-Aufrufe – prüfen; „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar.
+**Tutor & Übungen werden neu gedacht** (eigene Session, „muss sauber sein und Spaß machen“). Der bisherige Code (`tutor_service.py`, Übungs-/Phrasen-Pool, Übungslogik in den Routern) ist ein früher Schnellschuss: beim Aufräumen einfrieren, nicht polieren. Das Aufräumen schafft stattdessen die Basis (zentrale KI-Schicht, modulares Frontend) und endet mit einer Bestandsaufnahme als Startpunkt.
+
+Bekannte offene Punkte: Tutor-WebSocket ist eine Attrappe; „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar.
