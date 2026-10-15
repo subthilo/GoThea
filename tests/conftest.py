@@ -1,5 +1,6 @@
 import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
@@ -10,21 +11,24 @@ from backend.main import app
 # Schnelle In-Memory SQLite Datenbank für Tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def engine():
+    # Jeder Test bekommt eine eigene, frische In-Memory-Datenbank: keine Daten zwischen Tests,
+    # auch wenn der getestete Code selbst commit()/rollback() aufruft.
+    # StaticPool: alle Threads eines Tests teilen dieselbe Verbindung (sonst sähe jeder Thread
+    # eine eigene, leere In-Memory-Datenbank).
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
-        connect_args={"check_same_thread": False}
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
     Base.metadata.create_all(bind=engine)
     yield engine
-    Base.metadata.drop_all(bind=engine)
+    engine.dispose()
 
 @pytest.fixture(scope="function")
 def db_session(engine):
-    connection = engine.connect()
-    transaction = connection.begin()
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=connection)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = TestingSessionLocal()
 
     # Seed-Daten für Tests einspielen
@@ -33,9 +37,6 @@ def db_session(engine):
     yield session
 
     session.close()
-    if transaction.is_active:
-        transaction.rollback()
-    connection.close()
 
 @pytest.fixture(scope="function")
 def client(db_session):
