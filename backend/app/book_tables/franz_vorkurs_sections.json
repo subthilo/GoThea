@@ -1,0 +1,50 @@
+[
+  {
+    "title": "1. Begrüßen und verabschieden (Bonjour ! Au revoir !)",
+    "book_page": 4,
+    "relative_page": 4,
+    "level": 2
+  },
+  {
+    "title": "2. Sagen, wie es einem geht (Ça va ?)",
+    "book_page": 6,
+    "relative_page": 6,
+    "level": 2
+  },
+  {
+    "title": "3. Sagen, wie man heißt (Comment tu t'appelles ?)",
+    "book_page": 8,
+    "relative_page": 8,
+    "level": 2
+  },
+  {
+    "title": "4. Sagen, wie alt man ist (Tu as quel âge ?)",
+    "book_page": 10,
+    "relative_page": 10,
+    "level": 2
+  },
+  {
+    "title": "5. Sagen, wo man wohnt (Où tu habites ?)",
+    "book_page": 14,
+    "relative_page": 14,
+    "level": 2
+  },
+  {
+    "title": "6. Sagen, was man mag (J'aime les jeux vidéo et le chocolat)",
+    "book_page": 18,
+    "relative_page": 18,
+    "level": 2
+  },
+  {
+    "title": "7. Sagen, was man nicht mag (Je n'aime pas...)",
+    "book_page": 22,
+    "relative_page": 22,
+    "level": 2
+  },
+  {
+    "title": "Abschluss & Lernziele",
+    "book_page": 26,
+    "relative_page": 26,
+    "level": 2
+  }
+]

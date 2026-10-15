@@ -1,0 +1,270 @@
+[
+  {
+    "unit_number": 1,
+    "title": "Mechanik",
+    "start_pdf_page": 7,
+    "end_pdf_page": 36,
+    "book_start_page": 5,
+    "book_end_page": 34,
+    "kind": "Buchauszug",
+    "topic_name": "Mechanik & Kräfte",
+    "focus": "Kräfte, Wirkungen, Federkraftmesser, Gewichtskraft, Wechselwirkung, Reibung, einfache Maschinen (Rollen, Hebel, geneigte Ebene) sowie mechanische Arbeit und Leistung.",
+    "sections": [
+      {
+        "title": "1.1 Kraft & Wirkungen von Kräften",
+        "book_page": 6,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "1.2 Federkraftmesser & Darstellen von Kräften",
+        "book_page": 8,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "1.3 Gewichtskraft & Gravitation",
+        "book_page": 11,
+        "relative_page": 7,
+        "level": 2
+      },
+      {
+        "title": "1.4 Wechselwirkung von Kräften",
+        "book_page": 13,
+        "relative_page": 9,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: In der Schwerelosigkeit",
+        "book_page": 14,
+        "relative_page": 10,
+        "level": 2
+      },
+      {
+        "title": "Aufgaben & Zusammenfassung: Kraft",
+        "book_page": 15,
+        "relative_page": 11,
+        "level": 2
+      },
+      {
+        "title": "1.5 Reibung & Reibungskräfte",
+        "book_page": 16,
+        "relative_page": 12,
+        "level": 2
+      },
+      {
+        "title": "1.6 Haft-, Gleit- und Rollreibung",
+        "book_page": 16,
+        "relative_page": 12,
+        "level": 2
+      },
+      {
+        "title": "Projekt: Sicheres Radfahren",
+        "book_page": 20,
+        "relative_page": 16,
+        "level": 2
+      },
+      {
+        "title": "1.7 Rollen & Flaschenzüge",
+        "book_page": 22,
+        "relative_page": 18,
+        "level": 2
+      },
+      {
+        "title": "1.8 Mechanische Arbeit",
+        "book_page": 24,
+        "relative_page": 20,
+        "level": 2
+      },
+      {
+        "title": "1.9 Geneigte Ebene & Hebel",
+        "book_page": 26,
+        "relative_page": 22,
+        "level": 2
+      },
+      {
+        "title": "1.10 Mechanische Leistung",
+        "book_page": 28,
+        "relative_page": 24,
+        "level": 2
+      },
+      {
+        "title": "Projekt: Hebel am Fahrrad",
+        "book_page": 30,
+        "relative_page": 26,
+        "level": 2
+      },
+      {
+        "title": "Aufgaben & Zusammenfassung: Mechanik",
+        "book_page": 33,
+        "relative_page": 29,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 2,
+    "title": "Energie in Natur und Technik",
+    "start_pdf_page": 37,
+    "end_pdf_page": 52,
+    "book_start_page": 35,
+    "book_end_page": 50,
+    "kind": "Buchauszug",
+    "topic_name": "Energie & Umwelt",
+    "focus": "Physikalische Bedeutung der Energie, Energieformen, Energieumwandlung, Energieübertragung, Energieerhaltungssatz und rationelle Energienutzung.",
+    "sections": [
+      {
+        "title": "2.1 Physikalische Bedeutung der Energie",
+        "book_page": 36,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "2.2 Energieformen & Speicherung",
+        "book_page": 37,
+        "relative_page": 3,
+        "level": 2
+      },
+      {
+        "title": "2.3 Umwandlung & Übertragung von Energie",
+        "book_page": 39,
+        "relative_page": 5,
+        "level": 2
+      },
+      {
+        "title": "2.4 Energie für Lebensprozesse",
+        "book_page": 40,
+        "relative_page": 6,
+        "level": 2
+      },
+      {
+        "title": "2.5 Energie auf dem Weg zum Verbraucher",
+        "book_page": 41,
+        "relative_page": 7,
+        "level": 2
+      },
+      {
+        "title": "2.6 Kraftwerke & Umweltbelastung",
+        "book_page": 43,
+        "relative_page": 9,
+        "level": 2
+      },
+      {
+        "title": "2.7 Energieerhaltungssatz",
+        "book_page": 44,
+        "relative_page": 10,
+        "level": 2
+      },
+      {
+        "title": "Projekt: Wind als alternative Energiequelle",
+        "book_page": 45,
+        "relative_page": 11,
+        "level": 2
+      },
+      {
+        "title": "2.8 Rationelle Nutzung von Energie",
+        "book_page": 46,
+        "relative_page": 12,
+        "level": 2
+      },
+      {
+        "title": "Aufgaben & Zusammenfassung: Energie",
+        "book_page": 50,
+        "relative_page": 16,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 3,
+    "title": "Wärmelehre",
+    "start_pdf_page": 53,
+    "end_pdf_page": 105,
+    "book_start_page": 51,
+    "book_end_page": 103,
+    "kind": "Buchauszug",
+    "topic_name": "Wärmelehre & Thermodynamik",
+    "focus": "Teilchenmodell, Temperaturmessung, Kelvin-Skala, thermische Energie und Wärme, Ausdehnung von Körpern, Aggregatzustandsänderungen, Wärmeübertragung und Wärmekraftmaschinen.",
+    "sections": [
+      {
+        "title": "3.1 Aufbau der Stoffe aus Teilchen",
+        "book_page": 52,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "Teilbarkeit der Stoffe & Brown’sche Bewegung",
+        "book_page": 54,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "3.2 Temperatur, thermische Energie und Wärme",
+        "book_page": 56,
+        "relative_page": 6,
+        "level": 2
+      },
+      {
+        "title": "Die Kelvin-Skala & Berechnung der Wärme",
+        "book_page": 57,
+        "relative_page": 7,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: Gefühlte Temperatur",
+        "book_page": 64,
+        "relative_page": 14,
+        "level": 2
+      },
+      {
+        "title": "3.3 Thermisches Verhalten der Körper (Ausdehnung)",
+        "book_page": 66,
+        "relative_page": 16,
+        "level": 2
+      },
+      {
+        "title": "3.4 Aggregatzustandsänderungen (Schmelzen, Sieden)",
+        "book_page": 72,
+        "relative_page": 22,
+        "level": 2
+      },
+      {
+        "title": "3.5 Wärmeübertragung & Wetter (Leitung, Konvektion, Strahlung)",
+        "book_page": 80,
+        "relative_page": 30,
+        "level": 2
+      },
+      {
+        "title": "3.6 Wärme in der Technik (Motoren, Wärmepumpe, Kollektoren)",
+        "book_page": 94,
+        "relative_page": 44,
+        "level": 2
+      },
+      {
+        "title": "Aufgaben & Zusammenfassung: Wärmelehre",
+        "book_page": 103,
+        "relative_page": 53,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 4,
+    "title": "Register & Anhang",
+    "start_pdf_page": 106,
+    "end_pdf_page": 108,
+    "book_start_page": 104,
+    "book_end_page": 106,
+    "kind": "Buchauszug",
+    "topic_name": "Register & Nachschlagen",
+    "focus": "Stichwortverzeichnis und Sachregister zum schnellen Nachschlagen physikalischer Fachbegriffe.",
+    "sections": [
+      {
+        "title": "Sachregister",
+        "book_page": 104,
+        "relative_page": 1,
+        "level": 2
+      }
+    ]
+  }
+]

@@ -1,0 +1,352 @@
+[
+  {
+    "unit_number": 0,
+    "title": "C'est parti ! (Einstieg)",
+    "start_pdf_page": 10,
+    "end_pdf_page": 17,
+    "book_start_page": 8,
+    "book_end_page": 15,
+    "kind": "Buchauszug",
+    "topic_name": "Französisch Grundlagen",
+    "focus": "Erste Kontakte, Begrüßung, Alphabet, Zahlen und Vorlieben auf Französisch.",
+    "sections": [
+      {
+        "title": "1. Bonjour ! (Begrüßung & Vorstellung)",
+        "book_page": 8,
+        "relative_page": 1,
+        "level": 2
+      },
+      {
+        "title": "2. Tu as quel âge ? (Zahlen 1-12 & Alter)",
+        "book_page": 10,
+        "relative_page": 3,
+        "level": 2
+      },
+      {
+        "title": "3. Dans la classe (Gegenstände im Klassenzimmer)",
+        "book_page": 11,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "4. J'aime les jeux vidéo et le chocolat (Vorlieben)",
+        "book_page": 12,
+        "relative_page": 5,
+        "level": 2
+      },
+      {
+        "title": "5. Les animaux et les couleurs (Tiere & Farben)",
+        "book_page": 14,
+        "relative_page": 7,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 1,
+    "title": "Unité 1: Bienvenue à Paris !",
+    "start_pdf_page": 18,
+    "end_pdf_page": 39,
+    "book_start_page": 16,
+    "book_end_page": 37,
+    "kind": "Buchauszug",
+    "topic_name": "Sich und seinen Wohnort vorstellen",
+    "focus": "Paris entdecken, sich und Freunde vorstellen, Wegbeschreibungen und Sehenswürdigkeiten.",
+    "sections": [
+      {
+        "title": "Vocabulaire thématique: La ville de Paris",
+        "book_page": 16,
+        "relative_page": 1,
+        "level": 2
+      },
+      {
+        "title": "Volet 1: Les amis de Gabin",
+        "book_page": 18,
+        "relative_page": 3,
+        "level": 2
+      },
+      {
+        "title": "Volet 2: Coucou, c'est nous !",
+        "book_page": 23,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "Volet 3: Qu'est-ce qu'il y a à Paris ?",
+        "book_page": 28,
+        "relative_page": 13,
+        "level": 2
+      },
+      {
+        "title": "Atelier: Notre quartier",
+        "book_page": 32,
+        "relative_page": 17,
+        "level": 2
+      },
+      {
+        "title": "Bilan & Auto-contrôle",
+        "book_page": 34,
+        "relative_page": 19,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 2,
+    "title": "Unité 2: Ma famille",
+    "start_pdf_page": 40,
+    "end_pdf_page": 63,
+    "book_start_page": 38,
+    "book_end_page": 61,
+    "kind": "Buchauszug",
+    "topic_name": "Seine Familie vorstellen",
+    "focus": "Familienmitglieder, Verwandtschaftsverhältnisse, Tagesabläufe und Freizeitaktivitäten.",
+    "sections": [
+      {
+        "title": "Vocabulaire thématique: La famille",
+        "book_page": 38,
+        "relative_page": 1,
+        "level": 2
+      },
+      {
+        "title": "Volet 1: Tu as des frères et sœurs ?",
+        "book_page": 40,
+        "relative_page": 3,
+        "level": 2
+      },
+      {
+        "title": "Volet 2: Qu'est-ce que tu fais avec ta famille ?",
+        "book_page": 47,
+        "relative_page": 10,
+        "level": 2
+      },
+      {
+        "title": "Lecture: Le journal de Jeanne",
+        "book_page": 50,
+        "relative_page": 13,
+        "level": 2
+      },
+      {
+        "title": "Atelier: Mon arbre généalogique",
+        "book_page": 54,
+        "relative_page": 17,
+        "level": 2
+      },
+      {
+        "title": "Bilan & Auto-contrôle",
+        "book_page": 58,
+        "relative_page": 21,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 3,
+    "title": "Unité 3: Ma chambre et moi",
+    "start_pdf_page": 64,
+    "end_pdf_page": 87,
+    "book_start_page": 62,
+    "book_end_page": 85,
+    "kind": "Buchauszug",
+    "topic_name": "Sein Zimmer vorstellen",
+    "focus": "Möbel, Präpositionen des Ortes, Alltagsgegenstände und die eigene Umgebung beschreiben.",
+    "sections": [
+      {
+        "title": "Vocabulaire thématique: La chambre et la maison",
+        "book_page": 62,
+        "relative_page": 1,
+        "level": 2
+      },
+      {
+        "title": "Volet 1: Chez Noé",
+        "book_page": 64,
+        "relative_page": 3,
+        "level": 2
+      },
+      {
+        "title": "Volet 2: Qu'est-ce que vous faites ?",
+        "book_page": 70,
+        "relative_page": 9,
+        "level": 2
+      },
+      {
+        "title": "Volet 3: Ma chambre raconte ma vie !",
+        "book_page": 73,
+        "relative_page": 12,
+        "level": 2
+      },
+      {
+        "title": "Atelier: Mon lieu préféré",
+        "book_page": 78,
+        "relative_page": 17,
+        "level": 2
+      },
+      {
+        "title": "Bilan & Auto-contrôle",
+        "book_page": 82,
+        "relative_page": 21,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 4,
+    "title": "Unité 4: Au collège",
+    "start_pdf_page": 88,
+    "end_pdf_page": 109,
+    "book_start_page": 86,
+    "book_end_page": 107,
+    "kind": "Buchauszug",
+    "topic_name": "Schule und Stundenplan",
+    "focus": "Schulalltag in Frankreich, Fächer, Stundenplan, Uhrzeiten und Schulleben.",
+    "sections": [
+      {
+        "title": "Vocabulaire thématique: L'école et les matières",
+        "book_page": 86,
+        "relative_page": 1,
+        "level": 2
+      },
+      {
+        "title": "Volet 1: La vie au collège",
+        "book_page": 88,
+        "relative_page": 3,
+        "level": 2
+      },
+      {
+        "title": "Volet 2: Leur emploi du temps est super !",
+        "book_page": 93,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "Volet 3: Notre collège et nous",
+        "book_page": 98,
+        "relative_page": 13,
+        "level": 2
+      },
+      {
+        "title": "Atelier: Notre école de rêve",
+        "book_page": 102,
+        "relative_page": 17,
+        "level": 2
+      },
+      {
+        "title": "Bilan & Auto-contrôle",
+        "book_page": 106,
+        "relative_page": 21,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 5,
+    "title": "Unité 5: Un pique-nique à Paris",
+    "start_pdf_page": 110,
+    "end_pdf_page": 135,
+    "book_start_page": 108,
+    "book_end_page": 133,
+    "kind": "Buchauszug",
+    "topic_name": "Essen, Einkaufen & Verabredungen",
+    "focus": "Lebensmittel, Einkaufsdialoge auf dem Markt, Mengenangaben und Rezepte.",
+    "sections": [
+      {
+        "title": "Vocabulaire thématique: La nourriture et les courses",
+        "book_page": 108,
+        "relative_page": 1,
+        "level": 2
+      },
+      {
+        "title": "Volet 1: On se retrouve à La Villette !",
+        "book_page": 110,
+        "relative_page": 3,
+        "level": 2
+      },
+      {
+        "title": "Volet 2: On fait les courses ensemble !",
+        "book_page": 115,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "Volet 3: Le secret des madeleines",
+        "book_page": 120,
+        "relative_page": 13,
+        "level": 2
+      },
+      {
+        "title": "Atelier: Recette de cuisine",
+        "book_page": 126,
+        "relative_page": 19,
+        "level": 2
+      },
+      {
+        "title": "Bilan & Auto-contrôle",
+        "book_page": 130,
+        "relative_page": 23,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 6,
+    "title": "Module 6: Une carte postale",
+    "start_pdf_page": 136,
+    "end_pdf_page": 139,
+    "book_start_page": 134,
+    "book_end_page": 137,
+    "kind": "Buchauszug",
+    "topic_name": "Postkarten & Ferien",
+    "focus": "Über Ferien und Wetter berichten, Postkarten schreiben.",
+    "sections": [
+      {
+        "title": "Volet: Une carte postale de vacances",
+        "book_page": 134,
+        "relative_page": 1,
+        "level": 2
+      },
+      {
+        "title": "Atelier d'écriture: Écrire une carte postale",
+        "book_page": 136,
+        "relative_page": 3,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 7,
+    "title": "Anhang: Grammatik & Vokabular",
+    "start_pdf_page": 140,
+    "end_pdf_page": 226,
+    "book_start_page": 138,
+    "book_end_page": 224,
+    "kind": "Buchauszug",
+    "topic_name": "Grammatik, Verbtabellen & Wörterbuch",
+    "focus": "Systematische Grammatikübersicht, Konjugationstabellen und Französisch-Deutsches Vokabular.",
+    "sections": [
+      {
+        "title": "Grammaire: Systematische Grammatikübersicht",
+        "book_page": 138,
+        "relative_page": 1,
+        "level": 2
+      },
+      {
+        "title": "Tableaux de conjugaison (Verbtabellen)",
+        "book_page": 164,
+        "relative_page": 27,
+        "level": 2
+      },
+      {
+        "title": "Vocabulaire par unité (Lernwortschatz)",
+        "book_page": 168,
+        "relative_page": 31,
+        "level": 2
+      },
+      {
+        "title": "Dictionnaire français-allemand",
+        "book_page": 200,
+        "relative_page": 63,
+        "level": 2
+      }
+    ]
+  }
+]

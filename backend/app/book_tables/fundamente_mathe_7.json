@@ -1,0 +1,733 @@
+[
+  {
+    "unit_number": 0,
+    "title": "Titelei & Vorbereitung zur Lernausgangslage",
+    "start_pdf_page": 1,
+    "end_pdf_page": 14,
+    "book_start_page": 1,
+    "book_end_page": 10,
+    "kind": "Buchauszug",
+    "topic_name": "Fundamente der Mathematik",
+    "focus": "Titelei, Inhaltsverzeichnis und diagnostische Vorbereitung zur Lernausgangslage Klasse 7.",
+    "sections": [
+      {
+        "title": "Deine Grundlagen aus der Grundschulzeit",
+        "book_page": 6,
+        "relative_page": 6,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 1,
+    "title": "Kapitel 1: Zuordnungen und Proportionalität",
+    "start_pdf_page": 15,
+    "end_pdf_page": 46,
+    "book_start_page": 11,
+    "book_end_page": 42,
+    "kind": "Buchauszug",
+    "topic_name": "Dreisatz und proportionale Zuordnungen",
+    "focus": "Zuordnungen, grafische Darstellung, proportionale und antiproportionale Zuordnungen, Dreisatz.",
+    "sections": [
+      {
+        "title": "Dein Fundament (Wiederholung)",
+        "book_page": 12,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "1.1 Zuordnungen",
+        "book_page": 14,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "1.2 Grafische Darstellung",
+        "book_page": 18,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "1.3 Proportionale Zuordnungen",
+        "book_page": 22,
+        "relative_page": 12,
+        "level": 2
+      },
+      {
+        "title": "1.4 Dreisatz für proportionale Zuordnungen",
+        "book_page": 26,
+        "relative_page": 16,
+        "level": 2
+      },
+      {
+        "title": "1.5 Antiproportionale Zuordnungen",
+        "book_page": 30,
+        "relative_page": 20,
+        "level": 2
+      },
+      {
+        "title": "1.6 Dreisatz für antiproportionale Zuordnungen",
+        "book_page": 34,
+        "relative_page": 24,
+        "level": 2
+      },
+      {
+        "title": "1.7 Vermischte Aufgaben",
+        "book_page": 37,
+        "relative_page": 27,
+        "level": 2
+      },
+      {
+        "title": "Prüfe dein neues Fundament",
+        "book_page": 40,
+        "relative_page": 30,
+        "level": 2
+      },
+      {
+        "title": "Zusammenfassung",
+        "book_page": 42,
+        "relative_page": 32,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 2,
+    "title": "Kapitel 2: Prozent- und Zinsrechnung",
+    "start_pdf_page": 47,
+    "end_pdf_page": 78,
+    "book_start_page": 43,
+    "book_end_page": 74,
+    "kind": "Buchauszug",
+    "topic_name": "Prozent- und Zinsrechnung",
+    "focus": "Prozentschreibweise, Grundbegriffe, Prozentwert, Grundwert, prozentuale Veränderung und Zinsen.",
+    "sections": [
+      {
+        "title": "Dein Fundament (Wiederholung)",
+        "book_page": 44,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "2.1 Prozentschreibweise",
+        "book_page": 46,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "2.2 Grundbegriffe der Prozentrechnung",
+        "book_page": 50,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "2.3 Prozentwert berechnen",
+        "book_page": 52,
+        "relative_page": 10,
+        "level": 2
+      },
+      {
+        "title": "2.4 Prozentsatz berechnen",
+        "book_page": 54,
+        "relative_page": 12,
+        "level": 2
+      },
+      {
+        "title": "2.5 Grundwert berechnen",
+        "book_page": 56,
+        "relative_page": 14,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: Promille",
+        "book_page": 58,
+        "relative_page": 16,
+        "level": 2
+      },
+      {
+        "title": "2.6 Prozentuale Veränderung",
+        "book_page": 60,
+        "relative_page": 18,
+        "level": 2
+      },
+      {
+        "title": "2.7 Zinsen",
+        "book_page": 65,
+        "relative_page": 23,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: Sparpläne und Tilgungspläne",
+        "book_page": 68,
+        "relative_page": 26,
+        "level": 2
+      },
+      {
+        "title": "2.8 Vermischte Aufgaben",
+        "book_page": 70,
+        "relative_page": 28,
+        "level": 2
+      },
+      {
+        "title": "Prüfe dein neues Fundament",
+        "book_page": 72,
+        "relative_page": 30,
+        "level": 2
+      },
+      {
+        "title": "Zusammenfassung",
+        "book_page": 74,
+        "relative_page": 32,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 3,
+    "title": "Kapitel 3: Rationale Zahlen",
+    "start_pdf_page": 79,
+    "end_pdf_page": 114,
+    "book_start_page": 75,
+    "book_end_page": 110,
+    "kind": "Buchauszug",
+    "topic_name": "Rationale Zahlen",
+    "focus": "Ganze Zahlen, Zahlengerade, Koordinatensystem, Addition, Subtraktion, Multiplikation und Division rationaler Zahlen.",
+    "sections": [
+      {
+        "title": "Dein Fundament (Wiederholung)",
+        "book_page": 76,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "3.1 Ganze Zahlen und Zahlengerade",
+        "book_page": 78,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "3.2 Erweiterung des Koordinatensystems",
+        "book_page": 80,
+        "relative_page": 6,
+        "level": 2
+      },
+      {
+        "title": "3.3 Ganze Zahlen vergleichen und ordnen",
+        "book_page": 82,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "3.4 Zustandsänderungen",
+        "book_page": 84,
+        "relative_page": 10,
+        "level": 2
+      },
+      {
+        "title": "3.5 Rationale Zahlen",
+        "book_page": 87,
+        "relative_page": 13,
+        "level": 2
+      },
+      {
+        "title": "3.6 Rationale Zahlen addieren und subtrahieren",
+        "book_page": 89,
+        "relative_page": 15,
+        "level": 2
+      },
+      {
+        "title": "3.7 Rationale Zahlen multiplizieren und dividieren",
+        "book_page": 95,
+        "relative_page": 21,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: Rechenspiele",
+        "book_page": 99,
+        "relative_page": 25,
+        "level": 2
+      },
+      {
+        "title": "3.8 Rechnen mit allen Grundrechenarten",
+        "book_page": 100,
+        "relative_page": 26,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: Den Taschenrechner kennenlernen",
+        "book_page": 102,
+        "relative_page": 28,
+        "level": 2
+      },
+      {
+        "title": "3.9 Ausmultiplizieren und Ausklammern",
+        "book_page": 104,
+        "relative_page": 30,
+        "level": 2
+      },
+      {
+        "title": "3.10 Vermischte Aufgaben",
+        "book_page": 107,
+        "relative_page": 33,
+        "level": 2
+      },
+      {
+        "title": "Prüfe dein neues Fundament",
+        "book_page": 108,
+        "relative_page": 34,
+        "level": 2
+      },
+      {
+        "title": "Zusammenfassung",
+        "book_page": 110,
+        "relative_page": 36,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 4,
+    "title": "Kapitel 4: Geometrische Konstruktionen",
+    "start_pdf_page": 115,
+    "end_pdf_page": 160,
+    "book_start_page": 111,
+    "book_end_page": 156,
+    "kind": "Buchauszug",
+    "topic_name": "Geometrie & Winkelbeziehungen",
+    "focus": "Kreis, Senkrechte und Parallele, Dreiecke, Winkelsumme, Kongruenzsätze, Mittelsenkrechte, Umkreis und Inkreis.",
+    "sections": [
+      {
+        "title": "Dein Fundament (Wiederholung)",
+        "book_page": 112,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "4.1 Kreis",
+        "book_page": 114,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "4.2 Senkrecht und parallel",
+        "book_page": 117,
+        "relative_page": 7,
+        "level": 2
+      },
+      {
+        "title": "4.3 Dreiecke",
+        "book_page": 120,
+        "relative_page": 10,
+        "level": 2
+      },
+      {
+        "title": "4.4 Winkelsumme im Dreieck",
+        "book_page": 124,
+        "relative_page": 14,
+        "level": 2
+      },
+      {
+        "title": "4.5 Dynamische Geometrie-Software",
+        "book_page": 128,
+        "relative_page": 18,
+        "level": 2
+      },
+      {
+        "title": "4.6 Kongruenzsätze",
+        "book_page": 131,
+        "relative_page": 21,
+        "level": 2
+      },
+      {
+        "title": "4.7 Probleme lösen mit Dreieckskonstruktionen",
+        "book_page": 137,
+        "relative_page": 27,
+        "level": 2
+      },
+      {
+        "title": "4.8 Mittelsenkrechte und Winkelhalbierende",
+        "book_page": 140,
+        "relative_page": 30,
+        "level": 2
+      },
+      {
+        "title": "4.9 Umkreis und Inkreis beim Dreieck",
+        "book_page": 143,
+        "relative_page": 33,
+        "level": 2
+      },
+      {
+        "title": "4.10 Höhe und Seitenhalbierende im Dreieck",
+        "book_page": 147,
+        "relative_page": 37,
+        "level": 2
+      },
+      {
+        "title": "4.11 Vermischte Aufgaben",
+        "book_page": 151,
+        "relative_page": 41,
+        "level": 2
+      },
+      {
+        "title": "Prüfe dein neues Fundament",
+        "book_page": 154,
+        "relative_page": 44,
+        "level": 2
+      },
+      {
+        "title": "Zusammenfassung",
+        "book_page": 156,
+        "relative_page": 46,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 5,
+    "title": "Kapitel 5: Terme und Gleichungen",
+    "start_pdf_page": 161,
+    "end_pdf_page": 198,
+    "book_start_page": 157,
+    "book_end_page": 194,
+    "kind": "Buchauszug",
+    "topic_name": "Terme und lineare Gleichungen",
+    "focus": "Variablen, Terme vereinfachen, lineare Gleichungen lösen, Äquivalenzumformungen und Modellieren.",
+    "sections": [
+      {
+        "title": "Dein Fundament (Wiederholung)",
+        "book_page": 158,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "5.1 Variablen und Terme",
+        "book_page": 160,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "5.2 Terme vereinfachen",
+        "book_page": 164,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "5.3 Gleichungen",
+        "book_page": 167,
+        "relative_page": 11,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: Sprache in der Mathematik",
+        "book_page": 170,
+        "relative_page": 14,
+        "level": 2
+      },
+      {
+        "title": "5.4 Äquivalenzumformungen",
+        "book_page": 172,
+        "relative_page": 16,
+        "level": 2
+      },
+      {
+        "title": "5.5 Sonderfälle beim Lösen von Gleichungen",
+        "book_page": 176,
+        "relative_page": 20,
+        "level": 2
+      },
+      {
+        "title": "5.6 Mit Gleichungen modellieren",
+        "book_page": 178,
+        "relative_page": 22,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: Gleichungen mit einem CAS lösen",
+        "book_page": 182,
+        "relative_page": 26,
+        "level": 2
+      },
+      {
+        "title": "5.7 Verhältnisgleichungen und Bruchgleichungen",
+        "book_page": 184,
+        "relative_page": 28,
+        "level": 2
+      },
+      {
+        "title": "5.8 Ungleichungen",
+        "book_page": 187,
+        "relative_page": 31,
+        "level": 2
+      },
+      {
+        "title": "5.9 Vermischte Aufgaben",
+        "book_page": 189,
+        "relative_page": 33,
+        "level": 2
+      },
+      {
+        "title": "Prüfe dein neues Fundament",
+        "book_page": 192,
+        "relative_page": 36,
+        "level": 2
+      },
+      {
+        "title": "Zusammenfassung",
+        "book_page": 194,
+        "relative_page": 38,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 6,
+    "title": "Kapitel 6: Flächen",
+    "start_pdf_page": 199,
+    "end_pdf_page": 222,
+    "book_start_page": 195,
+    "book_end_page": 218,
+    "kind": "Buchauszug",
+    "topic_name": "Geometrie & Winkelbeziehungen",
+    "focus": "Flächeninhalt von Dreiecken, Parallelogrammen, Trapezen, Drachenvierecken und zusammengesetzten Figuren.",
+    "sections": [
+      {
+        "title": "Dein Fundament (Wiederholung)",
+        "book_page": 196,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "6.1 Flächeninhalt eines Dreiecks",
+        "book_page": 198,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "6.2 Winkelsumme im Viereck",
+        "book_page": 202,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "6.3 Flächeninhalt eines Parallelogramms",
+        "book_page": 204,
+        "relative_page": 10,
+        "level": 2
+      },
+      {
+        "title": "6.4 Flächeninhalt von Trapez und Drachenviereck",
+        "book_page": 208,
+        "relative_page": 14,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: Flächeninhalt beliebiger Figuren",
+        "book_page": 212,
+        "relative_page": 18,
+        "level": 2
+      },
+      {
+        "title": "6.5 Vermischte Aufgaben",
+        "book_page": 215,
+        "relative_page": 21,
+        "level": 2
+      },
+      {
+        "title": "Prüfe dein neues Fundament",
+        "book_page": 216,
+        "relative_page": 22,
+        "level": 2
+      },
+      {
+        "title": "Zusammenfassung",
+        "book_page": 218,
+        "relative_page": 24,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 7,
+    "title": "Kapitel 7: Daten",
+    "start_pdf_page": 223,
+    "end_pdf_page": 258,
+    "book_start_page": 219,
+    "book_end_page": 254,
+    "kind": "Buchauszug",
+    "topic_name": "Absolute und relative Häufigkeiten",
+    "focus": "Absolute und relative Häufigkeiten, Diagramme, Histogramme, statistische Kennwerte und Boxplots.",
+    "sections": [
+      {
+        "title": "Dein Fundament (Wiederholung)",
+        "book_page": 220,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "7.1 Absolute und relative Häufigkeit",
+        "book_page": 222,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "7.2 Diagramme",
+        "book_page": 226,
+        "relative_page": 8,
+        "level": 2
+      },
+      {
+        "title": "7.3 Klasseneinteilung und Histogramme",
+        "book_page": 230,
+        "relative_page": 12,
+        "level": 2
+      },
+      {
+        "title": "7.4 Kennwerte",
+        "book_page": 234,
+        "relative_page": 16,
+        "level": 2
+      },
+      {
+        "title": "7.5 Tabellenkalkulation",
+        "book_page": 238,
+        "relative_page": 20,
+        "level": 2
+      },
+      {
+        "title": "7.6 Boxplots",
+        "book_page": 242,
+        "relative_page": 24,
+        "level": 2
+      },
+      {
+        "title": "7.7 Statistische Erhebungen",
+        "book_page": 246,
+        "relative_page": 28,
+        "level": 2
+      },
+      {
+        "title": "7.8 Vermischte Aufgaben",
+        "book_page": 249,
+        "relative_page": 31,
+        "level": 2
+      },
+      {
+        "title": "Prüfe dein neues Fundament",
+        "book_page": 252,
+        "relative_page": 34,
+        "level": 2
+      },
+      {
+        "title": "Zusammenfassung",
+        "book_page": 254,
+        "relative_page": 36,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 8,
+    "title": "Kapitel 8: Ähnlichkeit",
+    "start_pdf_page": 259,
+    "end_pdf_page": 278,
+    "book_start_page": 255,
+    "book_end_page": 274,
+    "kind": "Buchauszug",
+    "topic_name": "Geometrie & Winkelbeziehungen",
+    "focus": "Kongruente und ähnliche Figuren, Kongruenzabbildungen, Maßstäbe, Umfang und Flächeninhalt ähnlicher Figuren.",
+    "sections": [
+      {
+        "title": "Dein Fundament (Wiederholung)",
+        "book_page": 256,
+        "relative_page": 2,
+        "level": 2
+      },
+      {
+        "title": "8.1 Kongruente Figuren",
+        "book_page": 258,
+        "relative_page": 4,
+        "level": 2
+      },
+      {
+        "title": "8.2 Kongruenzabbildungen",
+        "book_page": 261,
+        "relative_page": 7,
+        "level": 2
+      },
+      {
+        "title": "8.3 Ähnliche Figuren",
+        "book_page": 265,
+        "relative_page": 11,
+        "level": 2
+      },
+      {
+        "title": "8.4 Umfang und Flächeninhalt ähnlicher Figuren",
+        "book_page": 268,
+        "relative_page": 14,
+        "level": 2
+      },
+      {
+        "title": "Streifzug: CAS-Einsatz bei Ähnlichkeit",
+        "book_page": 270,
+        "relative_page": 16,
+        "level": 2
+      },
+      {
+        "title": "8.5 Vermischte Aufgaben",
+        "book_page": 271,
+        "relative_page": 17,
+        "level": 2
+      },
+      {
+        "title": "Prüfe dein neues Fundament",
+        "book_page": 272,
+        "relative_page": 18,
+        "level": 2
+      },
+      {
+        "title": "Zusammenfassung",
+        "book_page": 274,
+        "relative_page": 20,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 9,
+    "title": "Kapitel 9: Methodenkarten",
+    "start_pdf_page": 279,
+    "end_pdf_page": 282,
+    "book_start_page": 275,
+    "book_end_page": 278,
+    "kind": "Buchauszug",
+    "topic_name": "Fundamente der Mathematik",
+    "focus": "Methodenkarten und Strategien zum strukturierten mathematischen Arbeiten und Problemlösen.",
+    "sections": [
+      {
+        "title": "Methodenkarten & Lösungsstrategien",
+        "book_page": 276,
+        "relative_page": 2,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "unit_number": 10,
+    "title": "Kapitel 10: Anhang & Lösungen",
+    "start_pdf_page": 283,
+    "end_pdf_page": 304,
+    "book_start_page": 279,
+    "book_end_page": 300,
+    "kind": "Lösungsheft",
+    "topic_name": "Fundamente der Mathematik",
+    "focus": "Vollständige Lösungen und Kontrollhilfen für alle Aufgaben des Lehrbuchs.",
+    "sections": [
+      {
+        "title": "Lösungen aller Aufgaben",
+        "book_page": 280,
+        "relative_page": 2,
+        "level": 2
+      }
+    ]
+  }
+]
