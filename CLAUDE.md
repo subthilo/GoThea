@@ -47,7 +47,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
   - `page_renderer.py` – Seitenbilder (pdftoppm, Priorität, Cache-Aufräumen).
   - `timetable_slots.py` / `timetable_analyzer.py` – Stundenplan-Import (Untis-Zeilen → Slots).
   - `tutor_service.py` – Tutor „Luna“ (Tafel-Feedback, Übungen, Lückenprüfung, TTS).
-- `frontend/` – `index.html`, `app.js` (fast alles), `whiteboard.js`, `cloze_trainer.js`, `style.css`.
+- `frontend/` – klassische Skripte ohne Build, gemeinsamer globaler Bereich, Ladereihenfolge in `index.html`: `js/api.js` (**einziger Weg zum Backend**: `apiFetch()`/`apiJson()`, Eltern-Token, 403 → PIN-Dialog), `js/*.js` (eine Datei pro Bereich, früher `app.js`), `js/ink_core.js` (Zeichenkern), `whiteboard.js` (Tafel, nutzt den Kern über `surface.…`), `cloze_trainer.js`; Stile in `css/*.css` (Reihenfolge = Kaskade, nicht umsortieren); Dialoge in `dialogs/*.html`.
 - `scripts/` – Pflege-Skripte (Neu-Einordnung, Themenkatalog, Zusammenführung, Klassifizierungs-Messung).
 
 ## Fachliche Konzepte (mit dem Nutzer abgestimmt)
@@ -62,10 +62,10 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - SQLAlchemy-Sessions laufen mit `autoflush=False`: vor Abfragen auf eben hinzugefügte Objekte `db.flush()`.
 - Daten, die eine Voranalyse anlegt und ein späterer Request nutzt, müssen **committet** werden (sonst 404 beim Bestätigen).
 - Der Seeder legt Start-Themen nur für **neu angelegte** Fächer an (gelöschte Platzhalter kommen nicht zurück).
-- **Pencil/Zeichenkern (`whiteboard.js`, auch vom Buch-Leser für Anmerkungen genutzt) ist fragil und mühsam erarbeitet:** darf besser, auf keinen Fall schlechter werden. Nur unverändert verschieben; Änderungen am Schreibverhalten als eigene, einzeln getestete Commits, vom Nutzer auf dem iPad geprüft. Dazu gehören auch die iOS-relevanten CSS-Regeln (`touch-action`, `user-select`, `-webkit-touch-callout`).
+- **Pencil/Zeichenkern (`frontend/js/ink_core.js`, `createInkSurface()`; Tafel und Dokument-Notizen) ist fragil und mühsam erarbeitet:** darf besser, auf keinen Fall schlechter werden. `tests/unit/test_ink_core_guard.py` schlägt bei jeder Änderung an der Datei an (Prüfsumme bewusst nachziehen). Nur unverändert verschieben; Änderungen am Schreibverhalten als eigene, einzeln getestete Commits, vom Nutzer auf dem iPad geprüft. Dazu gehören auch die iOS-relevanten CSS-Regeln (`touch-action`, `user-select`, `-webkit-touch-callout`).
 - Stundenplan und Tafel nutzen Zen-Modi (fixierte Seite ohne Scrollen). Jede Ansicht, die einen Tab aktiviert, muss `applyTabViewModes()` aufrufen.
 - Endpunkte, die Inhalte inkl. Lösungen liefern, bleiben im Eltern-Modus, bis Lösungen serverseitig verborgen werden.
-- Tests (`tests/conftest.py`): temporäres `DATA_DIR`/`SHARED_DATA_DIR`, leerer API-Key, keine Hintergrund-Worker, frische In-Memory-DB pro Test. `client` und `strict_client` nie im selben Test (teilen sich die Dependency-Overrides). Suite läuft in ~15 s (davon ~9 s Browser-Tests; ohne Playwright werden sie übersprungen).
+- Tests (`tests/conftest.py`): temporäres `DATA_DIR`/`SHARED_DATA_DIR`, leerer API-Key, keine Hintergrund-Worker, frische In-Memory-DB pro Test. `client` und `strict_client` nie im selben Test (teilen sich die Dependency-Overrides). Suite läuft in ~65 s (davon ~55 s Browser-Tests; ohne Playwright werden sie übersprungen). `tests/e2e/test_dialogs.py` öffnet jeden Dialog einmal – fängt Ladereihenfolge-Fehler der klassischen Skripte.
 
 ## Stand & nächste Schritte
 
@@ -75,7 +75,7 @@ Erledigt am 15.10.2026 (Aufräumen, Teil 1): Übungs-Vorrat abgeschaltet; Browse
 Konzept Tutor „Luna“ + Übungsarten: Claude-Doc https://claude.ai/code/artifact/e9556b4a-e16b-4671-84a1-efa29623bc82 (Tabs „Luna – Tutor-Konzept“, „Übungsarten“). Übungsarten werden in einem eigenen Chat ausgearbeitet (nur Konzept, kein Code).
 
 Vereinbarte Reihenfolge:
-1. **Aufräumen, Teil 2:** `frontend/app.js` (~5.100 Z.) und `style.css` (~8.400 Z.) in Module aufteilen (zuerst ein API-Helfer), Dialoge aus `index.html` lösen. Den Zeichenkern aus `whiteboard.js` **unverändert** als eigene Komponente herauslösen (Funktionsvergleich alt/neu maschinell, Pencil-Tests, iPad-Check). Dabei die toten Funktionen der früheren „Unterlage unter der Tafel“ entfernen (`setWhiteboardMaterial`, `clearWhiteboardMaterial`, `renderUnderlayPage`, `activeMaterial`-Zweige). Danach Upload-Weg entflechten (lange Funktionen in `material_ingestion`, `document_analyzer`, `inbox_service`), Kapiteltabellen aus `book_segmentation.py` in Datendateien, README aktualisieren.
+1. **Aufräumen, Teil 2:** Frontend-Aufteilung erledigt (15.10.2026, auf Staging; Produktion nach iPad-Check des Zeichenkerns). Offen: Aufräumen innerhalb der neuen `js/`-Dateien, zusammengehörige CSS-Abschnitte nur mit Bildschirmfoto-Vergleich zusammenlegen, ggf. Tabs aus `index.html` wie die Dialoge auslagern. Danach Upload-Weg entflechten (lange Funktionen in `material_ingestion`, `document_analyzer`, `inbox_service`), Kapiteltabellen aus `book_segmentation.py` in Datendateien, README aktualisieren.
 2. **Fundament für Luna** (siehe Konzept, Abschnitt „Was das Fundament liefern muss“): Materialsuche + Fundstellen-Anzeige, Gedächtnis/Lernstand in der DB, Übungsarten als Bausteine, HTTPS auf dem Pi (Mikrofon in Safari), Streaming in der KI-Schicht.
 3. **Arbeitsblatt-Ablauf** komplett (siehe Konzepte), danach Arbeitsheft-Seiten, Tests & Arbeiten (inkl. Stärken/Schwächen), Mitschriften, Hefte mit PDF-Export, Vokabellisten.
 4. **Tutor** neu bauen (Konzept-Doc), an Seiten-Erschließung und Tafeln angebunden.
