@@ -83,6 +83,6 @@ Vereinbarte Reihenfolge:
 
 **Tutor & Übungen werden neu gedacht** (eigene Session, „muss sauber sein und Spaß machen“). Der bisherige Code (`tutor_service.py`, Übungs-/Phrasen-Pool, Übungslogik in den Routern) ist ein früher Schnellschuss: einfrieren, nicht polieren (nutzt aber schon den gemeinsamen KI-Client). Tafeln liegen vorerst in `tutor_sessions`; beim Tutor-Umbau „Tafel“ und „Lernsitzung“ trennen.
 
-Offene Entscheidungen des Nutzers: Eltern-PIN fällt bei beschädigter PIN-Datei still auf den Standard zurück (jetzt geloggt) – lieber sperren? `scripts/extract_aplus1_toc.py` (Einmal-Skript mit festem Pfad) löschen?
+Entschieden: Bei beschädigter PIN-Datei bleibt der Rückfall auf die Standard-PIN (wird als Fehler geloggt).
 
 Bekannte offene Punkte: Tutor-WebSocket `/ws/tutor/…` ist eine Attrappe (`/ws` dagegen speist die Online-Anzeige); „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar; Seiten-Notizen können verloren gehen, wenn das Seitenbild beim Speichern noch nicht geladen ist (`saveBookPageAnnotationsNow` bricht bei Bildgröße 0 still ab).
