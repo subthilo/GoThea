@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status, Response
@@ -54,7 +55,10 @@ def _to_material_read(mat: Material, db: Session) -> MaterialRead:
         parent_id=mat.parent_id,
         start_page=mat.start_page,
         end_page=mat.end_page,
-        dossier_title=mat.dossier.title if mat.dossier else None
+        dossier_title=mat.dossier.title if mat.dossier else None,
+        solution_pages=json.loads(mat.solution_pages_json) if mat.solution_pages_json else [],
+        worked_on_paper=mat.worked_on_paper,
+        teacher_graded=mat.teacher_graded,
     )
 
 @router.post("/pre-analyze", response_model=PreAnalysisResponse, status_code=status.HTTP_200_OK)
@@ -208,29 +212,7 @@ def get_material_detail(
         raise HTTPException(status_code=404, detail="Material nicht gefunden.")
 
     return MaterialDetailRead(
-        id=mat.id,
-        user_id=mat.user_id,
-        subject_id=mat.subject_id,
-        topic_id=mat.topic_id,
-        title=mat.title,
-        kind=mat.kind,
-        filename=mat.filename,
-        file_size=mat.file_size,
-        mime_type=mat.mime_type,
-        page_count=mat.page_count,
-        summary=mat.summary,
-        created_at=mat.created_at,
-        chunks_count=len(mat.chunks) if mat.chunks else 0,
-        subject_name=mat.subject.name if mat.subject else None,
-        subject_icon=mat.subject.icon if mat.subject else None,
-        subject_color=mat.subject.color_code if mat.subject else None,
-        topic_name=mat.topic.name if mat.topic else None,
-        dossier_id=mat.dossier_id,
-        dossier_order=mat.dossier_order,
-        parent_id=mat.parent_id,
-        start_page=mat.start_page,
-        end_page=mat.end_page,
-        dossier_title=mat.dossier.title if mat.dossier else None,
+        **_to_material_read(mat, db).model_dump(),
         extracted_text=mat.extracted_text,
         chunks=mat.chunks
     )

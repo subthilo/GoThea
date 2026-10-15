@@ -797,6 +797,7 @@ function getSubjectIconUrl(subjectNameOrCode) {
 function getDocumentIconUrl(docKind) {
   if (!docKind) return "/static/Icons/Dokumente.svg";
   const norm = String(docKind).toLowerCase().trim();
+  if (norm.includes("vokabel")) return "/static/Icons/Inhaltsverzeichnis.svg";
   if (norm.includes("blatt") || norm.includes("arbeitsblatt")) return "/static/Icons/Arbeitsblätter.svg";
   if (norm.includes("heft") || norm.includes("arbeitsheft")) return "/static/Icons/Arbeitshefte.svg";
   if (norm.includes("mitschrift") || norm.includes("notiz")) return "/static/Icons/Mitschriften.svg";
@@ -1181,8 +1182,10 @@ function renderSubjectMaterialsList(materials) {
   const filtered = materials.filter((m) => {
     if (activeSubjectKindFilter === "all") return true;
     if (activeSubjectKindFilter === "Arbeitsblatt") return m.kind === "Arbeitsblatt";
-    if (activeSubjectKindFilter === "Hefter") return (m.kind || "").includes("Heft");
+    if (activeSubjectKindFilter === "Mitschrift") return m.kind === "Mitschrift" || m.kind === "Hefterseite";
     if (activeSubjectKindFilter === "Buch") return (m.kind || "").includes("Buch");
+    if (activeSubjectKindFilter === "Vokabelliste") return m.kind === "Vokabelliste";
+    if (activeSubjectKindFilter === "Sonstiges") return m.kind === "Sonstiges";
     if (activeSubjectKindFilter === "Test") {
       const k = m.kind || "";
       return k.includes("Test") || k.includes("Klassenarbeit") || k.includes("Übung") || k.includes("Klausur");
@@ -1197,7 +1200,7 @@ function renderSubjectMaterialsList(materials) {
         <span style="font-size: 2.4rem; display: block; margin-bottom: 8px;">📭</span>
         <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 6px;">Keine Dokumente${filterName}</div>
         <p style="font-size: 0.88rem; max-width: 440px; margin: 0 auto 16px;">
-          Lade Arbeitsblätter, Hefterseiten oder Schulbuchauszüge für dieses Fach hoch, um sie hier direkt zu öffnen und auf der Tafel zu bearbeiten.
+          Lade Arbeitsblätter, Mitschriften, Tests oder Schulbücher für dieses Fach hoch, um sie hier direkt zu öffnen und auf der Tafel zu bearbeiten.
         </p>
         <button class="btn-primary-sm" onclick="openMaterialUploadModal('${currentDetailSubjectId || ''}')">➕ Jetzt Dokument hochladen</button>
       </div>
@@ -1616,6 +1619,7 @@ if (btnResetStaging) {
 
 let currentMaterials = [];
 let currentUploadToken = null;
+let currentUploadSignals = {}; // KI-Signale der Voranalyse (Lösungsseiten, bearbeitet, bewertet)
 let currentPreselectedSubjectId = null;
 let allTopicsCache = [];
 
@@ -2177,6 +2181,7 @@ async function handleSingleFileUpload(file) {
 
     const data = await res.json();
     currentUploadToken = data.upload_token;
+    currentUploadSignals = pickAnalysisSignals(data);
 
     matStepUpload.style.display = "none";
     matStepConfirm.style.display = "block";
@@ -2224,6 +2229,14 @@ async function handleSingleFileUpload(file) {
     alert("Netzwerkfehler beim Upload.");
     resetMaterialModal();
   }
+}
+
+function pickAnalysisSignals(preData) {
+  return {
+    solution_pages: preData.solution_pages || [],
+    worked_on_paper: preData.worked_on_paper ?? null,
+    teacher_graded: preData.teacher_graded ?? null,
+  };
 }
 
 async function handleBatchFileUpload(files) {
@@ -2285,7 +2298,8 @@ async function handleBatchFileUpload(files) {
         topic_id: preData.predicted_topic_id || null,
         title: preData.predicted_title || file.name,
         kind: preData.predicted_kind || "Arbeitsblatt",
-        summary: preData.preview_snippet || null
+        summary: preData.preview_snippet || null,
+        ...pickAnalysisSignals(preData)
       };
 
       const confRes = await fetch("/api/v1/materials/confirm", {
@@ -2336,6 +2350,7 @@ async function handleBatchFileUpload(files) {
 
 function resetMaterialModal() {
   currentUploadToken = null;
+  currentUploadSignals = {};
   currentPreselectedSubjectId = null;
   if (matFileInput) matFileInput.value = "";
   if (matDropzone) matDropzone.style.display = "flex";
@@ -2376,7 +2391,7 @@ function openMaterialUploadModal(preselectedSubjectId = null) {
     if (dzSub) dzSub.textContent = "PDF oder Foto (Mehrfachauswahl möglich)";
   } else {
     if (titleEl) titleEl.textContent = "📄 Dokument hinzufügen";
-    if (subEl) subEl.textContent = "Lade ein Schulbuch, ein Arbeitsblatt, eine Hefterseite oder eine Klassenarbeit hoch.";
+    if (subEl) subEl.textContent = "Lade ein Schulbuch, ein Arbeitsblatt, eine Mitschrift oder einen Test hoch.";
     if (dzText) dzText.textContent = "Datei hierher ziehen oder tippen";
     if (dzSub) dzSub.textContent = "PDF oder Foto (Mehrfachauswahl möglich)";
   }
@@ -2474,7 +2489,8 @@ if (btnSubmitMaterial) {
       topic_id: matConfirmTopic.value || null,
       title: titleVal,
       kind: matConfirmKind.value,
-      summary: matConfirmSummary.value.trim() || null
+      summary: matConfirmSummary.value.trim() || null,
+      ...currentUploadSignals
     };
 
     btnSubmitMaterial.disabled = true;

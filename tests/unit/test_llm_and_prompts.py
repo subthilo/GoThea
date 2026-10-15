@@ -48,7 +48,12 @@ def test_document_analysis_uses_analysis_model_and_page_count(db_session, tmp_pa
 
     kwargs = mock_client.chat.completions.create.call_args.kwargs
     assert kwargs["model"] == "gpt-4o-mini"
-    assert "Seitenzahl des Dokuments: 42" in kwargs["messages"][1]["content"]
+    parts = kwargs["messages"][1]["content"]
+    texts = "\n".join(p["text"] for p in parts if p["type"] == "text")
+    assert "Seitenzahl des Dokuments: 42" in texts
+    # Große Dokumente: nur die ersten 3 Seiten als Bild (Cover, Impressum, Inhaltsverzeichnis)
+    assert sum(1 for p in parts if p["type"] == "image_url") == 3
+    assert "--- Seite 3 ---" in texts and "--- Seite 4 ---" not in texts
 
 
 def test_book_toc_uses_main_model_and_pdf_page_markers(tmp_path):
@@ -98,3 +103,22 @@ def test_tutor_highlight_box_is_clamped_to_image():
 
     coords = res["actions"][0]["coords"]
     assert coords == {"x_pct": 90.0, "y_pct": 0.0, "w_pct": 10.0, "h_pct": 100.0}
+
+
+def test_small_documents_are_analyzed_page_by_page_with_signals(db_session, tmp_path):
+    pdf = _blank_pdf(tmp_path / "blatt.pdf", 2)
+    mock_client = _mock_openai({
+        "fach": "Biologie", "dokumentart": "Hefterseite", "inhaltlicher_titel": "Verhütungsmittel",
+        "loesungsseiten": [2, "2", "x"], "von_schuelerin_bearbeitet": False, "von_lehrkraft_bewertet": "ja",
+    })
+    with patch("backend.app.services.document_analyzer.OPENAI_API_KEY", "sk-fake"), \
+         patch("openai.OpenAI", return_value=mock_client):
+        from backend.app.services.document_analyzer import analyze_document_content
+        result = analyze_document_content(db_session, pdf, "")
+
+    parts = mock_client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+    assert sum(1 for p in parts if p["type"] == "image_url") == 2
+    assert result.kind == "Mitschrift"          # alte Bezeichnung wird abgebildet
+    assert result.solution_pages == [2]
+    assert result.worked_on_paper is False
+    assert result.teacher_graded is None        # kein echter Wahrheitswert -> unbekannt

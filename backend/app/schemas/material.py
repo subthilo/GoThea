@@ -14,6 +14,9 @@ class PreAnalysisResponse(BaseModel):
     predicted_kind: str = "Arbeitsblatt"
     preview_snippet: Optional[str] = None
     extracted_text: Optional[str] = None
+    solution_pages: List[int] = []
+    worked_on_paper: Optional[bool] = None
+    teacher_graded: Optional[bool] = None
 
 class MaterialConfirmRequest(BaseModel):
     upload_token: str
@@ -25,6 +28,9 @@ class MaterialConfirmRequest(BaseModel):
     title: str
     kind: str = "Arbeitsblatt"
     summary: Optional[str] = None
+    solution_pages: List[int] = []
+    worked_on_paper: Optional[bool] = None
+    teacher_graded: Optional[bool] = None
 
 class MaterialChunkRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -61,6 +67,9 @@ class MaterialRead(BaseModel):
     subject_color: Optional[str] = None
     topic_name: Optional[str] = None
     dossier_title: Optional[str] = None
+    solution_pages: List[int] = []
+    worked_on_paper: Optional[bool] = None
+    teacher_graded: Optional[bool] = None
 
 class MaterialDetailRead(MaterialRead):
     extracted_text: Optional[str] = None

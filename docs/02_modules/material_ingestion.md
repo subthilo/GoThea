@@ -143,13 +143,27 @@ Neben dem interaktiven Einzel-Upload im Frontend bietet GoThea eine automatisier
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Modell-Allokation: Vorverarbeitung vs. Didaktischer Tutor
+### Dokumentarten (`services/document_kinds.py`)
 
-* **`gpt-4o-mini` (Vorverarbeitung / Ingestion):**
-  * Aufgaben: Text- und Bild-OCR, Inhaltsanalyse von Deckblättern, Fächerzuordnung, Titelerstellung, JSON-Normalisierung.
-  * Vorteile: Sehr hohe Ausführungsgeschwindigkeit, fehlerfreies JSON-Schema, minimale Token-Kosten.
-* **`gpt-6-luna` & `gpt-6.1-sol` (Lernbegleiter & Didaktik):**
-  * Aufgaben: Sokratischer Live-Tutor auf dem iPad Whiteboard, latenzarme Audio-Unterstützung (< 500 ms Streaming), pixelgenaue Fehleranalyse von Rechenschritten und Schülerskizzen.
+| Dokumentart | Bedeutung |
+| :--- | :--- |
+| Arbeitsblatt | Übungsmaterial zu einem Unterthema, auch kopierte Arbeitsheft-Seiten; darf schon auf Papier ausgefüllt sein |
+| Mitschrift | Von Thea handschriftlich angelegte Notizen / Hefteinträge (früher „Hefterseite“) |
+| Buch | Schulbuch oder Arbeitsheft; wird in Kapitel (`Buchauszug`) segmentiert |
+| Test | Jede von der Lehrkraft **bewertete** Leistung: Test, Diktat, bewertetes Protokoll |
+| Klassenarbeit | Große Arbeit / Klausur |
+| Vokabelliste | Vokabeln mit Übersetzung und Beispielsätzen |
+| Sonstiges | Passt in keine andere Art |
+| Stundenplan | Wochenraster (Fach *Organisation*) |
+
+Zusätzlich liefert die Analyse drei Signale, die am Material gespeichert werden: `solution_pages_json` (Seiten mit Lösungen / Erwartungshorizont), `worked_on_paper` (bereits auf Papier bearbeitet) und `teacher_graded` (Korrekturen, Punkte oder Note sichtbar). Kleine Dokumente (bis 6 Seiten) werden vollständig als Seitenbilder analysiert, größere über die ersten 3 Seiten.
+
+Neu-Einordnung bestehender Dokumente: `scripts/reanalyze_materials.py` (Fach bleibt unverändert, Bücher verlieren ihre Kapitel nur bei ausdrücklich anderer Dokumentart).
+
+### Modell-Allokation
+
+* **Dokumentanalyse:** `OPENAI_ANALYSIS_MODEL`, Standard = Hauptmodell (`OPENAI_MODEL`). In der Messung mit `scripts/eval_document_classification.py` an 24 echten Dokumenten erreichte `gpt-6-luna` 24/24 korrekte Dokumentarten, `gpt-4o-mini` 19/24 bei rund 15-fachem Token-Verbrauch für Seitenbilder.
+* **Tutor & Didaktik:** `OPENAI_MODEL` (`gpt-6-luna`).
 
 ---
 
@@ -192,7 +206,7 @@ Die GoThea Benutzeroberfläche trennt Ingestion und Facharbeit klar voneinander:
   - *„➕ Dokument für dieses Fach hochladen“*: Öffnet das Upload-Modal mit automatischer Fach-Vorbelegung.
   - *„🔗 Dokumente zusammenführen“*: Ermöglicht das gezielte Verbinden mehrerer Materialien dieses Fachs.
 * **Einklappbare Lehrplanthemen:** Liste aller im Rahmenlehrplan hinterlegten Themen für diese Klassenstufe mit RLP-Niveaustufen (`E`, `F`, etc.).
-* **Fach-Materialien-Grid:** Alle Arbeitsblätter, Hefterseiten, Schulbücher und Tests gefiltert nach Fach mit Filter-Pills (Alle, Arbeitsblatt, Hefter, Buch, Klassenarbeit).
+* **Fach-Materialien-Grid:** Alle Arbeitsblätter, Hefterseiten, Schulbücher und Tests gefiltert nach Fach mit Filter-Pills (Alle, Arbeitsblätter, Mitschriften, Schulbücher, Tests & Arbeiten, Vokabeln, Sonstiges).
 
 ---
 
@@ -205,7 +219,7 @@ Schüler und Eltern haben bei der Pflege der Schulunterlagen volle Flexibilität
 * **Felder:**
   * **Schulfach:** Beliebiges Schulfach wählbar. Bei Fachwechsel wird die Themenliste automatisch aktualisiert und ungültige alte Themenverknüpfungen werden bereinigt.
   * **Thema:** Zuordnung zu Lehrplanthemen des Fachs oder Freilassen.
-  * **Titel & Dokumentart:** Anpassbar (Arbeitsblatt, Hefterseite, Buchauszug, Klassenarbeit, Test, Stundenplan).
+  * **Titel & Dokumentart:** Anpassbar (siehe Dokumentarten oben).
   * **Zusammenfassung / Notiz:** Freitext für Lernhinweise oder Prüfungstermine.
 
 ### B. Seitenreihenfolge ändern & Einzelseiten löschen (`POST /api/v1/materials/{id}/reorder-pages`)

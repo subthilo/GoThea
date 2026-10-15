@@ -16,8 +16,10 @@ else:
 # OpenAI Integration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-# Günstiges Modell für die Vorverarbeitung jedes Uploads (Dokument- & Stundenplananalyse)
-OPENAI_ANALYSIS_MODEL = os.getenv("OPENAI_ANALYSIS_MODEL", "gpt-4o-mini")
+# Modell für die Dokumentanalyse jedes Uploads. Standard: Hauptmodell, weil gpt-4o-mini in
+# der Messung (scripts/eval_document_classification.py) schlechter klassifizierte und für
+# Seitenbilder ein Vielfaches an Tokens verbrauchte.
+OPENAI_ANALYSIS_MODEL = os.getenv("OPENAI_ANALYSIS_MODEL", OPENAI_MODEL)
 
 # Umgebung: "staging" oder "production" (Default: "staging" für Sicherheit)
 APP_ENV = os.getenv("APP_ENV", "staging").lower()

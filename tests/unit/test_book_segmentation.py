@@ -342,3 +342,10 @@ def test_force_resegments_existing_chapters(db_session, tmp_path):
     refreshed = auto_detect_and_segment_book(db_session, book, force=True)
     assert refreshed[0].page_count == 30
     assert len(pypdf.PdfReader(refreshed[0].file_path).pages) == 30
+
+
+def test_non_book_kinds_are_never_segmented():
+    for kind in ("Vokabelliste", "Test", "Klassenarbeit", "Mitschrift", "Hefterseite", "Sonstiges"):
+        mat = Material(id="mat_x", kind=kind, mime_type="application/pdf", parent_id=None,
+                       page_count=60, title="Vokabelliste Englisch Klasse 7")
+        assert is_candidate_book(mat) is False, kind

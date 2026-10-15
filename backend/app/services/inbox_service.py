@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import uuid
@@ -6,6 +7,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
 
+from backend.app.services.document_kinds import ARBEITSBLATT, BUCHAUSZUG
 from backend.app.config import INBOX_DIR, INBOX_ERRORS_DIR, MATERIALS_DIR
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.dossier import Dossier
@@ -201,7 +203,7 @@ def process_single_inbox_file(
     dossier_title = analysis.dossier_title
     dossier_kind = analysis.dossier_kind
 
-    if is_pdf and page_count >= 20 and kind in ("Arbeitsblatt", "Hefterseite", "Buchauszug"):
+    if is_pdf and page_count >= 20 and kind in (ARBEITSBLATT, BUCHAUSZUG):
         kind = "Buch"
         dossier_title = f"Lehrbuch: {title}"
         dossier_kind = "lehrbuch"
@@ -247,7 +249,10 @@ def process_single_inbox_file(
         mime_type=mime_type,
         page_count=page_count,
         extracted_text=extracted_text or None,
-        summary=analysis.summary or f"Automatisch aus Inbox verarbeitet in Mappe '{dossier.title}'"
+        summary=analysis.summary or f"Automatisch aus Inbox verarbeitet in Mappe '{dossier.title}'",
+        solution_pages_json=json.dumps(analysis.solution_pages) if analysis.solution_pages else None,
+        worked_on_paper=analysis.worked_on_paper,
+        teacher_graded=analysis.teacher_graded
     )
     db.add(material)
     db.flush()

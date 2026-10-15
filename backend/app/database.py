@@ -39,6 +39,9 @@ def ensure_schema_migrations(target_engine):
                 ("start_page", "INTEGER"),
                 ("end_page", "INTEGER"),
                 ("toc_json", "TEXT"),
+                ("solution_pages_json", "TEXT"),
+                ("worked_on_paper", "BOOLEAN"),
+                ("teacher_graded", "BOOLEAN"),
             ]
             for col_name, col_def in new_cols:
                 if col_name not in existing_cols:
@@ -46,6 +49,12 @@ def ensure_schema_migrations(target_engine):
                         conn.execute(text(f"ALTER TABLE materials ADD COLUMN {col_name} {col_def};"))
                     except Exception:
                         pass
+
+            # Frühere Dokumentarten auf die heutigen abbilden (z. B. Hefterseite -> Mitschrift)
+            if "kind" in existing_cols:
+                from backend.app.services.document_kinds import LEGACY_KINDS
+                for legacy, current in LEGACY_KINDS.items():
+                    conn.execute(text("UPDATE materials SET kind = :new WHERE kind = :old"), {"new": current, "old": legacy})
         conn.commit()
 
 def get_db():

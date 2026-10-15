@@ -8,6 +8,7 @@ import pypdf
 from sqlalchemy.orm import Session
 
 from backend.app.config import MATERIALS_DIR
+from backend.app.services.document_kinds import NEVER_BOOK_KINDS, normalize_kind
 from backend.app.prompts.book_toc import BOOK_TOC_SYSTEM_PROMPT
 from backend.app.services.llm import chat_params
 from backend.app.models.material import Material
@@ -937,6 +938,9 @@ def is_candidate_book(material: Material) -> bool:
     if material.parent_id is not None:
         return False
     if material.mime_type != "application/pdf":
+        return False
+    # Ausdrücklich als etwas anderes erkannte Dokumente (Vokabelliste, Test, Mitschrift ...) nie zerlegen
+    if normalize_kind(material.kind, default="") in NEVER_BOOK_KINDS:
         return False
 
     kind_lower = (material.kind or "").lower()

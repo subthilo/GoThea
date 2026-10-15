@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import json
 import uuid
 import shutil
 import subprocess
@@ -15,6 +16,7 @@ from sqlalchemy.orm import Session
 import logging
 
 from backend.app.config import MATERIALS_DIR, TEMP_UPLOADS_DIR, PAGE_CACHE_DIR
+from backend.app.services.document_kinds import ARBEITSBLATT, BUCHAUSZUG, normalize_kind
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.material import Material, MaterialChunk
 from backend.app.schemas.material import (
@@ -153,7 +155,7 @@ def pre_analyze_upload(
     predicted_subject_id: Optional[str] = None
     predicted_topic_id: Optional[str] = None
     predicted_title: str = clean_title_from_filename(filename)
-    predicted_kind: str = detect_kind_from_filename_and_text(filename, extracted_text)
+    predicted_kind: str = normalize_kind(detect_kind_from_filename_and_text(filename, extracted_text), default=ARBEITSBLATT)
 
     # 1. Intelligente KI-Analyse (falls OpenAI konfiguriert). Ein fixiertes Fach (Upload von der
     #    Fachseite) bleibt bestehen; Titel, Art, Zusammenfassung und ggf. Thema kommen von der KI.
@@ -170,7 +172,7 @@ def pre_analyze_upload(
                 ai_kind = ai_res.kind
                 if hint_subject and ai_kind == "Stundenplan":
                     ai_kind = predicted_kind
-                if is_pdf and page_count >= 20 and ai_kind in ("Arbeitsblatt", "Hefterseite", "Buchauszug"):
+                if is_pdf and page_count >= 20 and ai_kind in (ARBEITSBLATT, BUCHAUSZUG):
                     ai_kind = "Buch"
                 preview_snippet = ai_res.summary or ((extracted_text[:280] + "...") if len(extracted_text) > 280 else (extracted_text or None))
                 return PreAnalysisResponse(
@@ -184,7 +186,10 @@ def pre_analyze_upload(
                     predicted_title=ai_res.title,
                     predicted_kind=ai_kind,
                     preview_snippet=preview_snippet,
-                    extracted_text=extracted_text or None
+                    extracted_text=extracted_text or None,
+                    solution_pages=ai_res.solution_pages,
+                    worked_on_paper=ai_res.worked_on_paper,
+                    teacher_graded=ai_res.teacher_graded,
                 )
         except Exception as e:
             logger.warning(f"KI-Vorabanalyse im Web-Upload fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
@@ -218,7 +223,7 @@ def pre_analyze_upload(
                 best_t_score = t_score
                 predicted_topic_id = top.id
 
-    if is_pdf and page_count >= 20 and predicted_kind in ("Arbeitsblatt", "Hefterseite", "Buchauszug"):
+    if is_pdf and page_count >= 20 and predicted_kind in (ARBEITSBLATT, BUCHAUSZUG):
         predicted_kind = "Buch"
     if not subject_id_hint:
         from backend.app.services.timetable_analyzer import is_timetable_document, get_or_create_organisation_subject
@@ -328,7 +333,7 @@ def confirm_and_save_material(
 
     save_subject_id = request.subject_id
     save_topic_id = request.topic_id
-    save_kind = request.kind
+    save_kind = normalize_kind(request.kind, default=ARBEITSBLATT)
     save_title = request.title
     save_dossier_id = request.dossier_id
     save_summary = request.summary
@@ -399,7 +404,10 @@ def confirm_and_save_material(
         summary=save_summary,
         dossier_id=save_dossier_id,
         dossier_order=dossier_order,
-        parent_id=request.parent_id
+        parent_id=request.parent_id,
+        solution_pages_json=json.dumps(request.solution_pages) if request.solution_pages else None,
+        worked_on_paper=request.worked_on_paper,
+        teacher_graded=request.teacher_graded
     )
     db.add(material)
     db.flush()

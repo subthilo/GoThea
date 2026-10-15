@@ -532,14 +532,20 @@
             <button class="filter-pill" data-kind="Arbeitsblatt">
               <img src="/static/Icons/Arbeitsblätter.svg" class="filter-pill-svg" alt=""> Arbeitsblätter
             </button>
-            <button class="filter-pill" data-kind="Hefter">
-              <img src="/static/Icons/Mitschriften.svg" class="filter-pill-svg" alt=""> Mitschriften &amp; Hefte
+            <button class="filter-pill" data-kind="Mitschrift">
+              <img src="/static/Icons/Mitschriften.svg" class="filter-pill-svg" alt=""> Mitschriften
             </button>
             <button class="filter-pill" data-kind="Buch">
               <img src="/static/Icons/Bücher.svg" class="filter-pill-svg" alt=""> Schulbücher
             </button>
             <button class="filter-pill" data-kind="Test">
               <img src="/static/Icons/Tests.svg" class="filter-pill-svg" alt=""> Tests &amp; Arbeiten
+            </button>
+            <button class="filter-pill" data-kind="Vokabelliste">
+              <img src="/static/Icons/Inhaltsverzeichnis.svg" class="filter-pill-svg" alt=""> Vokabeln
+            </button>
+            <button class="filter-pill" data-kind="Sonstiges">
+              <img src="/static/Icons/Dokumente.svg" class="filter-pill-svg" alt=""> Sonstiges
             </button>
           </div>
 
@@ -1060,7 +1066,7 @@
         <!-- Stufe 1: Upload & Dateiwahl -->
         <div id="mat-step-upload">
           <p class="subtitle" id="mat-modal-subtitle" style="margin-bottom: 16px;">
-            Lade ein Schulbuch, ein Arbeitsblatt, eine Hefterseite oder eine Klassenarbeit hoch.
+            Lade ein Schulbuch, ein Arbeitsblatt, eine Mitschrift oder einen Test hoch.
           </p>
           <div class="mat-dropzone" id="mat-dropzone">
             <span class="mat-dropzone-icon">📥</span>
@@ -1110,12 +1116,14 @@
           <div class="form-group">
             <label>Dokumentenart</label>
             <select id="mat-confirm-kind" class="input-field">
-              <option value="Arbeitsblatt" selected>Arbeitsblatt</option>
-              <option value="Hefterseite">Hefterseite / Mitschrift</option>
-              <option value="Buch">Schulbuch / Lehrbuch (Gesamtwerk)</option>
+              <option value="Arbeitsblatt">Arbeitsblatt</option>
+              <option value="Mitschrift">Mitschrift (handschriftlich)</option>
+              <option value="Buch">Schulbuch / Arbeitsheft</option>
               <option value="Buchauszug">Buchauszug (Kapitel / Seiten)</option>
+              <option value="Test">Test / Diktat / bewertete Leistung</option>
               <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
-              <option value="Test">Test / Übungszettel</option>
+              <option value="Vokabelliste">Vokabelliste</option>
+              <option value="Sonstiges">Sonstiges</option>
               <option value="Stundenplan">Stundenplan</option>
             </select>
           </div>
@@ -1327,11 +1335,13 @@
           <label>Dokumentenart</label>
           <select id="edit-mat-kind" class="input-field">
             <option value="Arbeitsblatt">Arbeitsblatt</option>
-            <option value="Hefterseite">Hefterseite / Mitschrift</option>
-            <option value="Buch">Schulbuch / Lehrbuch (Gesamtwerk)</option>
+            <option value="Mitschrift">Mitschrift (handschriftlich)</option>
+            <option value="Buch">Schulbuch / Arbeitsheft</option>
             <option value="Buchauszug">Buchauszug (Kapitel / Seiten)</option>
+            <option value="Test">Test / Diktat / bewertete Leistung</option>
             <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
-            <option value="Test">Test / Übungszettel</option>
+            <option value="Vokabelliste">Vokabelliste</option>
+            <option value="Sonstiges">Sonstiges</option>
             <option value="Stundenplan">Stundenplan</option>
           </select>
         </div>
@@ -1436,11 +1446,13 @@
                 <label style="font-size: 0.82rem;">Dokumentenart</label>
                 <select id="merge-target-kind" class="input-field">
                   <option value="Arbeitsblatt">Arbeitsblatt</option>
-                  <option value="Hefterseite" selected>Hefterseite / Mitschrift</option>
-                  <option value="Buch">Schulbuch / Lehrbuch (Gesamtwerk)</option>
+                  <option value="Mitschrift">Mitschrift (handschriftlich)</option>
+                  <option value="Buch">Schulbuch / Arbeitsheft</option>
                   <option value="Buchauszug">Buchauszug (Kapitel / Seiten)</option>
+                  <option value="Test">Test / Diktat / bewertete Leistung</option>
                   <option value="Klassenarbeit">Klassenarbeit / Klausur</option>
-                  <option value="Test">Test / Übungszettel</option>
+                  <option value="Vokabelliste">Vokabelliste</option>
+                  <option value="Sonstiges">Sonstiges</option>
                 </select>
               </div>
               <label class="merge-checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; margin-bottom: 14px;">
@@ -1622,7 +1634,7 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=11.6"></script>
+  <script src="/static/app.js?v=11.7"></script>
   <script src="/static/whiteboard.js?v=7.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>

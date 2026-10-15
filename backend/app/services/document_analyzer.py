@@ -5,13 +5,14 @@ import json
 import uuid
 import base64
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Optional, Dict, Any, Tuple
+from dataclasses import dataclass, field
+from typing import Optional, Dict, Any, List, Tuple
 from PIL import Image
 from sqlalchemy.orm import Session
 
 from backend.app.config import OPENAI_API_KEY, OPENAI_ANALYSIS_MODEL
 from backend.app.services.llm import chat_params
+from backend.app.services.document_kinds import dossier_for_kind, normalize_kind
 from backend.app.models import Subject, Topic, Dossier, Material
 from backend.app.services.material_ingestion import (
     render_material_page_as_image,
@@ -112,6 +113,9 @@ class DocumentAnalysisResult:
     dossier_title: str
     dossier_kind: str
     summary: Optional[str] = None
+    solution_pages: List[int] = field(default_factory=list)
+    worked_on_paper: Optional[bool] = None
+    teacher_graded: Optional[bool] = None
 
 
 def sanitize_filename_part(text: str) -> str:
@@ -159,6 +163,37 @@ def get_pdf_page_count(file_path: Path, mime_type: str) -> Optional[int]:
         return None
 
 
+# Kleine Dokumente vollständig ansehen (Lösungsseiten, Antworten auf Folgeseiten),
+# bei größeren reichen Cover, Impressum und Inhaltsverzeichnis
+ANALYZE_ALL_PAGES_UP_TO = 6
+ANALYZE_FIRST_PAGES_OF_LARGE_DOCS = 3
+
+
+def parse_page_list(value: Any) -> List[int]:
+    """KI-Angabe der Lösungsseiten robust in eine sortierte Liste von Seitenzahlen wandeln."""
+    if not isinstance(value, list):
+        return []
+    pages = set()
+    for v in value:
+        try:
+            pages.add(int(v))
+        except (TypeError, ValueError):
+            continue
+    return sorted(p for p in pages if p > 0)
+
+
+def _as_bool(value: Any) -> Optional[bool]:
+    return value if isinstance(value, bool) else None
+
+
+def pages_to_analyze(page_count: Optional[int], mime_type: str) -> List[int]:
+    if mime_type != "application/pdf" or not page_count:
+        return [1]
+    if page_count <= ANALYZE_ALL_PAGES_UP_TO:
+        return list(range(1, page_count + 1))
+    return list(range(1, ANALYZE_FIRST_PAGES_OF_LARGE_DOCS + 1))
+
+
 def query_openai_analyzer(
     file_path: Path,
     extracted_text: str,
@@ -175,37 +210,23 @@ def query_openai_analyzer(
         effective_name = original_filename or file_path.name
         page_count = get_pdf_page_count(file_path, mime_type)
         clean_text = (extracted_text or "").strip()
-        word_count = len(clean_text.split())
 
-        # Wenn substanzieller digitaler Text vorhanden ist (>= 200 Zeichen UND >= 25 Wörter):
-        # Text-Prompt nutzen. Andernfalls immer Vision (Seite 1 gerendert), um nicht an
-        # kurzen Impressumszeilen oder Seitenzahlen hängenzubleiben.
-        if clean_text and len(clean_text) >= 200 and word_count >= 25:
-            messages = [
-                {"role": "system", "content": DOCUMENT_ANALYSIS_SYSTEM_PROMPT},
-                {"role": "user", "content": build_analysis_user_prompt(effective_name, clean_text, page_count)}
-            ]
-        else:
-            # Reiner Scan oder unvollständiger Text: Seite 1 als Bild an Vision-Modell senden
-            img_bytes, img_mime = render_material_page_as_image(str(file_path), mime_type, page_num=1)
-            b64_img = prepare_image_base64_for_vision(img_bytes, img_mime)
-            messages = [
-                {"role": "system", "content": DOCUMENT_ANALYSIS_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": (
-                                f"Ursprünglicher Dateiname: {effective_name}\n"
-                                f"{build_page_count_line(page_count)}"
-                                f"Bitte analysiere diese gescannte Seite und ordne sie dem passenden Fach und Thema der 7. Klasse Brandenburg zu."
-                            ),
-                        },
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}", "detail": "high"}}
-                    ]
-                }
-            ]
+        # Seitenbilder sind immer dabei: Handschrift, Korrekturen und Lösungsseiten sieht man nur dort
+        user_content = [{"type": "text", "text": build_analysis_user_prompt(effective_name, clean_text, page_count)}]
+        for page_num in pages_to_analyze(page_count, mime_type):
+            try:
+                img_bytes, img_mime = render_material_page_as_image(str(file_path), mime_type, page_num=page_num)
+            except Exception:
+                continue
+            user_content.append({"type": "text", "text": f"--- Seite {page_num} ---"})
+            user_content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{prepare_image_base64_for_vision(img_bytes, img_mime)}", "detail": "high"}
+            })
+        messages = [
+            {"role": "system", "content": DOCUMENT_ANALYSIS_SYSTEM_PROMPT},
+            {"role": "user", "content": user_content}
+        ]
 
         response = client.chat.completions.create(**chat_params(
             model_name,
@@ -214,8 +235,11 @@ def query_openai_analyzer(
             response_format={"type": "json_object"}
         ))
 
-        content = response.choices[0].message.content or "{}"
-        return json.loads(content)
+        parsed = json.loads(response.choices[0].message.content or "{}")
+        usage = getattr(response, "usage", None)
+        if usage is not None and isinstance(getattr(usage, "prompt_tokens", None), int):
+            parsed["_usage"] = {"prompt_tokens": usage.prompt_tokens, "completion_tokens": usage.completion_tokens}
+        return parsed
     except Exception as e:
         print(f"Warnung: OpenAI Inhaltsanalyse fehlgeschlagen ({e}), verwende Heuristik-Fallback.")
         return None
@@ -336,12 +360,7 @@ def analyze_document_content(
         topic_name = topic.name if topic else (oberthema or None)
 
         # 3. Dokumentart
-        kind = raw_ai_data.get("dokumentart") or "Arbeitsblatt"
-        if kind not in ("Arbeitsblatt", "Hefterseite", "Buchauszug", "Buch", "Klassenarbeit", "Test", "Stundenplan"):
-            if "stundenplan" in effective_name.lower():
-                kind = "Stundenplan"
-            else:
-                kind = "Arbeitsblatt"
+        kind = normalize_kind(raw_ai_data.get("dokumentart"))
 
         # Falls Stundenplan: Fächer in DB synchronisieren
         if kind == "Stundenplan":
@@ -361,21 +380,7 @@ def analyze_document_content(
             norm_name = f"{safe_fach}_{safe_thema}_{safe_kind}_{safe_title}{ext}"
 
         # 5. Mappe bestimmen
-        if kind == "Stundenplan":
-            dossier_title = "Stundenplan & Organisation"
-            dossier_kind = "organisation"
-        elif kind in ("Buch", "Buchauszug"):
-            dossier_title = f"Lehrbuch: {title}"
-            dossier_kind = "lehrbuch"
-        elif kind == "Hefterseite":
-            dossier_title = f"Hefter: {topic_name or subject.name}"
-            dossier_kind = "hefter"
-        elif kind in ("Klassenarbeit", "Test"):
-            dossier_title = f"Testsammlung: {subject.name}"
-            dossier_kind = "testsammlung"
-        else:
-            dossier_title = f"Arbeitsblätter: {topic_name or subject.name}"
-            dossier_kind = "uebungsmappe"
+        dossier_title, dossier_kind = dossier_for_kind(kind, title, topic_name or subject.name, subject.name)
 
         summary = raw_ai_data.get("zusammenfassung")
 
@@ -389,7 +394,10 @@ def analyze_document_content(
             normalized_filename=norm_name,
             dossier_title=dossier_title,
             dossier_kind=dossier_kind,
-            summary=summary
+            summary=summary,
+            solution_pages=parse_page_list(raw_ai_data.get("loesungsseiten")),
+            worked_on_paper=_as_bool(raw_ai_data.get("von_schuelerin_bearbeitet")),
+            teacher_graded=_as_bool(raw_ai_data.get("von_lehrkraft_bewertet")),
         )
 
     # Heuristik-Fallback wenn keine KI verfügbar ist
@@ -422,7 +430,7 @@ def analyze_document_content(
         subject = db.query(Subject).filter_by(id=subject_id).first()
         topic = db.query(Topic).filter_by(id=topic_id).first() if topic_id else None
 
-        kind = detect_kind_from_filename_and_text(effective_name, extracted_text)
+        kind = normalize_kind(detect_kind_from_filename_and_text(effective_name, extracted_text))
         title = clean_title_from_filename(effective_name)
 
         safe_fach = sanitize_filename_part(subject.name if subject else "Fach")
@@ -430,18 +438,8 @@ def analyze_document_content(
         ext = Path(effective_name).suffix.lower() or file_path.suffix.lower() or ".pdf"
         norm_name = f"{safe_fach}_{safe_title}{ext}"
 
-        if kind in ("Buch", "Buchauszug"):
-            dossier_title = f"Lehrbuch: {title}"
-            dossier_kind = "lehrbuch"
-        elif kind == "Hefterseite":
-            dossier_title = f"Hefter: {topic.name if topic else (subject.name if subject else 'Schule')}"
-            dossier_kind = "hefter"
-        elif kind in ("Klassenarbeit", "Test"):
-            dossier_title = f"Testsammlung: {subject.name if subject else 'Schule'}"
-            dossier_kind = "testsammlung"
-        else:
-            dossier_title = f"Arbeitsblätter: {topic.name if topic else (subject.name if subject else 'Schule')}"
-            dossier_kind = "uebungsmappe"
+        subject_label = subject.name if subject else "Schule"
+        dossier_title, dossier_kind = dossier_for_kind(kind, title, topic.name if topic else subject_label, subject_label)
 
     return DocumentAnalysisResult(
         subject_id=subject_id,

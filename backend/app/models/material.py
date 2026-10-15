@@ -1,6 +1,6 @@
 from datetime import datetime
 import uuid
-from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, Index
+from sqlalchemy import Boolean, Column, String, Integer, DateTime, Text, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from backend.app.database import Base
 
@@ -15,7 +15,7 @@ class Material(Base):
     dossier_order = Column(Integer, nullable=False, default=1)
     parent_id = Column(String, ForeignKey("materials.id", ondelete="CASCADE"), nullable=True)
     title = Column(String, nullable=False)
-    kind = Column(String, nullable=False, default="Arbeitsblatt")  # 'Arbeitsblatt', 'Hefterseite', 'Buchauszug', 'Übungszettel', 'Buch'
+    kind = Column(String, nullable=False, default="Arbeitsblatt")  # siehe services/document_kinds.py
     filename = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
     file_size = Column(Integer, nullable=False, default=0)
@@ -26,6 +26,10 @@ class Material(Base):
     extracted_text = Column(Text, nullable=True)
     summary = Column(Text, nullable=True)
     toc_json = Column(Text, nullable=True)
+    # Signale der Dokumentanalyse
+    solution_pages_json = Column(Text, nullable=True)       # JSON-Liste der Seiten mit Lösungen / Erwartungshorizont
+    worked_on_paper = Column(Boolean, nullable=True)        # Schülerin hat bereits auf Papier bearbeitet
+    teacher_graded = Column(Boolean, nullable=True)         # Korrekturen, Punkte oder Note einer Lehrkraft sichtbar
     created_at = Column(DateTime, default=datetime.utcnow)
 
     subject = relationship("Subject")

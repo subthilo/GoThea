@@ -67,7 +67,7 @@ OPENAI_MODEL=gpt-6-luna
 OPENAI_ANALYSIS_MODEL=gpt-4o-mini
 ```
 * **`OPENAI_MODEL`** (aktuell `gpt-6-luna`): Hauptmodell für Tutor-Feedback, Übungsgenerierung, Lückenprüfung und die Inhaltsverzeichnis-Erkennung von Schulbüchern (läuft nur einmal pro Buch und ist die anspruchsvollste Analyse).
-* **`OPENAI_ANALYSIS_MODEL`** (Standard `gpt-4o-mini`): Günstiges Modell für die Vorverarbeitung jedes Uploads (Dokumentanalyse & Titelerkennung, Stundenplan-Import).
+* **`OPENAI_ANALYSIS_MODEL`** (Standard = `OPENAI_MODEL`): Modell für die Dokumentanalyse jedes Uploads. `gpt-4o-mini` klassifizierte in der Messung schlechter und verbrauchte für Seitenbilder ein Vielfaches an Tokens.
 * Alle Prompts liegen zentral in `backend/app/prompts/`. `temperature` wird nur an Modelle übergeben, die ihn unterstützen (nicht an GPT-6- und o-Modelle, siehe `services/llm.py`).
 
 ---
