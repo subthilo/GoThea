@@ -4,7 +4,8 @@ import logging
 import re
 from typing import Dict, Any, Optional, List
 
-from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
+from backend.app.config import OPENAI_MODEL, OPENAI_TTS_MODEL, OPENAI_TTS_VOICE
+from backend.app.services import llm
 from backend.app.prompts.tutor import TUTOR_SYSTEM_PROMPT, EXERCISE_SYSTEM_PROMPT, CLOZE_EVALUATION_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
@@ -208,10 +209,9 @@ def analyze_whiteboard_and_speak(
     audio_b64 = None
 
     # 2. OpenAI Vision Abfrage
-    if OPENAI_API_KEY:
+    if llm.is_available():
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=OPENAI_API_KEY)
+            client = llm.client()
 
             user_prompt = f"SCHULFACH: {subject_name} (Klasse {grade_level} Gymnasium, Brandenburg).\n"
             if curriculum_topics:
@@ -294,12 +294,11 @@ def analyze_whiteboard_and_speak(
         # 3. Audio-Synthese via OpenAI TTS (nova)
         if audio_enabled:
             try:
-                from openai import OpenAI
-                client = OpenAI(api_key=OPENAI_API_KEY)
+                client = llm.client()
                 clean_speech = clean_text_for_speech(tutor_speech, lang="en" if "Englisch" in subject_name else "de")
                 tts_res = client.audio.speech.create(
-                    model="tts-1",
-                    voice="nova",
+                    model=OPENAI_TTS_MODEL,
+                    voice=OPENAI_TTS_VOICE,
                     input=clean_speech,
                     response_format="mp3",
                     speed=0.90
@@ -343,10 +342,9 @@ def generate_board_exercise(
     audio_b64 = None
     data = None
 
-    if OPENAI_API_KEY:
+    if llm.is_available():
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=OPENAI_API_KEY)
+            client = llm.client()
 
             user_prompt = (
                 f"SCHULFACH: {subject_name} (Klasse {grade_level} Gymnasium, Brandenburg)\n"
@@ -534,14 +532,13 @@ def generate_board_exercise(
         data["content"] = normalize_cloze_content(data.get("content", {}))
 
     # Audio TTS generieren falls aktiviert
-    if audio_enabled and OPENAI_API_KEY:
+    if audio_enabled and llm.is_available():
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=OPENAI_API_KEY)
+            client = llm.client()
             clean_speech = clean_text_for_speech(tutor_speech, lang="en" if "Englisch" in subject_name else "de")
             tts_res = client.audio.speech.create(
-                model="tts-1",
-                voice="nova",
+                model=OPENAI_TTS_MODEL,
+                voice=OPENAI_TTS_VOICE,
                 input=clean_speech,
                 response_format="mp3",
                 speed=0.90
@@ -725,13 +722,12 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
     else:
         sentences = extract_cloze_sentences(text, blanks)
 
-    if generate_sentence_audio and OPENAI_API_KEY:
+    if generate_sentence_audio and llm.is_available():
         sentences_to_synth = [s for s in sentences if not s.get("audio_base64")]
         if sentences_to_synth:
             try:
                 from concurrent.futures import ThreadPoolExecutor
-                from openai import OpenAI
-                client = OpenAI(api_key=OPENAI_API_KEY)
+                client = llm.client()
 
                 def _synthesize_sentence(s):
                     target_text = s.get("full_text_solved")
@@ -741,8 +737,8 @@ def normalize_cloze_content(content: Dict[str, Any], generate_sentence_audio: bo
                         sentence_lang = "en" if any(w in (text or "").lower() for w in ["the ", "is ", "was ", "yesterday ", "went "]) else "de"
                         clean_speech = clean_text_for_speech(target_text, lang=sentence_lang)
                         tts_res = client.audio.speech.create(
-                            model="tts-1",
-                            voice="nova",
+                            model=OPENAI_TTS_MODEL,
+                            voice=OPENAI_TTS_VOICE,
                             input=clean_speech,
                             response_format="mp3",
                             speed=0.90
@@ -804,10 +800,9 @@ def evaluate_cloze_blanks_targeted(
     audio_b64 = None
 
     # 2. Falls Bilder zur Auswertung vorliegen und OpenAI konfiguriert ist
-    if items_to_evaluate and OPENAI_API_KEY:
+    if items_to_evaluate and llm.is_available():
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=OPENAI_API_KEY)
+            client = llm.client()
 
 
             import io
@@ -979,14 +974,13 @@ def evaluate_cloze_blanks_targeted(
         else:
             tutor_speech = "Schau dir die Begriffe noch einmal an. Du bist auf dem richtigen Weg!"
 
-    if audio_enabled and OPENAI_API_KEY and tutor_speech:
+    if audio_enabled and llm.is_available() and tutor_speech:
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=OPENAI_API_KEY)
+            client = llm.client()
             clean_speech = clean_text_for_speech(tutor_speech)
             tts_res = client.audio.speech.create(
-                model="tts-1",
-                voice="nova",
+                model=OPENAI_TTS_MODEL,
+                voice=OPENAI_TTS_VOICE,
                 input=clean_speech,
                 response_format="mp3",
                 speed=0.90

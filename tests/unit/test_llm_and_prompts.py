@@ -96,7 +96,7 @@ def test_tutor_highlight_box_is_clamped_to_image():
         "tutor_speech": "Schau dir das Vorzeichen an.",
         "highlight_box": {"x_pct": 90, "y_pct": -5, "w_pct": 40, "h_pct": 150}
     })
-    with patch("backend.app.services.tutor_service.OPENAI_API_KEY", "sk-fake"), \
+    with patch("backend.app.config.OPENAI_API_KEY", "sk-fake"), \
          patch("openai.OpenAI", return_value=mock_client):
         from backend.app.services.tutor_service import analyze_whiteboard_and_speak
         res = analyze_whiteboard_and_speak("data:image/jpeg;base64,AAAA", audio_enabled=False)

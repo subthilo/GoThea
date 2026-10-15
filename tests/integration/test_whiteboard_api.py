@@ -237,8 +237,7 @@ def test_cloze_blank_checking_lifecycle(client, db_session, monkeypatch):
     assert len(content["blanks"]) > 0
 
     # 2. Gezielte Prüfung von Lücken mit Mini-Crops
-    from backend.app.services import tutor_service
-    monkeypatch.setattr(tutor_service, "OPENAI_API_KEY", None)
+    monkeypatch.setattr("backend.app.config.OPENAI_API_KEY", "")
 
     valid_jpeg_b64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="
     check_res = client.post(

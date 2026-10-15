@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from backend.app.config import OPENAI_API_KEY
+from backend.app.config import OPENAI_TTS_MODEL, OPENAI_TTS_VOICE
+from backend.app.services import llm
 from backend.app.database import get_db
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.material import Material
@@ -99,15 +100,14 @@ def synthesize_quick_speech(payload: QuickTTSRequest):
     mit ruhigerer Sprechgeschwindigkeit (speed=0.90) und natürlicher
     deutscher Aussprache mathematischer Operatoren (z. B. 'Wurzel aus' statt 'Root').
     """
-    if not OPENAI_API_KEY or not payload.text:
+    if not llm.is_available() or not payload.text:
         return {"status": "skipped", "audio_base64": None}
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=OPENAI_API_KEY)
+        client = llm.client()
         clean_input = clean_text_for_speech(payload.text, lang=payload.lang or "de")
         tts_res = client.audio.speech.create(
-            model="tts-1",
-            voice="nova",
+            model=OPENAI_TTS_MODEL,
+            voice=OPENAI_TTS_VOICE,
             input=clean_input,
             response_format="mp3",
             speed=payload.speed or 0.90

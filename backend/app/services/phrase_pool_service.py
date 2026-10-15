@@ -6,7 +6,8 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 import random
 
-from backend.app.config import AUDIO_PHRASES_DIR, OPENAI_API_KEY
+from backend.app.config import AUDIO_PHRASES_DIR, OPENAI_TTS_MODEL, OPENAI_TTS_VOICE
+from backend.app.services import llm
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +113,12 @@ class PhrasePoolManager:
                 logger.warning(f"Fehler beim Lesen der Audio-Phrase: {e}")
 
         # Falls noch keine MP3 existiert und OpenAI verfügbar ist -> on-demand generieren & cachen
-        if OPENAI_API_KEY:
+        if llm.is_available():
             try:
-                from openai import OpenAI
-                client = OpenAI(api_key=OPENAI_API_KEY)
+                client = llm.client()
                 tts_res = client.audio.speech.create(
-                    model="tts-1",
-                    voice="nova",
+                    model=OPENAI_TTS_MODEL,
+                    voice=OPENAI_TTS_VOICE,
                     input=phrase_item["text"],
                     response_format="mp3",
                     speed=0.90
