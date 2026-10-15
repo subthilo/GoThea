@@ -1355,7 +1355,7 @@
     }
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(async () => {
-      if (!currentSession) return;
+      if (!currentSession || isBookPageMode) return;
       try {
         const payload = {
           board_state_json: JSON.stringify(strokes)
@@ -1495,67 +1495,16 @@
         `).join("");
       }
 
-      // 2. Aktive Session suchen oder anlegen
-      const actRes = await fetch("/api/v1/whiteboard/sessions/active");
-      if (actRes.ok) {
-        const data = await actRes.json();
-        if (data) {
-          currentSession = data;
-          subjectSelect.value = data.subject_id;
-          await loadMaterialsForSubject(data.subject_id);
-          if (data.board_state_json) {
-            try {
-              strokes = JSON.parse(data.board_state_json) || [];
-              strokes.forEach(s => {
-                if (!s.bbox && s.points) s.bbox = computeBoundingBox(s.points);
-              });
-              panY = 0;
-              updateViewportPan();
-            } catch (e) {
-              strokes = [];
-            }
-          }
-          await loadSessionExercises(data.id);
-          // Nur hier verbinden: createNewSession() verbindet selbst (ein zweiter Aufruf würde
-          // den gerade aufgebauten Socket wieder schließen)
-          connectTutorWebSocket();
-        } else {
-          await createNewSession();
-        }
-      } else {
-        await createNewSession();
-      }
+      // 2. Zuletzt geöffnete Tafel wieder öffnen (oder eine neue anlegen)
+      await openLastBoard(null);
+      await loadMaterialsForSubject(subjectSelect.value);
     } catch (e) {
       console.error("Fehler beim Initialisieren der Sitzung:", e);
     }
   }
 
   async function createNewSession() {
-    const selectedSub = subjectSelect.value || "sub_math";
-    try {
-      const res = await fetch("/api/v1/whiteboard/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject_id: selectedSub,
-          title: "Tafelübung",
-          grade_level: 7
-        })
-      });
-      if (res.ok) {
-        currentSession = await res.json();
-        strokes = [];
-        undoStack = [];
-        redoStack = [];
-        exercises = [];
-        if (tasksLayer) tasksLayer.innerHTML = "";
-        panY = 0;
-        updateViewportPan();
-        connectTutorWebSocket();
-      }
-    } catch (e) {
-      console.error("Fehler beim Erstellen einer neuen Sitzung:", e);
-    }
+    await startNewBoard(subjectSelect.value || "sub_math");
   }
 
   // 10. WebSocket Verbindung
@@ -1758,34 +1707,30 @@
     });
   }
 
+  // Neue Tafel: die bisherige wird gespeichert und bleibt in der Liste (keine Rückfrage nötig)
   if (btnNewSession) {
-    btnNewSession.addEventListener("click", async () => {
-      if (confirm("Möchtest du eine neue Tafel für das gewählte Fach beginnen?")) {
-        await createNewSession();
-      }
-    });
+    btnNewSession.addEventListener("click", queued(() => startNewBoard(subjectSelect.value)));
   }
 
+  // Fachwechsel: zuletzt geöffnete Tafel des Fachs (oder eine neue)
   if (subjectSelect) {
-    subjectSelect.addEventListener("change", async () => {
-      await loadMaterialsForSubject(subjectSelect.value);
-      await createNewSession();
-    });
+    subjectSelect.addEventListener("change", queued(async () => {
+      const subjectId = subjectSelect.value;
+      await loadMaterialsForSubject(subjectId);
+      await openLastBoard(subjectId);
+    }));
   }
 
-  // Material-Auswahl Listener
+  // Unterlage wählen: das Dokument öffnet sich mit seinen eigenen Notizen (pro Seite)
   if (materialSelect) {
-    materialSelect.addEventListener("change", () => {
+    materialSelect.addEventListener("change", queued(async () => {
       const matId = materialSelect.value;
       if (!matId) {
-        clearWhiteboardMaterial();
-      } else {
-        const found = currentSubjectMaterialsList.find(m => m.id === matId);
-        if (found) {
-          setWhiteboardMaterial(found, 1, true);
-        }
+        await closeDocument();
+      } else if (!(isBookPageMode && bookPageContext && bookPageContext.materialId === matId)) {
+        await openMaterialDocument(matId, subjectSelect.value);
       }
-    });
+    }));
   }
 
   // Underlay Ein-/Ausblenden Button
@@ -1835,35 +1780,24 @@
       }
     });
   }
+  // Dokument schließen: Notizen speichern, zurück zur zuletzt geöffneten Tafel des Fachs
   if (btnDocClose) {
-    btnDocClose.addEventListener("click", async () => {
-      if (isBookPageMode) {
-        await saveBookPageAnnotationsNow();
-        isBookPageMode = false;
-      }
-      isUnderlayVisible = false;
-      updateUnderlayVisibility();
-    });
+    btnDocClose.addEventListener("click", queued(closeDocument));
   }
 
   if (btnReturnToBook) {
-    btnReturnToBook.addEventListener("click", async () => {
-      if (isBookPageMode && bookPageContext) {
-        await saveBookPageAnnotationsNow();
-        const retPage = bookPageContext.page;
-        isBookPageMode = false;
-        isUnderlayVisible = false;
-        updateUnderlayVisibility();
-        btnReturnToBook.style.display = "none";
-        if (docSaveStatus) docSaveStatus.style.display = "none";
-        if (btnDocClose) btnDocClose.style.display = "inline-block";
-        strokes = [];
-        redrawAllStrokes();
-        if (typeof window.returnToBookReader === "function") {
-          window.returnToBookReader(retPage);
-        }
+    btnReturnToBook.addEventListener("click", queued(async () => {
+      if (!isBookPageMode || !bookPageContext) return;
+      const retPage = bookPageContext.page;
+      const subjectId = bookPageContext.subjectId || subjectSelect.value;
+      await saveBookPageAnnotationsNow();
+      exitDocumentMode();
+      if (typeof window.returnToBookReader === "function") {
+        window.returnToBookReader(retPage);
       }
-    });
+      // Im Hintergrund die Tafel des Fachs bereitlegen, damit der nächste Besuch nicht leer ist
+      await openLastBoard(subjectId);
+    }));
   }
 
   // Audio Toggle Button (Lautsprecher)
@@ -2505,53 +2439,204 @@
     });
   }
 
-  // Globale Funktion: Material direkt auf der Tafel öffnen
-  window.openMaterialOnWhiteboard = async function(materialId, subjectId = null) {
-    if (typeof switchToTab === "function") {
-      switchToTab("whiteboard");
+  // 13. Tafel-Verwaltung (wie Notizen): Jede freie Tafel gehört zu einem Fach. Wer etwas anderes
+  //     öffnet oder beginnt, schließt die aktuelle Tafel – vorher wird sie vollständig gespeichert –
+  //     und kann sie aus der Liste wieder öffnen. Dokumente (Mitschrift, Arbeitsblatt, Buchseite)
+  //     sind keine eigene Tafel: ihre Notizen liegen pro Material und Seite (page_annotations).
+  const btnBoards = document.getElementById("btn-wb-boards");
+  const boardTitleEl = document.getElementById("wb-board-title");
+  const boardsPanel = document.getElementById("wb-boards-panel");
+  const boardsPanelTitle = document.getElementById("wb-boards-panel-title");
+  const boardsList = document.getElementById("wb-boards-list");
+  const btnBoardsNew = document.getElementById("btn-wb-boards-new");
+
+  // Wechsel laufen nacheinander: ein Doppeltipp darf nicht zwei Tafeln gleichzeitig öffnen.
+  // Nur Einstiegspunkte (Klicks, globale Funktionen) werden eingereiht, nie Aufrufe untereinander.
+  let boardQueue = Promise.resolve();
+  function queued(fn) {
+    return (...args) => {
+      boardQueue = boardQueue.then(() => fn(...args)).catch((err) => {
+        console.error("Tafel-Wechsel fehlgeschlagen:", err);
+        if (wsStatus) wsStatus.textContent = "⚠ Nicht gespeichert";
+      });
+      return boardQueue;
+    };
+  }
+
+  async function fetchJson(url, options) {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+    return res.json();
+  }
+
+  function updateBoardTitle() {
+    if (!boardTitleEl) return;
+    if (isBookPageMode && bookPageContext) {
+      boardTitleEl.textContent = bookPageContext.title || "Dokument";
     } else {
-      const tabBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
-      if (tabBtn) tabBtn.click();
+      boardTitleEl.textContent = currentSession ? (currentSession.title || "Tafel") : "Tafel";
     }
+  }
+
+  function applyBoard(board) {
+    currentSession = board;
+    let loaded = [];
+    try {
+      loaded = JSON.parse(board.board_state_json || "[]") || [];
+    } catch (e) {
+      loaded = [];
+    }
+    strokes = Array.isArray(loaded) ? loaded : [];
+    strokes.forEach(s => {
+      if (!s.bbox && s.points) s.bbox = computeBoundingBox(s.points);
+    });
+    undoStack = [];
+    redoStack = [];
+    exercises = [];
+    if (tasksLayer) tasksLayer.innerHTML = "";
+    if (subjectSelect && board.subject_id) subjectSelect.value = board.subject_id;
+    panY = 0;
+    updateViewportPan();
+    updateBoardTitle();
+    loadSessionExercises(board.id);
+    connectTutorWebSocket();
+  }
+
+  // Vorschaubild der ganzen Tafel (Liste und KI-Name), unabhängig vom sichtbaren Ausschnitt
+  function renderBoardThumbnail() {
+    const inked = strokes.filter(s => s.points && s.points.length && s.tool !== "pixel_eraser" && s.tool !== "eraser");
+    if (inked.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    inked.forEach(s => s.points.forEach(p => {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }));
+    const W = 480, H = 320, PAD = 18;
+    const w = Math.max(maxX - minX, 1);
+    const h = Math.max(maxY - minY, 1);
+    const k = Math.min((W - 2 * PAD) / w, (H - 2 * PAD) / h, 2);
+
+    // Striche (inkl. Radierer) auf eine transparente Ebene, dann auf den Tafelhintergrund
+    const ink = document.createElement("canvas");
+    ink.width = W;
+    ink.height = H;
+    const inkLayer = ink.getContext("2d");
+    inkLayer.setTransform(k, 0, 0, k, (W - w * k) / 2 - minX * k, (H - h * k) / 2 - minY * k);
+    strokes.forEach(s => renderStrokeToContext(inkLayer, s));
+
+    const out = document.createElement("canvas");
+    out.width = W;
+    out.height = H;
+    const outCtx = out.getContext("2d");
+    outCtx.fillStyle = getComputedStyle(viewport).backgroundColor || "#121620";
+    outCtx.fillRect(0, 0, W, H);
+    outCtx.drawImage(ink, 0, 0);
+    return out.toDataURL("image/jpeg", 0.75);
+  }
+
+  async function saveBoardNow(withThumbnail) {
+    clearTimeout(saveDebounceTimer);
+    if (!currentSession || isBookPageMode) return;
+    const payload = { board_state_json: JSON.stringify(strokes) };
+    if (withThumbnail) {
+      const thumb = renderBoardThumbnail();
+      if (thumb) payload.snapshot_data_url = thumb;
+    }
+    const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/state`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`Tafel nicht gespeichert (HTTP ${res.status})`);
+  }
+
+  async function closeCurrentBoard() {
+    if (!currentSession) return;
+    const board = currentSession;
+    const empty = strokes.length === 0;
+    await saveBoardNow(true);  // scheitert das Speichern, bleibt die Tafel offen
+    currentSession = null;
+    const closing = fetch(`/api/v1/boards/${board.id}/close`, { method: "POST", keepalive: true }).catch(() => {});
+    // Leere Tafeln verwirft der Server sofort – abwarten, damit sie nicht wieder auftauchen.
+    // Sonst nicht warten: den Namen vergibt die KI im Hintergrund.
+    if (empty) await closing;
+  }
+
+  function exitDocumentMode() {
+    isBookPageMode = false;
+    bookPageContext = null;
+    clearTimeout(bookPageSaveDebounceTimer);
+    isUnderlayVisible = false;
+    updateUnderlayVisibility();
+    if (btnReturnToBook) btnReturnToBook.style.display = "none";
+    if (docSaveStatus) docSaveStatus.style.display = "none";
+    if (btnDocClose) btnDocClose.style.display = "inline-block";
+    if (materialSelect) materialSelect.value = "";
+    strokes = [];
+    undoStack = [];
+    redoStack = [];
+    redrawAllStrokes();
+    updateBoardTitle();
+  }
+
+  async function leaveCurrent() {
+    if (isBookPageMode) {
+      await saveBookPageAnnotationsNow();
+      exitDocumentMode();
+    } else {
+      await closeCurrentBoard();
+    }
+  }
+
+  async function startNewBoard(subjectId) {
+    await leaveCurrent();
+    applyBoard(await fetchJson("/api/v1/boards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject_id: subjectId || subjectSelect.value || "sub_math" })
+    }));
+  }
+
+  async function openBoard(boardId) {
+    if (!isBookPageMode && currentSession && currentSession.id === boardId) return;
+    await leaveCurrent();
+    applyBoard(await fetchJson(`/api/v1/boards/${boardId}/open`, { method: "POST" }));
+  }
+
+  async function openLastBoard(subjectId) {
+    // Schon die Tafel dieses Fachs offen? Dann bleibt sie offen.
+    if (!isBookPageMode && currentSession && subjectId && currentSession.subject_id === subjectId) return;
+    await leaveCurrent();
+    const query = subjectId ? `?subject_id=${encodeURIComponent(subjectId)}` : "";
+    const last = await fetchJson(`/api/v1/boards/last${query}`);
+    if (last) {
+      applyBoard(await fetchJson(`/api/v1/boards/${last.id}/open`, { method: "POST" }));
+    } else {
+      await startNewBoard(subjectId);
+    }
+  }
+
+  // Dokument auf der Tafel: Notizen pro Seite, Zeichnen nur auf der Seite
+  async function openDocument({ materialId, page = 1, pageCount = 1, title = "Dokument", subjectId = null, badge = "📄 Dokument", returnToBook = false }) {
+    await leaveCurrent();
+    isBookPageMode = true;
+    bookPageContext = { materialId, page, pageCount, title, subjectId };
+    strokes = [];
+    undoStack = [];
+    redoStack = [];
+    redrawAllStrokes();
+    if (tasksLayer) tasksLayer.innerHTML = "";
 
     if (subjectId && subjectSelect && subjectSelect.value !== subjectId) {
       subjectSelect.value = subjectId;
       await loadMaterialsForSubject(subjectId);
-    } else if (!currentSubjectMaterialsList.length && subjectSelect) {
-      await loadMaterialsForSubject(subjectSelect.value);
     }
-
-    const mat = currentSubjectMaterialsList.find(m => m.id === materialId);
-    if (mat) {
-      setWhiteboardMaterial(mat, 1, true);
-    } else {
-      try {
-        const r = await fetch(`/api/v1/materials/${materialId}`);
-        if (r.ok) {
-          const mData = await r.json();
-          setWhiteboardMaterial(mData, 1, true);
-        }
-      } catch (err) {
-        console.warn("Fehler beim Öffnen des Materials auf Tafel:", err);
-      }
+    if (materialSelect) {
+      materialSelect.value = currentSubjectMaterialsList.some(m => m.id === materialId) ? materialId : "";
     }
-  };
-
-  // Globale Funktion: Buchseite auf der Tafel im Dokument-Notiz-Modus öffnen
-  window.openBookPageOnWhiteboard = async function({ materialId, page = 1, pageCount = 1, title = "Buchseite", subjectId = null }) {
-    isBookPageMode = true;
-    bookPageContext = { materialId, page, pageCount, title, subjectId };
-
-    if (typeof switchToTab === "function") {
-      switchToTab("whiteboard");
-    } else {
-      const tabBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
-      if (tabBtn) tabBtn.click();
-    }
-
-    if (subjectId && subjectSelect && subjectSelect.value !== subjectId) {
-      subjectSelect.value = subjectId;
-    }
+    updateBoardTitle();
 
     // Standard-Farbe auf Blau stellen, falls Weiß aktiv ist (damit auf weißer Seite lesbar)
     if (currentColor === "#f8fafc" || currentColor === "#ffffff") {
@@ -2565,13 +2650,13 @@
 
     // Topbar anpassen
     if (docTopbar) docTopbar.style.display = "flex";
-    if (btnReturnToBook) btnReturnToBook.style.display = "inline-flex";
-    if (docBadge) docBadge.textContent = "📖 Buchseite";
+    if (btnReturnToBook) btnReturnToBook.style.display = returnToBook ? "inline-flex" : "none";
+    if (docBadge) docBadge.textContent = badge;
     if (docTitle) docTitle.textContent = title;
     if (docPageInfo) docPageInfo.textContent = `Seite ${page} / ${pageCount || 1}`;
     if (btnDocPrev) btnDocPrev.disabled = page <= 1;
     if (btnDocNext) btnDocNext.disabled = page >= pageCount;
-    if (btnDocClose) btnDocClose.style.display = "none";
+    if (btnDocClose) btnDocClose.style.display = returnToBook ? "none" : "inline-block";
     if (btnToggleUnderlay) btnToggleUnderlay.style.display = "none";
 
     // Underlay anzeigen
@@ -2588,10 +2673,200 @@
       updateViewportPan();
       loadBookPageAnnotations();
     }
+  }
+
+  async function openMaterialDocument(materialId, subjectId) {
+    const mat = currentSubjectMaterialsList.find(m => m.id === materialId)
+      || await fetchJson(`/api/v1/materials/${materialId}`);
+    await openDocument({
+      materialId,
+      page: 1,
+      pageCount: mat.page_count || 1,
+      title: mat.title || "Dokument",
+      subjectId: subjectId || mat.subject_id,
+      badge: mat.kind || "📄 Dokument"
+    });
+  }
+
+  async function closeDocument() {
+    if (!isBookPageMode) return;
+    const subjectId = (bookPageContext && bookPageContext.subjectId) || subjectSelect.value;
+    await saveBookPageAnnotationsNow();
+    exitDocumentMode();
+    await openLastBoard(subjectId);
+  }
+
+  // Liste der Tafeln eines Fachs
+  function formatBoardDate(iso) {
+    if (!iso) return "";
+    const d = new Date(/[zZ]|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`);  // Server liefert UTC
+    return `${d.toLocaleDateString("de-DE", { day: "numeric", month: "short" })}, ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+
+  function makeIconButton(label, title, onClick) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "wb-boards-icon-btn";
+    btn.title = title;
+    btn.setAttribute("aria-label", title);
+    btn.textContent = label;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onClick();
+    });
+    return btn;
+  }
+
+  function createBoardListItem(b) {
+    const item = document.createElement("div");
+    item.className = "wb-boards-item";
+    if (!isBookPageMode && currentSession && currentSession.id === b.id) item.classList.add("active");
+
+    const thumb = document.createElement(b.has_thumbnail ? "img" : "div");
+    thumb.className = "wb-boards-thumb";
+    if (b.has_thumbnail) {
+      thumb.src = `/api/v1/boards/${b.id}/thumbnail?v=${encodeURIComponent(b.updated_at || "")}`;
+      thumb.alt = "";
+    }
+
+    const text = document.createElement("div");
+    text.className = "wb-boards-text";
+    const title = document.createElement("div");
+    title.className = "wb-boards-title";
+    title.textContent = b.title || "Tafel";
+    const meta = document.createElement("div");
+    meta.className = "wb-boards-meta";
+    meta.textContent = formatBoardDate(b.updated_at || b.created_at);
+    text.append(title, meta);
+
+    const actions = document.createElement("div");
+    actions.className = "wb-boards-actions";
+    actions.append(
+      makeIconButton("✏️", "Umbenennen", () => renameBoard(b)),
+      makeIconButton("🗄️", "Archivieren", () => archiveBoard(b))
+    );
+
+    item.append(thumb, text, actions);
+    item.addEventListener("click", () => {
+      closeBoardsPanel();
+      queued(openBoard)(b.id);
+    });
+    return item;
+  }
+
+  async function renderBoardsPanel() {
+    if (!boardsList) return;
+    const option = subjectSelect && subjectSelect.selectedOptions[0];
+    if (boardsPanelTitle) boardsPanelTitle.textContent = `Tafeln · ${option ? option.textContent.trim() : ""}`;
+    let boards = [];
+    try {
+      boards = await fetchJson(`/api/v1/boards?subject_id=${encodeURIComponent(subjectSelect.value)}`);
+    } catch (err) {
+      console.warn("Tafeln nicht geladen:", err);
+    }
+    boardsList.textContent = "";
+    if (boards.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "wb-boards-empty";
+      empty.textContent = "Noch keine Tafeln in diesem Fach.";
+      boardsList.appendChild(empty);
+      return;
+    }
+    boards.forEach(b => boardsList.appendChild(createBoardListItem(b)));
+  }
+
+  async function renameBoard(b) {
+    const name = prompt("Name der Tafel:", b.title || "");
+    if (name === null || !name.trim()) return;
+    try {
+      const updated = await fetchJson(`/api/v1/boards/${b.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: name.trim().slice(0, 60) })
+      });
+      if (currentSession && currentSession.id === b.id) {
+        currentSession.title = updated.title;
+        currentSession.title_source = updated.title_source;
+        updateBoardTitle();
+      }
+    } catch (err) {
+      console.warn("Umbenennen fehlgeschlagen:", err);
+    }
+    renderBoardsPanel();
+  }
+
+  const archiveBoard = queued(async (b) => {
+    if (!confirm(`„${b.title || "Tafel"}“ archivieren? Die Tafel verschwindet aus der Liste.`)) return;
+    const isCurrent = !isBookPageMode && currentSession && currentSession.id === b.id;
+    if (isCurrent) {
+      await saveBoardNow(true);
+      currentSession = null;
+    }
+    await fetchJson(`/api/v1/boards/${b.id}/archive`, { method: "POST" });
+    if (isCurrent) await openLastBoard(subjectSelect.value);
+    renderBoardsPanel();
+  });
+
+  function closeBoardsPanel() {
+    if (boardsPanel) boardsPanel.style.display = "none";
+  }
+
+  if (btnBoards && boardsPanel) {
+    btnBoards.addEventListener("click", () => {
+      if (boardsPanel.style.display !== "none") {
+        closeBoardsPanel();
+        return;
+      }
+      boardsPanel.style.display = "flex";
+      renderBoardsPanel();
+    });
+    // Außerhalb tippen schließt die Liste (pointerdown, weil die Tafel Klicks unterdrückt)
+    document.addEventListener("pointerdown", (e) => {
+      if (boardsPanel.style.display === "none") return;
+      if (boardsPanel.contains(e.target) || btnBoards.contains(e.target)) return;
+      closeBoardsPanel();
+    }, true);
+  }
+  if (btnBoardsNew) {
+    btnBoardsNew.addEventListener("click", () => {
+      closeBoardsPanel();
+      queued(startNewBoard)(subjectSelect.value);
+    });
+  }
+
+  // Globale Einstiege (Fachseite, Dokumentkarten, Buchleser)
+  function showBoardTab() {
+    if (typeof switchToTab === "function") {
+      switchToTab("whiteboard");
+    } else {
+      const tabBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
+      if (tabBtn) tabBtn.click();
+    }
+  }
+
+  window.openMaterialOnWhiteboard = function(materialId, subjectId = null) {
+    showBoardTab();
+    return queued(openMaterialDocument)(materialId, subjectId);
   };
+
+  window.openBookPageOnWhiteboard = function({ materialId, page = 1, pageCount = 1, title = "Buchseite", subjectId = null }) {
+    showBoardTab();
+    return queued(openDocument)({ materialId, page, pageCount, title, subjectId, badge: "📖 Buchseite", returnToBook: true });
+  };
+
+  window.openBoardOnWhiteboard = function(boardId) {
+    showBoardTab();
+    return queued(openBoard)(boardId);
+  };
+
+  window.openNewBoardOnWhiteboard = function(subjectId) {
+    showBoardTab();
+    return queued(startNewBoard)(subjectId);
+  };
+
   setTimeout(() => {
     resizeCanvases();
-    initSession();
+    queued(initSession)();
   }, 150);
 
 })();

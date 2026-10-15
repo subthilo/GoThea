@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-  <link rel="stylesheet" href="/static/style.css?v=11.1">
+  <link rel="stylesheet" href="/static/style.css?v=11.2">
 </head>
 <body>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
@@ -454,6 +454,19 @@
           </div>
         </div>
 
+        <!-- Tafeln des Fachs (zuletzt bearbeitete zuerst) -->
+        <div class="subject-boards-section">
+          <div class="section-title-row">
+            <div>
+              <h3>Tafeln</h3>
+            </div>
+            <span class="badge-minutes" id="subject-boards-count">0 Tafeln</span>
+          </div>
+          <div id="subject-boards-grid" class="subject-boards-grid">
+            <!-- Dynamisch via API befüllt -->
+          </div>
+        </div>
+
         <!-- Lehrplanthemen des Fachs (kompakt & einklappbar) -->
         <div class="subject-topics-bar" id="subject-topics-bar">
           <div class="subject-topics-bar-header" id="btn-toggle-subject-topics">
@@ -608,6 +621,22 @@
                 <!-- Dynamisch mit Schulfächern befüllt -->
               </select>
 
+              <!-- Tafeln des Fachs (wie Notizen): aktuelle Tafel, Liste zum Wechseln -->
+              <div class="wb-boards-anchor">
+                <button type="button" id="btn-wb-boards" class="wb-btn-subtle wb-boards-btn" title="Tafeln dieses Fachs" aria-haspopup="dialog">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line></svg>
+                  <span id="wb-board-title" class="wb-board-title">Tafel</span>
+                  <span aria-hidden="true">▾</span>
+                </button>
+                <div id="wb-boards-panel" class="wb-boards-panel" style="display: none;" role="dialog" aria-label="Tafeln">
+                  <div class="wb-boards-panel-head">
+                    <span id="wb-boards-panel-title" class="wb-boards-panel-title">Tafeln</span>
+                    <button type="button" id="btn-wb-boards-new" class="wb-btn-subtle">+ Neue Tafel</button>
+                  </div>
+                  <div id="wb-boards-list" class="wb-boards-list"></div>
+                </div>
+              </div>
+
               <span class="wb-label" style="margin-left: 6px;">Unterlage:</span>
               <select id="wb-material-select" class="wb-select" style="max-width: 250px;" title="Wähle eine Unterlage, ein Arbeitsblatt oder Buchkapitel zum gezielten Üben">
                 <option value="">Freies Üben</option>
@@ -671,7 +700,7 @@
                 <button type="button" class="btn-pager" id="btn-wb-doc-prev">◀</button>
                 <span id="wb-doc-page-info">Seite 1 / 1</span>
                 <button type="button" class="btn-pager" id="btn-wb-doc-next">▶</button>
-                <button type="button" class="btn-pager" id="btn-wb-doc-close" title="Vorlage schließen">✕ Ausblenden</button>
+                <button type="button" class="btn-pager" id="btn-wb-doc-close" title="Notizen speichern und Dokument schließen">✕ Schließen</button>
               </div>
             </div>
 
@@ -1634,8 +1663,8 @@
 
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
-  <script src="/static/app.js?v=11.7"></script>
-  <script src="/static/whiteboard.js?v=7.1"></script>
+  <script src="/static/app.js?v=11.8"></script>
+  <script src="/static/whiteboard.js?v=8.0"></script>
   <script src="/static/cloze_trainer.js?v=2.6"></script>
 </body>
 </html>

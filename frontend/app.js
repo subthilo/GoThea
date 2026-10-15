@@ -972,6 +972,7 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   });
 
   loadSubjectMaterials(subjectId);
+  loadSubjectBoards(subjectId);
   initSubjectScoresVisibility();
   loadSubjectScores(subjectId);
 
@@ -1148,6 +1149,51 @@ async function loadSubjectScores(subjectId) {
     console.warn("Fehler beim Laden der Fach-Scores:", err);
     container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); font-size: 0.85rem;">Trainingsstand konnte nicht geladen werden.</div>`;
   }
+}
+
+// Tafeln eines Fachs auf der Fachseite: Vorschaubild, Name, zuletzt bearbeitet; erste Karte = neue Tafel
+async function loadSubjectBoards(subjectId) {
+  const grid = document.getElementById("subject-boards-grid");
+  const count = document.getElementById("subject-boards-count");
+  if (!grid) return;
+  let boards = [];
+  try {
+    const res = await fetch(`/api/v1/boards?subject_id=${encodeURIComponent(subjectId)}`);
+    if (res.ok) boards = await res.json();
+  } catch (err) {
+    console.warn("Tafeln des Fachs nicht geladen:", err);
+  }
+  if (count) count.textContent = `${boards.length} ${boards.length === 1 ? "Tafel" : "Tafeln"}`;
+
+  const newCard = `
+    <button type="button" class="subject-board-card subject-board-new" data-new-board="1">
+      <span class="subject-board-thumb subject-board-thumb-new">+</span>
+      <span class="subject-board-title">Neue Tafel</span>
+    </button>`;
+  grid.innerHTML = newCard + boards.map((b) => {
+    const when = b.updated_at || b.created_at;
+    const date = when ? new Date(/[zZ]|[+-]\d\d:\d\d$/.test(when) ? when : `${when}Z`) : null;
+    const dateText = date ? date.toLocaleDateString("de-DE", { day: "numeric", month: "short" }) : "";
+    const thumb = b.has_thumbnail
+      ? `<img class="subject-board-thumb" src="/api/v1/boards/${encodeURIComponent(b.id)}/thumbnail?v=${encodeURIComponent(b.updated_at || "")}" alt="">`
+      : `<span class="subject-board-thumb"></span>`;
+    return `
+      <button type="button" class="subject-board-card" data-board-id="${escapeHtml(b.id)}">
+        ${thumb}
+        <span class="subject-board-title">${escapeHtml(b.title || "Tafel")}</span>
+        <span class="subject-board-meta">${escapeHtml(dateText)}</span>
+      </button>`;
+  }).join("");
+
+  grid.querySelectorAll(".subject-board-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      if (card.dataset.newBoard && typeof window.openNewBoardOnWhiteboard === "function") {
+        window.openNewBoardOnWhiteboard(subjectId);
+      } else if (card.dataset.boardId && typeof window.openBoardOnWhiteboard === "function") {
+        window.openBoardOnWhiteboard(card.dataset.boardId);
+      }
+    });
+  });
 }
 
 async function loadSubjectMaterials(subjectId) {
