@@ -27,70 +27,8 @@ function escapeHtml(str) {
 // ============================================================================
 // Eltern-Modus & Rechte-Verwaltung (Thea-Modus vs. Eltern-Modus)
 // ============================================================================
-const PARENT_TOKEN_STORAGE_KEY = "gothea_parent_token";
-const PARENT_EXPIRES_STORAGE_KEY = "gothea_parent_expires_at";
-
 let isParentActive = false;
 let isDefaultParentPin = false;
-
-function getParentToken() {
-  const token = sessionStorage.getItem(PARENT_TOKEN_STORAGE_KEY);
-  const exp = parseInt(sessionStorage.getItem(PARENT_EXPIRES_STORAGE_KEY) || "0", 10);
-  if (!token) return null;
-  if (exp && exp < Math.floor(Date.now() / 1000)) {
-    clearParentToken();
-    return null;
-  }
-  return token;
-}
-
-function setParentToken(token, expiresAt) {
-  if (token) {
-    sessionStorage.setItem(PARENT_TOKEN_STORAGE_KEY, token);
-    if (expiresAt) {
-      sessionStorage.setItem(PARENT_EXPIRES_STORAGE_KEY, String(expiresAt));
-    }
-  } else {
-    clearParentToken();
-  }
-}
-
-function clearParentToken() {
-  sessionStorage.removeItem(PARENT_TOKEN_STORAGE_KEY);
-  sessionStorage.removeItem(PARENT_EXPIRES_STORAGE_KEY);
-}
-
-// Globaler Fetch-Interceptor für automatische Token-Übermittlung & 403-Handling
-const nativeFetch = window.fetch.bind(window);
-window.fetch = async function (url, options = {}) {
-  const token = getParentToken();
-  if (token) {
-    options = options || {};
-    if (options.headers instanceof Headers) {
-      if (!options.headers.has("X-Parent-Token")) {
-        options.headers.set("X-Parent-Token", token);
-      }
-    } else if (Array.isArray(options.headers)) {
-      options.headers.push(["X-Parent-Token", token]);
-    } else {
-      options.headers = Object.assign({}, options.headers, { "X-Parent-Token": token });
-    }
-  }
-
-  const response = await nativeFetch(url, options);
-
-  if (response.status === 403) {
-    try {
-      const clone = response.clone();
-      const data = await clone.json();
-      if (data && data.detail && typeof data.detail === "string" && data.detail.includes("Eltern-Modus")) {
-        openParentPinModal("Für diese Aktion ist der Eltern-Modus erforderlich.");
-      }
-    } catch (_) {}
-  }
-
-  return response;
-};
 
 // UI-Synchronisation
 function updateParentModeUI(active, isDefault = isDefaultParentPin) {
@@ -149,7 +87,7 @@ function updateParentModeUI(active, isDefault = isDefaultParentPin) {
 
 async function checkParentAuthStatus() {
   try {
-    const res = await nativeFetch("/api/v1/auth/parent/status", {
+    const res = await fetch("/api/v1/auth/parent/status", {
       headers: getParentToken() ? { "X-Parent-Token": getParentToken() } : {}
     });
     if (res.ok) {
@@ -217,7 +155,7 @@ async function submitParentPin() {
   }
 
   try {
-    const res = await nativeFetch("/api/v1/auth/parent/unlock", {
+    const res = await fetch("/api/v1/auth/parent/unlock", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pin })
@@ -293,7 +231,7 @@ async function handleParentPinChange() {
   }
 
   try {
-    const res = await fetch("/api/v1/auth/parent/change-pin", {
+    const res = await apiFetch("/api/v1/auth/parent/change-pin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ current_pin: currentPin, new_pin: newPin })
@@ -563,7 +501,7 @@ window.fireCelebrationConfetti = fireCelebrationConfetti;
 // ============================================================================
 async function loadGamificationOverview() {
   try {
-    const res = await fetch("/api/v1/exercises/gamification/overview");
+    const res = await apiFetch("/api/v1/exercises/gamification/overview");
     if (!res.ok) return;
     const data = await res.json();
 
@@ -706,7 +644,7 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
 // 1. Profil laden
 async function loadProfile() {
   try {
-    const res = await fetch("/api/v1/profile");
+    const res = await apiFetch("/api/v1/profile");
     if (res.ok) {
       currentProfile = await res.json();
       if (badgeGrade) badgeGrade.textContent = `${currentProfile.grade_level}. Klasse`;
@@ -730,8 +668,8 @@ async function loadProfile() {
 async function loadTaxonomy() {
   try {
     const [subRes, topRes] = await Promise.all([
-      fetch("/api/v1/taxonomy/subjects"),
-      fetch("/api/v1/taxonomy/topics")
+      apiFetch("/api/v1/taxonomy/subjects"),
+      apiFetch("/api/v1/taxonomy/topics")
     ]);
 
     if (subRes.ok && topRes.ok) {
@@ -1031,7 +969,7 @@ async function loadSubjectScores(subjectId) {
   container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 18px; color: var(--text-muted); font-size: 0.85rem;">Lade Trainingsstand...</div>`;
 
   try {
-    const res = await fetch(`/api/v1/exercises/scores/${encodeURIComponent(subjectId)}`);
+    const res = await apiFetch(`/api/v1/exercises/scores/${encodeURIComponent(subjectId)}`);
     if (!res.ok) {
       container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); font-size: 0.85rem;">Keine Trainingsdaten verfügbar.</div>`;
       return;
@@ -1158,7 +1096,7 @@ async function loadSubjectBoards(subjectId) {
   if (!grid) return;
   let boards = [];
   try {
-    const res = await fetch(`/api/v1/boards?subject_id=${encodeURIComponent(subjectId)}`);
+    const res = await apiFetch(`/api/v1/boards?subject_id=${encodeURIComponent(subjectId)}`);
     if (res.ok) boards = await res.json();
   } catch (err) {
     console.warn("Tafeln des Fachs nicht geladen:", err);
@@ -1204,7 +1142,7 @@ async function loadSubjectMaterials(subjectId) {
   grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-secondary);">Lade Materialien...</div>`;
 
   try {
-    const res = await fetch(`/api/v1/materials?subject_id=${encodeURIComponent(subjectId)}`);
+    const res = await apiFetch(`/api/v1/materials?subject_id=${encodeURIComponent(subjectId)}`);
     if (res.ok) {
       currentSubjectMaterials = await res.json();
       if (countBadge) {
@@ -1302,7 +1240,7 @@ document.getElementById("btn-save-profile").addEventListener("click", async () =
   const feedback = document.getElementById("prof-feedback");
 
   try {
-    const res = await fetch("/api/v1/profile", {
+    const res = await apiFetch("/api/v1/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, grade_level, school_type })
@@ -1354,7 +1292,7 @@ let currentEnvInfo = null;
 
 async function checkEnvironment() {
   try {
-    const res = await fetch("/api/v1/env");
+    const res = await apiFetch("/api/v1/env");
     if (res.ok) {
       const data = await res.json();
       currentEnvInfo = data;
@@ -1379,7 +1317,7 @@ async function checkEnvironment() {
 // 6. Lernplan & Countdown laden
 async function loadPlan() {
   try {
-    const res = await fetch("/api/v1/plan");
+    const res = await apiFetch("/api/v1/plan");
     if (!res.ok) return;
     const plan = await res.json();
 
@@ -1520,7 +1458,7 @@ async function loadPlan() {
 // Task Toggle
 async function toggleTask(testId, dateStr, completed) {
   try {
-    await fetch("/api/v1/plan/complete-task", {
+    await apiFetch("/api/v1/plan/complete-task", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ test_id: testId, date: dateStr, completed })
@@ -1534,7 +1472,7 @@ async function toggleTask(testId, dateStr, completed) {
 // Prüfung löschen
 async function deleteTest(testId) {
   try {
-    const res = await fetch(`/api/v1/tests/${testId}`, { method: "DELETE" });
+    const res = await apiFetch(`/api/v1/tests/${testId}`, { method: "DELETE" });
     if (res.ok) await loadPlan();
   } catch (e) {
     console.error(e);
@@ -1581,7 +1519,7 @@ document.getElementById("btn-submit-test").addEventListener("click", async () =>
     return;
   }
 
-  const res = await fetch("/api/v1/tests", {
+  const res = await apiFetch("/api/v1/tests", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ subject_id, kind, date: dateVal, note })
@@ -1606,7 +1544,7 @@ document.getElementById("btn-submit-block").addEventListener("click", async () =
     return;
   }
 
-  const res = await fetch("/api/v1/plan/block", {
+  const res = await apiFetch("/api/v1/plan/block", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ date: dateVal, type: typeVal })
@@ -1625,7 +1563,7 @@ const btnSeedDummies = document.getElementById("btn-seed-dummies");
 if (btnSeedDummies) {
   btnSeedDummies.addEventListener("click", async () => {
     try {
-      const res = await fetch("/api/v1/staging/seed-dummy-tests", { method: "POST" });
+      const res = await apiFetch("/api/v1/staging/seed-dummy-tests", { method: "POST" });
       if (res.ok) {
         alert("3 realistische Test-Prüfungen (Mathe, Bio, Deutsch) angelegt!");
         await loadPlan();
@@ -1642,7 +1580,7 @@ if (btnResetStaging) {
   btnResetStaging.addEventListener("click", async () => {
     if (!confirm("Möchtest du die Staging-Testdaten wirklich zurücksetzen?")) return;
     try {
-      const res = await fetch("/api/v1/staging/reset", { method: "POST" });
+      const res = await apiFetch("/api/v1/staging/reset", { method: "POST" });
       if (res.ok) {
         alert("Staging-Datenbank wurde erfolgreich zurückgesetzt.");
         await loadProfile();
@@ -1712,12 +1650,12 @@ async function checkInboxStatus() {
   try {
     if (!currentEnvInfo) {
       try {
-        const envRes = await fetch("/api/v1/env");
+        const envRes = await apiFetch("/api/v1/env");
         if (envRes.ok) currentEnvInfo = await envRes.json();
       } catch (e) {}
     }
 
-    const res = await fetch("/api/v1/inbox/status");
+    const res = await apiFetch("/api/v1/inbox/status");
     if (!res.ok) {
       console.error("Inbox Status HTTP Fehler:", res.status);
       if (inboxSubtitle) {
@@ -1816,7 +1754,7 @@ async function processInbox() {
   }
 
   try {
-    const res = await fetch("/api/v1/inbox/process", { method: "POST" });
+    const res = await apiFetch("/api/v1/inbox/process", { method: "POST" });
     if (res.ok) {
       const data = await res.json();
       const pCount = data.processed_count || 0;
@@ -2042,7 +1980,7 @@ function buildMaterialCard(m, onDeleted) {
       e.stopPropagation();
       if (!confirm(`Möchtest du das Material „${m.title}“ wirklich löschen?`)) return;
       try {
-        const delRes = await fetch(`/api/v1/materials/${m.id}`, { method: "DELETE" });
+        const delRes = await apiFetch(`/api/v1/materials/${m.id}`, { method: "DELETE" });
         if (delRes.ok) {
           if (typeof onDeleted === "function") {
             onDeleted();
@@ -2065,7 +2003,7 @@ function buildMaterialCard(m, onDeleted) {
 
 async function loadMaterials() {
   try {
-    const res = await fetch("/api/v1/materials");
+    const res = await apiFetch("/api/v1/materials");
     if (res.ok) {
       currentMaterials = await res.json();
       renderUploadsHistory(currentMaterials);
@@ -2079,7 +2017,7 @@ async function loadUploadsHistory() {
   const historyList = document.getElementById("uploads-history-list");
   if (!historyList) return;
   try {
-    const res = await fetch("/api/v1/materials");
+    const res = await apiFetch("/api/v1/materials");
     if (res.ok) {
       currentMaterials = await res.json();
       renderUploadsHistory(currentMaterials);
@@ -2213,7 +2151,7 @@ async function handleSingleFileUpload(file) {
   }
 
   try {
-    const res = await fetch("/api/v1/materials/pre-analyze", {
+    const res = await apiFetch("/api/v1/materials/pre-analyze", {
       method: "POST",
       body: formData
     });
@@ -2326,7 +2264,7 @@ async function handleBatchFileUpload(files) {
         formData.append("subject_id", currentPreselectedSubjectId);
       }
 
-      const preRes = await fetch("/api/v1/materials/pre-analyze", {
+      const preRes = await apiFetch("/api/v1/materials/pre-analyze", {
         method: "POST",
         body: formData
       });
@@ -2348,7 +2286,7 @@ async function handleBatchFileUpload(files) {
         ...pickAnalysisSignals(preData)
       };
 
-      const confRes = await fetch("/api/v1/materials/confirm", {
+      const confRes = await apiFetch("/api/v1/materials/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -2543,7 +2481,7 @@ if (btnSubmitMaterial) {
     btnSubmitMaterial.textContent = "Speichere...";
 
     try {
-      const res = await fetch("/api/v1/materials/confirm", {
+      const res = await apiFetch("/api/v1/materials/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -2936,7 +2874,7 @@ if (btnSaveEditMaterial) {
     btnSaveEditMaterial.disabled = true;
     btnSaveEditMaterial.textContent = "Speichere...";
     try {
-      const res = await fetch(`/api/v1/materials/${matId}`, {
+      const res = await apiFetch(`/api/v1/materials/${matId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3100,7 +3038,7 @@ if (btnSaveReorderPages) {
     btnSaveReorderPages.textContent = "Speichere Seiten...";
 
     try {
-      const res = await fetch(`/api/v1/materials/${activeReorderMaterial.id}/reorder-pages`, {
+      const res = await apiFetch(`/api/v1/materials/${activeReorderMaterial.id}/reorder-pages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ page_order: currentReorderPages })
@@ -3350,7 +3288,7 @@ if (btnSubmitMerge) {
     btnSubmitMerge.textContent = "Verbinde Dokumente...";
 
     try {
-      const res = await fetch("/api/v1/materials/merge", {
+      const res = await apiFetch("/api/v1/materials/merge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3460,7 +3398,7 @@ if (timetableFileInput) {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("/api/v1/taxonomy/import-timetable", {
+      const res = await apiFetch("/api/v1/taxonomy/import-timetable", {
         method: "POST",
         body: formData,
       });
@@ -3578,7 +3516,7 @@ let currentTimetableData = null;
 async function loadTimetable(forcedWeek = null) {
   try {
     const weekParam = forcedWeek || currentTimetableWeek;
-    const res = await fetch(`/api/v1/timetable?week_type=${weekParam}`);
+    const res = await apiFetch(`/api/v1/timetable?week_type=${weekParam}`);
     if (!res.ok) throw new Error("Fehler beim Laden des Stundenplans.");
     currentTimetableData = await res.json();
     currentTimetableWeek = currentTimetableData.current_week_type || "A";
@@ -3791,7 +3729,7 @@ async function loadTodayDashboardWidget() {
   if (!container) return;
 
   try {
-    const res = await fetch("/api/v1/timetable/today");
+    const res = await apiFetch("/api/v1/timetable/today");
     if (!res.ok) throw new Error("Fehler beim Laden des Tagesplans.");
     const data = await res.json();
 
@@ -3870,7 +3808,7 @@ async function loadTodayDashboardWidget() {
 
 async function viewMaterialById(matId) {
   try {
-    const res = await fetch(`/api/v1/materials/${matId}`);
+    const res = await apiFetch(`/api/v1/materials/${matId}`);
     if (res.ok) {
       const mat = await res.json();
       openDocumentViewerModal(mat);
@@ -3982,7 +3920,7 @@ let bookZoomMode = "width"; // Standard: Volle Dokumentbreite (100% Breite)
 
 async function loadBooks() {
   try {
-    const res = await fetch("/api/v1/books");
+    const res = await apiFetch("/api/v1/books");
     if (!res.ok) {
       console.error("HTTP error loading books:", res.status);
       const grid = document.getElementById("book-catalog-grid");
@@ -4085,7 +4023,7 @@ async function selectBook(bookId) {
   renderBooksShelf();
 
   try {
-    const res = await fetch(`/api/v1/books/${bookId}`);
+    const res = await apiFetch(`/api/v1/books/${bookId}`);
     if (!res.ok) return;
     activeBookDetail = await res.json();
 
@@ -4619,7 +4557,7 @@ function prefetchAdjacentPages() {
 
   // 2. Server-seitige Prioritäts-Queue triggern
   try {
-    fetch(`/api/v1/materials/${activeChapter.id}/prefetch?page=${p}`, {
+    apiFetch(`/api/v1/materials/${activeChapter.id}/prefetch?page=${p}`, {
       method: "POST"
     }).catch(() => {});
   } catch (e) {}
@@ -5024,7 +4962,7 @@ async function loadBookAnnotations(materialId, pageNum) {
   bookAnnotationLoadedKey = key;
 
   try {
-    const res = await fetch(`/api/v1/materials/${materialId}/pages/${pageNum}/annotations`);
+    const res = await apiFetch(`/api/v1/materials/${materialId}/pages/${pageNum}/annotations`);
     if (res.ok) {
       const data = await res.json();
       if (bookAnnotationLoadedKey === key) {

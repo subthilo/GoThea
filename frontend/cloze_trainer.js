@@ -206,7 +206,7 @@
 
     // Aktuelle adaptive Schwierigkeitsstufe ermitteln
     try {
-      const adRes = await fetch(`/api/v1/exercises/adaptive-difficulty/${encodeURIComponent(currentSubjectId)}?exercise_type=cloze`);
+      const adRes = await apiFetch(`/api/v1/exercises/adaptive-difficulty/${encodeURIComponent(currentSubjectId)}?exercise_type=cloze`);
       if (adRes.ok) {
         const adData = await adRes.json();
         currentAdaptiveDifficulty = adData.difficulty || 'mittel';
@@ -335,7 +335,7 @@
         audio_enabled: true
       };
 
-      const res = await fetch('/api/v1/exercises/cloze/generate', {
+      const res = await apiFetch('/api/v1/exercises/cloze/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -1032,7 +1032,7 @@
         hint: (b.def && b.def.hint) || null
       };
 
-      const res = await fetch('/api/v1/exercises/cloze/check-single-blank', {
+      const res = await apiFetch('/api/v1/exercises/cloze/check-single-blank', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -1207,7 +1207,7 @@
         setLunaSpeaking(true);
         let played = false;
         try {
-          const phraseRes = await fetch('/api/v1/exercises/phrases/unclear_handwriting');
+          const phraseRes = await apiFetch('/api/v1/exercises/phrases/unclear_handwriting');
           if (phraseRes.ok) {
             const pData = await phraseRes.json();
             if (pData.audio_base64) {
@@ -1444,7 +1444,7 @@
     });
 
     try {
-      const subRes = await fetch('/api/v1/exercises/results', {
+      const subRes = await apiFetch('/api/v1/exercises/results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1497,7 +1497,7 @@
    */
   async function playInstantPhrase(category) {
     try {
-      const res = await fetch(`/api/v1/exercises/phrases/${category}`);
+      const res = await apiFetch(`/api/v1/exercises/phrases/${category}`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.audio_base64) {
@@ -1636,7 +1636,7 @@
 
     // 1. Primär: Authentische OpenAI Nova Stimme via Backend on-demand anfordern (speed=0.90)
     try {
-      const res = await fetch('/api/v1/exercises/tts', {
+      const res = await apiFetch('/api/v1/exercises/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

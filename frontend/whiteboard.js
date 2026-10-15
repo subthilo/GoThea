@@ -1277,7 +1277,7 @@
         strokes: normalizedStrokes,
         strokes_json: JSON.stringify(normalizedStrokes)
       };
-      const res = await fetch(`/api/v1/materials/${bookPageContext.materialId}/pages/${bookPageContext.page}/annotations`, {
+      const res = await apiFetch(`/api/v1/materials/${bookPageContext.materialId}/pages/${bookPageContext.page}/annotations`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -1314,7 +1314,7 @@
     if (dw === 0 || dh === 0) return;
 
     try {
-      const res = await fetch(`/api/v1/materials/${bookPageContext.materialId}/pages/${bookPageContext.page}/annotations`);
+      const res = await apiFetch(`/api/v1/materials/${bookPageContext.materialId}/pages/${bookPageContext.page}/annotations`);
       if (res.ok) {
         const data = await res.json();
         let loaded = [];
@@ -1360,7 +1360,7 @@
         const payload = {
           board_state_json: JSON.stringify(strokes)
         };
-        await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/state`, {
+        await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/state`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -1378,7 +1378,7 @@
     currentSubjectMaterialsList = [];
 
     try {
-      const res = await fetch(`/api/v1/materials?subject_id=${encodeURIComponent(subjectId)}`);
+      const res = await apiFetch(`/api/v1/materials?subject_id=${encodeURIComponent(subjectId)}`);
       if (res.ok) {
         currentSubjectMaterialsList = await res.json();
       }
@@ -1487,7 +1487,7 @@
   async function initSession() {
     try {
       // 1. Fächer in Dropdown einbinden
-      const subRes = await fetch("/api/v1/taxonomy/subjects");
+      const subRes = await apiFetch("/api/v1/taxonomy/subjects");
       if (subRes.ok) {
         const subjects = await subRes.json();
         subjectSelect.innerHTML = subjects.map(s => `
@@ -1848,7 +1848,7 @@
 
       try {
         const snapshot = captureBoardSnapshot();
-        const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/ask-tutor`, {
+        const res = await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/ask-tutor`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2123,7 +2123,7 @@
           exercises = exercises.filter(item => item.id !== ex.id);
           if (currentSession) {
             try {
-              await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}`, {
+              await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}`, {
                 method: "DELETE"
               });
             } catch (err) {}
@@ -2222,7 +2222,7 @@
         items.push({ blank_id: bid, crop_image_base64: cropB64 });
       }
 
-      const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}/check-blanks`, {
+      const res = await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}/check-blanks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2320,7 +2320,7 @@
 
       if (currentSession) {
         try {
-          await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}/position`, {
+          await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/${ex.id}/position`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ pos_x: ex.pos_x, pos_y: ex.pos_y })
@@ -2344,7 +2344,7 @@
   async function loadSessionExercises(sessionId) {
     if (!sessionId) return;
     try {
-      const res = await fetch(`/api/v1/whiteboard/sessions/${sessionId}/exercises`);
+      const res = await apiFetch(`/api/v1/whiteboard/sessions/${sessionId}/exercises`);
       if (res.ok) {
         exercises = await res.json();
         renderAllExercises();
@@ -2400,7 +2400,7 @@
         const initialX = Math.round(Math.max(60, (-panX / scale) + (viewW / scale) * 0.45));
         const initialY = Math.round(Math.max(80, (-panY / scale) + 60));
 
-        const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/generate`, {
+        const res = await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/exercises/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2461,12 +2461,6 @@
       });
       return boardQueue;
     };
-  }
-
-  async function fetchJson(url, options) {
-    const res = await fetch(url, options);
-    if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-    return res.json();
   }
 
   function updateBoardTitle() {
@@ -2544,7 +2538,7 @@
       const thumb = renderBoardThumbnail();
       if (thumb) payload.snapshot_data_url = thumb;
     }
-    const res = await fetch(`/api/v1/whiteboard/sessions/${currentSession.id}/state`, {
+    const res = await apiFetch(`/api/v1/whiteboard/sessions/${currentSession.id}/state`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -2558,7 +2552,7 @@
     const empty = strokes.length === 0;
     await saveBoardNow(true);  // scheitert das Speichern, bleibt die Tafel offen
     currentSession = null;
-    const closing = fetch(`/api/v1/boards/${board.id}/close`, { method: "POST", keepalive: true }).catch(() => {});
+    const closing = apiFetch(`/api/v1/boards/${board.id}/close`, { method: "POST", keepalive: true }).catch(() => {});
     // Leere Tafeln verwirft der Server sofort – abwarten, damit sie nicht wieder auftauchen.
     // Sonst nicht warten: den Namen vergibt die KI im Hintergrund.
     if (empty) await closing;
@@ -2592,7 +2586,7 @@
 
   async function startNewBoard(subjectId) {
     await leaveCurrent();
-    applyBoard(await fetchJson("/api/v1/boards", {
+    applyBoard(await apiJson("/api/v1/boards", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subject_id: subjectId || subjectSelect.value || "sub_math" })
@@ -2602,7 +2596,7 @@
   async function openBoard(boardId) {
     if (!isBookPageMode && currentSession && currentSession.id === boardId) return;
     await leaveCurrent();
-    applyBoard(await fetchJson(`/api/v1/boards/${boardId}/open`, { method: "POST" }));
+    applyBoard(await apiJson(`/api/v1/boards/${boardId}/open`, { method: "POST" }));
   }
 
   async function openLastBoard(subjectId) {
@@ -2610,9 +2604,9 @@
     if (!isBookPageMode && currentSession && subjectId && currentSession.subject_id === subjectId) return;
     await leaveCurrent();
     const query = subjectId ? `?subject_id=${encodeURIComponent(subjectId)}` : "";
-    const last = await fetchJson(`/api/v1/boards/last${query}`);
+    const last = await apiJson(`/api/v1/boards/last${query}`);
     if (last) {
-      applyBoard(await fetchJson(`/api/v1/boards/${last.id}/open`, { method: "POST" }));
+      applyBoard(await apiJson(`/api/v1/boards/${last.id}/open`, { method: "POST" }));
     } else {
       await startNewBoard(subjectId);
     }
@@ -2677,7 +2671,7 @@
 
   async function openMaterialDocument(materialId, subjectId) {
     const mat = currentSubjectMaterialsList.find(m => m.id === materialId)
-      || await fetchJson(`/api/v1/materials/${materialId}`);
+      || await apiJson(`/api/v1/materials/${materialId}`);
     await openDocument({
       materialId,
       page: 1,
@@ -2760,7 +2754,7 @@
     if (boardsPanelTitle) boardsPanelTitle.textContent = `Tafeln · ${option ? option.textContent.trim() : ""}`;
     let boards = [];
     try {
-      boards = await fetchJson(`/api/v1/boards?subject_id=${encodeURIComponent(subjectSelect.value)}`);
+      boards = await apiJson(`/api/v1/boards?subject_id=${encodeURIComponent(subjectSelect.value)}`);
     } catch (err) {
       console.warn("Tafeln nicht geladen:", err);
     }
@@ -2779,7 +2773,7 @@
     const name = prompt("Name der Tafel:", b.title || "");
     if (name === null || !name.trim()) return;
     try {
-      const updated = await fetchJson(`/api/v1/boards/${b.id}`, {
+      const updated = await apiJson(`/api/v1/boards/${b.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: name.trim().slice(0, 60) })
@@ -2802,7 +2796,7 @@
       await saveBoardNow(true);
       currentSession = null;
     }
-    await fetchJson(`/api/v1/boards/${b.id}/archive`, { method: "POST" });
+    await apiJson(`/api/v1/boards/${b.id}/archive`, { method: "POST" });
     if (isCurrent) await openLastBoard(subjectSelect.value);
     renderBoardsPanel();
   });

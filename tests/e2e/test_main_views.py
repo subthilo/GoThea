@@ -25,3 +25,14 @@ def test_parent_mode_unlocks_with_pin(app_page, parent_pin):
     app_page.click("#btn-submit-parent-pin")
     app_page.wait_for_function("document.body.classList.contains('parent-mode-active')", timeout=5000)
     assert app_page.problems.errors == []
+
+
+def test_api_helper_sends_parent_token_only_in_parent_mode(app_page, parent_pin):
+    status_js = "() => apiJson('/api/v1/auth/parent/status').then(d => d.is_parent)"
+    assert app_page.evaluate(status_js) is False
+    app_page.click("#btn-parent-toggle")
+    app_page.fill("#input-parent-pin", parent_pin)
+    app_page.click("#btn-submit-parent-pin")
+    app_page.wait_for_function("document.body.classList.contains('parent-mode-active')", timeout=5000)
+    assert app_page.evaluate(status_js) is True
+    assert app_page.problems.errors == []
