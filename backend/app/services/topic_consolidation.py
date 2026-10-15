@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+from sqlalchemy import not_, or_
 from sqlalchemy.orm import Session
 
 from backend.app.config import OPENAI_API_KEY, OPENAI_MODEL
@@ -20,8 +21,9 @@ from backend.app.services.llm import chat_params
 logger = logging.getLogger(__name__)
 
 TOPIC_REFERENCES = (Material, Dossier, TutorSession)
-# Bücher und Kapitel umfassen viele Unterrichtseinheiten -> kein Thema auf mittlerer Ebene
-BOOK_KINDS = (BUCH, BUCHAUSZUG)
+# Bücher und ihre Kapitel umfassen viele Unterrichtseinheiten -> kein Thema auf mittlerer Ebene.
+# Kapitel erkennt man am Buch (parent_id), nicht an der Art (Kapiteltabellen setzen z. B. "Lösungsheft").
+IS_BOOK_OR_CHAPTER = or_(Material.kind.in_((BUCH, BUCHAUSZUG)), Material.parent_id.isnot(None))
 
 
 @dataclass
@@ -42,7 +44,7 @@ class ConsolidationPlan:
 
 def _usage_count(db: Session, topic_id: str) -> int:
     count = sum(db.query(model).filter_by(topic_id=topic_id).count() for model in (Dossier, TutorSession))
-    return count + db.query(Material).filter(Material.topic_id == topic_id, Material.kind.notin_(BOOK_KINDS)).count()
+    return count + db.query(Material).filter(Material.topic_id == topic_id, not_(IS_BOOK_OR_CHAPTER)).count()
 
 
 def _ask_model(payload: dict) -> dict:
@@ -96,7 +98,7 @@ def plan_for_subject(db: Session, subject: Subject, ask=_ask_model) -> Consolida
                 "name": t.name,
                 "bereich": t.area,
                 "dokumente": [m.title for m in db.query(Material).filter(
-                    Material.topic_id == t.id, Material.kind.notin_(BOOK_KINDS)).limit(6)],
+                    Material.topic_id == t.id, not_(IS_BOOK_OR_CHAPTER)).limit(6)],
             }
             for t in used.values()
         ],
@@ -115,7 +117,7 @@ def plan_for_subject(db: Session, subject: Subject, ask=_ask_model) -> Consolida
 def apply_plan(db: Session, plan: ConsolidationPlan) -> None:
     if plan.error:
         raise ValueError(plan.error)
-    db.query(Material).filter(Material.subject_id == plan.subject_id, Material.kind.in_(BOOK_KINDS)) \
+    db.query(Material).filter(Material.subject_id == plan.subject_id, IS_BOOK_OR_CHAPTER) \
         .update({"topic_id": None}, synchronize_session=False)
     for group in plan.groups:
         topics = [db.get(Topic, tid) for tid in group.topic_ids]

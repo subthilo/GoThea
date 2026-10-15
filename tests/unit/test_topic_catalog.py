@@ -101,3 +101,13 @@ def test_book_topics_do_not_count_and_are_cleared(db_session):
     tc.apply_plan(db_session, plan)
     assert db_session.get(Material, "mat_book").topic_id is None
     assert db_session.get(Topic, "top_chapter") is None
+
+
+def test_chapters_with_unusual_kind_do_not_count(db_session):
+    topic = _topic(db_session, "top_appendix", "Fundamente der Mathematik (Test)")
+    db_session.add(Material(id="mat_ch10", user_id="usr_thea", subject_id="sub_physics", topic_id=topic.id,
+                            parent_id="mat_somebook", title="Anhang & Lösungen", kind="Lösungsheft",
+                            filename="c.pdf", file_path="/tmp/c.pdf"))
+    db_session.commit()
+    plan = tc.plan_for_subject(db_session, db_session.get(Subject, "sub_physics"), ask=lambda p: {"themen": []})
+    assert "top_appendix" in plan.delete_unused
