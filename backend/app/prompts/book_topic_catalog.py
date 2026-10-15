@@ -16,8 +16,12 @@ Regeln:
 - Jede Abschnitts-ID höchstens EINMAL. Reine Verwaltungs- und Anhangseiten (Inhaltsverzeichnis, Register, Bildquellen,
   Lösungsteil, allgemeine Methodenübersichten) darfst du weglassen. Projekt-, Streifzug- und Übungsseiten ordnest du dem
   passenden inhaltlichen Thema zu.
-- Die 'bestehenden_themen' stammen aus Theas eigenen Unterlagen. JEDE bestehende Themen-ID muss in GENAU EINEM Thema vorkommen:
-  im inhaltlich passenden Buchthema oder, wenn keins passt, als eigenes Thema (dann ohne Abschnitte).
+- Die 'bestehenden_themen' stammen aus Theas eigenen Unterlagen und zeigen, wie fein im Unterricht tatsächlich gegliedert wird.
+  JEDE bestehende Themen-ID muss in GENAU EINEM Thema vorkommen: im inhaltlich passenden Buchthema oder, wenn keins passt,
+  als eigenes Thema (dann ohne Abschnitte).
+- Lege NIE zwei bestehende Themen in dasselbe Thema. Ordne stattdessen die Buchabschnitte so zu, dass jedes bestehende Thema
+  seine passenden Abschnitte bekommt (z. B. "1.1 Kraft & Wirkungen" zu "Kräfte und ihre Wirkungen",
+  "1.3 Gewichtskraft & Gravitation" zu "Masse und Gewichtskraft").
 - Themennamen sind innerhalb des Fachs eindeutig und verständlich für eine Schülerin.
 - Haben mehrere Bücher dasselbe Thema (z. B. Lehrbuch und Arbeitsheft), lege ihre Abschnitte in DASSELBE Thema.
 

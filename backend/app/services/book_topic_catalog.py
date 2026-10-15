@@ -101,6 +101,9 @@ def validate_catalog(groups: List[CatalogGroup], sections: Dict[str, BookSection
         return "Themennamen leer oder nicht eindeutig"
     if any(not g.section_ids and not g.topic_ids for g in groups):
         return "Thema ohne Abschnitte und ohne bestehendes Thema"
+    merged = [g.name for g in groups if len(g.topic_ids) > 1]
+    if merged:
+        return f"Bestehende Themen zusammengelegt in: {merged}"
     return None
 
 

@@ -83,3 +83,11 @@ def test_validate_catalog_rejects_bad_plans(db_session):
                                                btc.CatalogGroup("B", None, ["s1"], [])], sections, topics)
     assert "fehlen" in btc.validate_catalog([btc.CatalogGroup("A", None, ["s1"], [])], sections, topics)
     assert "Unbekannte" in btc.validate_catalog([btc.CatalogGroup("A", None, ["s99"], ["top_x"])], sections, topics)
+
+
+def test_existing_topics_must_not_be_merged(db_session):
+    _book_with_chapter(db_session, SECTIONS)
+    sections = btc.collect_book_sections(db_session, "sub_physics")
+    topics = {tid: Topic(id=tid, subject_id="sub_physics", name=tid, grade_level=7) for tid in ("top_a", "top_b")}
+    merged = [btc.CatalogGroup("Kräfte", "Mechanik", ["s1"], ["top_a", "top_b"])]
+    assert "zusammengelegt" in btc.validate_catalog(merged, sections, topics)
