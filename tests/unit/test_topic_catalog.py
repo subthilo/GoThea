@@ -121,3 +121,30 @@ def test_consolidation_plan_roundtrip_and_fingerprint(db_session):
     before = tc.consolidation_fingerprint(db_session, "sub_physics")
     _material(db_session, "mat_new", "top_a")
     assert tc.consolidation_fingerprint(db_session, "sub_physics") != before
+
+
+def test_consolidation_never_merges_or_renames_book_topics(db_session):
+    from backend.app.models.taxonomy import TopicBookRef
+    wald = _topic(db_session, "top_wald", "Der Wald als Ökosystem")
+    nahrung = _topic(db_session, "top_nahrung", "Nahrungsbeziehungen im Wald")
+    stray = _topic(db_session, "top_stray", "Waldtiere (eigene Notiz)")
+    db_session.add(Material(id="mat_ch", user_id="usr_thea", subject_id="sub_physics", title="Kap", kind="Buchauszug",
+                            parent_id="mat_b", filename="k.pdf", file_path="/tmp/k.pdf"))
+    for t in (wald, nahrung):
+        db_session.add(TopicBookRef(topic_id=t.id, material_id="mat_ch", section_title=t.name, start_page=1, end_page=2))
+    _material(db_session, "mat_s", stray.id, "Notiz Waldtiere")
+    db_session.commit()
+
+    merged = tc.plan_for_subject(db_session, db_session.get(Subject, "sub_physics"), ask=lambda p: {"themen": [
+        {"name": "Wald", "bereich": "Ökologie", "ids": ["top_wald", "top_nahrung", "top_stray"]}]})
+    assert "Buchthemen zusammengelegt" in merged.error
+
+    ok = tc.plan_for_subject(db_session, db_session.get(Subject, "sub_physics"), ask=lambda p: {"themen": [
+        {"name": "Wald als Lebensraum", "bereich": "Ökologie", "ids": ["top_wald", "top_stray"]},
+        {"name": "Nahrung neu benannt", "bereich": "Ökologie", "ids": ["top_nahrung"]}]})
+    assert ok.error is None
+    tc.apply_plan(db_session, ok)
+    assert db_session.get(Topic, "top_wald").name == "Der Wald als Ökosystem"      # Buchthema behält Namen
+    assert db_session.get(Topic, "top_nahrung").name == "Nahrungsbeziehungen im Wald"
+    assert db_session.get(Topic, "top_stray") is None
+    assert db_session.get(Material, "mat_s").topic_id == "top_wald"

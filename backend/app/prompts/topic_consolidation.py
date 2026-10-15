@@ -10,6 +10,9 @@ nicht zu grob (nicht "Mechanik").
 
 Regeln:
 - Jede Themen-ID aus der Eingabe muss in GENAU EINER Gruppe vorkommen.
+- Themen mit "aus_buch": true bilden den Themenkatalog aus den Schulbüchern. Lege NIE zwei davon zusammen und
+  benenne sie nicht um. Deine Aufgabe ist, Themen OHNE Buchbezug ("aus_buch": false) dem inhaltlich passenden
+  Buchthema zuzuordnen oder sie als eigenes Thema zu lassen bzw. untereinander zusammenzufassen.
 - Fasse nur zusammen, was wirklich dieselbe Unterrichtseinheit ist. Zu grobe Themen (z. B. "Mechanik: Kräfte & Masse")
   sind KEIN Sammelbecken: Ordne ihre Dokumente lieber den passenden mittleren Themen zu, indem du die Themen-ID
   des groben Themas in die Gruppe legst, die den Inhalt am besten trifft.

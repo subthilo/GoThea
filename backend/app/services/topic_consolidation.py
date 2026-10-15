@@ -63,7 +63,12 @@ def _ask_model(payload: dict) -> dict:
     return json.loads(response.choices[0].message.content or "{}")
 
 
-def validate_groups(groups: List[TopicGroup], topics: Dict[str, Topic]) -> Optional[str]:
+def _has_book_refs(db: Session, topic_id: str) -> bool:
+    return db.query(TopicBookRef).filter_by(topic_id=topic_id).count() > 0
+
+
+def validate_groups(groups: List[TopicGroup], topics: Dict[str, Topic],
+                    book_topics: Optional[set] = None) -> Optional[str]:
     """Prüft den KI-Vorschlag; liefert eine Fehlerbeschreibung oder None."""
     seen: List[str] = [tid for g in groups for tid in g.topic_ids]
     if sorted(seen) != sorted(topics):
@@ -73,6 +78,11 @@ def validate_groups(groups: List[TopicGroup], topics: Dict[str, Topic]) -> Optio
     names = [g.name.strip().lower() for g in groups]
     if len(names) != len(set(names)) or not all(names):
         return "Gruppennamen leer oder nicht eindeutig"
+    book_topics = book_topics or set()
+    for g in groups:
+        in_book = [topics[t].name for t in g.topic_ids if t in book_topics]
+        if len(in_book) > 1:
+            return f"Buchthemen zusammengelegt: {in_book}"
     return None
 
 
@@ -98,6 +108,7 @@ def plan_for_subject(db: Session, subject: Subject, ask=_ask_model) -> Consolida
                 "id": t.id,
                 "name": t.name,
                 "bereich": t.area,
+                "aus_buch": _has_book_refs(db, t.id),
                 "dokumente": [m.title for m in db.query(Material).filter(
                     Material.topic_id == t.id, not_(IS_BOOK_OR_CHAPTER)).limit(6)],
             }
@@ -109,7 +120,8 @@ def plan_for_subject(db: Session, subject: Subject, ask=_ask_model) -> Consolida
         TopicGroup(str(g.get("name", "")).strip(), (g.get("bereich") or "").strip() or None, [str(i) for i in g.get("ids", [])])
         for g in raw.get("themen", []) if isinstance(g, dict)
     ]
-    plan.error = validate_groups(groups, used)
+    book_topics = {tid for tid in used if _has_book_refs(db, tid)}
+    plan.error = validate_groups(groups, used, book_topics)
     if not plan.error:
         plan.groups = groups
     return plan
@@ -142,11 +154,16 @@ def apply_plan(db: Session, plan: ConsolidationPlan) -> None:
         .update({"topic_id": None}, synchronize_session=False)
     for group in plan.groups:
         topics = [db.get(Topic, tid) for tid in group.topic_ids]
-        target = next((t for t in topics if t.name.strip().lower() == group.name.lower()), None) or topics[0]
-        target.area = group.area or target.area
-        merge_topics(db, target, [t for t in topics if t.id != target.id])
-        if target.name != group.name:
+        book_topic = next((t for t in topics if _has_book_refs(db, t.id)), None)
+        target = book_topic \
+            or next((t for t in topics if t.name.strip().lower() == group.name.lower()), None) or topics[0]
+        if book_topic is not None:
+            # Buchthemen behalten Namen und Bereich (Katalog aus dem Inhaltsverzeichnis)
+            target.area = target.area or group.area
+        else:
+            target.area = group.area or target.area
             target.name = group.name
+        merge_topics(db, target, [t for t in topics if t.id != target.id])
     for tid in plan.delete_unused:
         topic = db.get(Topic, tid)
         if topic is not None and _usage_count(db, tid) == 0:
