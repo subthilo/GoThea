@@ -108,7 +108,6 @@ async function loadGamificationOverview() {
     const streakDaysEl = document.getElementById("game-streak-days");
     const totalStarsEl = document.getElementById("game-total-stars");
     const totalXpEl = document.getElementById("game-total-xp");
-    const todayCountEl = document.getElementById("stat-today-exercises");
 
     if (levelNumEl) levelNumEl.textContent = data.level?.level || 1;
     if (levelTitleEl) levelTitleEl.textContent = data.level?.title || "Wissens-Entdeckerin";
@@ -117,7 +116,6 @@ async function loadGamificationOverview() {
     if (streakDaysEl) streakDaysEl.textContent = data.streak_days || 0;
     if (totalStarsEl) totalStarsEl.textContent = data.total_stars || 0;
     if (totalXpEl) totalXpEl.textContent = data.total_xp || 0;
-    if (todayCountEl) todayCountEl.textContent = data.today?.completed_count || 0;
 
     // Progress Bar
     const barTitleEl = document.getElementById("game-level-bar-title");

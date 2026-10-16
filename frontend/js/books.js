@@ -508,28 +508,6 @@ function closeReaderToCatalog() {
   else window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function updateChapterNavButtons() {
-  const prevBtn = document.getElementById("btn-reader-prev-chapter");
-  const nextBtn = document.getElementById("btn-reader-next-chapter");
-  if (!activeBookDetail || !activeChapter) return;
-
-  const chaps = activeBookDetail.chapters || [];
-  const idx = chaps.findIndex(c => c.id === activeChapter.id);
-
-  if (prevBtn) prevBtn.disabled = idx <= 0;
-  if (nextBtn) nextBtn.disabled = idx < 0 || idx >= chaps.length - 1;
-}
-
-function navigateChapter(delta) {
-  if (!activeBookDetail || !activeChapter) return;
-  const chaps = activeBookDetail.chapters || [];
-  const idx = chaps.findIndex(c => c.id === activeChapter.id);
-  const targetIdx = idx + delta;
-  if (targetIdx >= 0 && targetIdx < chaps.length) {
-    openChapter(chaps[targetIdx], 1);
-  }
-}
-
 // Schnelles Blättern im Kapitel (per 2-Finger-Swipe, Schwebepfeile oder Tastatur)
 function flipBookPage(delta) {
   if (!activeChapter) return;
@@ -691,10 +669,7 @@ function renderBookPageStrip() {
 async function renderChapterPage() {
   if (!activeChapter) return;
 
-  const counterEl = document.getElementById("book-page-counter");
   const counterSlim = document.getElementById("reader-page-counter-slim");
-  const prevBtn = document.getElementById("btn-book-prev-page");
-  const nextBtn = document.getElementById("btn-book-next-page");
   const floatPrev = document.getElementById("btn-floating-prev");
   const floatNext = document.getElementById("btn-floating-next");
   const imgEl = document.getElementById("book-page-img");
@@ -704,52 +679,9 @@ async function renderChapterPage() {
   if (counterSlim) {
     counterSlim.textContent = `Seite ${currentChapterPage} von ${activeChapter.page_count} (S. ${absPage})`;
   }
-  if (counterEl) {
-    counterEl.innerHTML = `Seite ${currentChapterPage} von ${activeChapter.page_count} <small id="book-page-absolute">(Buchseite ${absPage})</small>`;
-  }
 
-  if (prevBtn) prevBtn.disabled = currentChapterPage <= 1;
-  if (nextBtn) nextBtn.disabled = currentChapterPage >= activeChapter.page_count;
   if (floatPrev) floatPrev.disabled = currentChapterPage <= 1;
   if (floatNext) floatNext.disabled = currentChapterPage >= activeChapter.page_count;
-
-  // Schnell-Sprung-Dropdown für Unterthemen / Inhaltsverzeichnis-Einträge synchronisieren
-  const sectionWrap = document.getElementById("book-section-picker-wrap");
-  const sectionSelect = document.getElementById("book-section-select");
-  if (sectionWrap && sectionSelect) {
-    const sections = activeChapter.sections || [];
-    if (sections.length > 0) {
-      sectionWrap.style.display = "inline-flex";
-      sectionSelect.innerHTML = sections
-        .map(
-          (s) =>
-            `<option value="${s.relative_page}">${escapeHtml(s.title)} (S. ${s.book_page})</option>`
-        )
-        .join("");
-
-      // Bestimme den Abschnitt, in dem Thea sich gerade befindet
-      let currentActiveRel = sections[0].relative_page;
-      sections.forEach((s) => {
-        if (s.relative_page <= currentChapterPage) {
-          currentActiveRel = s.relative_page;
-        }
-      });
-      sectionSelect.value = String(currentActiveRel);
-
-      if (!sectionSelect.dataset.wired) {
-        sectionSelect.dataset.wired = "true";
-        sectionSelect.addEventListener("change", (e) => {
-          const targetPage = parseInt(e.target.value, 10);
-          if (targetPage && targetPage >= 1 && activeChapter && targetPage <= activeChapter.page_count) {
-            currentChapterPage = targetPage;
-            renderChapterPage();
-          }
-        });
-      }
-    } else {
-      sectionWrap.style.display = "none";
-    }
-  }
 
   // Aktive Pill markieren und horizontal ins Sichtfeld scrollen (ohne vertikales Springen)
   document.querySelectorAll(".book-page-pill").forEach((pill) => {
@@ -872,17 +804,6 @@ function setupBookBrowserEvents() {
     });
   }
 
-  // Vorheriges / Nächstes Kapitel Buttons im Reader
-  const prevChapBtn = document.getElementById("btn-reader-prev-chapter");
-  if (prevChapBtn) {
-    prevChapBtn.addEventListener("click", () => navigateChapter(-1));
-  }
-
-  const nextChapBtn = document.getElementById("btn-reader-next-chapter");
-  if (nextChapBtn) {
-    nextChapBtn.addEventListener("click", () => navigateChapter(1));
-  }
-
   // Seiten-Navigation: Schwebepfeile links & rechts
   const floatPrev = document.getElementById("btn-floating-prev");
   const floatNext = document.getElementById("btn-floating-next");
@@ -896,38 +817,6 @@ function setupBookBrowserEvents() {
     floatNext.addEventListener("click", (e) => {
       e.stopPropagation();
       flipBookPage(1);
-    });
-  }
-
-  // Seiten-Navigation Buttons (Fallback falls vorhanden)
-  const prevBtn = document.getElementById("btn-book-prev-page");
-  const nextBtn = document.getElementById("btn-book-next-page");
-
-  if (prevBtn) {
-    prevBtn.addEventListener("click", () => flipBookPage(-1));
-  }
-
-  if (nextBtn) {
-    nextBtn.addEventListener("click", () => flipBookPage(1));
-  }
-
-  // Schwebende Stift-Palette Ein-/Ausklappen (Vorschlag 1)
-  const btnToggleInk = document.getElementById("btn-toggle-ink-toolbar");
-  const inkPalette = document.getElementById("reader-floating-ink-palette");
-  const btnClosePalette = document.getElementById("btn-close-ink-palette");
-
-  if (btnToggleInk && inkPalette) {
-    btnToggleInk.addEventListener("click", () => {
-      const isHidden = inkPalette.style.display === "none";
-      inkPalette.style.display = isHidden ? "flex" : "none";
-      btnToggleInk.classList.toggle("active", isHidden);
-    });
-  }
-
-  if (btnClosePalette && inkPalette) {
-    btnClosePalette.addEventListener("click", () => {
-      inkPalette.style.display = "none";
-      if (btnToggleInk) btnToggleInk.classList.remove("active");
     });
   }
 
@@ -986,8 +875,6 @@ function setupBookBrowserEvents() {
   // 1-Klick Zoom-Umschalter in der Kopfzeile & Palette
   const btnToggleZoom = document.getElementById("btn-toggle-zoom-mode");
   const zoomIcon = document.getElementById("zoom-mode-icon");
-  const zoomFitBtn = document.getElementById("btn-book-zoom-fit");
-  const zoomWidthBtn = document.getElementById("btn-book-zoom-width");
   const imgEl = document.getElementById("book-page-img");
 
   function setBookZoomMode(mode) {
@@ -995,8 +882,6 @@ function setupBookBrowserEvents() {
     if (imgEl) imgEl.className = `book-page-img mode-${mode}`;
     if (zoomIcon) zoomIcon.innerHTML = icon(mode === "fit" ? "Breite" : "Vollbild");
     if (btnToggleZoom) btnToggleZoom.title = mode === "fit" ? "Auf volle Breite umschalten" : "Ganze Seite einpassen";
-    if (zoomFitBtn) zoomFitBtn.classList.toggle("active", mode === "fit");
-    if (zoomWidthBtn) zoomWidthBtn.classList.toggle("active", mode === "width");
     setTimeout(syncBookAnnotationCanvasSize, 220);
   }
 
@@ -1004,14 +889,6 @@ function setupBookBrowserEvents() {
     btnToggleZoom.addEventListener("click", () => {
       setBookZoomMode(bookZoomMode === "width" ? "fit" : "width");
     });
-  }
-
-  if (zoomFitBtn) {
-    zoomFitBtn.addEventListener("click", () => setBookZoomMode("fit"));
-  }
-
-  if (zoomWidthBtn) {
-    zoomWidthBtn.addEventListener("click", () => setBookZoomMode("width"));
   }
 
   // Inking Engine starten

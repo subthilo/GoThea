@@ -28,10 +28,6 @@ function iconText(name, text) {
   return `${icon(name)} ${escapeHtml(text)}`;
 }
 
-function iconUrl(name) {
-  return `/static/Icons/${name}.svg`;
-}
-
 // Fächer: Icon und Farbe an einer Stelle (Name oder Kürzel, erste passende Regel gilt).
 // Die Farben sind für den dunklen Hintergrund abgestimmt und paarweise gut unterscheidbar
 // (CIEDE2000 ≥ 17,9 unter Theas Fächern, Kontrast ≥ 3,6:1). Emojis und Farben, die das
@@ -97,14 +93,6 @@ function documentIconName(docKind) {
   if (norm.includes("hausaufgabe")) return "Hausaufgaben";
   if (norm.includes("buch")) return "Bücher";
   return "Dokumente";
-}
-
-function getSubjectIconUrl(subjectNameOrCode) {
-  return iconUrl(subjectIconName(subjectNameOrCode));
-}
-
-function getDocumentIconUrl(docKind) {
-  return iconUrl(documentIconName(docKind));
 }
 
 // Fach-Icon in Fachfarbe

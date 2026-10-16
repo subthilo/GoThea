@@ -217,30 +217,6 @@ body.reader-zen-mode .book-reader-view {
 }
 
 /* 2. Schwebende, ein-/ausklappbare Stift-Palette (Vorschlag 1) */
-.reader-floating-ink-palette {
-  position: absolute;
-  top: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 120;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(18, 22, 34, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 30px;
-  padding: 6px 16px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.2);
-  max-width: 95vw;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.reader-floating-ink-palette::-webkit-scrollbar {
-  display: none;
-}
 
 .btn-close-palette {
   width: 24px;
@@ -439,36 +415,6 @@ body.reader-zen-mode .book-page-img.mode-fit {
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 0 0 14px var(--theme-glow);
   transform: scale(1.08);
-}
-
-/* 3. Interaktiver Vollbreiten-Viewer */
-
-.book-page-counter {
-  font-size: 0.94rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.book-page-counter small {
-  color: var(--text-muted);
-  font-weight: 500;
-  margin-left: 4px;
-}
-
-/* Schnell-Auswahl für Unterthemen / Abschnitte im Reader */
-.book-section-picker-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 4px 10px;
-  transition: border-color 0.15s ease;
-}
-
-.book-section-picker-wrap:hover {
-  border-color: rgba(2, 132, 199, 0.5);
 }
 
 /* 4. Canvas & Image Wrapper: Nimmt 100% Breite */

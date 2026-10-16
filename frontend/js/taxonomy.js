@@ -4,9 +4,7 @@ async function loadProfile() {
     const res = await apiFetch("/api/v1/profile");
     if (res.ok) {
       currentProfile = await res.json();
-      if (badgeGrade) badgeGrade.textContent = `${currentProfile.grade_level}. Klasse`;
       if (userGreeting) userGreeting.innerHTML = `${escapeHtml(`Hallo, ${currentProfile.name}!`)} ${icon("Hand")}`;
-      if (userSubtitle) userSubtitle.textContent = `${currentProfile.grade_level}. Klasse ${currentProfile.school_type} • Land ${currentProfile.federal_state} (Niveaustufe E)`;
 
       // Profil-Formular initialisieren
       const profNameInput = document.getElementById("prof-name");
@@ -33,9 +31,6 @@ async function loadTaxonomy() {
       currentSubjects = await subRes.json();
       const allTopics = await topRes.json();
       allTopicsCache = allTopics;
-
-      if (statSubjectsCount) statSubjectsCount.textContent = currentSubjects.length;
-      if (statTopicsCount) statTopicsCount.textContent = allTopics.length;
 
       // Group topics by subject
       const topicsBySubject = {};

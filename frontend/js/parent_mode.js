@@ -251,11 +251,6 @@ function setupParentModeEvents() {
     });
   }
 
-  const profUnlockBtn = document.getElementById("btn-prof-unlock-parent");
-  if (profUnlockBtn) {
-    profUnlockBtn.addEventListener("click", () => openParentPinModal());
-  }
-
   const profLockBtn = document.getElementById("btn-prof-lock-parent");
   if (profLockBtn) {
     profLockBtn.addEventListener("click", () => lockParentMode());

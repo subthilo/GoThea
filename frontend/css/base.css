@@ -409,14 +409,6 @@ body {
   transform: scale(0.95);
 }
 
-/* Subjects Detailed List */
-.subjects-detailed-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 20px;
-}
-
 .topic-rlp-tag {
   background: rgba(99, 102, 241, 0.2);
   color: var(--accent-light);

@@ -29,53 +29,12 @@ async function initApp() {
   safeRun(setupBookBrowserEvents, "setupBookBrowserEvents");
   safeRun(setupSubjectDetailEvents, "setupSubjectDetailEvents");
   safeRun(setupUploadsPageEvents, "setupUploadsPageEvents");
-  safeRun(initDashboardQuickActions, "initDashboardQuickActions");
+  safeRun(applyInitialZenMode, "applyInitialZenMode");
   safeRun(setupSearchEvents, "setupSearchEvents");
   safeRun(connectWebSocket, "connectWebSocket");
 }
 
-function initDashboardQuickActions() {
-  const quickTafel = document.getElementById("btn-quick-tafel");
-  if (quickTafel) {
-    quickTafel.addEventListener("click", () => switchToTab("whiteboard"));
-    quickTafel.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        switchToTab("whiteboard");
-      }
-    });
-  }
-  const quickPlanner = document.getElementById("btn-quick-planner");
-  if (quickPlanner) {
-    quickPlanner.addEventListener("click", () => switchToTab("planner"));
-    quickPlanner.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        switchToTab("planner");
-      }
-    });
-  }
-  const quickBooks = document.getElementById("btn-quick-books");
-  if (quickBooks) {
-    quickBooks.addEventListener("click", () => switchToTab("books"));
-    quickBooks.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        switchToTab("books");
-      }
-    });
-  }
-  const quickUpload = document.getElementById("btn-quick-upload");
-  if (quickUpload) {
-    quickUpload.addEventListener("click", () => switchToTab("uploads"));
-    quickUpload.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        switchToTab("uploads");
-      }
-    });
-  }
-
+function applyInitialZenMode() {
   const initialTab = document.querySelector(".nav-tab.active");
   if (initialTab && initialTab.dataset.tab === "whiteboard") {
     document.documentElement.classList.add("whiteboard-zen-mode");

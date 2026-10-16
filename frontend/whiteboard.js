@@ -13,12 +13,10 @@
   const btnNewSession = document.getElementById("btn-wb-new-session");
   const btnRequestHint = document.getElementById("btn-wb-request-hint");
   const btnFullscreen = document.getElementById("btn-wb-fullscreen");
-  const patternSelect = document.getElementById("wb-pattern-select");
   const btnPenOnly = document.getElementById("btn-wb-pen-only");
   const btnUndo = document.getElementById("btn-wb-undo");
   const btnRedo = document.getElementById("btn-wb-redo");
   const btnClear = document.getElementById("btn-wb-clear");
-  const btnSave = document.getElementById("btn-wb-save");
   const btnScrollTop = document.getElementById("btn-wb-scroll-top");
   const scrollTrack = document.getElementById("wb-scroll-track");
   const scrollThumb = document.getElementById("wb-scroll-thumb");
@@ -790,8 +788,6 @@
     btnPenOnly.addEventListener("click", () => {
       surface.penOnlyMode = !surface.penOnlyMode;
       btnPenOnly.classList.toggle("active", surface.penOnlyMode);
-      const penLabel = document.getElementById("wb-pen-label");
-      if (penLabel) penLabel.textContent = surface.penOnlyMode ? "Pencil" : "Touch";
       btnPenOnly.title = surface.penOnlyMode
         ? "Apple Pencil aktiv (Handfläche wird ignoriert)"
         : "Touch-Modus aktiv (Finger und Stift zeichnen)";
@@ -862,15 +858,6 @@
         overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
         scheduleAutoSave();
       }
-    });
-  }
-
-  if (btnSave) {
-    btnSave.addEventListener("click", () => {
-      const link = document.createElement("a");
-      link.download = `gothea-tafel-${new Date().toISOString().slice(0, 10)}.png`;
-      link.href = inkCanvas.toDataURL("image/png");
-      link.click();
     });
   }
 
