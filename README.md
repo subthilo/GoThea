@@ -300,13 +300,11 @@ Anschließend die Web-App im Browser öffnen: **`http://localhost:8000`**
 ./deploy.sh -f         # nur Frontend-Dateien, ohne Neustart (gilt fürs gewählte Ziel)
 ```
 
-### Zugriff
-| | Zuhause (WLAN) | Unterwegs (Tailscale-App an) |
-| :--- | :--- | :--- |
-| 🟢 **Produktion (Echtdaten)** | `http://192.168.1.135:8000` | `http://gothea-pi:8000` |
-| 🟡 **Staging (Spielwiese / Reset)** | `http://192.168.1.135:8001` | `http://gothea-pi:8001` |
+### Zugriff (über Tailscale, zuhause wie unterwegs)
+* 🟢 **Produktion (Echtdaten):** `http://gothea-pi:8000`
+* 🟡 **Staging (Spielwiese / Reset):** `http://gothea-pi:8001`
 
-`deploy.sh` wählt den Weg selbst (`scripts/pi_host.sh`); `PI_HOST=gothea-pi ./deploy.sh` erzwingt Tailscale. Eigene Befehle: `ssh pi@$(scripts/pi_host.sh)`.
+Voraussetzung: Tailscale-App auf dem Gerät eingeschaltet (zuhause verbindet Tailscale direkt übers WLAN). Ohne Tailscale geht es zuhause weiter über `http://192.168.1.135:8000`/`8001`. `deploy.sh` nimmt `gothea-pi` und weicht nur aufs WLAN aus, wenn Tailscale aus ist (`scripts/pi_host.sh`); `PI_HOST=…` erzwingt einen Weg. Eigene Befehle: `ssh pi@gothea-pi`.
 
 ---
 

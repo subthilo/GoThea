@@ -38,7 +38,7 @@ if [ "$ENV_SKIP_TESTS" = "1" ]; then
 fi
 
 PI_USER="pi"
-# Zuhause WLAN-Adresse, unterwegs Tailscale (PI_HOST=… erzwingt einen Weg)
+# Immer Tailscale (gothea-pi), Rückfall aufs WLAN; PI_HOST=… erzwingt einen Weg
 source "$(dirname "$0")/scripts/pi_host.sh"
 echo "📡 Pi erreichbar über $PI_HOST"
 
