@@ -61,6 +61,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 
 ## Stolperfallen
 
+- Das Repo liegt in Synology Drive (`~/Library/CloudStorage/…`). Der Ordner muss **dauerhaft angeheftet** sein (lokal behalten): Dateien „auf Abruf“ werden sonst beim Zugriff nachgeladen – Tests hängen, Testserver starten nicht, `ruff` wird abgebrochen, Dateirechte springen um (`core.fileMode` ist deshalb `false`).
 - SQLAlchemy-Sessions laufen mit `autoflush=False`: vor Abfragen auf eben hinzugefügte Objekte `db.flush()`.
 - Daten, die eine Voranalyse anlegt und ein späterer Request nutzt, müssen **committet** werden (sonst 404 beim Bestätigen).
 - Der Seeder legt Start-Themen nur für **neu angelegte** Fächer an (gelöschte Platzhalter kommen nicht zurück).
@@ -87,4 +88,4 @@ Vereinbarte Reihenfolge:
 
 Entschieden: Bei beschädigter PIN-Datei bleibt der Rückfall auf die Standard-PIN (wird als Fehler geloggt).
 
-Bekannte offene Punkte: Tutor-WebSocket `/ws/tutor/…` ist eine Attrappe (`/ws` dagegen speist die Online-Anzeige); „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar; Seiten-Notizen können verloren gehen, wenn das Seitenbild beim Speichern noch nicht geladen ist (`saveBookPageAnnotationsNow` bricht bei Bildgröße 0 still ab).
+Bekannte offene Punkte: Tutor-WebSocket `/ws/tutor/…` ist eine Attrappe (`/ws` dagegen speist die Online-Anzeige); „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar.
