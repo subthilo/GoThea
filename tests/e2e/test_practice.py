@@ -97,3 +97,36 @@ def test_reasoning_task_needs_a_chosen_reasoning(app_page):
     app_page.click('[data-action="check"]')
     assert "Richtig" in app_page.inner_text(".px-luna")
     assert app_page.problems.errors == []
+
+
+def test_stage_opens_sheet_on_new_board_with_solution_toggle(app_page):
+    from tests.e2e.board_helpers import _draw_and_capture_save, _line
+    open_practice(app_page)
+    with app_page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
+        app_page.click('.px-stage[data-stage="2"]')
+    board = created.value.json()
+    assert board["practice_exercise_id"] == "sa-gummibaerchen" and board["practice_stage"] == 2
+    app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
+    assert app_page.get_attribute("#wb-doc-underlay-img", "src").startswith("data:image/png")
+    assert "Stufe 2" in app_page.inner_text("#wb-board-title")
+
+    # Lösung ein- und ausblenden ändert das Blatt
+    plain = app_page.get_attribute("#wb-doc-underlay-img", "src")
+    app_page.click("#btn-wb-practice-solution")
+    assert app_page.get_attribute("#wb-doc-underlay-img", "src") != plain
+    app_page.click("#btn-wb-practice-solution")
+    assert app_page.get_attribute("#wb-doc-underlay-img", "src") == plain
+
+    # Schreiben wird gespeichert wie auf jeder Tafel
+    strokes = _draw_and_capture_save(app_page, _line(100, 420, 300, 430))
+    assert len(strokes) == 1
+
+    # Neue freie Tafel: kein Blatt, kein Lösungsknopf
+    app_page.evaluate("window.openNewBoardOnWhiteboard('sub_math')")
+    app_page.wait_for_function("!document.getElementById('wb-doc-underlay-img').classList.contains('practice-sheet')")
+    assert not app_page.is_visible("#btn-wb-practice-solution")
+
+    # Übungstafel wieder öffnen: das Blatt ist wieder da
+    app_page.evaluate(f"window.openBoardOnWhiteboard('{board['id']}')")
+    app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
+    assert app_page.problems.errors == []

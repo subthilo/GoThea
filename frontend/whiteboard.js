@@ -40,6 +40,9 @@
   const docUnderlay = document.getElementById("wb-doc-underlay");
   const docUnderlayImg = document.getElementById("wb-doc-underlay-img");
   const docTopbar = document.getElementById("wb-doc-topbar");
+  const btnPracticeSolution = document.getElementById("btn-wb-practice-solution");
+  // Übungstafel (Tab „Üben“): { ex, stage, solution } – oben deklariert, weil setPattern sie nutzt
+  let practiceContext = null;
   const docPageInfo = document.getElementById("wb-doc-page-info");
   const btnDocPrev = document.getElementById("btn-wb-doc-prev");
   const btnDocNext = document.getElementById("btn-wb-doc-next");
@@ -661,6 +664,7 @@
 
   function setPattern(pattern) {
     viewport.className = `wb-viewport ${pattern}`;
+    if (practiceContext) showPracticeSheet();  // Schriftfarbe des Blatts passt sich an
     document.querySelectorAll(".wb-pattern-swatch").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.pattern === pattern);
     });
@@ -1021,6 +1025,60 @@
     surface.updateViewportPan();
     updateBoardTitle();
     connectTutorWebSocket();
+    loadPracticeSheet(board);
+  }
+
+  // Übungstafel (Tab „Üben“, Stufen 1–4): Das Übungsblatt liegt als Unterlage, gezeichnet aus den
+  // Übungsdaten (js/practice_sheet.js). Die Tafel merkt sich Übung und Stufe, beim Wiederöffnen
+  // erscheint das Blatt wieder. Gespeichert werden wie immer nur Theas Striche.
+  function showPracticeSheet() {
+    if (!practiceContext) return;
+    const light = viewport.classList.contains("pattern-white");
+    docUnderlayImg.classList.add("practice-sheet");
+    docUnderlayImg.src = renderPracticeSheet(practiceContext.ex, practiceContext.stage,
+      { light, solution: practiceContext.solution });
+    surface.isUnderlayVisible = true;
+    if (docUnderlay) docUnderlay.style.display = "block";
+    surface.updateViewportPan();
+    if (btnPracticeSolution) {
+      btnPracticeSolution.style.display = "";
+      btnPracticeSolution.classList.toggle("active", practiceContext.solution);
+      btnPracticeSolution.title = practiceContext.solution ? "Lösung ausblenden" : "Lösung zeigen";
+    }
+  }
+
+  function hidePracticeSheet() {
+    const shown = practiceContext !== null || docUnderlayImg.classList.contains("practice-sheet");
+    practiceContext = null;
+    if (btnPracticeSolution) btnPracticeSolution.style.display = "none";
+    if (!shown) return;
+    docUnderlayImg.classList.remove("practice-sheet");
+    if (!surface.isBookPageMode) {
+      surface.isUnderlayVisible = false;
+      if (docUnderlay) docUnderlay.style.display = "none";
+      docUnderlayImg.removeAttribute("src");
+    }
+  }
+
+  async function loadPracticeSheet(board) {
+    hidePracticeSheet();
+    if (!board.practice_exercise_id || typeof renderPracticeSheet !== "function") return;
+    try {
+      const ex = await apiJson(`/api/v1/practice/${encodeURIComponent(board.practice_exercise_id)}`);
+      if (surface.currentSession !== board || surface.isBookPageMode) return;  // inzwischen gewechselt
+      practiceContext = { ex, stage: board.practice_stage || 1, solution: false };
+      showPracticeSheet();
+    } catch (err) {
+      console.warn("Übungsblatt nicht geladen:", err);
+    }
+  }
+
+  if (btnPracticeSolution) {
+    btnPracticeSolution.addEventListener("click", () => {
+      if (!practiceContext) return;
+      practiceContext.solution = !practiceContext.solution;
+      showPracticeSheet();
+    });
   }
 
   // Vorschaubild der ganzen Tafel (Liste und KI-Name), unabhängig vom sichtbaren Ausschnitt
@@ -1142,6 +1200,7 @@
   // Dokument auf der Tafel: Notizen pro Seite, Zeichnen nur auf der Seite
   async function openDocument({ materialId, page = 1, pageCount = 1, title = "Dokument", subjectId = null, badge = "Dokument", returnToBook = false }) {
     await leaveCurrent();
+    hidePracticeSheet();
     surface.isBookPageMode = true;
     bookPageContext = { materialId, page, pageCount, title, subjectId };
     surface.strokes = [];
@@ -1394,6 +1453,19 @@
   window.openNewBoardOnWhiteboard = function(subjectId) {
     showBoardTab();
     return queued(startNewBoard)(subjectId);
+  };
+
+  // Übung aus dem Tab „Üben“ auf einer neuen Tafel (Stufe 1–4)
+  window.openPracticeOnWhiteboard = function({ exerciseId, stage, title, subjectId = "sub_math" }) {
+    showBoardTab();
+    return queued(async () => {
+      await leaveCurrent();
+      applyBoard(await apiJson("/api/v1/boards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject_id: subjectId, title, practice_exercise_id: exerciseId, practice_stage: stage })
+      }));
+    })();
   };
 
   // Von der Fachseite aus: Umbenennen (alle) und Löschen (nur Eltern). Läuft hier, weil die Tafel

@@ -12,6 +12,7 @@ from backend.app.models.taxonomy import Subject
 from backend.app.models.whiteboard import TutorSession
 from backend.app.schemas.boards import BoardCloseResult, BoardCreate, BoardDetail, BoardRename, BoardSummary
 from backend.app.services import boards as svc
+from backend.app.services import practice_exercises
 from backend.app.services.parent_auth import require_parent
 
 router = APIRouter(prefix="/api/v1/boards", tags=["Tafeln"])
@@ -31,6 +32,8 @@ def _summary_fields(b: TutorSession) -> dict:
         archived=b.archived_at is not None,
         stroke_count=svc.stroke_count(b),
         has_thumbnail=svc.thumbnail_bytes(b) is not None,
+        practice_exercise_id=b.practice_exercise_id,
+        practice_stage=b.practice_stage,
     )
 
 
@@ -70,7 +73,11 @@ def create_board(payload: BoardCreate, db: Session = Depends(get_db)):
     subject = db.get(Subject, payload.subject_id)
     if subject is None:
         raise HTTPException(status_code=404, detail=f"Fach '{payload.subject_id}' existiert nicht.")
-    return _detail(svc.create_board(db, subject))
+    if payload.practice_exercise_id and practice_exercises.get_exercise(payload.practice_exercise_id) is None:
+        raise HTTPException(status_code=404, detail=f"Übung '{payload.practice_exercise_id}' nicht gefunden.")
+    return _detail(svc.create_board(db, subject, title=payload.title,
+                                    practice_exercise_id=payload.practice_exercise_id,
+                                    practice_stage=payload.practice_stage))
 
 
 @router.post("/{board_id}/open", response_model=BoardDetail)

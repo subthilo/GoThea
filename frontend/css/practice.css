@@ -416,3 +416,39 @@
   width: 26px;
   height: 26px;
 }
+
+/* Übungsblatt als Unterlage der Tafel (js/practice_sheet.js): feste Breite, durchsichtig, ohne Rahmen.
+   Überschreibt die Darstellung von Dokumentseiten (materials.css, .wb-doc-page-img). */
+.wb-doc-page-img.practice-sheet {
+  width: 780px;
+  max-width: none;
+  margin: 0;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Stufenwahl in der Kopfzeile der Übung: 0 = Bausteine, 1–4 = Tafel */
+.px-stages {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.px-stage {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.px-stage.active {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: rgba(99, 102, 241, 0.2);
+}

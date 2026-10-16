@@ -45,15 +45,19 @@ def is_empty(board: TutorSession) -> bool:
     return stroke_count(board) == 0 and not board.exercises and not board.messages
 
 
-def create_board(db: Session, subject: Subject) -> TutorSession:
+def create_board(db: Session, subject: Subject, title: Optional[str] = None,
+                 practice_exercise_id: Optional[str] = None, practice_stage: Optional[int] = None) -> TutorSession:
+    """Neue Tafel. Mit festem Namen (z. B. Übungstafel) benennt die KI sie beim Schließen nicht um."""
     now = datetime.now()
     board = TutorSession(
         subject_id=subject.id,
-        title=default_title(subject.name, now),
-        title_source="auto",
+        title=(title or "").strip()[:MAX_TITLE_LENGTH] or default_title(subject.name, now),
+        title_source="user" if title else "auto",
         board_state_json="[]",
         last_opened_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
+        practice_exercise_id=practice_exercise_id,
+        practice_stage=practice_stage,
     )
     db.add(board)
     db.commit()

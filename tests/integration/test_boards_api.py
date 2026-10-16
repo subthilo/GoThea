@@ -133,3 +133,22 @@ def test_deleting_a_board_requires_parent_mode(strict_client):
     board_id = res.json()["id"]
     assert strict_client.delete(f"/api/v1/boards/{board_id}").status_code == 403
     assert strict_client.patch(f"/api/v1/boards/{board_id}", json={"title": "Bruchrechnung"}).status_code == 200
+
+
+def test_practice_board_remembers_exercise_and_stage(client):
+    res = client.post("/api/v1/boards", json={"subject_id": "sub_math", "title": "Gummibärchen · Stufe 2",
+                                              "practice_exercise_id": "sa-gummibaerchen", "practice_stage": 2})
+    assert res.status_code == 201
+    board = res.json()
+    assert board["practice_exercise_id"] == "sa-gummibaerchen" and board["practice_stage"] == 2
+    # Fester Name: die KI benennt die Übungstafel beim Schließen nicht um
+    assert board["title"] == "Gummibärchen · Stufe 2" and board["title_source"] == "user"
+    reopened = client.post(f"/api/v1/boards/{board['id']}/open").json()
+    assert reopened["practice_exercise_id"] == "sa-gummibaerchen" and reopened["practice_stage"] == 2
+
+
+def test_practice_board_needs_known_exercise_and_valid_stage(client):
+    unknown = {"subject_id": "sub_math", "practice_exercise_id": "gibt-es-nicht", "practice_stage": 1}
+    assert client.post("/api/v1/boards", json=unknown).status_code == 404
+    bad_stage = {"subject_id": "sub_math", "practice_exercise_id": "sa-gummibaerchen", "practice_stage": 7}
+    assert client.post("/api/v1/boards", json=bad_stage).status_code == 422

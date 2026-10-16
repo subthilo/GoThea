@@ -223,6 +223,7 @@
       <div class="px-topbar">
         <button type="button" class="practice-icon-btn" data-action="back" title="Zur Liste" aria-label="Zur Liste">${icon("Pfeil links")}</button>
         <span class="px-src">${esc(sourceLine(ex.quelle))}${ex.ableitung === "B" ? " · ähnliche Aufgabe" : ""}</span>
+        <div class="px-stages" role="group" aria-label="Stufe">${stageButtons()}</div>
       </div>
       <div class="px-layout">
         <div class="px-sheet">
@@ -239,6 +240,28 @@
           </div>
         </aside>
       </div>`;
+  }
+
+  // Stufe 0 = Bausteine hier; 1–4 = Blatt auf einer neuen Tafel, mit dem Pencil (weniger Gerüst je Stufe)
+  const STAGE_TITLES = [
+    "Bausteine einsetzen",
+    "Tafel: Tabelle vorgegeben, Antwort angefangen",
+    "Tafel: nur Tabellenkopf",
+    "Tafel: nur R: und A:",
+    "Tafel: leeres Blatt wie im Test",
+  ];
+
+  function stageButtons() {
+    return STAGE_TITLES.map((title, n) =>
+      `<button type="button" class="px-stage${n === 0 ? " active" : ""}" data-stage="${n}" title="${esc(title)}" aria-label="Stufe ${n}: ${esc(title)}">${n}</button>`
+    ).join("");
+  }
+
+  function boardTitle(ex, stage) {
+    const q = ex.quelle;
+    const src = q.art === "Buch" ? `S. ${q.seite} Nr. ${q.nummer}` : `${q.material} Nr. ${q.nummer}`;
+    const suffix = `${ex.ableitung === "B" ? " (ähnlich)" : ""} · Stufe ${stage}`;
+    return (src.slice(0, 60 - suffix.length) + suffix).trim();
   }
 
   function nextButtons() {
@@ -264,6 +287,11 @@
     const t = e.target.closest("button");
     if (!t || t.disabled) return;
     if (t.dataset.action === "back") return closeExercise();
+    if (t.dataset.stage !== undefined) {
+      const stage = Number(t.dataset.stage);
+      if (stage === 0 || typeof window.openPracticeOnWhiteboard !== "function") return;
+      return window.openPracticeOnWhiteboard({ exerciseId: run.ex.id, stage, title: boardTitle(run.ex, stage) });
+    }
     if (t.dataset.action === "open") return openExercise(t.dataset.id);
     if (t.dataset.action === "check") { run.checked = true; return renderRun(); }
     if (t.dataset.guess) { run.guess = t.dataset.guess; return renderRun(); }

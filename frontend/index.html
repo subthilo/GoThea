@@ -659,6 +659,10 @@
                 <span id="wb-audio-icon-off" style="display: none;" class="ui-icon i-lautsprecher-aus" aria-hidden="true"></span>
               </span>
             </button>
+            <!-- Nur auf Übungstafeln (Tab „Üben“): Lösung auf dem Blatt ein-/ausblenden -->
+            <button id="btn-wb-practice-solution" class="wb-btn-subtle wb-btn-square" title="Lösung zeigen" aria-label="Lösung zeigen" style="display: none;">
+              <span class="ui-icon i-anzeigen" aria-hidden="true"></span>
+            </button>
             <div class="wb-session-info">
               <select id="wb-subject-select" class="wb-select" title="Fach" aria-label="Fach">
                 <!-- Dynamisch mit Schulfächern befüllt -->
@@ -990,6 +994,7 @@
   <script src="/static/js/books.js?v={{v}}"></script>
   <script src="/static/js/reader_notes.js?v={{v}}"></script>
   <script src="/static/js/search.js?v={{v}}"></script>
+  <script src="/static/js/practice_sheet.js?v={{v}}"></script>
   <script src="/static/js/practice.js?v={{v}}"></script>
   <script src="/static/js/init.js?v={{v}}"></script>
   <script src="/static/js/ink_core.js?v={{v}}"></script>

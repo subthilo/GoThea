@@ -24,6 +24,9 @@ class TutorSession(Base):
     last_opened_at = Column(DateTime, nullable=True)
     title_source = Column(String, nullable=False, default="auto")  # 'auto', 'ai', 'user'
     archived_at = Column(DateTime, nullable=True)
+    # Übungstafel (Tab „Üben“, Tafel-Stufen 1–4): welche Übung als Blatt unterliegt, auf welcher Stufe
+    practice_exercise_id = Column(String, nullable=True)
+    practice_stage = Column(Integer, nullable=True)
 
     subject = relationship("Subject")
     topic = relationship("Topic")
