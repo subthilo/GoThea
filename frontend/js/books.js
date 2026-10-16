@@ -172,6 +172,8 @@ function fullBookChapter(detail) {
 }
 
 function openBookChapter(detail, ch, page = 1) {
+  rememberReaderOrigin();
+  if (!document.getElementById("tab-books")?.classList.contains("active")) switchToTab("books");
   activateBook(detail);
   booksOpenState.books.add(detail.id);
   saveBooksOpenState();
@@ -186,6 +188,49 @@ function chapterMatches(ch, term) {
   return ch.title.toLowerCase().includes(term) ||
     (ch.topic_name && ch.topic_name.toLowerCase().includes(term)) ||
     (ch.focus && ch.focus.toLowerCase().includes(term));
+}
+
+// Buch als Eintrag in einer anderen Liste (z. B. Fachseite): gleiche Darstellung und Bedienung
+// wie im Inhaltsverzeichnis, Auf-/Zuklappen gilt auf beiden Seiten.
+function buildEmbeddedBookNode(book) {
+  const holder = document.createElement("div");
+  holder.className = "btree btree-embed";
+  holder.dataset.bookId = book.id;
+  holder.innerHTML = renderBookNode(book, "");
+  holder.addEventListener("click", onBooksTreeClick);
+  holder.addEventListener("keydown", onBooksTreeKeydown);
+  return holder;
+}
+
+function rerenderBookTrees() {
+  renderBooksTree();
+  document.querySelectorAll(".btree-embed").forEach((el) => {
+    const book = currentBooks.find((b) => b.id === el.dataset.bookId);
+    if (book) el.innerHTML = renderBookNode(book, "");
+  });
+}
+
+function onBooksTreeKeydown(e) {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("[role='button']")) {
+    e.preventDefault();
+    e.target.click();
+  }
+}
+
+// Woher der Reader geöffnet wurde: „Zurück“ führt dorthin (Fachseite, Upload …), sonst zum Inhaltsverzeichnis
+let readerReturn = null;
+function rememberReaderOrigin() {
+  const active = document.querySelector(".tab-pane.active");
+  if (!active || active.id === "tab-books") {
+    readerReturn = null;
+  } else if (active.id === "tab-subject-detail" && currentDetailSubjectId) {
+    const subjectId = currentDetailSubjectId;
+    const source = subjectDetailSourceTab;
+    readerReturn = () => openSubjectDetail(subjectId, source);
+  } else {
+    const tab = active.id.replace(/^tab-/, "");
+    readerReturn = () => switchToTab(tab);
+  }
 }
 
 function renderBooksTree() {
@@ -345,15 +390,16 @@ async function onBooksTreeClick(e) {
   const { action, bookId, chapterId } = el.dataset;
 
   if (action === "toggle-book" || action === "toggle-node") {
-    if (booksTreeFilter) return; // beim Suchen ist alles Passende aufgeklappt
+    // Beim Suchen auf der Bücherseite ist alles Passende aufgeklappt
+    if (booksTreeFilter && e.currentTarget.id === "book-catalog-grid") return;
     const set = action === "toggle-book" ? booksOpenState.books : booksOpenState.chapters;
     const key = action === "toggle-book" ? bookId : el.dataset.key;
     if (set.has(key)) set.delete(key); else set.add(key);
     saveBooksOpenState();
-    renderBooksTree();
+    rerenderBookTrees();
     if (action === "toggle-book" && set.has(key) && !bookDetailsCache[key]) {
       await ensureBookDetails([key]);
-      renderBooksTree();
+      rerenderBookTrees();
     }
     return;
   }
@@ -449,6 +495,12 @@ function closeReaderToCatalog() {
   if (catalogView) catalogView.style.display = "flex";
   document.body.classList.remove("reader-zen-mode");
   closeTOCDrawer();
+  if (readerReturn) {
+    const back = readerReturn;
+    readerReturn = null;
+    back();
+    return;
+  }
   // Zurück an die Stelle im Inhaltsverzeichnis, von der aus gelesen wurde
   renderBooksTree();
   const activeRow = document.querySelector("#book-catalog-grid .btree-chapter-row.active");
@@ -809,12 +861,7 @@ function setupBookBrowserEvents() {
   const booksTree = document.getElementById("book-catalog-grid");
   if (booksTree) {
     booksTree.addEventListener("click", onBooksTreeClick);
-    booksTree.addEventListener("keydown", (e) => {
-      if ((e.key === "Enter" || e.key === " ") && e.target.matches("[role='button']")) {
-        e.preventDefault();
-        e.target.click();
-      }
-    });
+    booksTree.addEventListener("keydown", onBooksTreeKeydown);
   }
 
   // Filter im Offcanvas Drawer

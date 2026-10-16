@@ -407,7 +407,8 @@ async function loadSubjectMaterials(subjectId) {
     if (res.ok) {
       currentSubjectMaterials = await res.json();
       if (countBadge) {
-        countBadge.textContent = `${currentSubjectMaterials.length} Dokument${currentSubjectMaterials.length === 1 ? "" : "e"}`;
+        const n = currentSubjectMaterials.filter((m) => !isChapterOfKnownBook(m)).length;
+        countBadge.textContent = `${n} Dokument${n === 1 ? "" : "e"}`;
       }
       renderSubjectMaterialsList(currentSubjectMaterials);
     } else {
@@ -419,12 +420,17 @@ async function loadSubjectMaterials(subjectId) {
   }
 }
 
+// Kapitel eines bekannten Schulbuchs stehen nicht einzeln in der Liste, sondern im aufklappbaren Buch
+function isChapterOfKnownBook(m) {
+  return Boolean(m.parent_id) && currentBooks.some((b) => b.id === m.parent_id);
+}
+
 function renderSubjectMaterialsList(materials) {
   const grid = document.getElementById("subject-materials-grid");
   if (!grid) return;
   grid.innerHTML = "";
 
-  const filtered = materials.filter((m) => {
+  const filtered = materials.filter((m) => !isChapterOfKnownBook(m)).filter((m) => {
     if (activeSubjectKindFilter === "all") return true;
     if (activeSubjectKindFilter === "Arbeitsblatt") return m.kind === "Arbeitsblatt";
     if (activeSubjectKindFilter === "Mitschrift") return m.kind === "Mitschrift" || m.kind === "Hefterseite";
@@ -453,13 +459,24 @@ function renderSubjectMaterialsList(materials) {
     return;
   }
 
+  const embeddedBooks = [];
   filtered.forEach((m) => {
+    const book = currentBooks.find((b) => b.id === m.id);
+    if (book) {
+      grid.appendChild(buildEmbeddedBookNode(book));
+      embeddedBooks.push(book.id);
+      return;
+    }
     const card = buildMaterialCard(m, () => {
       loadSubjectMaterials(currentDetailSubjectId);
       loadUploadsHistory();
     });
     grid.appendChild(card);
   });
+
+  // Aufgeklappte Bücher brauchen ihre Kapitel
+  const openBooks = embeddedBooks.filter((id) => booksOpenState.books.has(id));
+  if (openBooks.length) ensureBookDetails(openBooks).then(rerenderBookTrees);
 }
 
 function setupSubjectDetailEvents() {

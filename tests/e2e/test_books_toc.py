@@ -108,3 +108,43 @@ def test_book_row_edit_button_only_in_parent_mode(app_page, parent_pin):
     # Der Klick auf „Ändern“ klappt das Buch nicht zu
     assert app_page.locator(".btree-book.open").count() == 1
     assert app_page.problems.errors == []
+
+
+def _material(mid, title, kind, pages, parent_id=None):
+    return {"id": mid, "title": title, "kind": kind, "subject_id": "sub_bio", "subject_name": "Biologie",
+            "topic_id": None, "topic_name": None, "page_count": pages, "file_size": 1000,
+            "mime_type": "application/pdf", "parent_id": parent_id, "summary": None,
+            "created_at": "2026-10-15T10:00:00", "filename": f"{mid}.pdf"}
+
+
+def test_subject_page_shows_book_as_one_expandable_entry(app_page):
+    _mock_books(app_page)
+    materials = [
+        _material("mat_book", BOOK["title"], "Buch", 60),
+        _material("mat_book_ch01", "Kapitel 1", "Buchauszug", 30, parent_id="mat_book"),
+        _material("mat_book_ch02", "Kapitel 2", "Buchauszug", 30, parent_id="mat_book"),
+        _material("mat_ws", "Zellen", "Arbeitsblatt", 2),
+    ]
+    app_page.route(re.compile(r".*/api/v1/materials\?subject_id=sub_bio$"), lambda r: r.fulfill(
+        status=200, content_type="application/json", body=json.dumps(materials)))
+    app_page.evaluate("localStorage.removeItem('gothea_books_open')")
+    app_page.evaluate("loadBooks()")  # Buchliste (gemockt) laden, bevor die Fachseite rendert
+    app_page.wait_for_function("currentBooks.length === 1", timeout=5000)
+    app_page.evaluate("booksOpenState.books.clear()")  # ein einzelnes Buch klappt loadBooks sonst automatisch auf
+    app_page.evaluate("openSubjectDetail('sub_bio')")
+    app_page.wait_for_selector("#subject-materials-grid .btree-embed", timeout=5000)
+
+    # Ein Eintrag für das Buch, keine Kapitel als eigene Zeilen, normales Dokument als Zeile
+    assert app_page.locator("#subject-materials-grid .btree-embed").count() == 1
+    assert app_page.locator("#subject-materials-grid .doc-row").count() == 1
+    assert app_page.text_content("#subject-materials-count") == "2 Dokumente"
+
+    # Aufklappen → Kapitel; Aufschlagen → Reader; Zurück → Fachseite
+    app_page.click("#subject-materials-grid .btree-book-row")
+    app_page.wait_for_selector("#subject-materials-grid .btree-chapter-row", timeout=5000)
+    assert app_page.locator("#subject-materials-grid .btree-chapter-row").count() == 2
+    app_page.click("#subject-materials-grid .btree-chapter-row >> nth=1 >> .btree-open")
+    app_page.wait_for_selector("#book-reader-view", state="visible", timeout=5000)
+    app_page.click("#btn-back-to-catalog")
+    app_page.wait_for_selector("#tab-subject-detail.active", timeout=5000)
+    assert [e for e in app_page.problems.errors if e.startswith("JS-Fehler")] == []

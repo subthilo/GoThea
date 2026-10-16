@@ -150,6 +150,7 @@ function closeDocumentViewerModal() {
 }
 
 function openMaterialInReader(material, page = 1) {
+  rememberReaderOrigin();
   switchToTab("books");
   const ch = {
     id: material.id,
