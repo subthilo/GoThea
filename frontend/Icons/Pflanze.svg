@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Keimling / Anfang -->
+  <line x1="50" y1="84" x2="50" y2="44" />
+  <path d="M 50 60 C 34 60 22 50 22 34 C 38 34 50 44 50 60 Z" />
+  <path d="M 50 48 C 50 32 62 20 80 20 C 80 36 68 48 50 48 Z" />
+  <line x1="34" y1="84" x2="66" y2="84" />
+</svg>

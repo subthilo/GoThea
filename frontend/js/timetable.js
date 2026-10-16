@@ -82,11 +82,11 @@ if (timetableFileInput) {
       const newlyAddedCount = (data.created_subjects || []).length;
       if (ttResultStatusTitle) {
         if (!data.slots_imported) {
-          ttResultStatusTitle.textContent = "⚠️ Wochenraster nicht erkannt – Stundenplan unverändert";
+          ttResultStatusTitle.innerHTML = iconText("Warnung", "Wochenraster nicht erkannt – Stundenplan unverändert");
         } else if (newlyAddedCount > 0) {
-          ttResultStatusTitle.textContent = `🎉 ${data.slots_imported} Stunden übernommen, ${newlyAddedCount} neue(s) Fach/Fächer angelegt!`;
+          ttResultStatusTitle.innerHTML = iconText("Feier", `${data.slots_imported} Stunden übernommen, ${newlyAddedCount} neue(s) Fach/Fächer angelegt!`);
         } else {
-          ttResultStatusTitle.textContent = `✅ Stundenplan übernommen: ${data.slots_imported} Stunden`;
+          ttResultStatusTitle.innerHTML = iconText("Erledigt", `Stundenplan übernommen: ${data.slots_imported} Stunden`);
         }
       }
 
@@ -99,7 +99,7 @@ if (timetableFileInput) {
           docText += ` (${wochenLabel} – Fächer beider Wochen übernommen)`;
         }
         if (grid.wechsel_details) {
-          docText += `<div style="margin-top: 6px; font-size: 0.8rem; color: var(--accent-light);">🔄 ${grid.wechsel_details}</div>`;
+          docText += `<div style="margin-top: 6px; font-size: 0.8rem; color: var(--accent-light);">${icon("Aktualisieren")} ${escapeHtml(grid.wechsel_details)}</div>`;
         }
         ttResultDocName.innerHTML = docText;
       }
@@ -116,7 +116,7 @@ if (timetableFileInput) {
             pill.style.border = "1px solid rgba(16, 185, 129, 0.4)";
             pill.style.padding = "4px 10px";
             pill.style.fontSize = "0.85rem";
-            pill.textContent = `✨ ${s.icon || "📚"} ${s.name || ""}`.trim();
+            pill.innerHTML = `${icon("Luna")} ${subjectLabel(s.name, "")}`;
             ttAddedSubjectsList.appendChild(pill);
           });
         } else {
@@ -140,10 +140,10 @@ if (timetableFileInput) {
             pill.style.padding = "4px 10px";
             pill.style.fontSize = "0.85rem";
             if (typeof s === "object" && s !== null) {
-              pill.textContent = `${s.icon || "📖"} ${s.name || ""}`.trim();
+              pill.innerHTML = subjectLabel(s.name, "");
             } else {
               const matched = allRecognized.find((sub) => sub.name.toLowerCase() === String(s).toLowerCase());
-              pill.textContent = matched ? `${matched.icon || "📖"} ${matched.name}` : `📖 ${s}`;
+              pill.innerHTML = subjectLabel(matched ? matched.name : String(s), "");
             }
             ttAllSubjectsList.appendChild(pill);
           });
@@ -414,7 +414,7 @@ async function loadTodayDashboardWidget() {
     const lessons = (data.lessons || []).filter((l) => !l.is_break);
 
     if (lessons.length === 0) {
-      container.innerHTML = `<div class="dash-tt-empty">Heute kein regulärer Unterricht eingetragen. 🎉</div>`;
+      container.innerHTML = `<div class="dash-tt-empty">Heute kein regulärer Unterricht eingetragen. ${icon("Feier")}</div>`;
       return;
     }
 

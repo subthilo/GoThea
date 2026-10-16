@@ -3,13 +3,13 @@
     <div class="modal-box" style="max-width: 520px;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.5rem;">📅</span>
+          <span style="font-size: 1.5rem;"><span class="ui-icon i-stundenplan" aria-hidden="true"></span></span>
           <div>
             <h3 id="tt-modal-title" style="margin: 0; font-size: 1.2rem;">Stundenplan importieren</h3>
             <span class="subtitle" style="font-size: 0.8rem; margin: 0;">Automatische Fächererkennung via KI</span>
           </div>
         </div>
-        <button class="modal-close" id="btn-close-timetable-modal">&times;</button>
+        <button class="modal-close" id="btn-close-timetable-modal"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
       </div>
       <div class="modal-body" id="tt-modal-body">
         <!-- Progress State -->
@@ -23,7 +23,7 @@
         <div id="tt-result-state" style="display: none;">
           <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #10b981; font-size: 0.95rem;">
-              <span>✅</span>
+              <span><span class="ui-icon i-erledigt" aria-hidden="true"></span></span>
               <span id="tt-result-status-title">Stundenplan erfolgreich eingelesen!</span>
             </div>
             <div id="tt-result-doc-name" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
@@ -56,7 +56,7 @@
 
         <!-- Error State -->
         <div id="tt-error-state" style="display: none; text-align: center; padding: 16px;">
-          <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">⚠️</span>
+          <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;"><span class="ui-icon i-warnung" aria-hidden="true"></span></span>
           <div style="font-weight: 600; color: #ef4444; margin-bottom: 6px;" id="tt-error-title">Fehler beim Import</div>
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;" id="tt-error-detail">Das Dokument konnte nicht verarbeitet werden.</p>
           <button type="button" id="btn-tt-error-close" class="btn-secondary-sm" style="width: 100%;">Schließen</button>

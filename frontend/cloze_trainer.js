@@ -4,7 +4,7 @@
  * Features:
  * - Eigenes fokussiertes Übungsfenster (Modal) für Lückentexte
  * - Geerdet auf Unterrichtsmaterialien & Schulfächer
- * - Zwei Eingabemodi: 🖐️ Ziehen (Drag & Drop) & ✍️ Schreiben (Handschrift / Apple Pencil)
+ * - Zwei Eingabemodi: Ziehen (Drag & Drop) & Schreiben (Handschrift / Apple Pencil)
  * - Stille 3-Sekunden Hintergrund-Auswertung beim Schreiben (Debounce)
  * - Synchrones "Gemeinsam durchgehen" mit Satz-TTS, Pause bei Fehlern,
  *   sofortigen Luna-Audio-Interjektionen (Phrasen-Pool) und Korrekturschleife.
@@ -29,7 +29,7 @@
   let currentMaterialId = null;
   let activeAudio = null;
   let currentAdaptiveDifficulty = 'mittel';
-  let currentAdaptiveLevelLabel = 'Stufe 2 (Mittel) 🎯';
+  let currentAdaptiveLevelLabel = 'Stufe 2 (Mittel)';
 
   // Blanks & Evaluation state
   // blankState[blankId] = { value: '', canvas: null, ctx: null, lastDraw: 0, timer: null, evalResult: null, dirty: false, attempts: 0, isAutoRevealed: false }
@@ -192,7 +192,7 @@
 
     if (options.sourceMaterialTitle) {
       modalDocSource.style.display = 'inline-block';
-      modalDocSource.textContent = `📄 ${options.sourceMaterialTitle}`;
+      modalDocSource.innerHTML = iconText("Dokumente", `${options.sourceMaterialTitle}`);
     } else {
       modalDocSource.style.display = 'none';
     }
@@ -210,9 +210,9 @@
       if (adRes.ok) {
         const adData = await adRes.json();
         currentAdaptiveDifficulty = adData.difficulty || 'mittel';
-        currentAdaptiveLevelLabel = adData.level_label || 'Stufe 2 (Mittel) 🎯';
+        currentAdaptiveLevelLabel = adData.level_label || 'Stufe 2 (Mittel)';
         if (modalAdaptiveBadge) {
-          modalAdaptiveBadge.textContent = `🎯 ${adData.level_label || 'Stufe 2 (Mittel)'}`;
+          modalAdaptiveBadge.innerHTML = iconText("Ziel", `${adData.level_label || 'Stufe 2 (Mittel)'}`);
           modalAdaptiveBadge.className = `badge-adaptive-level level-${adData.level_code || 2}`;
         }
       }
@@ -300,7 +300,7 @@
       if (wordbankContainer) {
         wordbankContainer.style.display = 'block';
         const header = wordbankContainer.querySelector('.cloze-wordbank-header span');
-        if (header) header.textContent = '📦 Wortspeicher (Wort antippen oder in die Lücke ziehen):';
+        if (header) header.innerHTML = iconText("Kiste", 'Wortspeicher (Wort antippen oder in die Lücke ziehen):');
       }
     } else {
       clozeTrainerBody.classList.add('mode-handwrite');
@@ -310,7 +310,7 @@
         if (wordbankContainer) {
           wordbankContainer.style.display = 'block';
           const header = wordbankContainer.querySelector('.cloze-wordbank-header span');
-          if (header) header.textContent = '💡 Wortspeicher zur Orientierung:';
+          if (header) header.innerHTML = iconText("Tipp", 'Wortspeicher zur Orientierung:');
         }
       } else {
         clozeTrainerBody.classList.remove('show-wordbank');
@@ -367,7 +367,7 @@
       if (data.topic && modalTopic) modalTopic.textContent = data.topic;
       if (data.source_material_title && modalDocSource) {
         modalDocSource.style.display = 'inline-block';
-        modalDocSource.textContent = `📄 ${data.source_material_title}`;
+        modalDocSource.innerHTML = iconText("Dokumente", `${data.source_material_title}`);
       }
 
       // Initialisiere blank states
@@ -763,7 +763,7 @@
       clearBtn.type = 'button';
       clearBtn.className = 'cloze-blank-clear-btn';
       clearBtn.title = 'Lücke löschen';
-      clearBtn.textContent = '🧹';
+      clearBtn.innerHTML = icon('Radierer');
       clearBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         clearBlankCanvas(bId);
@@ -1007,7 +1007,7 @@
     if (b.timer) clearTimeout(b.timer);
 
     const badge = document.getElementById(`cloze-status-${blankId}`);
-    if (badge) badge.textContent = '⏳';
+    if (badge) badge.innerHTML = icon('Sanduhr');
 
     b.timer = setTimeout(async () => {
       await performSilentBlankCheck(blankId);
@@ -1047,10 +1047,10 @@
       // Dezentes Feedback
       if (badge) {
         if (data.is_correct) {
-          badge.textContent = '✓';
+          badge.innerHTML = icon('Haken');
           badge.title = `Erkannt: "${data.recognized_text || ''}"`;
         } else if (data.unclear_handwriting) {
-          badge.textContent = '✍️';
+          badge.innerHTML = icon('Schreibwerkzeuge');
           badge.title = 'Schrift schwer lesbar – bitte deutlicher schreiben';
         } else {
           badge.textContent = '●';
@@ -1079,7 +1079,7 @@
     progressBadge.textContent = `${filledCount} / ${blanks.length} ausgefüllt`;
 
     if (filledCount === blanks.length && blanks.length > 0) {
-      statusHint.textContent = '✨ Alle Lücken gefüllt! Bereit zum Durchgehen.';
+      statusHint.innerHTML = iconText("Luna", 'Alle Lücken gefüllt! Bereit zum Durchgehen.');
     } else {
       statusHint.textContent = '';
     }
@@ -1163,7 +1163,7 @@
     const sentences = currentExercise.content.sentences || [];
 
     if (reviewSentenceIndex >= sentences.length) {
-      // ALLE SÄTZE ERFOLGREICH BEENDET! 🎉
+      // ALLE SÄTZE ERFOLGREICH BEENDET!
       await onAllSentencesCompleted();
       return;
     }
@@ -1224,7 +1224,7 @@
           await speakLuna(speechPrompt);
         }
         setLunaSpeaking(false);
-        setLunaBanner("✍️ Handschrift nicht eindeutig lesbar. Bitte schreibe das Wort noch einmal etwas deutlicher!", 'warning');
+        setLunaBanner("Handschrift nicht eindeutig lesbar. Bitte schreibe das Wort noch einmal etwas deutlicher!", 'warning');
         return; // Hält hier an, ohne Versuch zu verbrennen!
       }
 
@@ -1464,20 +1464,20 @@
           currentAdaptiveDifficulty = scoreData.adaptive_difficulty;
           currentAdaptiveLevelLabel = scoreData.adaptive_level_label;
           if (modalAdaptiveBadge) {
-            modalAdaptiveBadge.textContent = `🎯 ${scoreData.adaptive_level_label}`;
+            modalAdaptiveBadge.innerHTML = iconText("Ziel", `${scoreData.adaptive_level_label}`);
             modalAdaptiveBadge.className = `badge-adaptive-level level-${scoreData.adaptive_level_code || 2}`;
           }
         }
         const msg = scoreData.feedback_message || `Klasse! Du hast ${correctItems} von ${totalItems} Lücken gemeistert.`;
-        let bannerText = `🎉 ${msg}`;
+        let bannerText = msg;
         if (scoreData.xp_earned) {
           bannerText += ` • +${scoreData.xp_earned} XP`;
         }
         if (scoreData.stars_earned) {
-          bannerText += ` • ${'⭐'.repeat(scoreData.stars_earned)}`;
+          bannerText += ` • ${scoreData.stars_earned} ${scoreData.stars_earned === 1 ? 'Stern' : 'Sterne'}`;
         }
         if (scoreData.leveled_up && scoreData.level) {
-          bannerText = `🚀 LEVEL-UP! Du hast ${scoreData.level.title} erreicht! • +${scoreData.xp_earned} XP`;
+          bannerText = `LEVEL-UP! Du hast ${scoreData.level.title} erreicht! • +${scoreData.xp_earned} XP`;
         }
         setLunaBanner(bannerText, 'info');
         if (btnNext) btnNext.style.display = 'inline-flex';
@@ -1488,7 +1488,7 @@
       console.warn('Fehler beim Übermitteln des Übungsergebnisses:', err);
     }
 
-    setLunaBanner('🎉 Fantastisch gelöst! Du hast alle Lücken meisterhaft ausgefüllt.', 'info');
+    setLunaBanner('Fantastisch gelöst! Du hast alle Lücken meisterhaft ausgefüllt.', 'info');
     if (btnNext) btnNext.style.display = 'inline-flex';
   }
 
@@ -1526,22 +1526,22 @@
     if (state === 'playing') {
       btnReview.classList.remove('btn-danger');
       btnReview.classList.add('btn-primary');
-      reviewBtnIcon.textContent = '⏸️';
+      reviewBtnIcon.innerHTML = icon('Anhalten');
       reviewBtnLabel.textContent = 'Vorlesen anhalten';
     } else if (state === 'error') {
       btnReview.classList.remove('btn-primary');
       btnReview.classList.add('btn-danger');
-      reviewBtnIcon.textContent = '✏️';
+      reviewBtnIcon.innerHTML = icon('Schreibwerkzeuge');
       reviewBtnLabel.textContent = 'Korrektur prüfen & weiter';
     } else if (state === 'done') {
       btnReview.classList.remove('btn-danger');
       btnReview.classList.add('btn-primary');
-      reviewBtnIcon.textContent = '🎉';
+      reviewBtnIcon.innerHTML = icon('Feier');
       reviewBtnLabel.textContent = 'Geschafft! Fertig';
     } else {
       btnReview.classList.remove('btn-danger');
       btnReview.classList.add('btn-primary');
-      reviewBtnIcon.textContent = '🚀';
+      reviewBtnIcon.innerHTML = icon('Rakete');
       reviewBtnLabel.textContent = 'Gemeinsam durchgehen';
     }
   }

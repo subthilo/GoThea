@@ -2,8 +2,8 @@
   <div id="modal-material" class="modal-backdrop" style="display: none;">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 id="modal-material-title">📄 Dokument hinzufügen</h3>
-        <button class="modal-close" id="btn-close-material-modal">&times;</button>
+        <h3 id="modal-material-title"><span class="ui-icon i-dokumente" aria-hidden="true"></span> Dokument hinzufügen</h3>
+        <button class="modal-close" id="btn-close-material-modal"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
       </div>
       <div class="modal-body">
         <!-- Stufe 1: Upload & Dateiwahl -->
@@ -12,11 +12,11 @@
             Lade ein Schulbuch, ein Arbeitsblatt, eine Mitschrift oder einen Test hoch.
           </p>
           <div class="mat-dropzone" id="mat-dropzone">
-            <span class="mat-dropzone-icon">📥</span>
+            <span class="mat-dropzone-icon"><span class="ui-icon i-upload" aria-hidden="true"></span></span>
             <div class="mat-dropzone-text" id="mat-dropzone-text">Datei hierher ziehen oder tippen</div>
             <div class="mat-dropzone-sub" id="mat-dropzone-sub">PDF oder Foto (Mehrfachauswahl möglich)</div>
             <input type="file" id="mat-file-input" accept="application/pdf,image/*" style="display: none;" multiple>
-            <button type="button" class="btn-secondary-sm" id="btn-trigger-file" style="margin-top: 10px;">📎 Datei(en) auswählen</button>
+            <button type="button" class="btn-secondary-sm" id="btn-trigger-file" style="margin-top: 10px;"><span class="ui-icon i-ordner" aria-hidden="true"></span> Datei(en) auswählen</button>
           </div>
           <div id="mat-upload-spinner" style="display: none; text-align: center; padding: 24px;">
             <div class="mat-spinner"></div>
@@ -32,7 +32,7 @@
         <div id="mat-step-confirm" style="display: none;">
           <div class="mat-preview-card" id="mat-preview-card">
             <div class="mat-preview-header">
-              <span id="mat-preview-icon" style="font-size: 1.6rem;">📄</span>
+              <span id="mat-preview-icon" style="font-size: 1.6rem;"><span class="ui-icon i-dokumente" aria-hidden="true"></span></span>
               <div style="flex: 1; overflow: hidden;">
                 <div id="mat-preview-filename" style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">dateiname.pdf</div>
                 <div class="mat-preview-meta" id="mat-preview-meta" style="font-size: 0.8rem; color: var(--text-secondary);">0 Seiten • 0 KB</div>
@@ -44,7 +44,7 @@
           <div class="form-group" id="group-confirm-subject">
             <label id="lbl-confirm-subject">Schulfach *</label>
             <select id="mat-confirm-subject" class="input-field"></select>
-            <div id="mat-fixed-subject-badge" style="display: none; font-size: 0.8rem; color: var(--accent-light); margin-top: 4px; font-weight: 500;">🔒 Aus aktuellem Fach geöffnet (fest zugeordnet)</div>
+            <div id="mat-fixed-subject-badge" style="display: none; font-size: 0.8rem; color: var(--accent-light); margin-top: 4px; font-weight: 500;"><span class="ui-icon i-schloss" aria-hidden="true"></span> Aus aktuellem Fach geöffnet (fest zugeordnet)</div>
           </div>
           <div class="form-group">
             <label>Thema (Lehrplan E)</label>

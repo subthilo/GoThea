@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Papierkorb / löschen -->
+  <line x1="18" y1="28" x2="82" y2="28" />
+  <polyline points="40,28 40,18 60,18 60,28" />
+  <path d="M 26 28 L 30 80 A 6 6 0 0 0 36 86 L 64 86 A 6 6 0 0 0 70 80 L 74 28" />
+  <line x1="42" y1="42" x2="42" y2="72" />
+  <line x1="58" y1="42" x2="58" y2="72" />
+</svg>

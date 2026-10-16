@@ -13,17 +13,17 @@ document.getElementById("btn-save-profile").addEventListener("click", async () =
     });
 
     if (res.ok) {
-      feedback.textContent = "✅ Profil erfolgreich aktualisiert!";
+      feedback.innerHTML = iconText("Erledigt", "Profil erfolgreich aktualisiert!");
       feedback.style.color = "var(--success)";
       await loadProfile();
       await loadTaxonomy();
       setTimeout(() => (feedback.textContent = ""), 3000);
     } else {
-      feedback.textContent = "❌ Fehler beim Speichern";
+      feedback.innerHTML = iconText("Fehler", "Fehler beim Speichern");
       feedback.style.color = "var(--warning)";
     }
   } catch (err) {
-    feedback.textContent = "❌ Netzwerkfehler";
+    feedback.innerHTML = iconText("Fehler", "Netzwerkfehler");
     feedback.style.color = "var(--warning)";
   }
 });

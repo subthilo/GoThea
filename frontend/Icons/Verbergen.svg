@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Geschlossenes Auge -->
+  <path d="M 14 44 Q 50 76 86 44" />
+  <line x1="30" y1="58" x2="23" y2="68" />
+  <line x1="50" y1="64" x2="50" y2="76" />
+  <line x1="70" y1="58" x2="77" y2="68" />
+</svg>

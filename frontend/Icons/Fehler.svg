@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Kreuz im Kreis / Fehler -->
+  <circle cx="50" cy="50" r="32" />
+  <line x1="39" y1="39" x2="61" y2="61" />
+  <line x1="61" y1="39" x2="39" y2="61" />
+</svg>

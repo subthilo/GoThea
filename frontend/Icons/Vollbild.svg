@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Vier Ecken / einpassen -->
+  <polyline points="18,36 18,18 36,18" />
+  <polyline points="64,18 82,18 82,36" />
+  <polyline points="82,64 82,82 64,82" />
+  <polyline points="36,82 18,82 18,64" />
+</svg>

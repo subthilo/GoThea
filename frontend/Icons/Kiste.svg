@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Kiste / Wortspeicher -->
+  <path d="M 16 34 L 50 18 L 84 34 L 84 70 L 50 86 L 16 70 Z" />
+  <polyline points="16,34 50,50 84,34" />
+  <line x1="50" y1="50" x2="50" y2="86" />
+</svg>

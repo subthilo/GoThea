@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Kettenglieder / zusammenführen -->
+  <g transform="rotate(-45 50 50)">
+    <rect x="12" y="38" width="42" height="24" rx="12" />
+    <rect x="46" y="38" width="42" height="24" rx="12" />
+  </g>
+</svg>

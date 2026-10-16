@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Archivkiste -->
+  <rect x="14" y="20" width="72" height="18" rx="4" />
+  <path d="M 20 38 L 20 78 A 6 6 0 0 0 26 84 L 74 84 A 6 6 0 0 0 80 78 L 80 38" />
+  <line x1="42" y1="52" x2="58" y2="52" />
+</svg>

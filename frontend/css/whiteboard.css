@@ -525,6 +525,18 @@ body.whiteboard-zen-mode .wb-container {
   transform: scale(1.08);
 }
 
+/* Icons aus frontend/Icons (css/icons.css) in Tafel-Leisten: feste Größe statt Textgröße */
+.wb-floating-toolbar .ui-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.wb-header-actions .ui-icon,
+.wb-boards-btn .ui-icon {
+  width: 20px;
+  height: 20px;
+}
+
 .wb-btn-icon-wrap {
   display: inline-flex;
   align-items: center;

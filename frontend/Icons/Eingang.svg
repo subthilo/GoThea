@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Ablagefach / Posteingang -->
+  <path d="M 14 56 L 26 24 L 74 24 L 86 56 L 86 76 A 6 6 0 0 1 80 82 L 20 82 A 6 6 0 0 1 14 76 Z" />
+  <polyline points="14,56 36,56 40,66 60,66 64,56 86,56" />
+</svg>

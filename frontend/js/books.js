@@ -1,5 +1,5 @@
 // ==========================================================================
-// 📖 BÜCHER-BROWSER LOGIK (#tab-books)
+// BÜCHER-BROWSER LOGIK (#tab-books)
 // ==========================================================================
 
 let currentBooks = [];
@@ -18,12 +18,12 @@ async function loadBooks() {
       if (grid && currentBooks.length === 0) {
         grid.innerHTML = `
           <div class="empty-state-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 16px; margin: 20px 0;">
-            <div style="font-size: 2.5rem; margin-bottom: 12px;">⚠️</div>
+            <div style="font-size: 2.5rem; margin-bottom: 12px;">${icon("Warnung")}</div>
             <h3 style="margin-bottom: 6px; color: #ef4444;">Lehrbücher konnten nicht geladen werden</h3>
             <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
               Beim Abrufen der Bücher ist ein Serverfehler aufgetreten (${res.status}).
             </p>
-            <button onclick="loadBooks()" class="btn-primary-sm">🔄 Erneut versuchen</button>
+            <button onclick="loadBooks()" class="btn-primary-sm">${icon("Aktualisieren")} Erneut versuchen</button>
           </div>
         `;
       }
@@ -41,13 +41,13 @@ async function loadBooks() {
       if (grid) {
         grid.innerHTML = `
           <div class="empty-state-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 16px; margin: 20px 0;">
-            <div style="font-size: 3rem; margin-bottom: 12px;">📚</div>
+            <div style="font-size: 3rem; margin-bottom: 12px;">${icon("Bücher")}</div>
             <h3 style="margin-bottom: 6px;">Noch keine Schulbücher hinterlegt</h3>
             <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
               Sobald Lehrwerke hochgeladen oder importiert werden, kannst du hier interaktiv durch alle Kapitel und Seiten navigieren.
             </p>
             <button id="btn-books-goto-upload" class="btn-primary-sm" style="display: inline-flex; align-items: center; gap: 8px;">
-              <span>📤</span>
+              <span>${icon("Upload")}</span>
               <span>Schulbuch hochladen</span>
             </button>
           </div>
@@ -100,9 +100,9 @@ function renderBooksShelf() {
     pill.className = `shelf-book-pill ${book.id === activeBookId ? "active" : ""}`;
     pill.dataset.bookId = book.id;
     pill.innerHTML = `
-      <span class="shelf-book-icon">${book.subject_icon || "📚"}</span>
+      <span class="shelf-book-icon">${subjectIcon(book.subject_name)}</span>
       <span class="shelf-book-title">${escapeHtml(book.title)}</span>
-      <span class="shelf-book-badge">${book.segmenting ? "⏳ wird in Kapitel zerlegt…" : `${book.chapters_count} Kap. • ${book.total_pages} S.`}</span>
+      <span class="shelf-book-badge">${book.segmenting ? `${icon("Sanduhr")} wird in Kapitel zerlegt…` : `${book.chapters_count} Kap. • ${book.total_pages} S.`}</span>
     `;
     pill.addEventListener("click", () => selectBook(book.id));
     container.appendChild(pill);
@@ -124,7 +124,7 @@ async function selectBook(bookId) {
     const subEl = document.getElementById("catalog-book-subtitle");
     const drawerSubEl = document.getElementById("drawer-book-subtitle");
 
-    if (iconEl) iconEl.textContent = activeBookDetail.subject_icon || "📚";
+    if (iconEl) iconEl.innerHTML = subjectIcon(activeBookDetail.subject_name);
     if (titleEl) titleEl.textContent = activeBookDetail.title;
     if (subEl) subEl.textContent = `${activeBookDetail.chapters_count} Lerneinheiten • ${activeBookDetail.total_pages} Seiten`;
     if (drawerSubEl) drawerSubEl.textContent = activeBookDetail.title;
@@ -179,7 +179,7 @@ function renderBookCatalog(filterTerm = "") {
       <div style="padding: 36px; text-align: center; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); width: 100%;">
         <p style="margin-bottom: 16px;">${filterTerm ? `Keine Lerneinheiten für "${escapeHtml(filterTerm)}" gefunden.` : "Für dieses Lehrwerk wurden noch keine separaten Lerneinheiten aufgeteilt."}</p>
         <button type="button" class="btn-primary" id="btn-open-full-book-fallback" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px;">
-          <span>📖</span>
+          <span>${icon("Lesen")}</span>
           <span>Gesamtes Buch aufschlagen (${activeBookDetail.total_pages} Seiten)</span>
         </button>
       </div>
@@ -210,7 +210,7 @@ function renderBookCatalog(filterTerm = "") {
 
     const isSingleFullBook = ch.id === activeBookDetail.id;
     const numDisplay = isSingleFullBook
-      ? "★"
+      ? icon("Stern")
       : (ch.chapter_number === 0 ? "00" : String(ch.chapter_number).padStart(2, "0"));
     const unitLabel = isSingleFullBook
       ? "Gesamtbuch"
@@ -222,8 +222,8 @@ function renderBookCatalog(filterTerm = "") {
       sectionsHtml = `
         <details class="toc-subsections-accordion" ${hasSecMatch ? "open" : ""} onclick="event.stopPropagation()">
           <summary class="toc-summary">
-            <span class="toc-summary-label">📑 ${ch.sections.length} Unterthemen & Abschnitte</span>
-            <span class="toc-chevron">▾</span>
+            <span class="toc-summary-label">${icon("Inhaltsverzeichnis")} ${ch.sections.length} Unterthemen & Abschnitte</span>
+            <span class="toc-chevron">${icon("Aufklappen")}</span>
           </summary>
           <div class="toc-subsections-grid">
             ${ch.sections.map(sec => `
@@ -246,16 +246,16 @@ function renderBookCatalog(filterTerm = "") {
           <div class="toc-item-title">${escapeHtml(ch.title)}</div>
         </div>
         <div class="toc-meta-row">
-          <span class="toc-badge-pages">📄 S. ${ch.start_page}–${ch.end_page} (${ch.page_count} S.)</span>
-          ${ch.topic_name ? `<span class="toc-badge-topic">📐 ${escapeHtml(ch.topic_name)}</span>` : ""}
-          ${isSingleFullBook ? `<span class="toc-badge-topic">⭐ Vollständige Ausgabe</span>` : ""}
+          <span class="toc-badge-pages">${icon("Dokumente")} S. ${ch.start_page}–${ch.end_page} (${ch.page_count} S.)</span>
+          ${ch.topic_name ? `<span class="toc-badge-topic">${icon("Thema")} ${escapeHtml(ch.topic_name)}</span>` : ""}
+          ${isSingleFullBook ? `<span class="toc-badge-topic">${icon("Stern")} Vollständige Ausgabe</span>` : ""}
         </div>
         ${sectionsHtml}
       </div>
       <div class="toc-item-action">
         <button type="button" class="btn-toc-open">
           <span>${isSingleFullBook ? "Gesamtbuch öffnen" : "Aufschlagen"}</span>
-          <span>→</span>
+          <span>${icon("Pfeil rechts")}</span>
         </button>
       </div>
     `;
@@ -455,7 +455,7 @@ function renderDrawerTOC(filterTerm = "") {
           <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">S. ${ch.start_page}–${ch.end_page}</span>
         </div>
         <div style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">${escapeHtml(ch.title)}</div>
-        ${ch.topic_name ? `<div style="font-size: 0.76rem; color: #94a3b8;">📐 ${escapeHtml(ch.topic_name)}</div>` : ""}
+        ${ch.topic_name ? `<div style="font-size: 0.76rem; color: #94a3b8;">${icon("Thema")} ${escapeHtml(ch.topic_name)}</div>` : ""}
       </div>
       ${sectionsHtml}
     `;
@@ -817,8 +817,8 @@ function setupBookBrowserEvents() {
   function setBookZoomMode(mode) {
     bookZoomMode = mode;
     if (imgEl) imgEl.className = `book-page-img mode-${mode}`;
-    if (zoomIcon) zoomIcon.textContent = mode === "fit" ? "↔" : "⛶";
-    if (btnToggleZoom) btnToggleZoom.title = mode === "fit" ? "Auf volle Breite umschalten (↔)" : "Ganze Seite einpassen (⛶)";
+    if (zoomIcon) zoomIcon.innerHTML = icon(mode === "fit" ? "Breite" : "Vollbild");
+    if (btnToggleZoom) btnToggleZoom.title = mode === "fit" ? "Auf volle Breite umschalten" : "Ganze Seite einpassen";
     if (zoomFitBtn) zoomFitBtn.classList.toggle("active", mode === "fit");
     if (zoomWidthBtn) zoomWidthBtn.classList.toggle("active", mode === "width");
     setTimeout(syncBookAnnotationCanvasSize, 220);

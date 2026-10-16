@@ -4,10 +4,10 @@
       <div class="exercise-arena-header cloze-trainer-header">
         <div class="cloze-header-left">
           <button type="button" class="btn-back-to-subject" id="btn-exercise-back-to-subject" title="Zurück zur Fach-Übersicht (nicht ausgefüllte Teile werden nicht gewertet)">
-            <span>← Zurück zu</span>
+            <span><span class="ui-icon i-pfeil-links" aria-hidden="true"></span> Zurück zu</span>
             <strong id="cloze-back-subject-name">Fach</strong>
           </button>
-          <div class="cloze-luna-avatar" id="cloze-luna-avatar">✨</div>
+          <div class="cloze-luna-avatar" id="cloze-luna-avatar"><span class="ui-icon i-luna" aria-hidden="true"></span></div>
           <div class="cloze-header-titles">
             <div class="cloze-header-title-row">
               <h3 id="cloze-modal-title">Lückentext-Übung</h3>
@@ -30,11 +30,11 @@
           <!-- Modus-Umschalter: Stift (Schreiben) vs. Ziehen -->
           <div class="cloze-mode-toggle" id="cloze-mode-toggle" title="Eingabemodus wählen">
             <button type="button" class="cloze-mode-btn active" data-mode="handwrite" id="btn-mode-handwrite">
-              <span>✍️</span>
+              <span><span class="ui-icon i-schreibwerkzeuge" aria-hidden="true"></span></span>
               <span>Stift (Schreiben)</span>
             </button>
             <button type="button" class="cloze-mode-btn" data-mode="drag" id="btn-mode-drag">
-              <span>🖐️</span>
+              <span><span class="ui-icon i-hand" aria-hidden="true"></span></span>
               <span>Ziehen</span>
             </button>
           </div>
@@ -42,22 +42,22 @@
           <!-- Schwierigkeitsgrad: Mit Wörtern vs. Ohne Wörter -->
           <div class="cloze-difficulty-toggle" id="cloze-difficulty-toggle" title="Hilfestellung: Wortspeicher anzeigen oder ausblenden">
             <button type="button" class="cloze-diff-btn active" data-diff="with_words" id="btn-diff-with-words" title="Wortspeicher anzeigen (Einfacher)">
-              <span>💡</span>
+              <span><span class="ui-icon i-tipp" aria-hidden="true"></span></span>
               <span>Mit Wörtern</span>
             </button>
             <button type="button" class="cloze-diff-btn" data-diff="without_words" id="btn-diff-without-words" title="Freies Schreiben ohne Wortspeicher (Schwerer)">
-              <span>🎯</span>
+              <span><span class="ui-icon i-ziel" aria-hidden="true"></span></span>
               <span>Ohne Wörter</span>
             </button>
           </div>
-          <button class="modal-close" id="btn-close-cloze-modal" title="Schließen" style="display: none;">&times;</button>
+          <button class="modal-close" id="btn-close-cloze-modal" title="Schließen" style="display: none;"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
         </div>
       </div>
 
       <!-- Luna Banner / Feedback Alert -->
       <div class="exercise-arena-banner cloze-luna-banner" id="cloze-luna-banner">
         <div class="cloze-luna-pulse-dot" id="cloze-luna-pulse-dot"></div>
-        <span class="cloze-luna-banner-icon">💬</span>
+        <span class="cloze-luna-banner-icon"><span class="ui-icon i-nachrichten" aria-hidden="true"></span></span>
         <span class="cloze-luna-banner-text" id="cloze-luna-banner-text">Fülle die Lücken aus. Klicke danach auf "Gemeinsam durchgehen", dann lese ich dir den Text vor!</span>
       </div>
 
@@ -65,7 +65,7 @@
       <div class="exercise-arena-body cloze-trainer-body" id="cloze-trainer-body">
         <!-- Loading State -->
         <div class="cloze-loading-state" id="cloze-loading-state" style="display: none;">
-          <div class="cloze-spinner-owl">✨</div>
+          <div class="cloze-spinner-owl"><span class="ui-icon i-luna" aria-hidden="true"></span></div>
           <div style="margin-top: 12px; font-weight: 600; font-size: 1.05rem;" id="cloze-loading-text">Luna bereitet deine Übung vor...</div>
           <p style="margin: 6px 0 0; font-size: 0.85rem; color: var(--text-secondary);">Unterrichtsmaterialien werden analysiert und Satz-Audio vorgerendert</p>
         </div>
@@ -80,7 +80,7 @@
           <!-- Word Bank (Chips) for Drag & Drop / Click -->
           <div class="cloze-wordbank-container" id="cloze-wordbank-container">
             <div class="cloze-wordbank-header">
-              <span style="font-weight: 600; font-size: 0.88rem;">📦 Wortspeicher (Wort antippen oder in die Lücke ziehen):</span>
+              <span style="font-weight: 600; font-size: 0.88rem;"><span class="ui-icon i-kiste" aria-hidden="true"></span> Wortspeicher (Wort antippen oder in die Lücke ziehen):</span>
             </div>
             <div class="cloze-wordbank-chips" id="cloze-wordbank-chips">
               <!-- Dynamisch befüllte Wortkarten -->
@@ -97,15 +97,15 @@
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
           <button type="button" class="btn-secondary" id="btn-cloze-clear" title="Alle Eingaben löschen">
-            <span>🔄</span>
+            <span><span class="ui-icon i-zuruecksetzen" aria-hidden="true"></span></span>
             <span>Zurücksetzen</span>
           </button>
           <button type="button" class="btn-primary btn-cloze-review" id="btn-cloze-review">
-            <span id="cloze-review-btn-icon">🚀</span>
+            <span id="cloze-review-btn-icon"><span class="ui-icon i-rakete" aria-hidden="true"></span></span>
             <span id="cloze-review-btn-label">Gemeinsam durchgehen</span>
           </button>
           <button type="button" class="btn-primary btn-cloze-next" id="btn-cloze-next" style="display: none;" title="Direkt die nächste Übung starten">
-            <span>➡️</span>
+            <span><span class="ui-icon i-pfeil-rechts" aria-hidden="true"></span></span>
             <span>Nächste Übung</span>
           </button>
         </div>

@@ -46,7 +46,6 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   const s = cachedSubjects.find((sub) => sub.id === subjectId) || {
     id: subjectId,
     name: "Schulfach",
-    icon: "📚",
     color_code: "#6366f1",
     min_grade: 7,
     max_grade: 7
@@ -62,7 +61,7 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
 
   const btnBack = document.getElementById("btn-back-to-dashboard");
   if (btnBack) {
-    btnBack.innerHTML = `<span>← Zurück ${sourceTab === "timetable" ? "zum Stundenplan" : "zur Übersicht"}</span>`;
+    btnBack.innerHTML = `<span>${icon("Pfeil links")} Zurück ${sourceTab === "timetable" ? "zum Stundenplan" : "zur Übersicht"}</span>`;
   }
 
   const heroCard = document.getElementById("subject-hero-card");
@@ -186,7 +185,7 @@ function initSubjectScoresVisibility() {
   function applyVisibility(hidden) {
     if (bodyEl) bodyEl.style.display = hidden ? "none" : "block";
     if (hiddenEl) hiddenEl.style.display = hidden ? "block" : "none";
-    if (iconEl) iconEl.textContent = hidden ? "👁️" : "🙈";
+    if (iconEl) iconEl.innerHTML = icon(hidden ? "Anzeigen" : "Verbergen");
     if (textEl) textEl.textContent = hidden ? "Scores einblenden" : "Scores ausblenden";
   }
 
@@ -210,6 +209,18 @@ window.addEventListener("gothea:exercise-completed", (e) => {
   fireCelebrationConfetti();
 });
 
+// Übungsmethode → Icon (das Emoji aus der API wird nicht angezeigt)
+function methodIconName(methodKey) {
+  const names = {
+    math_problem: "Mathematik",
+    math_example: "Schreibwerkzeuge",
+    physics_diagram: "Physik",
+    formula_derivation: "Geodreieck",
+    text_question: "Lesen"
+  };
+  return names[methodKey] || "Übungen";
+}
+
 async function loadSubjectScores(subjectId) {
   const container = document.getElementById("subject-scores-methods-grid");
   const badgeEl = document.getElementById("subject-adaptive-level-badge");
@@ -228,11 +239,11 @@ async function loadSubjectScores(subjectId) {
 
     if (badgeEl) {
       if (isParentActive) {
-        badgeEl.textContent = data.difficulty_label || "Stufe 2 (Mittel) 🎯";
+        badgeEl.innerHTML = iconText("Ziel", data.difficulty_label || "Stufe 2 (Mittel)");
         badgeEl.className = `badge-adaptive-level level-${data.difficulty_level_code || 2}`;
       } else {
-        const badgeTitle = data.positive_summary?.badge || "Gymnasial-Profi 🎯";
-        badgeEl.textContent = `${badgeTitle} (${data.subject_stars || 0} ⭐)`;
+        const badgeTitle = data.positive_summary?.badge || "Gymnasial-Profi";
+        badgeEl.innerHTML = `${iconText("Ziel", badgeTitle)} (${data.subject_stars || 0} ${icon("Stern")})`;
         badgeEl.className = `badge-adaptive-level level-2`;
       }
     }
@@ -272,16 +283,16 @@ async function loadSubjectScores(subjectId) {
       if (!isParentActive) {
         // THEA-MODUS: Positives Gamified Scoring, niemals Fehlerprozente oder rote Warnfarben
         const starsCount = hasData ? Math.min(3, Math.max(1, Math.round((scorePct / 100) * 3))) : 0;
-        const starsDisplay = hasData ? "⭐".repeat(starsCount) : "Noch keine Sterne";
+        const starsDisplay = hasData ? icon("Stern").repeat(starsCount) : "Noch keine Sterne";
         return `
           <div class="method-score-card">
             <div class="method-score-header">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="method-score-icon">${m.icon || "📝"}</span>
+                <span class="method-score-icon">${icon(methodIconName(k))}</span>
                 <strong class="method-score-name">${escapeHtml(m.name)}</strong>
               </div>
               <span class="method-difficulty-pill" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35);">
-                ${hasData ? starsDisplay : "Bereit zum Üben 🌱"}
+                ${hasData ? starsDisplay : `Bereit zum Üben ${icon("Pflanze")}`}
               </span>
             </div>
 
@@ -292,7 +303,7 @@ async function loadSubjectScores(subjectId) {
               </div>
               <div class="method-score-details">
                 <div><strong>${m.completed_count}</strong> Übung${m.completed_count === 1 ? "" : "en"} gemeistert</div>
-                <div>${hasData ? "Toller Einsatz! Weiter so 👍" : "Starte deine erste Runde!"}</div>
+                <div>${hasData ? `Toller Einsatz! Weiter so ${icon("Daumen hoch")}` : "Starte deine erste Runde!"}</div>
               </div>
             </div>
 
@@ -308,7 +319,7 @@ async function loadSubjectScores(subjectId) {
         <div class="method-score-card">
           <div class="method-score-header">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="method-score-icon">${m.icon || "📝"}</span>
+              <span class="method-score-icon">${icon(methodIconName(k))}</span>
               <strong class="method-score-name">${escapeHtml(m.name)}</strong>
             </div>
             <span class="method-difficulty-pill level-${levelCode}">
@@ -431,12 +442,12 @@ function renderSubjectMaterialsList(materials) {
     const filterName = activeSubjectKindFilter === "all" ? "" : ` in der Kategorie „${activeSubjectKindFilter}“`;
     grid.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 16px; color: var(--text-secondary);">
-        <span style="font-size: 2.4rem; display: block; margin-bottom: 8px;">📭</span>
+        <span style="font-size: 2.4rem; display: block; margin-bottom: 8px;">${icon("Eingang")}</span>
         <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 6px;">Keine Dokumente${filterName}</div>
         <p style="font-size: 0.88rem; max-width: 440px; margin: 0 auto 16px;">
           Lade Arbeitsblätter, Mitschriften, Tests oder Schulbücher für dieses Fach hoch, um sie hier direkt zu öffnen und auf der Tafel zu bearbeiten.
         </p>
-        <button class="btn-primary-sm" onclick="openMaterialUploadModal('${currentDetailSubjectId || ''}')">➕ Jetzt Dokument hochladen</button>
+        <button class="btn-primary-sm" onclick="openMaterialUploadModal('${currentDetailSubjectId || ''}')">${icon("Plus")} Jetzt Dokument hochladen</button>
       </div>
     `;
     return;

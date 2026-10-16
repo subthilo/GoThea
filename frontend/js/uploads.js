@@ -93,7 +93,7 @@ async function checkInboxStatus() {
       }
       if (btnProcessInbox) {
         btnProcessInbox.disabled = false;
-        btnProcessInbox.innerHTML = `📥 Jetzt einsortieren (${pending})`;
+        btnProcessInbox.innerHTML = `${icon("Eingang")} Jetzt einsortieren (${pending})`;
       }
     } else {
       inboxCard.classList.remove("has-pending");
@@ -103,7 +103,7 @@ async function checkInboxStatus() {
       }
       if (btnProcessInbox) {
         btnProcessInbox.disabled = true;
-        btnProcessInbox.innerHTML = `📥 Jetzt einsortieren`;
+        btnProcessInbox.innerHTML = `${icon("Eingang")} Jetzt einsortieren`;
       }
     }
 
@@ -113,7 +113,7 @@ async function checkInboxStatus() {
       if (files.length === 0) {
         inboxFileList.innerHTML = `
           <div class="inbox-empty-hint">
-            <span>✨</span>
+            <span>${icon("Luna")}</span>
             <span>Ziehe PDFs oder Bilder in deinen Mac-Finder Netzwerkordner <code>${shareName}</code>, um sie automatisch hier einzulesen.</span>
           </div>
         `;
@@ -122,13 +122,13 @@ async function checkInboxStatus() {
           const chip = document.createElement("div");
           chip.className = "inbox-file-chip";
           const isPdf = (f.mime_type || "").includes("pdf") || (f.filename || "").toLowerCase().endsWith(".pdf");
-          const icon = isPdf ? "📄" : "🖼️";
+          const fileIcon = icon(isPdf ? "Dokumente" : "Bild");
           const sizeKb = Math.round((f.file_size || 0) / 1024);
           const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
 
           chip.innerHTML = `
-            <span>${icon}</span>
-            <span style="font-weight: 600;">${f.filename}</span>
+            <span>${fileIcon}</span>
+            <span style="font-weight: 600;">${escapeHtml(f.filename)}</span>
             <span class="inbox-file-size">${sizeStr}</span>
           `;
           inboxFileList.appendChild(chip);
@@ -166,17 +166,17 @@ async function processInbox() {
       if (pCount > 0 && eCount === 0) {
         inboxProcessStatus.className = "inbox-process-status success";
         if (inboxStatusMsg) {
-          inboxStatusMsg.textContent = `✅ Erfolgreich: ${pCount} Dokument${pCount === 1 ? "" : "e"} analysiert und einsortiert!`;
+          inboxStatusMsg.innerHTML = iconText("Erledigt", `Erfolgreich: ${pCount} Dokument${pCount === 1 ? "" : "e"} analysiert und einsortiert!`);
         }
       } else if (pCount > 0 && eCount > 0) {
         inboxProcessStatus.className = "inbox-process-status warning";
         if (inboxStatusMsg) {
-          inboxStatusMsg.textContent = `⚠️ ${pCount} Dokument${pCount === 1 ? "" : "e"} verarbeitet, ${eCount} fehlerhafte Datei(en) nach _errors/ verschoben.`;
+          inboxStatusMsg.innerHTML = iconText("Warnung", `${pCount} Dokument${pCount === 1 ? "" : "e"} verarbeitet, ${eCount} fehlerhafte Datei(en) nach _errors/ verschoben.`);
         }
       } else if (pCount === 0 && eCount > 0) {
         inboxProcessStatus.className = "inbox-process-status warning";
         if (inboxStatusMsg) {
-          inboxStatusMsg.textContent = `⚠️ Fehler bei ${eCount} Datei(en). Details in _errors/.`;
+          inboxStatusMsg.innerHTML = iconText("Warnung", `Fehler bei ${eCount} Datei(en). Details in _errors/.`);
         }
       } else {
         inboxProcessStatus.className = "inbox-process-status";
@@ -199,7 +199,7 @@ async function processInbox() {
       if (inboxSpinner) inboxSpinner.style.display = "none";
       inboxProcessStatus.className = "inbox-process-status warning";
       if (inboxStatusMsg) {
-        inboxStatusMsg.textContent = `❌ Fehler bei der Verarbeitung: ${err.detail || "Serverfehler"}`;
+        inboxStatusMsg.innerHTML = iconText("Fehler", `Fehler bei der Verarbeitung: ${err.detail || "Serverfehler"}`);
       }
     }
   } catch (err) {
@@ -207,7 +207,7 @@ async function processInbox() {
     if (inboxSpinner) inboxSpinner.style.display = "none";
     inboxProcessStatus.className = "inbox-process-status warning";
     if (inboxStatusMsg) {
-      inboxStatusMsg.textContent = "❌ Netzwerkfehler beim Verarbeiten.";
+      inboxStatusMsg.innerHTML = iconText("Fehler", "Netzwerkfehler beim Verarbeiten.");
     }
   } finally {
     await checkInboxStatus();
@@ -218,12 +218,12 @@ if (btnRefreshInbox) {
   btnRefreshInbox.addEventListener("click", async () => {
     const origHtml = btnRefreshInbox.innerHTML;
     btnRefreshInbox.disabled = true;
-    btnRefreshInbox.innerHTML = `<span class="inbox-spin-icon">🔄</span> Prüfe...`;
+    btnRefreshInbox.innerHTML = `<span class="inbox-spin-icon">${icon("Aktualisieren")}</span> Prüfe...`;
     try {
       await checkInboxStatus();
-      btnRefreshInbox.innerHTML = `✓ Geprüft`;
+      btnRefreshInbox.innerHTML = iconText("Haken", "Geprüft");
     } catch (e) {
-      btnRefreshInbox.innerHTML = `⚠️ Fehler`;
+      btnRefreshInbox.innerHTML = iconText("Warnung", "Fehler");
     } finally {
       setTimeout(() => {
         btnRefreshInbox.innerHTML = origHtml;
@@ -244,12 +244,8 @@ function buildMaterialCard(m, onDeleted) {
   card.className = "material-card";
 
   const isPdf = (m.mime_type || "").includes("pdf");
-  let docIcon = "📄";
-  if (m.kind && m.kind.includes("Stundenplan")) docIcon = "📅";
-  else if (m.kind && m.kind.includes("Buch")) docIcon = "📚";
-  else if (m.kind && m.kind.includes("Heft")) docIcon = "📁";
-  else if (m.kind && (m.kind.includes("Klassenarbeit") || m.kind.includes("Test") || m.kind.includes("Übung"))) docIcon = "📝";
-  else if (!isPdf) docIcon = "🖼️";
+  const kindIcon = documentIconName(m.kind);
+  const docIcon = icon(kindIcon === "Dokumente" && !isPdf ? "Bild" : kindIcon);
 
   const sizeKb = Math.round((m.file_size || 0) / 1024);
   const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
@@ -259,7 +255,7 @@ function buildMaterialCard(m, onDeleted) {
       <div class="mat-card-header">
         <div class="mat-card-title">${escapeHtml(m.title)}</div>
         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-          ${m.dossier_title ? `<span class="mat-dossier-badge" title="Zugeordneter Hefter">📁 ${escapeHtml(m.dossier_title)}</span>` : ""}
+          ${m.dossier_title ? `<span class="mat-dossier-badge" title="Zugeordneter Hefter">${icon("Ordner")} ${escapeHtml(m.dossier_title)}</span>` : ""}
           <span class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light); border: 1px solid rgba(99, 102, 241, 0.3);">
             ${escapeHtml(m.kind || "Dokument")}
           </span>
@@ -267,9 +263,9 @@ function buildMaterialCard(m, onDeleted) {
       </div>
       <div class="mat-card-meta">
         <span style="color: ${m.subject_color || 'var(--text-primary)'}; font-weight: 600;">
-          ${m.subject_icon || '📚'} ${escapeHtml(m.subject_name || 'Fach')}
+          ${subjectLabel(m.subject_name)}
         </span>
-        ${m.topic_name ? `<span>• 📑 ${escapeHtml(m.topic_name)}</span>` : ""}
+        ${m.topic_name ? `<span>• ${icon("Thema")} ${escapeHtml(m.topic_name)}</span>` : ""}
         <span>• ${docIcon} ${m.page_count} S. (${sizeStr})</span>
         ${m.start_page && m.end_page ? `<span>• S. ${m.start_page}–${m.end_page}</span>` : ""}
       </div>
@@ -278,31 +274,31 @@ function buildMaterialCard(m, onDeleted) {
     <div class="mat-card-actions">
       ${m.kind && m.kind.includes("Stundenplan") ? `
         <button class="btn-mat-action btn-mat-tt" style="background: rgba(99, 102, 241, 0.2); border-color: var(--accent); color: var(--accent-light); font-weight: 700;" title="Als interaktives Stundenplan-Widget öffnen">
-          🗓️ Stundenplan
+          ${icon("Stundenplan")} Stundenplan
         </button>
       ` : ""}
       <button class="btn-mat-action btn-mat-view" title="${m.kind && m.kind.includes('Stundenplan') ? 'Original-Scan als Dokument ansehen' : 'Dokument im Popup ansehen'}">
-        👁️ ${m.kind && m.kind.includes('Stundenplan') ? 'Scan' : 'Öffnen'}
+        ${icon("Anzeigen")} ${m.kind && m.kind.includes('Stundenplan') ? 'Scan' : 'Öffnen'}
       </button>
       <button class="btn-mat-action btn-mat-reader" title="Im Dokument-Reader öffnen & mit Apple Pencil beschreiben">
-        📖 Reader
+        ${icon("Lesen")} Reader
       </button>
       <button class="btn-mat-action btn-mat-wb" title="Dieses Dokument auf der digitalen Tafel mit KI-Tutorin Luna üben">
-        🎨 Tafel
+        ${icon("Tafel")} Tafel
       </button>
       <button class="btn-mat-action btn-mat-cloze" title="Lückentext-Übung direkt aus diesem Dokument erstellen">
-        🧩 Üben
+        ${icon("Übungen")} Üben
       </button>
       <button class="btn-mat-action btn-mat-edit parent-only" title="Dokument anpassen (Fach, Thema, Titel)">
-        ✏️ Ändern
+        ${icon("Schreibwerkzeuge")} Ändern
       </button>
       ${(m.page_count > 1 || (m.mime_type || "").includes("pdf")) ? `
         <button class="btn-mat-action btn-mat-reorder parent-only" title="Seitenreihenfolge ändern & verwalten">
-          📑 Seiten
+          ${icon("Seiten anzeigen")} Seiten
         </button>
       ` : ""}
       <button class="btn-mat-action btn-mat-del parent-only" data-id="${m.id}" title="Material löschen">
-        🗑️
+        ${icon("Papierkorb")}
       </button>
     </div>
   `;
@@ -441,7 +437,7 @@ function renderUploadsHistory(materials) {
   if (materials.length === 0) {
     historyList.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 40px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
-        <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">📭</span>
+        <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">${icon("Eingang")}</span>
         <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Noch keine Uploads vorhanden</div>
         <p style="font-size: 0.85rem; max-width: 440px; margin: 0 auto;">Ziehe Dateien in die Upload-Zone oben oder in deinen Finder-Netzwerkordner, um sie automatisch hier einzulesen.</p>
       </div>
@@ -575,7 +571,7 @@ async function handleSingleFileUpload(file) {
     const sizeKb = Math.round(data.file_size / 1024);
     const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
     matPreviewMeta.textContent = `${data.page_count} Seite${data.page_count === 1 ? "" : "n"} • ${sizeStr}`;
-    matPreviewIcon.textContent = data.mime_type.includes("pdf") ? "📄" : "🖼️";
+    matPreviewIcon.innerHTML = icon(data.mime_type.includes("pdf") ? "Dokumente" : "Bild");
 
     if (data.preview_snippet) {
       matPreviewSnippet.style.display = "block";
@@ -589,7 +585,7 @@ async function handleSingleFileUpload(file) {
     currentSubjects.forEach((s) => {
       const opt = document.createElement("option");
       opt.value = s.id;
-      opt.textContent = `${s.icon} ${s.name}`;
+      opt.textContent = s.name;
       if (activeSubId && s.id === activeSubId) {
         opt.selected = true;
       }
@@ -706,14 +702,14 @@ async function handleBatchFileUpload(files) {
 
   if (pFill) pFill.style.width = "100%";
   if (spinnerText) {
-    spinnerText.textContent = failures.length
-      ? `⚠️ ${successCount} von ${total} Dokumenten hochgeladen – ${failures.length} fehlgeschlagen`
-      : `✅ ${successCount} von ${total} Dokumenten erfolgreich hochgeladen!`;
+    spinnerText.innerHTML = failures.length
+      ? iconText("Warnung", `${successCount} von ${total} Dokumenten hochgeladen – ${failures.length} fehlgeschlagen`)
+      : iconText("Erledigt", `${successCount} von ${total} Dokumenten erfolgreich hochgeladen!`);
   }
   if (pStat) {
     if (failures.length) {
       // Fehler sichtbar lassen, nicht automatisch schließen
-      pStat.innerHTML = failures.map((f) => `<div>❌ ${escapeHtml(f)}</div>`).join("");
+      pStat.innerHTML = failures.map((f) => `<div>${iconText("Fehler", f)}</div>`).join("");
       await loadMaterials();
       await loadUploadsHistory();
       if (currentDetailSubjectId) await loadSubjectMaterials(currentDetailSubjectId);
@@ -770,12 +766,12 @@ function openMaterialUploadModal(preselectedSubjectId = null) {
     : null;
 
   if (targetSub) {
-    if (titleEl) titleEl.textContent = `📄 Neues Dokument für ${targetSub.name} hochladen`;
+    if (titleEl) titleEl.innerHTML = iconText("Dokumente", `Neues Dokument für ${targetSub.name} hochladen`);
     if (subEl) subEl.textContent = `Dokumente werden automatisch dem Fach ${targetSub.name} zugeordnet (Mehrfachauswahl möglich).`;
     if (dzText) dzText.textContent = `Dateien für ${targetSub.name} hierher ziehen oder auswählen`;
     if (dzSub) dzSub.textContent = "PDF oder Foto (Mehrfachauswahl möglich)";
   } else {
-    if (titleEl) titleEl.textContent = "📄 Dokument hinzufügen";
+    if (titleEl) titleEl.innerHTML = iconText("Dokumente", "Dokument hinzufügen");
     if (subEl) subEl.textContent = "Lade ein Schulbuch, ein Arbeitsblatt, eine Mitschrift oder einen Test hoch.";
     if (dzText) dzText.textContent = "Datei hierher ziehen oder tippen";
     if (dzSub) dzSub.textContent = "PDF oder Foto (Mehrfachauswahl möglich)";

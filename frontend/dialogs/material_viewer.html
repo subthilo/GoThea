@@ -3,7 +3,7 @@
     <div class="modal-box modal-box-large">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-          <span style="font-size: 1.4rem;">📄</span>
+          <span style="font-size: 1.4rem;"><span class="ui-icon i-dokumente" aria-hidden="true"></span></span>
           <div style="overflow: hidden;">
             <h3 id="viewer-doc-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.15rem;">Dokumententitel</h3>
             <span id="viewer-doc-badge" class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light);">Fach • Thema</span>
@@ -12,31 +12,31 @@
         <div style="display: flex; align-items: center; gap: 8px;">
           <!-- Zoom Steuerung (Maximal 100% Volle Breite, stufenlos rauszoomen) -->
           <div class="viewer-zoom-controls">
-            <button type="button" id="btn-viewer-zoom-out" class="btn-viewer-tool" title="Rauszoomen (–10%)">➖</button>
+            <button type="button" id="btn-viewer-zoom-out" class="btn-viewer-tool" title="Rauszoomen (–10%)"><span class="ui-icon i-minus" aria-hidden="true"></span></button>
             <span id="viewer-zoom-label" class="viewer-zoom-label" title="Zoom auf 100% zurücksetzen">100%</span>
-            <button type="button" id="btn-viewer-zoom-in" class="btn-viewer-tool" title="Reinzoomen (+10%, max. 100%)">➕</button>
+            <button type="button" id="btn-viewer-zoom-in" class="btn-viewer-tool" title="Reinzoomen (+10%, max. 100%)"><span class="ui-icon i-plus" aria-hidden="true"></span></button>
             <div class="viewer-tool-divider"></div>
-            <button type="button" id="btn-viewer-fit-page" class="btn-viewer-tool" title="Ganze Seite einpassen (ohne Scrollen)">📄 Seite</button>
-            <button type="button" id="btn-viewer-fit-width" class="btn-viewer-tool" title="Volle Breite (100%)">↔️ Breite</button>
+            <button type="button" id="btn-viewer-fit-page" class="btn-viewer-tool" title="Ganze Seite einpassen (ohne Scrollen)"><span class="ui-icon i-vollbild" aria-hidden="true"></span> Seite</button>
+            <button type="button" id="btn-viewer-fit-width" class="btn-viewer-tool" title="Volle Breite (100%)"><span class="ui-icon i-breite" aria-hidden="true"></span> Breite</button>
           </div>
 
           <button id="btn-viewer-reorder-pages" class="btn-secondary-sm parent-only" style="display: flex; align-items: center; gap: 6px;" title="Seitenreihenfolge ändern & verwalten">
-            <span>📑</span>
+            <span><span class="ui-icon i-seiten-anzeigen" aria-hidden="true"></span></span>
             <span>Seiten ordnen</span>
           </button>
           <button id="btn-viewer-open-wb" class="btn-primary-sm" style="display: flex; align-items: center; gap: 6px;">
-            <span>📖</span>
+            <span><span class="ui-icon i-lesen" aria-hidden="true"></span></span>
             <span>Im Reader öffnen</span>
           </button>
-          <a id="btn-viewer-download" href="#" target="_blank" download class="btn-secondary-sm" title="Originaldatei herunterladen">⬇️</a>
-          <button class="modal-close" id="btn-close-viewer-modal">&times;</button>
+          <a id="btn-viewer-download" href="#" target="_blank" download class="btn-secondary-sm" title="Originaldatei herunterladen"><span class="ui-icon i-herunterladen" aria-hidden="true"></span></a>
+          <button class="modal-close" id="btn-close-viewer-modal"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
         </div>
       </div>
       <div class="modal-body viewer-modal-body">
         <div id="viewer-pager-bar" style="display: none; align-items: center; justify-content: center; gap: 16px; margin-bottom: 10px; flex-shrink: 0;">
-          <button id="btn-viewer-prev-page" class="btn-secondary-sm">◀ Vorherige Seite</button>
+          <button id="btn-viewer-prev-page" class="btn-secondary-sm"><span class="ui-icon i-pfeil-links" aria-hidden="true"></span> Vorherige Seite</button>
           <span id="viewer-page-label" style="font-size: 0.9rem; font-weight: 600;">Seite 1 / 1</span>
-          <button id="btn-viewer-next-page" class="btn-secondary-sm">Nächste Seite ▶</button>
+          <button id="btn-viewer-next-page" class="btn-secondary-sm">Nächste Seite <span class="ui-icon i-pfeil-rechts" aria-hidden="true"></span></button>
         </div>
         <div id="viewer-content-container" class="viewer-content-container">
           <div id="viewer-loading-spinner" class="viewer-spinner-overlay" style="display: none;">

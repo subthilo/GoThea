@@ -2,10 +2,10 @@
 // Theme Manager (Farbschemata & Personalisierung)
 // ============================================================================
 const THEMES = {
-  space: { name: "Weltall", icon: "🚀" },
-  sunset: { name: "Sonnenuntergang", icon: "🌅" },
-  nature: { name: "Zauberwald", icon: "🌲" },
-  candy: { name: "Zauberwelt", icon: "🦄" }
+  space: { name: "Weltall" },
+  sunset: { name: "Sonnenuntergang" },
+  nature: { name: "Zauberwald" },
+  candy: { name: "Zauberwelt" }
 };
 
 let currentAppTheme = "space";
@@ -21,9 +21,7 @@ function applyTheme(themeKey) {
   document.documentElement.setAttribute("data-theme", themeKey);
 
   // Header pill aktualisieren
-  const pillIcon = document.getElementById("theme-pill-icon");
   const pillText = document.getElementById("theme-pill-text");
-  if (pillIcon) pillIcon.textContent = THEMES[themeKey].icon;
   if (pillText) pillText.textContent = THEMES[themeKey].name;
 
   // Active state in Dropdown & Profil

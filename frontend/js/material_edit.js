@@ -43,7 +43,7 @@ function openEditMaterialModal(material) {
 
   if (editMatSubject) {
     editMatSubject.innerHTML = currentSubjects
-      .map((s) => `<option value="${s.id}" ${s.id === material.subject_id ? "selected" : ""}>${s.icon || "📚"} ${escapeHtml(s.name)}</option>`)
+      .map((s) => `<option value="${s.id}" ${s.id === material.subject_id ? "selected" : ""}>${escapeHtml(s.name)}</option>`)
       .join("");
 
     updateEditTopicOptions(material.subject_id, material.topic_id);
@@ -196,9 +196,9 @@ function renderReorderPagesGrid() {
         <img class="reorder-page-thumb" src="/api/v1/materials/${activeReorderMaterial.id}/preview?page=${origPage}" alt="Seite ${origPage}" loading="lazy">
       </div>
       <div class="reorder-card-actions">
-        <button type="button" class="reorder-btn reorder-btn-left" title="Nach links verschieben" ${isFirst ? "disabled" : ""}>◀</button>
-        <button type="button" class="reorder-btn reorder-btn-del" title="Diese Seite entfernen" ${currentReorderPages.length <= 1 ? "disabled" : ""}>🗑️</button>
-        <button type="button" class="reorder-btn reorder-btn-right" title="Nach rechts verschieben" ${isLast ? "disabled" : ""}>▶</button>
+        <button type="button" class="reorder-btn reorder-btn-left" title="Nach links verschieben" ${isFirst ? "disabled" : ""}>${icon("Pfeil links")}</button>
+        <button type="button" class="reorder-btn reorder-btn-del" title="Diese Seite entfernen" ${currentReorderPages.length <= 1 ? "disabled" : ""}>${icon("Papierkorb")}</button>
+        <button type="button" class="reorder-btn reorder-btn-right" title="Nach rechts verschieben" ${isLast ? "disabled" : ""}>${icon("Pfeil rechts")}</button>
       </div>
     `;
 
@@ -291,7 +291,7 @@ if (btnSaveReorderPages) {
       alert("Netzwerkfehler beim Speichern der Seitenreihenfolge.");
     } finally {
       btnSaveReorderPages.disabled = false;
-      btnSaveReorderPages.textContent = "💾 Neue Reihenfolge speichern";
+      btnSaveReorderPages.innerHTML = iconText("Speichern", "Neue Reihenfolge speichern");
     }
   });
 }
@@ -324,7 +324,7 @@ function openMergeMaterialsModal(preselectedSubjectId = null) {
   // Filter dropdown
   if (mergeFilterSubject) {
     mergeFilterSubject.innerHTML = '<option value="all">Alle Fächer</option>' +
-      currentSubjects.map((s) => `<option value="${s.id}">${s.icon || "📚"} ${escapeHtml(s.name)}</option>`).join("");
+      currentSubjects.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
     if (preselectedSubjectId) {
       mergeFilterSubject.value = preselectedSubjectId;
     } else {
@@ -336,7 +336,7 @@ function openMergeMaterialsModal(preselectedSubjectId = null) {
   // Target subject dropdown
   if (mergeTargetSubject) {
     mergeTargetSubject.innerHTML = currentSubjects
-      .map((s) => `<option value="${s.id}" ${s.id === preselectedSubjectId ? "selected" : ""}>${s.icon || "📚"} ${escapeHtml(s.name)}</option>`)
+      .map((s) => `<option value="${s.id}" ${s.id === preselectedSubjectId ? "selected" : ""}>${escapeHtml(s.name)}</option>`)
       .join("");
     const chosenSubject = preselectedSubjectId || (currentSubjects[0] ? currentSubjects[0].id : "");
     updateMergeTargetTopicOptions(chosenSubject);
@@ -387,7 +387,7 @@ function renderMergeAvailableDocs() {
       <div class="merge-doc-info">
         <div class="merge-doc-title">${escapeHtml(m.title)}</div>
         <div class="merge-doc-meta">
-          <span>${m.subject_icon || "📚"} ${escapeHtml(m.subject_name || "Fach")}</span>
+          <span>${subjectLabel(m.subject_name)}</span>
           <span>• ${m.kind || "Dokument"}</span>
           <span>• ${m.page_count} S.</span>
         </div>
@@ -435,12 +435,12 @@ function renderMergeOrderList() {
       <div class="merge-order-index">#${idx + 1}</div>
       <div class="merge-doc-info">
         <div class="merge-doc-title">${escapeHtml(m.title)}</div>
-        <div class="merge-doc-meta">${m.page_count} S. • ${m.subject_icon || ""} ${escapeHtml(m.subject_name || "")}</div>
+        <div class="merge-doc-meta">${m.page_count} S. • ${m.subject_name ? subjectLabel(m.subject_name) : ""}</div>
       </div>
       <div class="merge-order-actions">
-        <button type="button" class="merge-order-btn btn-merge-up" title="Nach oben" ${isFirst ? "disabled" : ""}>▲</button>
-        <button type="button" class="merge-order-btn btn-merge-down" title="Nach unten" ${isLast ? "disabled" : ""}>▼</button>
-        <button type="button" class="merge-order-btn btn-merge-remove" title="Aus Auswahl entfernen">✕</button>
+        <button type="button" class="merge-order-btn btn-merge-up" title="Nach oben" ${isFirst ? "disabled" : ""}>${icon("Pfeil hoch")}</button>
+        <button type="button" class="merge-order-btn btn-merge-down" title="Nach unten" ${isLast ? "disabled" : ""}>${icon("Pfeil runter")}</button>
+        <button type="button" class="merge-order-btn btn-merge-remove" title="Aus Auswahl entfernen">${icon("Schließen")}</button>
       </div>
     `;
 
@@ -542,7 +542,7 @@ if (btnSubmitMerge) {
       alert("Netzwerkfehler beim Zusammenführen der Dokumente.");
     } finally {
       btnSubmitMerge.disabled = false;
-      btnSubmitMerge.textContent = "🔗 Dokumente zusammenführen";
+      btnSubmitMerge.innerHTML = iconText("Verknüpfen", "Dokumente zusammenführen");
     }
   });
 }

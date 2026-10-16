@@ -1,0 +1,125 @@
+/* ==========================================================================
+   ICONS – erzeugt von scripts/build_icon_css.py, nicht von Hand ändern.
+   Verwendung: <span class="ui-icon i-suche" aria-hidden="true"></span>
+   bzw. in JS: icon("Suche"). Das Icon folgt der Textfarbe (currentColor).
+   ========================================================================== */
+.ui-icon {
+  display: inline-block;
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.22em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / contain;
+  mask: no-repeat center / contain;
+}
+
+.i-aktualisieren { -webkit-mask-image: url("/static/Icons/Aktualisieren.svg"); mask-image: url("/static/Icons/Aktualisieren.svg"); }
+.i-anhalten { -webkit-mask-image: url("/static/Icons/Anhalten.svg"); mask-image: url("/static/Icons/Anhalten.svg"); }
+.i-anzeigen { -webkit-mask-image: url("/static/Icons/Anzeigen.svg"); mask-image: url("/static/Icons/Anzeigen.svg"); }
+.i-arbeiten { -webkit-mask-image: url("/static/Icons/Arbeiten.svg"); mask-image: url("/static/Icons/Arbeiten.svg"); }
+.i-arbeitsblaetter { -webkit-mask-image: url("/static/Icons/Arbeitsbl%C3%A4tter.svg"); mask-image: url("/static/Icons/Arbeitsbl%C3%A4tter.svg"); }
+.i-arbeitshefte { -webkit-mask-image: url("/static/Icons/Arbeitshefte.svg"); mask-image: url("/static/Icons/Arbeitshefte.svg"); }
+.i-archiv { -webkit-mask-image: url("/static/Icons/Archiv.svg"); mask-image: url("/static/Icons/Archiv.svg"); }
+.i-aufklappen { -webkit-mask-image: url("/static/Icons/Aufklappen.svg"); mask-image: url("/static/Icons/Aufklappen.svg"); }
+.i-berichtigungen { -webkit-mask-image: url("/static/Icons/Berichtigungen.svg"); mask-image: url("/static/Icons/Berichtigungen.svg"); }
+.i-bild { -webkit-mask-image: url("/static/Icons/Bild.svg"); mask-image: url("/static/Icons/Bild.svg"); }
+.i-biologie { -webkit-mask-image: url("/static/Icons/Biologie.svg"); mask-image: url("/static/Icons/Biologie.svg"); }
+.i-blaetterpfeile { -webkit-mask-image: url("/static/Icons/Bl%C3%A4tterpfeile.svg"); mask-image: url("/static/Icons/Bl%C3%A4tterpfeile.svg"); }
+.i-blitz { -webkit-mask-image: url("/static/Icons/Blitz.svg"); mask-image: url("/static/Icons/Blitz.svg"); }
+.i-breite { -webkit-mask-image: url("/static/Icons/Breite.svg"); mask-image: url("/static/Icons/Breite.svg"); }
+.i-buecher { -webkit-mask-image: url("/static/Icons/B%C3%BCcher.svg"); mask-image: url("/static/Icons/B%C3%BCcher.svg"); }
+.i-chemie { -webkit-mask-image: url("/static/Icons/Chemie.svg"); mask-image: url("/static/Icons/Chemie.svg"); }
+.i-countdown { -webkit-mask-image: url("/static/Icons/Countdown.svg"); mask-image: url("/static/Icons/Countdown.svg"); }
+.i-daumen-hoch { -webkit-mask-image: url("/static/Icons/Daumen%20hoch.svg"); mask-image: url("/static/Icons/Daumen%20hoch.svg"); }
+.i-deutsch { -webkit-mask-image: url("/static/Icons/Deutsch.svg"); mask-image: url("/static/Icons/Deutsch.svg"); }
+.i-dokumente { -webkit-mask-image: url("/static/Icons/Dokumente.svg"); mask-image: url("/static/Icons/Dokumente.svg"); }
+.i-eingang { -webkit-mask-image: url("/static/Icons/Eingang.svg"); mask-image: url("/static/Icons/Eingang.svg"); }
+.i-einstellungen { -webkit-mask-image: url("/static/Icons/Einstellungen.svg"); mask-image: url("/static/Icons/Einstellungen.svg"); }
+.i-englisch { -webkit-mask-image: url("/static/Icons/Englisch.svg"); mask-image: url("/static/Icons/Englisch.svg"); }
+.i-erledigt { -webkit-mask-image: url("/static/Icons/Erledigt.svg"); mask-image: url("/static/Icons/Erledigt.svg"); }
+.i-erwachsener { -webkit-mask-image: url("/static/Icons/Erwachsener.svg"); mask-image: url("/static/Icons/Erwachsener.svg"); }
+.i-federmappe { -webkit-mask-image: url("/static/Icons/Federmappe.svg"); mask-image: url("/static/Icons/Federmappe.svg"); }
+.i-fehler { -webkit-mask-image: url("/static/Icons/Fehler.svg"); mask-image: url("/static/Icons/Fehler.svg"); }
+.i-feier { -webkit-mask-image: url("/static/Icons/Feier.svg"); mask-image: url("/static/Icons/Feier.svg"); }
+.i-flamme { -webkit-mask-image: url("/static/Icons/Flamme.svg"); mask-image: url("/static/Icons/Flamme.svg"); }
+.i-franzoesisch { -webkit-mask-image: url("/static/Icons/Franz%C3%B6sisch.svg"); mask-image: url("/static/Icons/Franz%C3%B6sisch.svg"); }
+.i-freistunde { -webkit-mask-image: url("/static/Icons/Freistunde.svg"); mask-image: url("/static/Icons/Freistunde.svg"); }
+.i-geodreieck { -webkit-mask-image: url("/static/Icons/Geodreieck.svg"); mask-image: url("/static/Icons/Geodreieck.svg"); }
+.i-geografie { -webkit-mask-image: url("/static/Icons/Geografie.svg"); mask-image: url("/static/Icons/Geografie.svg"); }
+.i-geschichte { -webkit-mask-image: url("/static/Icons/Geschichte.svg"); mask-image: url("/static/Icons/Geschichte.svg"); }
+.i-haken { -webkit-mask-image: url("/static/Icons/Haken.svg"); mask-image: url("/static/Icons/Haken.svg"); }
+.i-hand { -webkit-mask-image: url("/static/Icons/Hand.svg"); mask-image: url("/static/Icons/Hand.svg"); }
+.i-hausaufgaben { -webkit-mask-image: url("/static/Icons/Hausaufgaben.svg"); mask-image: url("/static/Icons/Hausaufgaben.svg"); }
+.i-herunterladen { -webkit-mask-image: url("/static/Icons/Herunterladen.svg"); mask-image: url("/static/Icons/Herunterladen.svg"); }
+.i-informatik { -webkit-mask-image: url("/static/Icons/Informatik.svg"); mask-image: url("/static/Icons/Informatik.svg"); }
+.i-inhaltsverzeichnis { -webkit-mask-image: url("/static/Icons/Inhaltsverzeichnis.svg"); mask-image: url("/static/Icons/Inhaltsverzeichnis.svg"); }
+.i-kalender { -webkit-mask-image: url("/static/Icons/Kalender.svg"); mask-image: url("/static/Icons/Kalender.svg"); }
+.i-kind { -webkit-mask-image: url("/static/Icons/Kind.svg"); mask-image: url("/static/Icons/Kind.svg"); }
+.i-kiste { -webkit-mask-image: url("/static/Icons/Kiste.svg"); mask-image: url("/static/Icons/Kiste.svg"); }
+.i-klemmbrett { -webkit-mask-image: url("/static/Icons/Klemmbrett.svg"); mask-image: url("/static/Icons/Klemmbrett.svg"); }
+.i-kunst { -webkit-mask-image: url("/static/Icons/Kunst.svg"); mask-image: url("/static/Icons/Kunst.svg"); }
+.i-lautsprecher { -webkit-mask-image: url("/static/Icons/Lautsprecher.svg"); mask-image: url("/static/Icons/Lautsprecher.svg"); }
+.i-lautsprecher-aus { -webkit-mask-image: url("/static/Icons/Lautsprecher%20aus.svg"); mask-image: url("/static/Icons/Lautsprecher%20aus.svg"); }
+.i-ler { -webkit-mask-image: url("/static/Icons/LER.svg"); mask-image: url("/static/Icons/LER.svg"); }
+.i-lernplan { -webkit-mask-image: url("/static/Icons/Lernplan.svg"); mask-image: url("/static/Icons/Lernplan.svg"); }
+.i-lernstatus { -webkit-mask-image: url("/static/Icons/Lernstatus.svg"); mask-image: url("/static/Icons/Lernstatus.svg"); }
+.i-lesen { -webkit-mask-image: url("/static/Icons/Lesen.svg"); mask-image: url("/static/Icons/Lesen.svg"); }
+.i-level { -webkit-mask-image: url("/static/Icons/Level.svg"); mask-image: url("/static/Icons/Level.svg"); }
+.i-lineal { -webkit-mask-image: url("/static/Icons/Lineal.svg"); mask-image: url("/static/Icons/Lineal.svg"); }
+.i-luna { -webkit-mask-image: url("/static/Icons/Luna.svg"); mask-image: url("/static/Icons/Luna.svg"); }
+.i-marker { -webkit-mask-image: url("/static/Icons/Marker.svg"); mask-image: url("/static/Icons/Marker.svg"); }
+.i-mathematik { -webkit-mask-image: url("/static/Icons/Mathematik.svg"); mask-image: url("/static/Icons/Mathematik.svg"); }
+.i-minus { -webkit-mask-image: url("/static/Icons/Minus.svg"); mask-image: url("/static/Icons/Minus.svg"); }
+.i-mitschriften { -webkit-mask-image: url("/static/Icons/Mitschriften.svg"); mask-image: url("/static/Icons/Mitschriften.svg"); }
+.i-mittagspause { -webkit-mask-image: url("/static/Icons/Mittagspause.svg"); mask-image: url("/static/Icons/Mittagspause.svg"); }
+.i-musik { -webkit-mask-image: url("/static/Icons/Musik.svg"); mask-image: url("/static/Icons/Musik.svg"); }
+.i-nachrichten { -webkit-mask-image: url("/static/Icons/Nachrichten.svg"); mask-image: url("/static/Icons/Nachrichten.svg"); }
+.i-noten { -webkit-mask-image: url("/static/Icons/Noten.svg"); mask-image: url("/static/Icons/Noten.svg"); }
+.i-ordner { -webkit-mask-image: url("/static/Icons/Ordner.svg"); mask-image: url("/static/Icons/Ordner.svg"); }
+.i-papierkorb { -webkit-mask-image: url("/static/Icons/Papierkorb.svg"); mask-image: url("/static/Icons/Papierkorb.svg"); }
+.i-pause { -webkit-mask-image: url("/static/Icons/Pause.svg"); mask-image: url("/static/Icons/Pause.svg"); }
+.i-pausengong { -webkit-mask-image: url("/static/Icons/Pausengong.svg"); mask-image: url("/static/Icons/Pausengong.svg"); }
+.i-pencil { -webkit-mask-image: url("/static/Icons/Pencil.svg"); mask-image: url("/static/Icons/Pencil.svg"); }
+.i-pfeil-hoch { -webkit-mask-image: url("/static/Icons/Pfeil%20hoch.svg"); mask-image: url("/static/Icons/Pfeil%20hoch.svg"); }
+.i-pfeil-links { -webkit-mask-image: url("/static/Icons/Pfeil%20links.svg"); mask-image: url("/static/Icons/Pfeil%20links.svg"); }
+.i-pfeil-rechts { -webkit-mask-image: url("/static/Icons/Pfeil%20rechts.svg"); mask-image: url("/static/Icons/Pfeil%20rechts.svg"); }
+.i-pfeil-runter { -webkit-mask-image: url("/static/Icons/Pfeil%20runter.svg"); mask-image: url("/static/Icons/Pfeil%20runter.svg"); }
+.i-pflanze { -webkit-mask-image: url("/static/Icons/Pflanze.svg"); mask-image: url("/static/Icons/Pflanze.svg"); }
+.i-physik { -webkit-mask-image: url("/static/Icons/Physik.svg"); mask-image: url("/static/Icons/Physik.svg"); }
+.i-plus { -webkit-mask-image: url("/static/Icons/Plus.svg"); mask-image: url("/static/Icons/Plus.svg"); }
+.i-politische-bildung { -webkit-mask-image: url("/static/Icons/Politische%20Bildung.svg"); mask-image: url("/static/Icons/Politische%20Bildung.svg"); }
+.i-radierer { -webkit-mask-image: url("/static/Icons/Radierer.svg"); mask-image: url("/static/Icons/Radierer.svg"); }
+.i-rakete { -webkit-mask-image: url("/static/Icons/Rakete.svg"); mask-image: url("/static/Icons/Rakete.svg"); }
+.i-religion { -webkit-mask-image: url("/static/Icons/Religion.svg"); mask-image: url("/static/Icons/Religion.svg"); }
+.i-rueckgaengig { -webkit-mask-image: url("/static/Icons/R%C3%BCckg%C3%A4ngig.svg"); mask-image: url("/static/Icons/R%C3%BCckg%C3%A4ngig.svg"); }
+.i-sanduhr { -webkit-mask-image: url("/static/Icons/Sanduhr.svg"); mask-image: url("/static/Icons/Sanduhr.svg"); }
+.i-schere { -webkit-mask-image: url("/static/Icons/Schere.svg"); mask-image: url("/static/Icons/Schere.svg"); }
+.i-schliessen { -webkit-mask-image: url("/static/Icons/Schlie%C3%9Fen.svg"); mask-image: url("/static/Icons/Schlie%C3%9Fen.svg"); }
+.i-schloss { -webkit-mask-image: url("/static/Icons/Schloss.svg"); mask-image: url("/static/Icons/Schloss.svg"); }
+.i-schreibwerkzeuge { -webkit-mask-image: url("/static/Icons/Schreibwerkzeuge.svg"); mask-image: url("/static/Icons/Schreibwerkzeuge.svg"); }
+.i-schulranzen { -webkit-mask-image: url("/static/Icons/Schulranzen.svg"); mask-image: url("/static/Icons/Schulranzen.svg"); }
+.i-seiten-anzeigen { -webkit-mask-image: url("/static/Icons/Seiten%20anzeigen.svg"); mask-image: url("/static/Icons/Seiten%20anzeigen.svg"); }
+.i-speichern { -webkit-mask-image: url("/static/Icons/Speichern.svg"); mask-image: url("/static/Icons/Speichern.svg"); }
+.i-sperrtag { -webkit-mask-image: url("/static/Icons/Sperrtag.svg"); mask-image: url("/static/Icons/Sperrtag.svg"); }
+.i-sport { -webkit-mask-image: url("/static/Icons/Sport.svg"); mask-image: url("/static/Icons/Sport.svg"); }
+.i-stern { -webkit-mask-image: url("/static/Icons/Stern.svg"); mask-image: url("/static/Icons/Stern.svg"); }
+.i-stopp { -webkit-mask-image: url("/static/Icons/Stopp.svg"); mask-image: url("/static/Icons/Stopp.svg"); }
+.i-strich-radierer { -webkit-mask-image: url("/static/Icons/Strich-Radierer.svg"); mask-image: url("/static/Icons/Strich-Radierer.svg"); }
+.i-stundenplan { -webkit-mask-image: url("/static/Icons/Stundenplan.svg"); mask-image: url("/static/Icons/Stundenplan.svg"); }
+.i-suche { -webkit-mask-image: url("/static/Icons/Suche.svg"); mask-image: url("/static/Icons/Suche.svg"); }
+.i-tafel { -webkit-mask-image: url("/static/Icons/Tafel.svg"); mask-image: url("/static/Icons/Tafel.svg"); }
+.i-tests { -webkit-mask-image: url("/static/Icons/Tests.svg"); mask-image: url("/static/Icons/Tests.svg"); }
+.i-thema { -webkit-mask-image: url("/static/Icons/Thema.svg"); mask-image: url("/static/Icons/Thema.svg"); }
+.i-tipp { -webkit-mask-image: url("/static/Icons/Tipp.svg"); mask-image: url("/static/Icons/Tipp.svg"); }
+.i-uebersicht { -webkit-mask-image: url("/static/Icons/%C3%9Cbersicht.svg"); mask-image: url("/static/Icons/%C3%9Cbersicht.svg"); }
+.i-uebungen { -webkit-mask-image: url("/static/Icons/%C3%9Cbungen.svg"); mask-image: url("/static/Icons/%C3%9Cbungen.svg"); }
+.i-upload { -webkit-mask-image: url("/static/Icons/Upload.svg"); mask-image: url("/static/Icons/Upload.svg"); }
+.i-verbergen { -webkit-mask-image: url("/static/Icons/Verbergen.svg"); mask-image: url("/static/Icons/Verbergen.svg"); }
+.i-verknuepfen { -webkit-mask-image: url("/static/Icons/Verkn%C3%BCpfen.svg"); mask-image: url("/static/Icons/Verkn%C3%BCpfen.svg"); }
+.i-vollbild { -webkit-mask-image: url("/static/Icons/Vollbild.svg"); mask-image: url("/static/Icons/Vollbild.svg"); }
+.i-warnung { -webkit-mask-image: url("/static/Icons/Warnung.svg"); mask-image: url("/static/Icons/Warnung.svg"); }
+.i-wat { -webkit-mask-image: url("/static/Icons/WAT.svg"); mask-image: url("/static/Icons/WAT.svg"); }
+.i-wiederholen { -webkit-mask-image: url("/static/Icons/Wiederholen.svg"); mask-image: url("/static/Icons/Wiederholen.svg"); }
+.i-ziel { -webkit-mask-image: url("/static/Icons/Ziel.svg"); mask-image: url("/static/Icons/Ziel.svg"); }
+.i-zuruecksetzen { -webkit-mask-image: url("/static/Icons/Zur%C3%BCcksetzen.svg"); mask-image: url("/static/Icons/Zur%C3%BCcksetzen.svg"); }

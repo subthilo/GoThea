@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Rakete / los geht's -->
+  <path d="M 50 12 C 64 24 66 44 62 66 L 38 66 C 34 44 36 24 50 12 Z" />
+  <circle cx="50" cy="38" r="7" />
+  <polyline points="38,52 26,66 26,76 38,68" />
+  <polyline points="62,52 74,66 74,76 62,68" />
+  <path d="M 44 74 Q 50 90 56 74" />
+</svg>

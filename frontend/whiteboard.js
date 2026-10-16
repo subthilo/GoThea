@@ -349,7 +349,7 @@
 
         octx.fillStyle = isChalk ? "#f8fafc" : "#1e293b";
         octx.font = "bold 13px sans-serif";
-        octx.fillText(`📝 ${ex.title || 'Aufgabe'}`, cx + 12, cy + 22);
+        octx.fillText(`${ex.title || 'Aufgabe'}`, cx + 12, cy + 22);
 
         // Instructions
         octx.fillStyle = isChalk ? "#cbd5e1" : "#334155";
@@ -404,7 +404,7 @@
       octx.strokeRect(viewLeft, viewTop, viewRight - viewLeft, viewBottom - viewTop);
       octx.fillStyle = isChalk ? "rgba(251, 191, 36, 0.85)" : "rgba(37, 99, 235, 0.85)";
       octx.font = "14px -apple-system, sans-serif";
-      octx.fillText("👀 Theas aktueller Bildschirmausschnitt", viewLeft + 10, Math.max(viewTop + 18, 22));
+      octx.fillText("Theas aktueller Bildschirmausschnitt", viewLeft + 10, Math.max(viewTop + 18, 22));
       octx.restore();
     }
 
@@ -419,10 +419,10 @@
       docSaveStatus.textContent = "Speichere...";
       docSaveStatus.className = "wb-doc-save-status saving";
     } else if (status === "saved") {
-      docSaveStatus.textContent = "✓ Gespeichert";
+      docSaveStatus.innerHTML = iconText("Haken", "Gespeichert");
       docSaveStatus.className = "wb-doc-save-status";
     } else if (status === "error") {
-      docSaveStatus.textContent = "⚠ Fehler";
+      docSaveStatus.innerHTML = iconText("Warnung", "Fehler");
       docSaveStatus.className = "wb-doc-save-status saving";
     }
   }
@@ -661,7 +661,7 @@
       if (subRes.ok) {
         const subjects = await subRes.json();
         subjectSelect.innerHTML = subjects.map(s => `
-          <option value="${s.id}">${s.icon} ${s.name}</option>
+          <option value="${s.id}">${escapeHtml(s.name)}</option>
         `).join("");
       }
 
@@ -1088,12 +1088,12 @@
 
   // 12. Interaktives Aufgaben-Subsystem (Task Cards auf der Tafel)
   const EXERCISE_TYPE_LABELS = {
-    fill_in_the_blank: "✏️ Lückentext",
-    math_problem: "🔢 Rechenaufgabe",
-    math_example: "📖 Musterbeispiel",
-    physics_diagram: "📈 Physik-Diagramm",
-    formula_derivation: "📐 Formel-Herleitung",
-    text_question: "📄 Textfrage"
+    fill_in_the_blank: `${icon("Schreibwerkzeuge")} Lückentext`,
+    math_problem: `${icon("Mathematik")} Rechenaufgabe`,
+    math_example: `${icon("Lesen")} Musterbeispiel`,
+    physics_diagram: `${icon("Physik")} Physik-Diagramm`,
+    formula_derivation: `${icon("Geodreieck")} Formel-Herleitung`,
+    text_question: `${icon("Dokumente")} Textfrage`
   };
 
   function renderExerciseContent(ex) {
@@ -1146,7 +1146,7 @@
       const totalBlanks = blanks.length || blankCount;
       innerHtml += `
         <div class="wb-task-footer">
-          <button type="button" class="wb-task-check-btn" id="btn-check-${ex.id}">🔍 Lücken prüfen</button>
+          <button type="button" class="wb-task-check-btn" id="btn-check-${ex.id}">${icon("Suche")} Lücken prüfen</button>
           <span class="wb-cloze-progress" id="cloze-progress-${ex.id}">0 / ${totalBlanks} gelöst</span>
         </div>
       `;
@@ -1220,7 +1220,7 @@
 
     if (ex.solution_hint) {
       innerHtml += `
-        <button type="button" class="wb-task-hint-btn" id="btn-hint-${ex.id}">💡 Tipp aufdecken</button>
+        <button type="button" class="wb-task-hint-btn" id="btn-hint-${ex.id}">${icon("Tipp")} Tipp aufdecken</button>
         <div class="wb-task-hint-box" id="hint-box-${ex.id}" style="display: none;">
           ${ex.solution_hint}
         </div>
@@ -1246,7 +1246,7 @@
           <span class="wb-task-title" title="${ex.title || ''}">${ex.title || 'Aufgabe'}</span>
         </div>
         <div class="wb-task-header-actions">
-          <button type="button" class="wb-task-close-btn" id="btn-close-${ex.id}" title="Aufgabe von der Tafel entfernen">✕</button>
+          <button type="button" class="wb-task-close-btn" id="btn-close-${ex.id}" title="Aufgabe von der Tafel entfernen">${icon("Schließen")}</button>
         </div>
       </div>
       <div class="wb-task-body">
@@ -1263,7 +1263,7 @@
         e.stopPropagation();
         const isOpen = hintBox.style.display !== "none";
         hintBox.style.display = isOpen ? "none" : "block";
-        hintBtn.textContent = isOpen ? "💡 Tipp aufdecken" : "🙈 Tipp verbergen";
+        hintBtn.innerHTML = isOpen ? iconText("Tipp", "Tipp aufdecken") : iconText("Verbergen", "Tipp verbergen");
       });
     }
 
@@ -1314,13 +1314,13 @@
     if (blankEls.length === 0) return;
 
     checkBtn.disabled = true;
-    checkBtn.textContent = "⏳ Prüfe...";
+    checkBtn.innerHTML = iconText("Sanduhr", "Prüfe...");
 
     blankEls.forEach(el => {
       el.classList.remove("status-correct", "status-incorrect");
       el.classList.add("status-pending");
       const badge = el.querySelector(".wb-blank-badge");
-      if (badge) badge.textContent = "⏳";
+      if (badge) badge.innerHTML = icon("Sanduhr");
     });
 
     try {
@@ -1398,11 +1398,11 @@
               correctCount++;
               el.classList.remove("status-incorrect", "status-unclear");
               el.classList.add("status-correct");
-              if (badge) badge.textContent = "✓";
+              if (badge) badge.innerHTML = icon("Haken");
             } else if (r.unclear_handwriting) {
               el.classList.remove("status-correct", "status-incorrect");
               el.classList.add("status-unclear");
-              if (badge) badge.textContent = "✍️";
+              if (badge) badge.innerHTML = icon("Schreibwerkzeuge");
               if (r.hint) el.title = r.hint;
             } else {
               el.classList.remove("status-correct", "status-unclear");
@@ -1425,7 +1425,7 @@
       console.warn("Fehler bei gezielter Lückenprüfung:", err);
     } finally {
       checkBtn.disabled = false;
-      checkBtn.textContent = "🔍 Lücken prüfen";
+      checkBtn.innerHTML = iconText("Suche", "Lücken prüfen");
       blankEls.forEach(el => el.classList.remove("status-pending"));
     }
   }
@@ -1608,7 +1608,7 @@
     return (...args) => {
       boardQueue = boardQueue.then(() => fn(...args)).catch((err) => {
         console.error("Tafel-Wechsel fehlgeschlagen:", err);
-        if (wsStatus) wsStatus.textContent = "⚠ Nicht gespeichert";
+        if (wsStatus) wsStatus.innerHTML = iconText("Warnung", "Nicht gespeichert");
       });
       return boardQueue;
     };
@@ -1764,7 +1764,7 @@
   }
 
   // Dokument auf der Tafel: Notizen pro Seite, Zeichnen nur auf der Seite
-  async function openDocument({ materialId, page = 1, pageCount = 1, title = "Dokument", subjectId = null, badge = "📄 Dokument", returnToBook = false }) {
+  async function openDocument({ materialId, page = 1, pageCount = 1, title = "Dokument", subjectId = null, badge = "Dokument", returnToBook = false }) {
     await leaveCurrent();
     surface.isBookPageMode = true;
     bookPageContext = { materialId, page, pageCount, title, subjectId };
@@ -1828,7 +1828,7 @@
       pageCount: mat.page_count || 1,
       title: mat.title || "Dokument",
       subjectId: subjectId || mat.subject_id,
-      badge: mat.kind || "📄 Dokument"
+      badge: mat.kind || "Dokument"
     });
   }
 
@@ -1847,13 +1847,13 @@
     return `${d.toLocaleDateString("de-DE", { day: "numeric", month: "short" })}, ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`;
   }
 
-  function makeIconButton(label, title, onClick) {
+  function makeIconButton(iconName, title, onClick) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "wb-boards-icon-btn";
     btn.title = title;
     btn.setAttribute("aria-label", title);
-    btn.textContent = label;
+    btn.innerHTML = icon(iconName);
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       onClick();
@@ -1886,8 +1886,8 @@
     const actions = document.createElement("div");
     actions.className = "wb-boards-actions";
     actions.append(
-      makeIconButton("✏️", "Umbenennen", () => renameBoard(b)),
-      makeIconButton("🗄️", "Archivieren", () => archiveBoard(b))
+      makeIconButton("Schreibwerkzeuge", "Umbenennen", () => renameBoard(b)),
+      makeIconButton("Archiv", "Archivieren", () => archiveBoard(b))
     );
 
     item.append(thumb, text, actions);
@@ -1995,7 +1995,7 @@
 
   window.openBookPageOnWhiteboard = function({ materialId, page = 1, pageCount = 1, title = "Buchseite", subjectId = null }) {
     showBoardTab();
-    return queued(openDocument)({ materialId, page, pageCount, title, subjectId, badge: "📖 Buchseite", returnToBook: true });
+    return queued(openDocument)({ materialId, page, pageCount, title, subjectId, badge: "Buchseite", returnToBook: true });
   };
 
   window.openBoardOnWhiteboard = function(boardId) {

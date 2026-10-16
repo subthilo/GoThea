@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Eingabestift / nur Stift zeichnet -->
+  <g transform="rotate(45 50 50)">
+    <path d="M 43 14 A 7 7 0 0 1 57 14 L 57 68 L 50 86 L 43 68 Z" />
+    <line x1="43" y1="68" x2="57" y2="68" />
+  </g>
+</svg>

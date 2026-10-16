@@ -17,14 +17,14 @@ async function loadPlan() {
     if (plan.today_plan.is_blocked) {
       todayTasksList.innerHTML = `
         <div class="empty-placeholder" style="padding: 24px;">
-          <h3>🏖️ Heute ist Sperrtag!</h3>
+          <h3>${icon("Sperrtag")} Heute ist Sperrtag!</h3>
           <p>${plan.today_plan.block_info || "Für heute sind keine Lerneinheiten geplant."}</p>
         </div>
       `;
     } else if (plan.today_plan.tasks.length === 0) {
       todayTasksList.innerHTML = `
         <div class="empty-placeholder" style="padding: 24px;">
-          <h3>🎉 Alles im grünen Bereich!</h3>
+          <h3>${icon("Feier")} Alles im grünen Bereich!</h3>
           <p>Für heute stehen keine anstehenden Klassenarbeiten im Lernfenster an.</p>
         </div>
       `;
@@ -38,7 +38,7 @@ async function loadPlan() {
 
         card.innerHTML = `
           <div class="task-left">
-            <div class="task-subject-icon">${tsk.subject_icon}</div>
+            <div class="task-subject-icon">${subjectIcon(tsk.subject_name)}</div>
             <div class="task-meta">
               <div class="task-title">
                 <span>${tsk.subject_name} – ${tsk.test_kind}</span>
@@ -48,9 +48,9 @@ async function loadPlan() {
             </div>
           </div>
           <div class="task-right">
-            <div class="task-time-pill">⏱️ ${tsk.target_minutes} Min.</div>
+            <div class="task-time-pill">${icon("Countdown")} ${tsk.target_minutes} Min.</div>
             <button class="btn-task-check" data-test-id="${tsk.test_id}" data-date="${plan.today_date}" data-completed="${tsk.is_completed}">
-              ${tsk.is_completed ? "✓" : ""}
+              ${tsk.is_completed ? icon("Haken") : ""}
             </button>
           </div>
         `;
@@ -74,12 +74,12 @@ async function loadPlan() {
 
       let taskListHtml = "";
       if (day.is_blocked) {
-        taskListHtml = `<span>🏖️ Sperrtag</span>`;
+        taskListHtml = `<span>${icon("Sperrtag")} Sperrtag</span>`;
       } else if (day.tasks.length === 0) {
         taskListHtml = `<span>Frei</span>`;
       } else {
         taskListHtml = day.tasks.map((t) => `
-          <div>${t.subject_icon} ${t.subject_name} (${t.target_minutes}m)</div>
+          <div>${subjectLabel(t.subject_name)} (${t.target_minutes}m)</div>
         `).join("");
       }
 
@@ -97,7 +97,7 @@ async function loadPlan() {
     if (plan.upcoming_tests.length === 0) {
       testsGrid.innerHTML = `
         <div class="empty-placeholder" style="padding: 24px; grid-column: 1 / -1;">
-          <p>Keine bevorstehenden Prüfungen eingetragen. Tippe oben auf „➕ Neue Prüfung“, um einen Countdown zu starten.</p>
+          <p>Keine bevorstehenden Prüfungen eingetragen. Tippe oben auf „Neue Prüfung“, um einen Countdown zu starten.</p>
         </div>
       `;
     } else {
@@ -114,12 +114,12 @@ async function loadPlan() {
 
         card.innerHTML = `
           <div class="test-card-top">
-            <div class="test-card-title">${t.subject_icon} ${t.subject_name} – ${t.kind}</div>
+            <div class="test-card-title">${subjectLabel(t.subject_name)} – ${t.kind}</div>
             <span class="countdown-badge">${badgeText}</span>
           </div>
           <div class="test-note">${t.note || "Keine Notiz hinterlegt"}</div>
           <div class="test-card-footer">
-            <span>📅 ${t.date}</span>
+            <span>${icon("Kalender")} ${t.date}</span>
             <button class="btn-del-test parent-only" data-id="${t.id}">Löschen</button>
           </div>
         `;
@@ -170,7 +170,7 @@ const modalBlock = document.getElementById("modal-block");
 document.getElementById("btn-open-test-modal").addEventListener("click", () => {
   // Fächer Dropdown füllen
   const sel = document.getElementById("input-test-subject");
-  sel.innerHTML = currentSubjects.map((s) => `<option value="${s.id}">${s.icon} ${s.name}</option>`).join("");
+  sel.innerHTML = currentSubjects.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
   // Default Datum: in 7 Tagen
   const d = new Date();
   d.setDate(d.getDate() + 7);

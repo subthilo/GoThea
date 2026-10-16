@@ -3,21 +3,21 @@
     <div class="modal-box modal-box-large">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-          <span style="font-size: 1.4rem;">📑</span>
+          <span style="font-size: 1.4rem;"><span class="ui-icon i-seiten-anzeigen" aria-hidden="true"></span></span>
           <div style="overflow: hidden;">
             <h3 id="reorder-doc-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.15rem;">Seiten verwalten</h3>
-            <span class="subtitle" style="font-size: 0.8rem; margin: 0;">Reihenfolge mit ◀ / ▶ anpassen oder überflüssige Seiten mit 🗑️ entfernen</span>
+            <span class="subtitle" style="font-size: 0.8rem; margin: 0;">Reihenfolge mit <span class="ui-icon i-pfeil-links" aria-hidden="true"></span> / <span class="ui-icon i-pfeil-rechts" aria-hidden="true"></span> anpassen oder überflüssige Seiten mit <span class="ui-icon i-papierkorb" aria-hidden="true"></span> entfernen</span>
           </div>
         </div>
-        <button class="modal-close" id="btn-close-reorder-modal">&times;</button>
+        <button class="modal-close" id="btn-close-reorder-modal"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
       </div>
       <div class="modal-body reorder-modal-body">
         <input type="hidden" id="reorder-mat-id">
         <div class="reorder-toolbar-row">
           <div id="reorder-summary-badge" class="reorder-summary-badge">4 Seiten aktiv</div>
           <div style="display: flex; gap: 8px;">
-            <button type="button" id="btn-reorder-reset" class="btn-secondary-sm" title="Ursprüngliche Reihenfolge wiederherstellen">↺ Zurücksetzen</button>
-            <button type="button" id="btn-save-reorder-pages" class="btn-primary-sm">💾 Neue Reihenfolge speichern</button>
+            <button type="button" id="btn-reorder-reset" class="btn-secondary-sm" title="Ursprüngliche Reihenfolge wiederherstellen"><span class="ui-icon i-zuruecksetzen" aria-hidden="true"></span> Zurücksetzen</button>
+            <button type="button" id="btn-save-reorder-pages" class="btn-primary-sm"><span class="ui-icon i-speichern" aria-hidden="true"></span> Neue Reihenfolge speichern</button>
           </div>
         </div>
         <div id="reorder-pages-grid" class="reorder-pages-grid">

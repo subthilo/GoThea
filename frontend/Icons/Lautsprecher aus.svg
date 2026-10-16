@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Lautsprecher mit Kreuz / Ton aus -->
+  <path d="M 14 40 L 28 40 L 48 22 L 48 78 L 28 60 L 14 60 Z" />
+  <line x1="64" y1="40" x2="84" y2="60" />
+  <line x1="84" y1="40" x2="64" y2="60" />
+</svg>
