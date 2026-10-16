@@ -2,7 +2,7 @@
 set -e
 
 PI_USER="${PI_USER:-pi}"
-PI_HOST="${PI_HOST:-192.168.1.135}"
+source "$(dirname "$0")/scripts/pi_host.sh"
 INBOX_DIR="/home/$PI_USER/GoThea/inbox"
 SHARE_NAME="GoThea-Inbox"
 

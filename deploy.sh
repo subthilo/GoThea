@@ -38,7 +38,9 @@ if [ "$ENV_SKIP_TESTS" = "1" ]; then
 fi
 
 PI_USER="pi"
-PI_HOST="192.168.1.135"
+# Zuhause WLAN-Adresse, unterwegs Tailscale (PI_HOST=… erzwingt einen Weg)
+source "$(dirname "$0")/scripts/pi_host.sh"
+echo "📡 Pi erreichbar über $PI_HOST"
 
 case "$TARGET_ENV" in
     staging) TARGETS="staging" ;;
