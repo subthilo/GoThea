@@ -161,3 +161,33 @@ def test_tall_document_page_is_not_cut_off_when_scrolled(app_page):
     y = page_bottom["top"] + page_bottom["viewportH"] - 280  # knapp über dem Seitenende
     png = app_page.screenshot(clip={"x": page_bottom["x"], "y": y, "width": 1, "height": 1})
     assert Image.open(io.BytesIO(png)).convert("RGB").getpixel((0, 0)) == (255, 255, 255)
+
+
+def test_subject_page_lists_boards_with_preview_on_expand(app_page):
+    _open_board(app_page)
+    _draw_and_capture_save(app_page, _line(200, 200, 400, 260))
+    title = app_page.text_content("#wb-board-title")
+    with app_page.expect_request(lambda r: r.method == "PUT" and r.url.endswith("/state")
+                                 and "snapshot_data_url" in (r.post_data or "")):
+        app_page.click("#btn-wb-new-session")
+    _settle(app_page)
+
+    # Fachseite der Tafel (welches Fach aktiv ist, hängt von vorherigen Tests ab)
+    subject_id = app_page.evaluate(
+        "(t) => fetch('/api/v1/boards').then(r => r.json()).then(l => l.find(b => b.title === t).subject_id)", title)
+    # Tafeln als Zeilen; die Vorschau lädt erst beim Aufklappen
+    app_page.evaluate("(s) => openSubjectDetail(s)", subject_id)
+    row = app_page.locator(f"#subject-boards-grid .board-row:has(.board-row-preview):has-text('{title}')").first
+    row.wait_for(timeout=5000)
+    img = row.locator(".board-row-preview img")
+    assert img.get_attribute("src") is None
+    row.locator(".doc-row-name").click()
+    app_page.wait_for_function("(el) => el.complete && el.naturalWidth > 0", arg=img.element_handle(), timeout=5000)
+
+    # „Öffnen“ bringt die Tafel auf den Schirm
+    row.locator(".board-row-open").click()
+    app_page.wait_for_selector("#tab-whiteboard.active", timeout=5000)
+    _settle(app_page)
+    assert app_page.text_content("#wb-board-title") == title
+    assert _pixels(app_page) > 0
+    assert app_page.problems.errors == []

@@ -128,55 +128,22 @@
   margin-top: 28px;
 }
 
-.subject-boards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 14px;
-}
-
-.subject-board-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  text-align: left;
-  color: var(--text-primary);
-  background: var(--bg-card);
+/* Tafeln der Fachseite als aufklappbare Zeilen (subject_detail.js: buildBoardRow, Stil wie .doc-row) */
+.board-row-preview {
+  display: block;
+  width: min(100%, 640px);
+  margin-top: 12px;
+  padding: 0;
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 10px;
+  background: #121620;
+  overflow: hidden;
   cursor: pointer;
 }
 
-.subject-board-card:hover {
-  background: var(--bg-card-hover);
-}
-
-.subject-board-card .subject-board-thumb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.board-row-preview img {
+  display: block;
   width: 100%;
   aspect-ratio: 3 / 2;
-  border-radius: 8px;
-  object-fit: cover;
-  background: #121620;
-  border: 1px solid var(--border-color);
-}
-
-.subject-board-thumb-new {
-  font-size: 2rem;
-  color: var(--text-secondary);
-}
-
-.subject-board-title {
-  font-size: 0.88rem;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.subject-board-meta {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  object-fit: contain;
 }

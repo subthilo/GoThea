@@ -493,9 +493,12 @@
             <div>
               <h3>Tafeln</h3>
             </div>
-            <span class="badge-minutes" id="subject-boards-count">0 Tafeln</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button type="button" id="btn-subject-new-board" class="btn-secondary-sm"><span class="ui-icon i-plus" aria-hidden="true"></span> Neue Tafel</button>
+              <span class="badge-minutes" id="subject-boards-count">0 Tafeln</span>
+            </div>
           </div>
-          <div id="subject-boards-grid" class="subject-boards-grid">
+          <div id="subject-boards-grid" class="doc-list">
             <!-- Dynamisch via API befüllt -->
           </div>
         </div>

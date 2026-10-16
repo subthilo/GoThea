@@ -243,7 +243,7 @@ async function loadSubjectScores(subjectId) {
         badgeEl.className = `badge-adaptive-level level-${data.difficulty_level_code || 2}`;
       } else {
         const badgeTitle = data.positive_summary?.badge || "Gymnasial-Profi";
-        badgeEl.innerHTML = `${iconText("Ziel", badgeTitle)} (${data.subject_stars || 0} ${icon("Stern")})`;
+        badgeEl.innerHTML = `${iconText("Ziel", badgeTitle)} <span>(${data.subject_stars || 0} ${icon("Stern")})</span>`;
         badgeEl.className = `badge-adaptive-level level-2`;
       }
     }
@@ -364,35 +364,80 @@ async function loadSubjectBoards(subjectId) {
   }
   if (count) count.textContent = `${boards.length} ${boards.length === 1 ? "Tafel" : "Tafeln"}`;
 
-  const newCard = `
-    <button type="button" class="subject-board-card subject-board-new" data-new-board="1">
-      <span class="subject-board-thumb subject-board-thumb-new">+</span>
-      <span class="subject-board-title">Neue Tafel</span>
-    </button>`;
-  grid.innerHTML = newCard + boards.map((b) => {
-    const when = b.updated_at || b.created_at;
-    const date = when ? new Date(/[zZ]|[+-]\d\d:\d\d$/.test(when) ? when : `${when}Z`) : null;
-    const dateText = date ? date.toLocaleDateString("de-DE", { day: "numeric", month: "short" }) : "";
-    const thumb = b.has_thumbnail
-      ? `<img class="subject-board-thumb" src="/api/v1/boards/${encodeURIComponent(b.id)}/thumbnail?v=${encodeURIComponent(b.updated_at || "")}" alt="">`
-      : `<span class="subject-board-thumb"></span>`;
-    return `
-      <button type="button" class="subject-board-card" data-board-id="${escapeHtml(b.id)}">
-        ${thumb}
-        <span class="subject-board-title">${escapeHtml(b.title || "Tafel")}</span>
-        <span class="subject-board-meta">${escapeHtml(dateText)}</span>
-      </button>`;
-  }).join("");
+  const btnNew = document.getElementById("btn-subject-new-board");
+  if (btnNew) {
+    btnNew.onclick = () => {
+      if (typeof window.openNewBoardOnWhiteboard === "function") window.openNewBoardOnWhiteboard(subjectId);
+    };
+  }
 
-  grid.querySelectorAll(".subject-board-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      if (card.dataset.newBoard && typeof window.openNewBoardOnWhiteboard === "function") {
-        window.openNewBoardOnWhiteboard(subjectId);
-      } else if (card.dataset.boardId && typeof window.openBoardOnWhiteboard === "function") {
-        window.openBoardOnWhiteboard(card.dataset.boardId);
-      }
-    });
+  if (boards.length === 0) {
+    grid.innerHTML = `<div class="uploads-filter-empty">Noch keine Tafeln in diesem Fach.</div>`;
+    return;
+  }
+
+  grid.innerHTML = "";
+  boards.forEach((b) => grid.appendChild(buildBoardRow(b)));
+}
+
+// Aufgeklappte Tafelzeilen (bleiben beim Neuladen der Fachseite offen)
+const openBoardRows = new Set();
+
+// Tafel als aufklappbare Zeile: zugeklappt Titel, Datum, Öffnen; aufgeklappt die Vorschau.
+// Das Vorschaubild wird erst beim Aufklappen geladen.
+function buildBoardRow(b) {
+  const when = b.updated_at || b.created_at;
+  const date = when ? new Date(/[zZ]|[+-]\d\d:\d\d$/.test(when) ? when : `${when}Z`) : null;
+  const dateText = date ? date.toLocaleDateString("de-DE", { day: "numeric", month: "short" }) : "";
+  const thumbUrl = b.has_thumbnail
+    ? `/api/v1/boards/${encodeURIComponent(b.id)}/thumbnail?v=${encodeURIComponent(b.updated_at || "")}`
+    : "";
+
+  const row = document.createElement("div");
+  row.className = "doc-row board-row";
+  row.dataset.boardId = b.id;
+  row.style.cssText = subjectStyle(b.subject_name);
+  row.innerHTML = `
+    <div class="doc-row-head" role="button" tabindex="0" aria-expanded="false" title="Vorschau ein- oder ausblenden">
+      <span class="doc-row-chevron">${icon("Aufklappen")}</span>
+      <span class="doc-row-kind">${icon("Tafel")}</span>
+      <span class="doc-row-title"><span class="doc-row-name">${escapeHtml(b.title || "Tafel")}</span></span>
+      <span class="doc-row-pages">${escapeHtml(dateText)}</span>
+      <button type="button" class="btn-mat-action board-row-open" title="Tafel öffnen">${icon("Tafel")} Öffnen</button>
+    </div>
+    <div class="doc-row-body">
+      ${thumbUrl
+        ? `<button type="button" class="board-row-preview" title="Tafel öffnen"><img alt="Vorschau: ${escapeHtml(b.title || "Tafel")}"></button>`
+        : `<p class="doc-row-summary">Für diese Tafel gibt es noch keine Vorschau.</p>`}
+    </div>
+  `;
+
+  const open = () => {
+    if (typeof window.openBoardOnWhiteboard === "function") window.openBoardOnWhiteboard(b.id);
+  };
+  const head = row.querySelector(".doc-row-head");
+  const img = row.querySelector(".board-row-preview img");
+  const setOpen = (isOpen) => {
+    row.classList.toggle("open", isOpen);
+    head.setAttribute("aria-expanded", String(isOpen));
+    if (isOpen) openBoardRows.add(b.id); else openBoardRows.delete(b.id);
+    if (isOpen && img && !img.getAttribute("src")) img.src = thumbUrl;
+  };
+  head.addEventListener("click", () => setOpen(!row.classList.contains("open")));
+  head.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target === head) {
+      e.preventDefault();
+      setOpen(!row.classList.contains("open"));
+    }
   });
+  row.querySelector(".board-row-open").addEventListener("click", (e) => {
+    e.stopPropagation();
+    open();
+  });
+  const preview = row.querySelector(".board-row-preview");
+  if (preview) preview.addEventListener("click", open);
+  if (openBoardRows.has(b.id)) setOpen(true);
+  return row;
 }
 
 async function loadSubjectMaterials(subjectId) {
