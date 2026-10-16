@@ -1951,6 +1951,15 @@
     renderBoardsPanel();
   });
 
+  // Die Liste liegt fest über dem Bildschirm (sonst schnitte die seitlich scrollbare Kopfleiste
+  // sie ab) – direkt unter dem Knopf, ohne rechts über den Rand zu ragen.
+  function positionBoardsPanel() {
+    const r = btnBoards.getBoundingClientRect();
+    const width = boardsPanel.offsetWidth || 420;
+    boardsPanel.style.top = `${Math.round(r.bottom + 8)}px`;
+    boardsPanel.style.left = `${Math.round(Math.max(8, Math.min(r.left, window.innerWidth - width - 8)))}px`;
+  }
+
   function closeBoardsPanel() {
     if (boardsPanel) boardsPanel.style.display = "none";
   }
@@ -1962,8 +1971,13 @@
         return;
       }
       boardsPanel.style.display = "flex";
+      positionBoardsPanel();
       renderBoardsPanel();
     });
+    // Die Kopfleiste scrollt seitlich: Liste schließen statt vom Knopf wegzurutschen
+    const headerBar = btnBoards.closest(".wb-header-bar");
+    if (headerBar) headerBar.addEventListener("scroll", closeBoardsPanel, { passive: true });
+    window.addEventListener("resize", closeBoardsPanel);
     // Außerhalb tippen schließt die Liste (pointerdown, weil die Tafel Klicks unterdrückt)
     document.addEventListener("pointerdown", (e) => {
       if (boardsPanel.style.display === "none") return;

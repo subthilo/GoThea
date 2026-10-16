@@ -19,9 +19,11 @@
 }
 
 .wb-boards-panel {
-  position: absolute;
-  top: calc(100% + 8px);
+  /* fest positioniert (whiteboard.js: positionBoardsPanel), weil die Kopfleiste seitlich scrollt */
+  position: fixed;
+  top: 0;
   left: 0;
+  z-index: 300;
   width: min(420px, 80vw);
   max-height: 60vh;
   flex-direction: column;
@@ -105,16 +107,26 @@
 }
 
 .wb-boards-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 36px;
   min-height: 36px;
   border: none;
   border-radius: 8px;
   background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
+}
+
+.wb-boards-icon-btn .ui-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .wb-boards-icon-btn:hover {
   background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
 }
 
 .wb-boards-empty {

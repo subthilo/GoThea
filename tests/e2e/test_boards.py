@@ -224,3 +224,35 @@ def test_board_rename_for_all_and_delete_only_for_parents(app_page, parent_pin):
     assert current_id not in ids
     _settle(app_page)
     assert app_page.problems.errors == []
+
+
+def test_header_scrolls_sideways_on_narrow_ipad_and_board_list_stays_visible(app_page):
+    """iPad hochkant: die Kopfleiste der Tafel wird nicht abgeschnitten, sondern lässt sich seitlich wischen;
+    die Tafel-Liste geht trotzdem vollständig sichtbar unter ihrem Knopf auf."""
+    app_page.set_viewport_size({"width": 834, "height": 1194})
+    _open_board(app_page)
+    bar = app_page.locator(".wb-header-bar")
+    assert bar.evaluate("el => el.scrollWidth > el.clientWidth")
+
+    # Bis ans Ende wischen: der letzte Knopf (Vollbild) liegt dann ganz in der Leiste und ist erreichbar
+    bar.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
+    btn = app_page.locator("#btn-wb-fullscreen").bounding_box()
+    box = bar.bounding_box()
+    assert btn["x"] >= box["x"] and btn["x"] + btn["width"] <= box["x"] + box["width"] + 1
+    hit = app_page.evaluate("([x, y]) => document.elementFromPoint(x, y).closest('#btn-wb-fullscreen') !== null",
+                            [btn["x"] + btn["width"] / 2, btn["y"] + btn["height"] / 2])
+    assert hit
+
+    # Tafel-Liste: ganz im Bild und obenauf, nicht von der Leiste abgeschnitten
+    bar.evaluate("el => { el.scrollLeft = 0; }")
+    app_page.click("#btn-wb-boards")
+    panel = app_page.locator("#wb-boards-panel")
+    panel.wait_for(state="visible", timeout=5000)
+    p = panel.bounding_box()
+    assert p["x"] >= 0 and p["x"] + p["width"] <= 834 and p["y"] + p["height"] <= 1194
+    trigger = app_page.locator("#btn-wb-boards").bounding_box()
+    assert p["y"] >= trigger["y"] + trigger["height"]  # direkt unter ihrem Knopf
+    on_top = app_page.evaluate("([x, y]) => document.elementFromPoint(x, y).closest('#wb-boards-panel') !== null",
+                               [p["x"] + p["width"] / 2, p["y"] + min(40, p["height"] / 2)])
+    assert on_top
+    assert app_page.problems.errors == []

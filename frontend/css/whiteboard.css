@@ -95,17 +95,35 @@ body.whiteboard-zen-mode .wb-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   padding: 8px 16px;
+  /* Zu schmal (iPad hochkant, kleine iPads): seitlich wischen wie in der Werkzeugleiste */
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
   background: rgba(18, 22, 32, 0.95);
   border-bottom: 1px solid var(--border-color);
   z-index: 40; /* über der Dokument-Leiste der Tafel, damit die Tafel-Liste darüber liegt */
   flex-shrink: 0;
 }
 
+.wb-header-bar::-webkit-scrollbar {
+  display: none;
+}
+
 .wb-session-info {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+.wb-header-bar .wb-label,
+.wb-header-bar button,
+.wb-header-bar .wb-conn-badge {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .wb-label {
@@ -149,6 +167,7 @@ body.whiteboard-zen-mode .wb-container {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .wb-btn-subtle {
