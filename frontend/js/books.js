@@ -239,6 +239,9 @@ function renderBookNode(book, term) {
         <span class="btree-chevron">${icon("Aufklappen")}</span>
         <span class="btree-book-icon">${subjectIcon(book.subject_name)}</span>
         <span class="btree-title">${escapeHtml(book.title)}</span>
+        <button type="button" class="btn-mat-action btree-edit parent-only" data-action="edit-book" data-book-id="${escapeHtml(book.id)}" title="Buch ändern (Titel, Fach, Art)">
+          ${icon("Schreibwerkzeuge")} Ändern
+        </button>
         <span class="btree-meta">${meta}</span>
       </div>
       ${open ? `<div class="btree-children">${children}</div>` : ""}
@@ -351,6 +354,18 @@ async function onBooksTreeClick(e) {
     if (action === "toggle-book" && set.has(key) && !bookDetailsCache[key]) {
       await ensureBookDetails([key]);
       renderBooksTree();
+    }
+    return;
+  }
+
+  if (action === "edit-book") {
+    // Ändern-Dialog wie bei den Dokumenten; nach dem Speichern lädt er die Bücher neu
+    try {
+      const material = await apiJson(`/api/v1/materials/${encodeURIComponent(bookId)}`);
+      delete bookDetailsCache[bookId];
+      openEditMaterialModal(material);
+    } catch (err) {
+      console.error("Buch konnte nicht zum Ändern geladen werden:", err);
     }
     return;
   }

@@ -380,3 +380,8 @@
   color: #fff;
   border-color: var(--accent);
 }
+
+/* Eltern-Modus: Buch ändern direkt in der Buchzeile */
+.btree-edit {
+  flex-shrink: 0;
+}

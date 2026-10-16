@@ -87,3 +87,24 @@ def test_books_toc_search_shows_matching_section_with_parents(app_page):
     app_page.fill("#book-catalog-filter-input", "gibt es nicht")
     app_page.wait_for_selector(".btree-empty", timeout=5000)
     assert app_page.problems.errors == []
+
+
+def test_book_row_edit_button_only_in_parent_mode(app_page, parent_pin):
+    _mock_books(app_page)
+    material = {"id": "mat_book", "title": BOOK["title"], "subject_id": "sub_bio", "topic_id": None,
+                "kind": "Buch", "summary": None}
+    app_page.route(re.compile(r".*/api/v1/materials/mat_book$"), lambda r: r.fulfill(
+        status=200, content_type="application/json", body=json.dumps(material)))
+    _open_books_tab(app_page)
+    assert not app_page.is_visible(".btree-edit")
+
+    app_page.click("#btn-parent-toggle")
+    app_page.fill("#input-parent-pin", parent_pin)
+    app_page.click("#btn-submit-parent-pin")
+    app_page.wait_for_function("document.body.classList.contains('parent-mode-active')", timeout=5000)
+    app_page.click(".btree-edit")
+    app_page.wait_for_selector("#modal-edit-material", state="visible", timeout=5000)
+    assert app_page.input_value("#edit-mat-title") == BOOK["title"]
+    # Der Klick auf „Ändern“ klappt das Buch nicht zu
+    assert app_page.locator(".btree-book.open").count() == 1
+    assert app_page.problems.errors == []
