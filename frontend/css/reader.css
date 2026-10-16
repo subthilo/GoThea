@@ -11,6 +11,12 @@ body.reader-zen-mode .books-top-bar {
   display: none !important;
 }
 
+/* Abstand unter der (hier ausgeblendeten) Kopfzeile entfällt – sonst ragt die Ansicht 24 px
+   unter den Bildschirm und schneidet die Seitenzahlen unten ab */
+body.reader-zen-mode .content {
+  padding-top: 0 !important;
+}
+
 body.reader-zen-mode .app-container {
   padding: 0 !important;
   max-width: 100% !important;

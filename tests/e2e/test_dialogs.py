@@ -90,6 +90,11 @@ def test_document_opens_in_reader(uploads_page):
     uploads_page.wait_for_selector("#tab-books.active", timeout=5000)
     uploads_page.wait_for_selector("#book-reader-view", state="visible", timeout=5000)
     _settle(uploads_page)
+    # Die Seitenleiste unten liegt ganz im Fenster (früher ragte sie 24 px darunter)
+    overflow = uploads_page.evaluate(
+        "() => Math.max(...[...document.querySelectorAll('#reader-bottom-strip-wrap, #book-page-strip .book-page-pill')]"
+        ".map(e => e.getBoundingClientRect().bottom)) - innerHeight")
+    assert overflow <= 0
     uploads_page.click("#btn-floating-next")
     uploads_page.wait_for_function(
         "document.getElementById('reader-page-counter-slim').textContent.startsWith('Seite 2')", timeout=5000)
