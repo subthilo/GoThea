@@ -4,8 +4,8 @@
 
 /* Parent / Profile Pill Icon */
 .pill-svg-icon {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   filter: brightness(0) invert(0.92);
   vertical-align: middle;
 }

@@ -21,7 +21,7 @@ function updateParentModeUI(active, isDefault = isDefaultParentPin) {
   if (pillBtn && pillIcon && pillText) {
     if (isParentActive) {
       pillBtn.classList.add("is-parent-active");
-      pillIcon.innerHTML = '<img src="/static/Icons/Erwachsener.svg" class="pill-svg-icon" alt="Eltern-Modus">';
+      pillIcon.innerHTML = '<img src="/static/Icons/Eltern.svg" class="pill-svg-icon" alt="Eltern-Modus">';
       pillText.textContent = "Eltern-Modus (Aktiv)";
       pillBtn.title = "Klicken, um den Eltern-Modus zu sperren (zurück zu Thea)";
     } else {

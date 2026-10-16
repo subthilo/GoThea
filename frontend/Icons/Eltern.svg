@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Eltern (Eltern-Modus): zwei Erwachsene nebeneinander -->
+  <circle cx="35" cy="30" r="12" />
+  <path d="M 13 84 C 13 64, 22 54, 35 54 C 48 54, 57 64, 57 84" />
+  <circle cx="66" cy="34" r="11" />
+  <path d="M 58 56 C 61 55, 63 55, 66 55 C 78 55, 87 64, 87 84" />
+</svg>

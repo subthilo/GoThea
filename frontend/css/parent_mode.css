@@ -294,3 +294,11 @@ body.parent-mode-active .parent-status-pill {
   box-sizing: border-box;
 }
 
+
+/* Modus-Schalter nur als Icon (Kind = Thea, zwei Erwachsene = Eltern): rund und kompakt */
+.btn-parent-pill {
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px;
+}

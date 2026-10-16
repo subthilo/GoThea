@@ -36,6 +36,7 @@
 .i-dokumente { -webkit-mask-image: url("/static/Icons/Dokumente.svg"); mask-image: url("/static/Icons/Dokumente.svg"); }
 .i-eingang { -webkit-mask-image: url("/static/Icons/Eingang.svg"); mask-image: url("/static/Icons/Eingang.svg"); }
 .i-einstellungen { -webkit-mask-image: url("/static/Icons/Einstellungen.svg"); mask-image: url("/static/Icons/Einstellungen.svg"); }
+.i-eltern { -webkit-mask-image: url("/static/Icons/Eltern.svg"); mask-image: url("/static/Icons/Eltern.svg"); }
 .i-englisch { -webkit-mask-image: url("/static/Icons/Englisch.svg"); mask-image: url("/static/Icons/Englisch.svg"); }
 .i-erledigt { -webkit-mask-image: url("/static/Icons/Erledigt.svg"); mask-image: url("/static/Icons/Erledigt.svg"); }
 .i-erwachsener { -webkit-mask-image: url("/static/Icons/Erwachsener.svg"); mask-image: url("/static/Icons/Erwachsener.svg"); }
