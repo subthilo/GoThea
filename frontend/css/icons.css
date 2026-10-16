@@ -112,6 +112,7 @@
 .i-tests { -webkit-mask-image: url("/static/Icons/Tests.svg"); mask-image: url("/static/Icons/Tests.svg"); }
 .i-thema { -webkit-mask-image: url("/static/Icons/Thema.svg"); mask-image: url("/static/Icons/Thema.svg"); }
 .i-tipp { -webkit-mask-image: url("/static/Icons/Tipp.svg"); mask-image: url("/static/Icons/Tipp.svg"); }
+.i-tutor { -webkit-mask-image: url("/static/Icons/Tutor.svg"); mask-image: url("/static/Icons/Tutor.svg"); }
 .i-uebersicht { -webkit-mask-image: url("/static/Icons/%C3%9Cbersicht.svg"); mask-image: url("/static/Icons/%C3%9Cbersicht.svg"); }
 .i-uebungen { -webkit-mask-image: url("/static/Icons/%C3%9Cbungen.svg"); mask-image: url("/static/Icons/%C3%9Cbungen.svg"); }
 .i-upload { -webkit-mask-image: url("/static/Icons/Upload.svg"); mask-image: url("/static/Icons/Upload.svg"); }

@@ -94,8 +94,8 @@ body.whiteboard-zen-mode .wb-container {
 .wb-header-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 12px;
   padding: 8px 16px;
   /* Zu schmal (iPad hochkant, kleine iPads): seitlich wischen wie in der Werkzeugleiste */
   overflow-x: auto;
@@ -119,17 +119,9 @@ body.whiteboard-zen-mode .wb-container {
   flex-shrink: 0;
 }
 
-.wb-header-bar .wb-label,
-.wb-header-bar button,
-.wb-header-bar .wb-conn-badge {
+.wb-header-bar button {
   flex-shrink: 0;
   white-space: nowrap;
-}
-
-.wb-label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  font-weight: 600;
 }
 
 .wb-select {
@@ -144,15 +136,14 @@ body.whiteboard-zen-mode .wb-container {
   cursor: pointer;
 }
 
-.wb-conn-badge {
-  display: flex;
+/* Verbindung: nur der Punkt, ganz rechts in der Kopfleiste */
+.wb-conn-dot {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px 10px;
-  border-radius: 20px;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 34px;
 }
 
 .wb-session-dot {
@@ -168,6 +159,7 @@ body.whiteboard-zen-mode .wb-container {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto; /* Aktionen und Verbindungspunkt rechtsbündig */
 }
 
 .wb-btn-subtle {
@@ -528,20 +520,28 @@ body.whiteboard-zen-mode .wb-container {
   border-color: rgba(255, 255, 255, 0.6);
 }
 
-/* Header Vektor-Icon Buttons */
-.wb-btn-icon-svg {
-  width: 17px;
-  height: 17px;
-  object-fit: contain;
-  filter: brightness(0) invert(0.9);
-  vertical-align: middle;
-  transition: transform 0.15s ease, filter 0.15s ease;
+/* Knöpfe der Kopfleiste nur mit Icon (Neu, Aufgabe, Tutor) */
+.wb-btn-square {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 36px;
+  padding: 6px 10px;
 }
 
-.wb-btn-subtle:hover .wb-btn-icon-svg,
-.wb-btn-primary:hover .wb-btn-icon-svg {
-  filter: brightness(0) invert(1);
-  transform: scale(1.08);
+.wb-btn-tutor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 38px;
+  padding: 6px 12px;
+}
+
+.wb-btn-tutor .ui-icon {
+  width: 24px;
+  height: 24px;
 }
 
 /* Icons aus frontend/Icons (css/icons.css) in Tafel-Leisten: feste Größe statt Textgröße */

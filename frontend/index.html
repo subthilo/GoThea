@@ -651,6 +651,10 @@
         <div class="wb-container">
           <!-- Top Bar: Fach-Auswahl, Titel, Status, Fullscreen -->
           <div class="wb-header-bar">
+            <button id="btn-wb-request-hint" class="wb-btn-primary wb-btn-tutor" title="Tutorin Luna fragen: Tafel ansehen und einen Tipp geben" aria-label="Tutorin Luna fragen">
+              <span id="wb-hint-icon" class="wb-btn-icon-wrap"><span class="ui-icon i-tutor" aria-hidden="true"></span></span>
+              <span id="wb-hint-label" class="sr-only">Tutor fragen</span>
+            </button>
             <!-- Dokument auf der Tafel (Buchseite, Mitschrift …): nur zurück und blättern, nichts über dem Bild -->
             <div id="wb-doc-topbar" class="wb-doc-controls" style="display: none;">
               <button type="button" class="btn-wb-doc-return" id="btn-wb-doc-return-to-book" style="display: none;" title="Notizen sichern und zurück zum Buchleser"><span class="ui-icon i-lesen" aria-hidden="true"></span> Zurück zum Buch</button>
@@ -662,8 +666,7 @@
               <span id="wb-doc-save-status" class="wb-doc-save-status" style="display: none;"></span>
             </div>
             <div class="wb-session-info">
-              <span class="wb-label">Fach:</span>
-              <select id="wb-subject-select" class="wb-select">
+              <select id="wb-subject-select" class="wb-select" title="Fach" aria-label="Fach">
                 <!-- Dynamisch mit Schulfächern befüllt -->
               </select>
 
@@ -683,24 +686,17 @@
                 </div>
               </div>
 
-              <span class="wb-label" style="margin-left: 6px;">Unterlage:</span>
-              <select id="wb-material-select" class="wb-select" style="max-width: 250px;" title="Wähle eine Unterlage, ein Arbeitsblatt oder Buchkapitel zum gezielten Üben">
+              <select id="wb-material-select" class="wb-select" style="max-width: 250px;" title="Unterlage: Arbeitsblatt oder Buchkapitel zum gezielten Üben" aria-label="Unterlage">
                 <option value="">Freies Üben</option>
               </select>
 
-              <div class="wb-conn-badge" title="Tafel aktiv">
-                <span class="wb-session-dot" id="wb-ws-dot"></span>
-                <span class="wb-session-status" id="wb-ws-status">Tafel aktiv</span>
-              </div>
             </div>
             <div class="wb-header-actions">
-              <button id="btn-wb-new-session" class="wb-btn-subtle" title="Neue Tafel beginnen">
+              <button id="btn-wb-new-session" class="wb-btn-subtle wb-btn-square" title="Neue Tafel beginnen" aria-label="Neue Tafel">
                 <span class="ui-icon i-plus" aria-hidden="true"></span>
-                <span>Neu</span>
               </button>
-              <button id="btn-wb-place-exercise" class="wb-btn-subtle" style="font-weight: 600;" title="Aufgabe von Luna auf die Tafel legen">
-                <img src="/static/Icons/Übungen.svg" class="wb-btn-icon-svg" alt="">
-                <span>Aufgabe</span>
+              <button id="btn-wb-place-exercise" class="wb-btn-subtle wb-btn-square" title="Aufgabe von Luna auf die Tafel legen" aria-label="Aufgabe">
+                <span class="ui-icon i-uebungen" aria-hidden="true"></span>
               </button>
               <button id="btn-wb-audio-toggle" class="wb-btn-subtle wb-btn-speaker active" title="Sprachausgabe (TTS) an/aus">
                 <span id="wb-audio-icon-wrap" class="wb-btn-icon-wrap">
@@ -708,15 +704,15 @@
                   <span id="wb-audio-icon-off" style="display: none;" class="ui-icon i-lautsprecher-aus" aria-hidden="true"></span>
                 </span>
               </button>
-              <button id="btn-wb-request-hint" class="wb-btn-primary" title="Tafel mit KI analysieren &amp; sokratischen Tipp vorlesen">
-                <span id="wb-hint-icon" class="wb-btn-icon-wrap">
-                  <img src="/static/Icons/Stern.svg" class="wb-btn-icon-svg" alt="">
-                </span>
-                <span id="wb-hint-label">Tutor fragen</span>
-              </button>
               <button id="btn-wb-fullscreen" class="wb-btn-icon" title="Vollbildmodus umschalten">
                 <span class="ui-icon i-vollbild" aria-hidden="true"></span>
               </button>
+              <!-- Verbindung: grüner/roter Punkt; Speicherfehler erscheint daneben -->
+              <span id="wb-board-save-warning" class="wb-doc-save-status" style="display: none;"></span>
+              <span class="wb-conn-dot" id="wb-conn" title="Tafel aktiv">
+                <span class="wb-session-dot" id="wb-ws-dot"></span>
+                <span class="sr-only" id="wb-ws-status">Tafel aktiv</span>
+              </span>
             </div>
           </div>
 

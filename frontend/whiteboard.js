@@ -9,6 +9,7 @@
   const subjectSelect = document.getElementById("wb-subject-select");
   const wsDot = document.getElementById("wb-ws-dot");
   const wsStatus = document.getElementById("wb-ws-status");
+  const boardSaveWarning = document.getElementById("wb-board-save-warning");
   const btnNewSession = document.getElementById("btn-wb-new-session");
   const btnRequestHint = document.getElementById("btn-wb-request-hint");
   const btnFullscreen = document.getElementById("btn-wb-fullscreen");
@@ -688,6 +689,7 @@
         wsDot.style.background = "#10b981";
         wsDot.style.boxShadow = "0 0 8px #10b981";
         wsStatus.textContent = "Live verbunden";
+        if (wsDot.parentElement) wsDot.parentElement.title = "Live verbunden";
       };
 
       tutorSocket.onmessage = (event) => {
@@ -703,6 +705,7 @@
         wsDot.style.background = "#ef4444";
         wsDot.style.boxShadow = "0 0 8px #ef4444";
         wsStatus.textContent = "Offline-Modus";
+        if (wsDot.parentElement) wsDot.parentElement.title = "Offline";
       };
     } catch (e) {
       console.error("WebSocket Verbindungsfehler:", e);
@@ -1600,9 +1603,16 @@
   let boardQueue = Promise.resolve();
   function queued(fn) {
     return (...args) => {
-      boardQueue = boardQueue.then(() => fn(...args)).catch((err) => {
+      boardQueue = boardQueue.then(async () => {
+        await fn(...args);
+        if (boardSaveWarning) boardSaveWarning.style.display = "none";
+      }).catch((err) => {
         console.error("Tafel-Wechsel fehlgeschlagen:", err);
-        if (wsStatus) wsStatus.innerHTML = iconText("Warnung", "Nicht gespeichert");
+        // Sichtbar nur im Fehlerfall – sonst läuft das Speichern unbemerkt
+        if (boardSaveWarning) {
+          boardSaveWarning.innerHTML = iconText("Warnung", "Nicht gespeichert");
+          boardSaveWarning.style.display = "inline-flex";
+        }
       });
       return boardQueue;
     };
