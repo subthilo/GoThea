@@ -1,0 +1,422 @@
+<title>Dreisatz-Pilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600&family=Caveat:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Steuerleiste oben, darunter Tafel (Theas Sicht) links und Elternansicht rechts; schmal untereinander. */
+:root {
+  --bg: #f3f4f8;
+  --panel: #ffffff;
+  --fg: #1c2030;
+  --muted: #5d6478;
+  --line: #dde0ea;
+  --accent: #5457d6;
+  --accent-soft: #e7e7fb;
+  --ok: #1f8a5b;
+  --warn: #b5650d;
+  --font-ui: "Lexend", -apple-system, "Segoe UI", sans-serif;
+  --font-hand: "Caveat", "Bradley Hand", "Comic Sans MS", cursive;
+  --font-num: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  /* Tafel: wie in der App (dunkel mit Mathe-Gitter) oder weißes Blatt */
+  --board-bg: #121620;
+  --board-grid: rgba(255, 255, 255, 0.055);
+  --board-ink: #e8eaf2;
+  --board-faint: rgba(232, 234, 242, 0.45);
+  --board-line: rgba(232, 234, 242, 0.35);
+  --luna: #f2b84b;
+  --zone: rgba(99, 102, 241, 0.75);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11131a; --panel: #1a1d27; --fg: #e6e8f0; --muted: #9aa1b5; --line: #2c3040;
+    --accent: #8f92ff; --accent-soft: #262a48; --ok: #4cc28d; --warn: #f0a24a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11131a; --panel: #1a1d27; --fg: #e6e8f0; --muted: #9aa1b5; --line: #2c3040;
+  --accent: #8f92ff; --accent-soft: #262a48; --ok: #4cc28d; --warn: #f0a24a; color-scheme: dark;
+}
+.board.white {
+  --board-bg: #fbfbf7;
+  --board-grid: rgba(70, 100, 170, 0.12);
+  --board-ink: #1b2130;
+  --board-faint: rgba(27, 33, 48, 0.45);
+  --board-line: rgba(27, 33, 48, 0.35);
+  --luna: #b45a09;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1480px; margin: 0 auto; display: grid; gap: 16px; }
+header h1 { font-size: 22px; margin: 0; text-wrap: balance; }
+header p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+
+/* Steuerleiste */
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.group-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.chip {
+  font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
+}
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+.chip small { font-size: 11px; opacity: .8; }
+.anti-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); display: inline-block; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+/* Tafel */
+.board-scroll { overflow-x: auto; border-radius: 14px; }
+.board {
+  container-type: inline-size; min-width: 720px; min-height: 640px;
+  background-color: var(--board-bg); color: var(--board-ink);
+  background-image:
+    linear-gradient(var(--board-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--board-grid) 1px, transparent 1px);
+  background-size: 2.2cqw 2.2cqw;
+  border-radius: 14px; padding: 2.4cqw 3.2cqw 6cqw; font-size: 1.75cqw; line-height: 1.5;
+  display: grid; gap: 2.2cqw; align-content: start;
+}
+.src { font-size: 1.15cqw; color: var(--board-faint); letter-spacing: .04em; }
+.task { font-size: 1.95cqw; max-width: 62ch; }
+.zone { position: relative; display: grid; gap: .8cqw; padding: .6cqw .8cqw; border-radius: 10px; border: 2px dashed transparent; }
+.show-zones .zone { border-color: var(--zone); }
+.zone-tag {
+  display: none; position: absolute; top: -1.1cqw; right: 1cqw; font-size: 1cqw; font-family: var(--font-ui);
+  background: var(--zone); color: #fff; padding: .1cqw .7cqw; border-radius: 6px;
+}
+.show-zones .zone-tag { display: block; }
+.label { font-weight: 700; }
+.writeline { display: flex; gap: .8cqw; align-items: baseline; flex-wrap: wrap; }
+.blank { display: inline-block; min-width: 9cqw; border-bottom: 2px solid var(--board-line); height: 1.6em; vertical-align: bottom; position: relative; }
+.blank.long { flex: 1; min-width: 30cqw; }
+.luna { font-family: var(--font-hand); color: var(--luna); font-size: 2.5cqw; line-height: 1; font-weight: 700; }
+.blank .luna { position: absolute; left: .4cqw; bottom: .1cqw; white-space: nowrap; }
+.blank.long { height: auto; min-height: 1.6em; }
+.blank.long .luna { position: static; white-space: normal; display: block; padding: 0 .4cqw .2cqw; }
+.empty-space { min-height: 7cqw; }
+
+/* Dreisatz-Tabelle */
+.ds { display: grid; grid-template-columns: 7cqw 15cqw 15cqw 7cqw; align-items: center; justify-content: start; row-gap: .3cqw; font-family: var(--font-num); font-size: 1.8cqw; }
+.ds .head { font-family: var(--font-ui); font-size: 1.45cqw; text-align: center; border-bottom: 2px solid var(--board-line); padding-bottom: .4cqw; }
+.ds .val { text-align: center; height: 3.6cqw; display: flex; align-items: center; justify-content: center; border-right: 2px solid var(--board-line); }
+.ds .val.r { border-right: 0; border-left: 0; }
+.ds .val.l { border-right: 2px solid var(--board-line); }
+.ds .cellblank { width: 70%; border-bottom: 2px solid var(--board-line); height: 2.4cqw; position: relative; }
+.ds .cellblank .luna { position: absolute; inset: auto 0 .2cqw; text-align: center; }
+.ds .op { height: 3.6cqw; display: flex; align-items: center; justify-content: center; gap: .3cqw; color: var(--board-faint); }
+.ds .opbox { width: 4.6cqw; height: 2.7cqw; border: 2px solid var(--board-line); border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; }
+.ds .arrow { font-family: var(--font-ui); }
+.ds .opspace { height: 3.6cqw; }
+
+/* Lunas Leiste unter der Tafel */
+.leftcol { display: grid; gap: 12px; min-width: 0; }
+.lunabar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 12px; }
+.step { display: grid; gap: 8px; }
+.step-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.say { display: flex; gap: 10px; align-items: flex-start; }
+.say .who { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 14px; }
+.say p { margin: 0; font-size: 16px; padding-top: 4px; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 40px; }
+.opt { font: inherit; font-size: 16px; min-width: 110px; padding: 10px 18px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+.opt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.opt:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+.sim { font-size: 14px; }
+.verdict { margin-left: 40px; font-size: 13px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+.verdict.caught { border-color: var(--ok); }
+.verdict.missed { border-color: var(--warn); }
+
+/* Elternansicht */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 14px; min-width: 0; }
+.panel h2 { font-size: 13px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.panel h3 { font-size: 14px; margin: 0 0 4px; }
+.kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 4px 10px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+.pill { display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; }
+.pill.ok { color: var(--ok); }
+.pill.warn { color: var(--warn); }
+.soltable { border-collapse: collapse; font-family: var(--font-num); font-size: 13px; font-variant-numeric: tabular-nums; }
+.soltable td, .soltable th { padding: 3px 10px; border-bottom: 1px solid var(--line); text-align: right; }
+.soltable th { font-family: var(--font-ui); font-weight: 700; color: var(--muted); font-size: 12px; }
+.soltable td.op { color: var(--muted); text-align: center; }
+.help { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.help b { font-weight: 700; }
+.list { margin: 0; padding-left: 18px; }
+.note { color: var(--muted); font-size: 13px; }
+.thea { border-left: 3px solid var(--warn); padding-left: 10px; }
+@media (prefers-reduced-motion: no-preference) { .board .luna { animation: write .35s ease-out; } }
+@keyframes write { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Dreisatz-Pilot · Sachaufgabe mit Lösungsweg</h1>
+    <p>7 Aufgaben aus Theas Test, Matheprobe und Buch, je mit Zwilling. Alle Lösungen sind nachgerechnet. Links die Tafel, wie Thea sie sähe, darunter Lunas Schätzfrage, rechts die Ansicht für die Freigabe.</p>
+  </header>
+
+  <div class="controls">
+    <div class="group" id="pick" role="group" aria-label="Aufgabe"><span class="group-label">Aufgabe</span></div>
+  </div>
+  <div class="controls">
+    <div class="group" id="variant" role="group" aria-label="Fassung"><span class="group-label">Fassung</span></div>
+    <div class="group" id="stage" role="group" aria-label="Gerüst-Stufe"><span class="group-label">Gerüst</span></div>
+    <div class="group" id="toggles" role="group" aria-label="Anzeige"><span class="group-label">Anzeige</span></div>
+  </div>
+
+  <div class="main">
+    <div class="leftcol">
+      <div class="board-scroll"><div class="board" id="board" aria-live="polite"></div></div>
+      <section class="lunabar" id="lunabar" aria-label="Lunas Leiste" aria-live="polite"></section>
+    </div>
+    <aside class="panel" id="panel" aria-label="Elternansicht"></aside>
+  </div>
+</div>
+
+<script id="daten" type="application/json">/*DATA*/{"typ": "sachaufgabe", "version": 1, "stand": "2026-10-16", "hinweis": "Pilot für den Übungstyp 'Sachaufgabe mit Lösungsweg' (Lernphase Zuordnungen). Erzeugt in einer Claude-Code-Session, Lösungen mit verify_sachaufgabe.py nachgerechnet. Gerüst-Stufen 1-4 entstehen beim Anzeigen aus diesen Daten. Plausibilität über eine Schätzfrage vor dem Rechnen (Antippen), automatisch mit dem Ergebnis verglichen.", "uebungen": [{"id": "sa-gummibaerchen", "ableitung": "A", "quelle": {"art": "Test", "material": "1. Test Zuordnungen", "datum": "2026-10-05", "seite": 1, "nummer": "4"}, "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen", "aufgabentext": "Die Zuordnung ist proportional. Berechne mit dem Dreisatz: Am Kiosk kosten 150 g Gummibärchen 3 €. Ermittle den Preis für 500 g Gummibärchen.", "schema": "dreisatz_proportional", "groessen": [{"name": "Menge", "einheit": "g"}, {"name": "Preis", "einheit": "€"}], "zeilen": [[150, 3], [50, 1], [500, 10]], "schritte": [":3", "·10"], "ergebnis": {"wert": 10, "einheit": "€"}, "antwort_anfang": "500 g Gummibärchen kosten", "antwortsatz": "500 g Gummibärchen kosten 10 €.", "ueberschlag": null, "theas_loesung": "Tabelle mit :3 und ·10 richtig, Ergebnis 10 € richtig. Antwortsatz fehlte (3 von 4 Punkten).", "typische_fehler": ["Antwortsatz fehlt", "Einheit fehlt"], "hilfen": {"denkanstoss": "Welcher Wert lässt sich aus 150 g leicht ausrechnen und führt dich zu 500 g?", "hinweis": "Teile beide Seiten durch 3. Dann weißt du, was 50 g kosten."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 26, "stelle": "Beispiel 1"}, "freigabe": {"noetig": false, "grund": "Ergebnis von der Lehrkraft bestätigt"}, "schaetzfrage": {"frage": "Kosten 500 g Gummibärchen mehr oder weniger als 3 €?", "optionen": ["mehr", "weniger"], "antwort": "mehr", "vergleichswert": 3, "ergebnis_ist": "groesser", "aktiv": true}, "fehlerbeispiel": {"wert": 1, "fehler": "nur bis 50 g gerechnet"}}, {"id": "sa-gummibaerchen-z1", "ableitung": "B", "zwilling_von": "sa-gummibaerchen", "quelle": {"art": "Test", "material": "1. Test Zuordnungen", "datum": "2026-10-05", "seite": 1, "nummer": "4"}, "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen", "aufgabentext": "Die Zuordnung ist proportional. Berechne mit dem Dreisatz: Im Bioladen kosten 200 g Studentenfutter 2,40 €. Ermittle den Preis für 700 g Studentenfutter.", "schema": "dreisatz_proportional", "groessen": [{"name": "Menge", "einheit": "g"}, {"name": "Preis", "einheit": "€"}], "zeilen": [[200, 2.4], [100, 1.2], [700, 8.4]], "schritte": [":2", "·7"], "ergebnis": {"wert": 8.4, "einheit": "€"}, "antwort_anfang": "700 g Studentenfutter kosten", "antwortsatz": "700 g Studentenfutter kosten 8,40 €.", "ueberschlag": null, "typische_fehler": ["Antwortsatz fehlt", "Einheit fehlt", "8,4 statt 8,40 € (Geldbetrag)"], "hilfen": {"denkanstoss": "Welcher Wert passt sowohl in 200 g als auch in 700 g gut hinein?", "hinweis": "Teile beide Seiten durch 2. Dann weißt du, was 100 g kosten."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 26, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Zwilling"}, "schaetzfrage": {"frage": "Kosten 700 g Studentenfutter mehr oder weniger als 2,40 €?", "optionen": ["mehr", "weniger"], "antwort": "mehr", "vergleichswert": 2.4, "ergebnis_ist": "groesser", "aktiv": true}, "fehlerbeispiel": {"wert": 1.2, "fehler": "nur bis 100 g gerechnet"}}, {"id": "sa-apfelsaft-flaschen", "ableitung": "A", "quelle": {"art": "Test", "material": "Matheprobe zur Division mit Dezimalzahlen", "datum": "2026-05-18", "seite": 1, "nummer": "3", "wortlaut_aus": "Arbeitsblatt „Division mit Dezimalzahlen und Sachaufgaben“, Nr. 3"}, "abschnitt": "Klasse 6: Division mit Dezimalzahlen", "aufgabentext": "In einer Mosterei werden an einem Tag 2100 Liter Apfelsaft hergestellt und in 0,7-Liter-Flaschen abgefüllt. Wie viele Flaschen werden mit Apfelsaft gefüllt?", "schema": "rechnung", "rechnung": {"ausdruck": "2100 : 0,7", "umformung": "21000 : 7", "zahlen": [2100, 0.7]}, "ergebnis": {"wert": 3000, "einheit": "Flaschen"}, "antwort_anfang": "Es werden", "antwortsatz": "Es werden 3000 Flaschen mit Apfelsaft gefüllt.", "ueberschlag": {"verlangt": true, "ausdruck": "2100 : 1 = 2100", "folgerung": "mehr als 2100 Flaschen"}, "theas_loesung": "Gerechnet 2100 : 7 = 300, geantwortet „3 Flaschen“ (1 von 3 Punkten). Komma beim Divisor nicht verschoben, Antwort passt nicht zur Rechnung.", "typische_fehler": ["Komma beim Teilen durch eine Dezimalzahl nur auf einer Seite verschoben", "Antwortsatz passt nicht zur Rechnung", "kein Überschlag"], "hilfen": {"denkanstoss": "Passen in 2100 Liter mehr oder weniger als 2100 Flaschen, wenn jede Flasche kleiner als 1 Liter ist?", "hinweis": "Verschiebe das Komma bei beiden Zahlen um eine Stelle nach rechts: 2100 : 0,7 = 21000 : 7."}, "nachschlagen": null, "freigabe": {"noetig": true, "grund": "Lösung von Luna (in der Matheprobe nicht vorgegeben)"}, "schaetzfrage": {"frage": "Braucht man mehr oder weniger als 2100 Flaschen?", "optionen": ["mehr", "weniger"], "antwort": "mehr", "vergleichswert": 2100, "ergebnis_ist": "groesser", "aktiv": false, "grund": "Die Aufgabe verlangt einen Überschlag auf der Tafel, der dieselbe Prüfung leistet."}, "fehlerbeispiel": {"wert": 300, "fehler": "Komma nur bei einer Zahl verschoben (Theas Fehler in der Matheprobe)"}, "einstieg": "In der Matheprobe hattest du „3 Flaschen“ geschrieben. Passen 2100 Liter in 3 Flaschen? Lass uns das noch mal anschauen."}, {"id": "sa-apfelsaft-flaschen-z1", "ableitung": "B", "zwilling_von": "sa-apfelsaft-flaschen", "quelle": {"art": "Test", "material": "Matheprobe zur Division mit Dezimalzahlen", "datum": "2026-05-18", "seite": 1, "nummer": "3"}, "abschnitt": "Klasse 6: Division mit Dezimalzahlen", "aufgabentext": "Eine Molkerei füllt an einem Morgen 1500 Liter Milch in 0,75-Liter-Flaschen ab. Wie viele Flaschen werden mit Milch gefüllt?", "schema": "rechnung", "rechnung": {"ausdruck": "1500 : 0,75", "umformung": "150000 : 75", "zahlen": [1500, 0.75]}, "ergebnis": {"wert": 2000, "einheit": "Flaschen"}, "antwort_anfang": "Es werden", "antwortsatz": "Es werden 2000 Flaschen mit Milch gefüllt.", "ueberschlag": {"verlangt": true, "ausdruck": "1500 : 1 = 1500", "folgerung": "mehr als 1500 Flaschen"}, "typische_fehler": ["Komma nur um eine Stelle verschoben (0,75 hat zwei Nachkommastellen)", "Antwortsatz passt nicht zur Rechnung", "kein Überschlag"], "hilfen": {"denkanstoss": "Wie viele Stellen musst du das Komma verschieben, damit aus 0,75 eine ganze Zahl wird?", "hinweis": "Verschiebe das Komma bei beiden Zahlen um zwei Stellen nach rechts: 1500 : 0,75 = 150000 : 75."}, "nachschlagen": null, "freigabe": {"noetig": true, "grund": "Zwilling"}, "schaetzfrage": {"frage": "Braucht man mehr oder weniger als 1500 Flaschen?", "optionen": ["mehr", "weniger"], "antwort": "mehr", "vergleichswert": 1500, "ergebnis_ist": "groesser", "aktiv": false, "grund": "Die Aufgabe verlangt einen Überschlag auf der Tafel, der dieselbe Prüfung leistet."}, "fehlerbeispiel": {"wert": 200, "fehler": "Komma nur um eine Stelle verschoben"}}, {"id": "sa-drucker", "ableitung": "A", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 26, "nummer": "1"}, "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen", "aufgabentext": "Die Zuordnung Zeit → Anzahl gedruckter Seiten ist proportional. Für 250 Seiten benötigt der Drucker 5 Minuten. Berechne, wie viele Seiten er in 12 Minuten druckt.", "schema": "dreisatz_proportional", "groessen": [{"name": "Zeit", "einheit": "min"}, {"name": "Seiten", "einheit": ""}], "zeilen": [[5, 250], [1, 50], [12, 600]], "schritte": [":5", "·12"], "ergebnis": {"wert": 600, "einheit": "Seiten"}, "antwort_anfang": "In 12 Minuten druckt der Drucker", "antwortsatz": "In 12 Minuten druckt der Drucker 600 Seiten.", "ueberschlag": null, "typische_fehler": ["Antwortsatz fehlt", "Zeit und Seiten in der Tabelle vertauscht"], "hilfen": {"denkanstoss": "Wie viele Seiten schafft der Drucker in einer Minute?", "hinweis": "Teile beide Seiten durch 5. Dann multipliziere mit 12."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 26, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Lösung von Luna (Basisaufgabe ohne Lösung im Buch)"}, "schaetzfrage": {"frage": "Druckt er in 12 Minuten mehr oder weniger als 250 Seiten?", "optionen": ["mehr", "weniger"], "antwort": "mehr", "vergleichswert": 250, "ergebnis_ist": "groesser", "aktiv": true}, "fehlerbeispiel": {"wert": 50, "fehler": "nur bis 1 Minute gerechnet"}}, {"id": "sa-drucker-z1", "ableitung": "B", "zwilling_von": "sa-drucker", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 26, "nummer": "1"}, "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen", "aufgabentext": "Die Zuordnung Zeit → Anzahl kopierter Seiten ist proportional. Für 180 Seiten benötigt der Kopierer 4 Minuten. Berechne, wie viele Seiten er in 9 Minuten kopiert.", "schema": "dreisatz_proportional", "groessen": [{"name": "Zeit", "einheit": "min"}, {"name": "Seiten", "einheit": ""}], "zeilen": [[4, 180], [1, 45], [9, 405]], "schritte": [":4", "·9"], "ergebnis": {"wert": 405, "einheit": "Seiten"}, "antwort_anfang": "In 9 Minuten kopiert der Kopierer", "antwortsatz": "In 9 Minuten kopiert der Kopierer 405 Seiten.", "ueberschlag": null, "typische_fehler": ["Antwortsatz fehlt", "Zeit und Seiten in der Tabelle vertauscht"], "hilfen": {"denkanstoss": "Wie viele Seiten schafft der Kopierer in einer Minute?", "hinweis": "Teile beide Seiten durch 4. Dann multipliziere mit 9."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 26, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Zwilling"}, "schaetzfrage": {"frage": "Kopiert er in 9 Minuten mehr oder weniger als 180 Seiten?", "optionen": ["mehr", "weniger"], "antwort": "mehr", "vergleichswert": 180, "ergebnis_ist": "groesser", "aktiv": true}, "fehlerbeispiel": {"wert": 45, "fehler": "nur bis 1 Minute gerechnet"}}, {"id": "sa-flugzeug", "ableitung": "A", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 27, "nummer": "3c"}, "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen", "aufgabentext": "Begründe, dass die Zuordnung proportional ist. Berechne dann mit dem Dreisatz: Ein Flugzeug legt in drei Stunden 2640 km zurück. Berechne, wie weit es in 2,5 Stunden fliegt.", "schema": "dreisatz_proportional", "begruendung": {"verlangt": true, "erwartung": "Das Flugzeug fliegt (ungefähr) gleich schnell. In der doppelten Zeit legt es die doppelte Strecke zurück."}, "groessen": [{"name": "Zeit", "einheit": "h"}, {"name": "Strecke", "einheit": "km"}], "zeilen": [[3, 2640], [0.5, 440], [2.5, 2200]], "schritte": [":6", "·5"], "ergebnis": {"wert": 2200, "einheit": "km"}, "antwort_anfang": "In 2,5 Stunden fliegt das Flugzeug", "antwortsatz": "In 2,5 Stunden fliegt das Flugzeug 2200 km.", "ueberschlag": null, "typische_fehler": ["Begründung fehlt", "Antwortsatz fehlt", "Komma bei 0,5 h verrutscht"], "hilfen": {"denkanstoss": "2,5 Stunden sind fünf halbe Stunden. Wie weit fliegt das Flugzeug in einer halben Stunde?", "hinweis": "Teile beide Seiten durch 6. Dann hast du 0,5 Stunden."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 26, "stelle": "Beispiel 1, Teil b (Hilfswert)"}, "freigabe": {"noetig": true, "grund": "Lösung von Luna (Basisaufgabe ohne Lösung im Buch)"}, "schaetzfrage": {"frage": "Fliegt das Flugzeug in 2,5 Stunden mehr oder weniger als 2640 km?", "optionen": ["mehr", "weniger"], "antwort": "weniger", "vergleichswert": 2640, "ergebnis_ist": "kleiner", "aktiv": true}, "fehlerbeispiel": {"wert": 22000, "fehler": "Komma bei 2,5 übersehen (mit 50 statt 5 multipliziert)"}}, {"id": "sa-flugzeug-z1", "ableitung": "B", "zwilling_von": "sa-flugzeug", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 27, "nummer": "3c"}, "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen", "aufgabentext": "Begründe, dass die Zuordnung proportional ist. Berechne dann mit dem Dreisatz: Ein Zug legt in zwei Stunden 260 km zurück. Berechne, wie weit er in 3,5 Stunden fährt.", "schema": "dreisatz_proportional", "begruendung": {"verlangt": true, "erwartung": "Der Zug fährt (ungefähr) gleich schnell. In der doppelten Zeit legt er die doppelte Strecke zurück."}, "groessen": [{"name": "Zeit", "einheit": "h"}, {"name": "Strecke", "einheit": "km"}], "zeilen": [[2, 260], [0.5, 65], [3.5, 455]], "schritte": [":4", "·7"], "ergebnis": {"wert": 455, "einheit": "km"}, "antwort_anfang": "In 3,5 Stunden fährt der Zug", "antwortsatz": "In 3,5 Stunden fährt der Zug 455 km.", "ueberschlag": null, "typische_fehler": ["Begründung fehlt", "Antwortsatz fehlt", "Komma bei 0,5 h verrutscht"], "hilfen": {"denkanstoss": "3,5 Stunden sind sieben halbe Stunden. Wie weit fährt der Zug in einer halben Stunde?", "hinweis": "Teile beide Seiten durch 4. Dann hast du 0,5 Stunden."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 26, "stelle": "Beispiel 1, Teil b (Hilfswert)"}, "freigabe": {"noetig": true, "grund": "Zwilling"}, "schaetzfrage": {"frage": "Fährt der Zug in 3,5 Stunden mehr oder weniger als 260 km?", "optionen": ["mehr", "weniger"], "antwort": "mehr", "vergleichswert": 260, "ergebnis_ist": "groesser", "aktiv": true}, "fehlerbeispiel": {"wert": 45.5, "fehler": "Komma verrutscht"}}, {"id": "sa-apfelmosterei", "ableitung": "A", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 27, "nummer": "4b"}, "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen", "aufgabentext": "Aus 250 kg Äpfeln erzeugt eine Apfelmosterei etwa 125 Liter Apfelsaft. Berechne, wie viele Kilogramm Äpfel man für 20 Liter Apfelsaft benötigt.", "schema": "dreisatz_proportional", "groessen": [{"name": "Apfelsaft", "einheit": "l"}, {"name": "Äpfel", "einheit": "kg"}], "zeilen": [[125, 250], [5, 10], [20, 40]], "schritte": [":25", "·4"], "ergebnis": {"wert": 40, "einheit": "kg"}, "antwort_anfang": "Für 20 Liter Apfelsaft benötigt man", "antwortsatz": "Für 20 Liter Apfelsaft benötigt man 40 kg Äpfel.", "ueberschlag": null, "typische_fehler": ["Tabelle mit Äpfeln links begonnen, dann wird der falsche Wert gesucht", "Antwortsatz fehlt"], "hilfen": {"denkanstoss": "Was ist hier gegeben, was ist gesucht? Die Spalte mit dem bekannten Ziel kommt nach links.", "hinweis": "Schreibe links den Saft: 125 l → 250 kg. Teile dann beide Seiten durch 25."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 26, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Lösung von Luna (Basisaufgabe ohne Lösung im Buch)"}, "schaetzfrage": {"frage": "Braucht man für 20 Liter Saft mehr oder weniger als 250 kg Äpfel?", "optionen": ["mehr", "weniger"], "antwort": "weniger", "vergleichswert": 250, "ergebnis_ist": "kleiner", "aktiv": true}, "fehlerbeispiel": {"wert": 10, "fehler": "Spalten vertauscht: Liter Saft aus 20 kg Äpfeln berechnet"}}, {"id": "sa-apfelmosterei-z1", "ableitung": "B", "zwilling_von": "sa-apfelmosterei", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 27, "nummer": "4b"}, "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen", "aufgabentext": "Aus 60 kg Orangen presst ein Saftladen 24 Liter Orangensaft. Berechne, wie viele Kilogramm Orangen man für 10 Liter Orangensaft benötigt.", "schema": "dreisatz_proportional", "groessen": [{"name": "Orangensaft", "einheit": "l"}, {"name": "Orangen", "einheit": "kg"}], "zeilen": [[24, 60], [2, 5], [10, 25]], "schritte": [":12", "·5"], "ergebnis": {"wert": 25, "einheit": "kg"}, "antwort_anfang": "Für 10 Liter Orangensaft benötigt man", "antwortsatz": "Für 10 Liter Orangensaft benötigt man 25 kg Orangen.", "ueberschlag": null, "typische_fehler": ["Tabelle mit Orangen links begonnen, dann wird der falsche Wert gesucht", "Antwortsatz fehlt"], "hilfen": {"denkanstoss": "Was ist hier gegeben, was ist gesucht? Die Spalte mit dem bekannten Ziel kommt nach links.", "hinweis": "Schreibe links den Saft: 24 l → 60 kg. Teile dann beide Seiten durch 12."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 26, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Zwilling"}, "schaetzfrage": {"frage": "Braucht man für 10 Liter Saft mehr oder weniger als 60 kg Orangen?", "optionen": ["mehr", "weniger"], "antwort": "weniger", "vergleichswert": 60, "ergebnis_ist": "kleiner", "aktiv": true}, "fehlerbeispiel": {"wert": 4, "fehler": "Spalten vertauscht: Liter Saft aus 10 kg Orangen berechnet"}}, {"id": "sa-umzug", "ableitung": "A", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 34, "nummer": "1"}, "abschnitt": "1.6 Dreisatz für antiproportionale Zuordnungen", "aufgabentext": "Die Zuordnung Anzahl der Umzugshelfer → Dauer des Umzugs ist antiproportional. Mit 2 Helfern würde der Umzug 12 Stunden dauern. Berechne, wie lange er mit 3 Helfern dauert.", "schema": "dreisatz_antiproportional", "groessen": [{"name": "Helfer", "einheit": ""}, {"name": "Dauer", "einheit": "h"}], "zeilen": [[2, 12], [1, 24], [3, 8]], "schritte": [":2", "·3"], "ergebnis": {"wert": 8, "einheit": "Stunden"}, "antwort_anfang": "Mit 3 Helfern dauert der Umzug", "antwortsatz": "Mit 3 Helfern dauert der Umzug 8 Stunden.", "ueberschlag": null, "typische_fehler": ["proportional gerechnet (18 h)", "Antwortsatz fehlt"], "hilfen": {"denkanstoss": "Wenn nur 1 Helfer da ist: dauert es länger oder kürzer als mit 2?", "hinweis": "Links teilst du durch 2, rechts musst du dann mal 2 rechnen."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 34, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Lösung von Luna (Basisaufgabe ohne Lösung im Buch)"}, "schaetzfrage": {"frage": "Dauert der Umzug mit 3 Helfern länger oder kürzer als 12 Stunden?", "optionen": ["länger", "kürzer"], "antwort": "kürzer", "vergleichswert": 12, "ergebnis_ist": "kleiner", "aktiv": true}, "fehlerbeispiel": {"wert": 18, "fehler": "proportional statt antiproportional gerechnet"}}, {"id": "sa-umzug-z1", "ableitung": "B", "zwilling_von": "sa-umzug", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 34, "nummer": "1"}, "abschnitt": "1.6 Dreisatz für antiproportionale Zuordnungen", "aufgabentext": "Die Zuordnung Anzahl der Maler → Dauer der Arbeit ist antiproportional. 4 Maler streichen eine Schule in 6 Tagen. Berechne, wie lange 3 Maler dafür brauchen.", "schema": "dreisatz_antiproportional", "groessen": [{"name": "Maler", "einheit": ""}, {"name": "Dauer", "einheit": "Tage"}], "zeilen": [[4, 6], [1, 24], [3, 8]], "schritte": [":4", "·3"], "ergebnis": {"wert": 8, "einheit": "Tage"}, "antwort_anfang": "3 Maler brauchen", "antwortsatz": "3 Maler brauchen 8 Tage.", "ueberschlag": null, "typische_fehler": ["proportional gerechnet (4,5 Tage)", "Antwortsatz fehlt"], "hilfen": {"denkanstoss": "Wenn nur 1 Maler streicht: dauert es länger oder kürzer als mit 4?", "hinweis": "Links teilst du durch 4, rechts musst du dann mal 4 rechnen."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 34, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Zwilling"}, "schaetzfrage": {"frage": "Brauchen 3 Maler länger oder kürzer als 6 Tage?", "optionen": ["länger", "kürzer"], "antwort": "länger", "vergleichswert": 6, "ergebnis_ist": "groesser", "aktiv": true}, "fehlerbeispiel": {"wert": 4.5, "fehler": "proportional statt antiproportional gerechnet"}}, {"id": "sa-taxi", "ableitung": "A", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 34, "nummer": "2"}, "abschnitt": "1.6 Dreisatz für antiproportionale Zuordnungen", "aufgabentext": "Drei Personen teilen sich ein Taxi. Am Ende muss jeder 10,20 € bezahlen. Berechne, wie viel jeder bezahlen müsste, wenn sich vier Personen das Taxi teilen.", "schema": "dreisatz_antiproportional", "groessen": [{"name": "Personen", "einheit": ""}, {"name": "Preis pro Person", "einheit": "€"}], "zeilen": [[3, 10.2], [1, 30.6], [4, 7.65]], "schritte": [":3", "·4"], "ergebnis": {"wert": 7.65, "einheit": "€"}, "antwort_anfang": "Bei vier Personen müsste jeder", "antwortsatz": "Bei vier Personen müsste jeder 7,65 € bezahlen.", "ueberschlag": null, "typische_fehler": ["proportional gerechnet (13,60 €)", "Antwortsatz fehlt", "Komma beim Geldbetrag"], "hilfen": {"denkanstoss": "Wie viel kostet die ganze Taxifahrt?", "hinweis": "Links teilst du durch 3, rechts musst du dann mal 3 rechnen: Die Fahrt kostet 30,60 €."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 34, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Lösung von Luna (Basisaufgabe ohne Lösung im Buch)"}, "schaetzfrage": {"frage": "Zahlt jeder bei vier Personen mehr oder weniger als 10,20 €?", "optionen": ["mehr", "weniger"], "antwort": "weniger", "vergleichswert": 10.2, "ergebnis_ist": "kleiner", "aktiv": true}, "fehlerbeispiel": {"wert": 13.6, "fehler": "proportional statt antiproportional gerechnet"}}, {"id": "sa-taxi-z1", "ableitung": "B", "zwilling_von": "sa-taxi", "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "seite": 34, "nummer": "2"}, "abschnitt": "1.6 Dreisatz für antiproportionale Zuordnungen", "aufgabentext": "Fünf Freundinnen kaufen gemeinsam ein Geburtstagsgeschenk. Jede zahlt 6,40 €. Berechne, wie viel jede zahlen müsste, wenn nur vier mitmachen.", "schema": "dreisatz_antiproportional", "groessen": [{"name": "Freundinnen", "einheit": ""}, {"name": "Betrag pro Person", "einheit": "€"}], "zeilen": [[5, 6.4], [1, 32], [4, 8]], "schritte": [":5", "·4"], "ergebnis": {"wert": 8, "einheit": "€"}, "antwort_anfang": "Wenn nur vier mitmachen, zahlt jede", "antwortsatz": "Wenn nur vier mitmachen, zahlt jede 8,00 €.", "ueberschlag": null, "typische_fehler": ["proportional gerechnet (5,12 €)", "Antwortsatz fehlt"], "hilfen": {"denkanstoss": "Wie viel kostet das ganze Geschenk?", "hinweis": "Links teilst du durch 5, rechts musst du dann mal 5 rechnen: Das Geschenk kostet 32 €."}, "nachschlagen": {"material": "Fundamente der Mathematik 7", "seite": 34, "stelle": "Beispiel 1"}, "freigabe": {"noetig": true, "grund": "Zwilling"}, "schaetzfrage": {"frage": "Zahlt jede bei vier Personen mehr oder weniger als 6,40 €?", "optionen": ["mehr", "weniger"], "antwort": "mehr", "vergleichswert": 6.4, "ergebnis_ist": "groesser", "aktiv": true}, "fehlerbeispiel": {"wert": 5.12, "fehler": "proportional statt antiproportional gerechnet"}}]}/*END*/</script>
+<script>
+const DATA = JSON.parse(document.getElementById("daten").textContent.replace(/\/\*DATA\*\/|\/\*END\*\//g, ""));
+const byId = Object.fromEntries(DATA.uebungen.map(u => [u.id, u]));
+const originals = DATA.uebungen.filter(u => u.ableitung === "A");
+const KURZ = {
+  "sa-gummibaerchen": "Gummibärchen", "sa-apfelsaft-flaschen": "Saftflaschen", "sa-drucker": "Drucker",
+  "sa-flugzeug": "Flugzeug", "sa-apfelmosterei": "Apfelmosterei", "sa-umzug": "Umzug", "sa-taxi": "Taxi",
+};
+const STUFEN = {
+  1: "Tabelle vorgegeben, Antwort angefangen",
+  2: "nur Tabellenkopf",
+  3: "nur R: und A:",
+  4: "leer wie im Test",
+};
+
+let state = { orig: originals[0].id, twin: false, stage: 1, solution: false, zones: false, white: false, guess: null, outcome: null };
+try { Object.assign(state, JSON.parse(localStorage.getItem("dreisatz-pilot") || "{}")); } catch (e) {}
+if (!byId[state.orig]) state.orig = originals[0].id;
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function fmt(x, einheit) {
+  const n = Number(x);
+  if (einheit === "€") return n.toFixed(2).replace(".", ",");
+  return String(n).replace(".", ",");
+}
+function current() {
+  const o = byId[state.orig];
+  if (!state.twin) return o;
+  return DATA.uebungen.find(u => u.zwilling_von === o.id) || o;
+}
+const luna = (text, on) => on ? `<span class="luna">${esc(text)}</span>` : "";
+const blank = (sol, long) => `<span class="blank${long ? " long" : ""}">${sol || ""}</span>`;
+const zone = (name, inner) => `<div class="zone"><span class="zone-tag">${esc(name)}</span>${inner}</div>`;
+
+function dreisatzTable(u, stage, sol) {
+  const anti = u.schema === "dreisatz_antiproportional";
+  const [g1, g2] = u.groessen;
+  const head = g => esc(g.name) + (g.einheit ? ` (in ${esc(g.einheit)})` : "");
+  const inv = op => (op[0] === ":" ? "·" : ":") + op.slice(1);
+  const opL = u.schritte, opR = anti ? u.schritte.map(inv) : u.schritte;
+  const ein2 = g2.einheit;
+  let h = `<div class="ds"><div></div><div class="head">${head(g1)}</div><div class="head">${head(g2)}</div><div></div>`;
+  u.zeilen.forEach(([x, y], i) => {
+    const showX = stage === 1 && (i === 0 || i === u.zeilen.length - 1);
+    const showY = stage === 1 && i === 0;
+    const cell = (v, shown, unit) => shown ? esc(fmt(v, unit)) : `<span class="cellblank">${luna(fmt(v, unit), sol)}</span>`;
+    h += `<div class="opspace"></div><div class="val l">${cell(x, showX, "")}</div><div class="val r">${cell(y, showY, ein2)}</div><div class="opspace"></div>`;
+    if (i < u.schritte.length) {
+      h += `<div class="op"><span class="opbox">${luna(opL[i], sol)}</span><span class="arrow">↓</span></div><div></div><div></div>`;
+      h += `<div class="op"><span class="arrow">↓</span><span class="opbox">${luna(opR[i], sol)}</span></div>`;
+    }
+  });
+  return h + "</div>";
+}
+
+function renderBoard() {
+  const u = current(), s = state.stage, sol = state.solution;
+  const board = document.getElementById("board");
+  board.classList.toggle("white", state.white);
+  board.classList.toggle("show-zones", state.zones);
+  const q = u.quelle;
+  const src = q.art === "Buch" ? `${q.material} · S. ${q.seite} · Nr. ${q.nummer}` : `${q.material} · Nr. ${q.nummer}`;
+  let h = `<div class="src">${esc(src)}${u.ableitung === "B" ? " · ähnliche Aufgabe" : ""}</div>`;
+  h += `<div class="task">${esc(u.aufgabentext)}</div>`;
+
+  if (u.begruendung && u.begruendung.verlangt && s <= 3) {
+    h += zone("Begründung", `<div class="writeline"><span class="label">Begründung:</span>${blank(luna(u.begruendung.erwartung, sol), true)}</div><div class="writeline">${blank("", true)}</div>`);
+  }
+  if (u.ueberschlag && u.ueberschlag.verlangt && s <= 2) {
+    const pre = s === 1 ? `${esc(u.ueberschlag.ausdruck.split("=")[0])}= ` : "";
+    const val = s === 1 ? u.ueberschlag.ausdruck.split("=")[1].trim() : u.ueberschlag.ausdruck;
+    h += zone("Überschlag", `<div class="writeline"><span class="label">Überschlag:</span> ${pre}${blank(luna(val + "  → " + u.ueberschlag.folgerung, sol), true)}</div>`);
+  }
+  if (s <= 3) {
+    let rech;
+    if (u.schema === "rechnung") {
+      if (s === 1) {
+        const [a, b] = u.rechnung.ausdruck.split(":").map(t => t.trim());
+        const [ua, ub] = u.rechnung.umformung.split(":").map(t => t.trim());
+        rech = `<div class="writeline"><span class="label">R:</span> ${esc(a)} : ${esc(b)} = ${blank(luna(ua, sol))} : ${blank(luna(ub, sol))} = ${blank(luna(fmt(u.ergebnis.wert), sol))}</div>`;
+      } else {
+        rech = `<div class="writeline"><span class="label">R:</span>${blank(luna(`${u.rechnung.ausdruck} = ${u.rechnung.umformung} = ${fmt(u.ergebnis.wert)}`, sol), true)}</div>`;
+      }
+    } else if (s <= 2) {
+      rech = `<div class="writeline"><span class="label">R:</span></div>${dreisatzTable(u, s, sol)}`;
+    } else {
+      rech = `<div class="writeline"><span class="label">R:</span></div>${sol ? dreisatzTable(u, 2, true) : `<div class="empty-space"></div><div class="empty-space"></div>`}`;
+    }
+    h += zone("Rechnung", rech);
+    const anfang = s === 1 ? esc(u.antwort_anfang) + " " : "";
+    const rest = s === 1 ? u.antwortsatz.slice(u.antwort_anfang.length).trim() : u.antwortsatz;
+    h += zone("Antwortsatz", `<div class="writeline"><span class="label">A:</span> ${anfang}${blank(luna(rest, sol), true)}</div>`);
+  } else if (sol) {
+    h += zone("Rechnung", u.schema === "rechnung"
+      ? `<div class="writeline">${luna(`R: ${u.rechnung.ausdruck} = ${u.rechnung.umformung} = ${fmt(u.ergebnis.wert)}`, true)}</div>`
+      : dreisatzTable(u, 2, true));
+    h += zone("Antwortsatz", `<div class="writeline">${luna("A: " + u.antwortsatz, true)}</div>`);
+  }
+  h += `<div class="empty-space"></div>`;
+  board.innerHTML = h;
+}
+
+function renderPanel() {
+  const u = current(), g = u.ergebnis.einheit;
+  const q = u.quelle;
+  const fr = u.freigabe.noetig
+    ? `<span class="pill warn">Freigabe nötig</span> <span class="note">${esc(u.freigabe.grund)}</span>`
+    : `<span class="pill ok">ohne Freigabe</span> <span class="note">${esc(u.freigabe.grund)}</span>`;
+  let sol = "";
+  if (u.schema === "rechnung") {
+    sol = `<p style="margin:0;font-family:var(--font-num)">${esc(u.rechnung.ausdruck)} = ${esc(u.rechnung.umformung)} = ${esc(fmt(u.ergebnis.wert))}</p>`;
+  } else {
+    const anti = u.schema === "dreisatz_antiproportional";
+    const inv = op => (op[0] === ":" ? "·" : ":") + op.slice(1);
+    const [g1, g2] = u.groessen;
+    sol = `<table class="soltable"><tr><th></th><th>${esc(g1.name)}${g1.einheit ? " (" + esc(g1.einheit) + ")" : ""}</th><th>${esc(g2.name)}${g2.einheit ? " (" + esc(g2.einheit) + ")" : ""}</th><th></th></tr>`;
+    u.zeilen.forEach(([x, y], i) => {
+      const l = i > 0 ? u.schritte[i - 1] : "", r = i > 0 ? (anti ? inv(u.schritte[i - 1]) : u.schritte[i - 1]) : "";
+      sol += `<tr><td class="op">${esc(l)}</td><td>${esc(fmt(x))}</td><td>${esc(fmt(y, g2.einheit))}</td><td class="op">${esc(r)}</td></tr>`;
+    });
+    sol += `</table>`;
+  }
+  const look = u.nachschlagen ? `${esc(u.nachschlagen.material)}, S. ${u.nachschlagen.seite}, ${esc(u.nachschlagen.stelle)}` : `<span class="note">keine Stelle in Theas Büchern (Stoff Klasse 6)</span>`;
+  const twinOf = u.zwilling_von ? `<dt>Zwilling von</dt><dd>${esc(KURZ[u.zwilling_von] || u.zwilling_von)} (Original)</dd>` : "";
+  document.getElementById("panel").innerHTML = `
+    <h2>Für die Eltern</h2>
+    <dl class="kv">
+      <dt>Quelle</dt><dd>${esc(q.material)}${q.seite ? ", S. " + q.seite : ""}, Nr. ${esc(q.nummer)}${q.wortlaut_aus ? `<br><span class="note">Wortlaut: ${esc(q.wortlaut_aus)}</span>` : ""}</dd>
+      <dt>Ableitung</dt><dd>${u.ableitung === "A" ? "A · Original" : "B · Zwilling"}</dd>
+      ${twinOf}
+      <dt>Abschnitt</dt><dd>${esc(u.abschnitt)}</dd>
+      <dt>Freigabe</dt><dd>${fr}</dd>
+    </dl>
+    ${u.theas_loesung ? `<div class="thea"><h3>Theas Lösung damals</h3><p style="margin:0">${esc(u.theas_loesung)}</p></div>` : ""}
+    <div><h3>Lösung (nachgerechnet)</h3>${sol}</div>
+    <div><h3>Antwortsatz</h3><p style="margin:0">${esc(u.antwortsatz)}</p></div>
+    ${u.ueberschlag ? `<div><h3>Überschlag</h3><p style="margin:0">${esc(u.ueberschlag.ausdruck)} → ${esc(u.ueberschlag.folgerung)}</p></div>` : ""}
+    ${u.begruendung ? `<div><h3>Erwartete Begründung</h3><p style="margin:0">${esc(u.begruendung.erwartung)}</p></div>` : ""}
+    <div><h3>Schätzfrage vor dem Rechnen</h3><p style="margin:0">${u.schaetzfrage.aktiv
+      ? `${esc(u.schaetzfrage.frage)} → <b>${esc(u.schaetzfrage.antwort)}</b>`
+      : `entfällt, der Überschlag auf der Tafel übernimmt`}</p></div>
+    <div><h3>Fehlerbeispiel</h3><p style="margin:0">${esc(fmt(u.fehlerbeispiel.wert, g))} ${esc(g)}: ${esc(u.fehlerbeispiel.fehler)}.
+      ${catches(u) ? `<span class="pill ok">${u.schaetzfrage.aktiv ? "fängt die Schätzfrage" : "fängt der Überschlag"}</span>` : `<span class="pill warn">fängt nur das Programm</span>`}</p></div>
+    <div><h3>Typische Fehler</h3><ul class="list">${u.typische_fehler.map(f => `<li>${esc(f)}</li>`).join("")}</ul></div>
+    <div><h3>Hilfe-Stufen</h3><ol class="help">
+      <li><b>Denkanstoß:</b> ${esc(u.hilfen.denkanstoss)}</li>
+      <li><b>Nachschlagen:</b> ${look}</li>
+      <li><b>Hinweis:</b> ${esc(u.hilfen.hinweis)}</li>
+      <li><b>Lösungsweg:</b> Luna schreibt den Weg auf die Tafel (Schalter „Lösung“), danach folgt ein Zwilling.</li>
+    </ol></div>`;
+}
+
+// Schätzfrage: „mehr/länger“ heißt, das Ergebnis liegt über dem Vergleichswert
+const isUp = opt => opt === "mehr" || opt === "länger";
+const catches = u => (u.fehlerbeispiel.wert > u.schaetzfrage.vergleichswert) !== isUp(u.schaetzfrage.antwort);
+
+function renderLuna() {
+  const u = current(), sf = u.schaetzfrage, e = u.ergebnis.einheit;
+  const ref = `${fmt(sf.vergleichswert, e)} ${e}`;
+  const say = t => `<div class="say"><span class="who" aria-hidden="true">L</span><p>${esc(t)}</p></div>`;
+  let h = `<div class="step"><span class="step-label">Vor dem Rechnen</span>`;
+  if (u.einstieg && !state.twin) h += say(u.einstieg);
+  if (!sf.aktiv) {
+    h += say("Fang mit dem Überschlag an: Wie viele Flaschen wären es ungefähr?");
+    h += `<p class="verdict">Keine Schätzfrage: ${esc(sf.grund)}</p></div>`;
+    document.getElementById("lunabar").innerHTML = h;
+    return;
+  }
+  h += say(sf.frage) + `<div class="opts">${sf.optionen.map(o =>
+    `<button type="button" class="opt" data-opt="${esc(o)}" aria-pressed="${state.guess === o}">${esc(o)}</button>`).join("")}</div></div>`;
+
+  if (state.guess) {
+    const right = { wert: u.ergebnis.wert, label: "Thea rechnet richtig" };
+    const wrong = { wert: u.fehlerbeispiel.wert, label: "Thea verrechnet sich" };
+    h += `<div class="step"><span class="step-label">Nach dem Rechnen · zum Ausprobieren</span><div class="opts">
+      <button type="button" class="opt sim" data-out="richtig" aria-pressed="${state.outcome === "richtig"}">${right.label} (${esc(fmt(right.wert, e))} ${esc(e)})</button>
+      <button type="button" class="opt sim" data-out="fehler" aria-pressed="${state.outcome === "fehler"}">${wrong.label} (${esc(fmt(wrong.wert, e))} ${esc(e)})</button></div>`;
+    if (state.outcome) {
+      const r = state.outcome === "richtig" ? right.wert : wrong.wert;
+      const res = `${fmt(r, e)} ${e}`;
+      const fits = (r > sf.vergleichswert) === isUp(state.guess);
+      if (state.outcome === "richtig" && fits) {
+        h += say(`Passt zu deiner Schätzung: ${res} ist ${state.guess} als ${ref}.`);
+      } else if (state.outcome === "richtig") {
+        h += say(`Du hattest ${state.guess} als ${ref} geschätzt, herausgekommen sind ${res}. Dein Ergebnis stimmt. Überleg mal, warum es ${sf.antwort} sein muss.`);
+        h += `<p class="verdict">Das Programm weiß, dass die Rechnung stimmt. Luna zweifelt deshalb die Schätzung an, nicht das Ergebnis.</p>`;
+      } else if (!fits) {
+        h += say(`Du hattest gesagt: ${state.guess} als ${ref}. Dein Ergebnis ist ${res}. Schau noch mal auf deine Rechnung.`);
+        h += `<p class="verdict caught">Die Schätzfrage hat den Fehler aufgefangen. Thea findet ihn selbst.</p>`;
+      } else {
+        h += say(`Passt zu deiner Schätzung.`);
+        h += `<p class="verdict missed">Diesen Fehler (${esc(u.fehlerbeispiel.fehler)}) fängt die Schätzfrage nicht. Das Programm prüft die Rechnung trotzdem und meldet ihn danach.</p>`;
+      }
+    }
+    h += `</div>`;
+  }
+  const bar = document.getElementById("lunabar");
+  bar.innerHTML = h;
+  bar.querySelectorAll("[data-opt]").forEach(b => b.addEventListener("click", () => set({ guess: b.dataset.opt, outcome: null })));
+  bar.querySelectorAll("[data-out]").forEach(b => b.addEventListener("click", () => set({ outcome: b.dataset.out })));
+}
+
+function chip(label, pressed, onclick, extra) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip"; b.innerHTML = label + (extra || "");
+  b.setAttribute("aria-pressed", pressed ? "true" : "false");
+  b.addEventListener("click", onclick);
+  return b;
+}
+function renderControls() {
+  const fill = (id, items) => {
+    const g = document.getElementById(id);
+    g.querySelectorAll(".chip").forEach(c => c.remove());
+    items.forEach(i => g.appendChild(i));
+  };
+  fill("pick", originals.map(o => chip(esc(KURZ[o.id] || o.id), o.id === state.orig, () => set({ orig: o.id }),
+    o.schema === "dreisatz_antiproportional" ? ` <span class="anti-dot" title="antiproportional"></span>` : "")));
+  fill("variant", [chip("Original", !state.twin, () => set({ twin: false })), chip("Zwilling", state.twin, () => set({ twin: true }))]);
+  fill("stage", [1, 2, 3, 4].map(n => {
+    const c = chip(String(n), state.stage === n, () => set({ stage: n }));
+    c.title = STUFEN[n];
+    return c;
+  }));
+  fill("toggles", [
+    chip("Lösung", state.solution, () => set({ solution: !state.solution })),
+    chip("Zonen", state.zones, () => set({ zones: !state.zones })),
+    chip("Weißes Blatt", state.white, () => set({ white: !state.white })),
+  ]);
+}
+function set(patch) {
+  if ("orig" in patch || "twin" in patch) Object.assign(patch, { guess: null, outcome: null });
+  Object.assign(state, patch);
+  try { localStorage.setItem("dreisatz-pilot", JSON.stringify(state)); } catch (e) {}
+  render();
+}
+function render() { renderControls(); renderBoard(); renderLuna(); renderPanel(); }
+render();
+</script>
