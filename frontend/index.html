@@ -653,9 +653,6 @@
               <span id="wb-hint-icon" class="wb-btn-icon-wrap"><span class="ui-icon i-tutor" aria-hidden="true"></span></span>
               <span id="wb-hint-label" class="sr-only">Tutor fragen</span>
             </button>
-            <button id="btn-wb-place-exercise" class="wb-btn-subtle wb-btn-square" title="Aufgabe von Luna auf die Tafel legen" aria-label="Aufgabe">
-              <span class="ui-icon i-uebungen" aria-hidden="true"></span>
-            </button>
             <button id="btn-wb-audio-toggle" class="wb-btn-subtle wb-btn-speaker active" title="Sprachausgabe (TTS) an/aus">
               <span id="wb-audio-icon-wrap" class="wb-btn-icon-wrap">
                 <span id="wb-audio-icon-on" class="ui-icon i-lautsprecher" aria-hidden="true"></span>
@@ -818,67 +815,10 @@
               </div>
             </div>
 
-            <!-- Modal: Aufgabe von Luna anfordern -->
-            <div id="wb-exercise-modal" class="wb-modal-backdrop" style="display: none;">
-              <div class="wb-modal-card">
-                <div class="wb-modal-header">
-                  <div class="wb-modal-title">
-                    <span class="wb-modal-icon"><span class="ui-icon i-uebungen" aria-hidden="true"></span></span>
-                    <div>
-                      <h3>Aufgabe von Luna</h3>
-                      <p class="wb-modal-subtitle">Luna erstellt eine Übung und legt sie direkt auf deine Tafel.</p>
-                    </div>
-                  </div>
-                  <button type="button" class="wb-modal-close" id="btn-wb-exercise-modal-close"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
-                </div>
-                <div class="wb-modal-body">
-                  <div class="wb-form-group">
-                    <label for="wb-exercise-type-select">Aufgabentyp</label>
-                    <select id="wb-exercise-type-select" class="wb-input-select">
-                      <option value="auto" selected>Luna wählt passend zum Fach & Thema</option>
-                      <option value="math_problem">Rechenaufgabe (mit Schrittanleitung)</option>
-                      <option value="math_example">Rechenbeispiel (Musteraufgabe zum Nachmachen)</option>
-                      <option value="physics_diagram">Physik-Diagramm (z. B. s-t, v-t, Kräfte am Hebel)</option>
-                      <option value="formula_derivation">Formel-Herleitung (Schritt für Schritt)</option>
-                      <option value="fill_in_the_blank">Lückentext mit Fachbegriffen</option>
-                      <option value="text_question">Textverständnis (Fragen zum Material/Text)</option>
-                    </select>
-                  </div>
-
-                  <div class="wb-form-group">
-                    <label for="wb-exercise-topic-input">Thema / Schwerpunkt (optional)</label>
-                    <input type="text" id="wb-exercise-topic-input" class="wb-input-text" placeholder="z. B. Gleichungen, Hebelgesetz, Photosynthese..." />
-                  </div>
-
-                  <div class="wb-form-group">
-                    <label for="wb-exercise-difficulty-select">Schwierigkeit</label>
-                    <select id="wb-exercise-difficulty-select" class="wb-input-select">
-                      <option value="leicht">Leicht (Grundlagen)</option>
-                      <option value="mittel" selected>Mittel (Klasse 7 Standard)</option>
-                      <option value="knifflig">Knifflig (Herausforderung)</option>
-                    </select>
-                  </div>
-
-                  <div class="wb-form-group">
-                    <label for="wb-exercise-custom-prompt">Besonderer Wunsch an Luna (optional)</label>
-                    <input type="text" id="wb-exercise-custom-prompt" class="wb-input-text" placeholder="z. B. Mit zwei einfachen Zahlen oder einem anschaulichen Beispiel" />
-                  </div>
-                </div>
-                <div class="wb-modal-footer">
-                  <button type="button" class="wb-btn-subtle" id="btn-wb-exercise-cancel">Abbrechen</button>
-                  <button type="button" class="wb-btn-primary" id="btn-wb-exercise-submit">
-                    <span><span class="ui-icon i-luna" aria-hidden="true"></span></span>
-                    <span id="btn-wb-exercise-submit-label">Aufgabe auf Tafel legen</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
       </section>
 
-      <!-- Tab 5: Profil -->
       <!-- Üben: Übungen aus echten Aufgaben (Probebetrieb, js/practice.js) -->
       <section id="tab-practice" class="tab-pane">
         <div id="practice-list-view">
@@ -888,6 +828,7 @@
         <div id="practice-run-view" style="display: none;"></div>
       </section>
 
+      <!-- Tab 5: Profil -->
       <section id="tab-profile" class="tab-pane">
         <div class="profile-card">
           <h2><img src="/static/Icons/Kind.svg" class="prof-heading-icon" alt=""><span class="sr-only">Profil</span></h2>

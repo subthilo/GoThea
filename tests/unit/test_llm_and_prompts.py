@@ -5,7 +5,7 @@ import pypdf
 
 from backend.app.services.llm import chat_params, supports_temperature
 from backend.app.prompts.book_toc import BOOK_TOC_SYSTEM_PROMPT
-from backend.app.prompts.tutor import EXERCISE_SYSTEM_PROMPT, CLOZE_EVALUATION_SYSTEM_PROMPT, TUTOR_SYSTEM_PROMPT
+from backend.app.prompts.tutor import TUTOR_SYSTEM_PROMPT
 
 
 def _mock_openai(content: dict):
@@ -80,13 +80,6 @@ def test_book_toc_uses_main_model_and_pdf_page_markers(tmp_path):
 
 
 def test_prompts_match_code_expectations():
-    # Lückentexte liefern Alternativen, Schwierigkeitsgrade sind definiert
-    assert '"alternatives"' in EXERCISE_SYSTEM_PROMPT
-    for level in ("leicht", "mittel", "schwer"):
-        assert f'"{level}"' in EXERCISE_SYSTEM_PROMPT
-    # Handschrift wird wörtlich übernommen, kein widersprüchliches "STRENG"
-    assert "NIEMALS in Richtung des erwarteten Begriffs" in CLOZE_EVALUATION_SYSTEM_PROMPT
-    assert "großzügig" not in CLOZE_EVALUATION_SYSTEM_PROMPT
     # Tutor behauptet keinen Vollzugriff auf Unterlagen
     assert "VOLLEN Zugriff" not in TUTOR_SYSTEM_PROMPT
 

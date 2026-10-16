@@ -52,7 +52,6 @@ def server_url(server_data_dir):
         "DATABASE_URL": f"sqlite:///{data_dir}/app_data.db",
         "OPENAI_API_KEY": "",
         "GOTHEA_BACKGROUND_WORKERS": "0",
-        "GOTHEA_EXERCISE_POOL": "0",
         "GOTHEA_PARENT_PIN": PARENT_PIN,
     }
     log = open(os.path.join(data_dir, "server.log"), "w")

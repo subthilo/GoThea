@@ -31,10 +31,6 @@ OPENAI_MAX_RETRIES = int(os.getenv("OPENAI_MAX_RETRIES", "2"))
 # Hintergrund-Worker (Seiten-Renderer, Übungs-Pool) beim App-Start; in Tests abgeschaltet
 BACKGROUND_WORKERS_ENABLED = os.getenv("GOTHEA_BACKGROUND_WORKERS", "1") != "0"
 
-# Übungs-Vorrat (Vorproduktion von Übungen + Audio per OpenAI). Standard: aus, bis Tutor und
-# Übungserzeugung neu gebaut sind. Betrifft NICHT Seiten-Erschließung und Renderer.
-EXERCISE_POOL_ENABLED = os.getenv("GOTHEA_EXERCISE_POOL", "0") == "1"
-
 # Umgebung: "staging" oder "production" (Default: "staging" für Sicherheit)
 APP_ENV = os.getenv("APP_ENV", "staging").lower()
 IS_STAGING = APP_ENV == "staging"
@@ -72,7 +68,5 @@ INBOX_ERRORS_DIR = INBOX_DIR / "_errors"
 PAGE_CACHE_DIR = DATA_DIR / "cache" / "rendered_pages"
 PAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-EXERCISE_POOL_DIR = DATA_DIR / "exercise_pool"
-EXERCISE_POOL_DIR.mkdir(parents=True, exist_ok=True)
 
 
