@@ -161,4 +161,4 @@ done
 echo "✅ [4/4] Deployment abgeschlossen ($TARGET_ENV)!"
 echo "👉 🟢 PRODUKTION (geschützte Daten): http://$PI_HOST:8000"
 echo "👉 🟡 STAGING    (Test-Spielwiese):  http://$PI_HOST:8001"
-echo "🔒 STAGING per HTTPS (Tailscale):     https://gothea-pi.taile2bb97.ts.net:8443"
+echo "🔒 HTTPS (Tailscale): Produktion https://gothea-pi.taile2bb97.ts.net  ·  Staging https://gothea-pi.taile2bb97.ts.net:8443"
