@@ -191,3 +191,36 @@ def test_subject_page_lists_boards_with_preview_on_expand(app_page):
     assert app_page.text_content("#wb-board-title") == title
     assert _pixels(app_page) > 0
     assert app_page.problems.errors == []
+
+
+def test_board_rename_for_all_and_delete_only_for_parents(app_page, parent_pin):
+    _open_board(app_page)
+    _draw_and_capture_save(app_page, _line(200, 200, 400, 260))
+    current_id = app_page.evaluate("fetch('/api/v1/boards').then(r => r.json()).then(l => l[0].id)")
+    subject_id = app_page.evaluate("fetch('/api/v1/boards').then(r => r.json()).then(l => l[0].subject_id)")
+    app_page.evaluate("(s) => openSubjectDetail(s)", subject_id)
+    row = app_page.locator(f"#subject-boards-grid .board-row[data-board-id='{current_id}']")
+    row.wait_for(timeout=5000)
+
+    # Thea: umbenennen ja, löschen nein
+    app_page.once("dialog", lambda d: d.accept("Bruchrechnung QZB"))
+    row.locator(".board-row-rename").click()
+    app_page.wait_for_selector(f".board-row[data-board-id='{current_id}'] .doc-row-name:has-text('Bruchrechnung QZB')", timeout=5000)
+    row.locator(".doc-row-name").click()
+    assert not row.locator(".board-row-delete").is_visible()
+
+    # Eltern: die gerade geöffnete Tafel löschen – danach darf nichts mehr auf sie speichern
+    app_page.click("#btn-parent-toggle")
+    app_page.fill("#input-parent-pin", parent_pin)
+    app_page.click("#btn-submit-parent-pin")
+    app_page.wait_for_function("document.body.classList.contains('parent-mode-active')", timeout=5000)
+    row = app_page.locator(f"#subject-boards-grid .board-row[data-board-id='{current_id}']")
+    if "open" not in (row.get_attribute("class") or ""):
+        row.locator(".doc-row-name").click()
+    app_page.once("dialog", lambda d: d.accept())
+    row.locator(".board-row-delete").click()
+    app_page.wait_for_selector(f".board-row[data-board-id='{current_id}']", state="detached", timeout=5000)
+    ids = app_page.evaluate("fetch('/api/v1/boards').then(r => r.json()).then(l => l.map(b => b.id))")
+    assert current_id not in ids
+    _settle(app_page)
+    assert app_page.problems.errors == []

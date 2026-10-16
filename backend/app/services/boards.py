@@ -2,7 +2,8 @@
 Tafel-Verwaltung wie in einer Notizen-App: Jede freie Tafel gehört zu einem Fach, wird beim Wechsel
 geschlossen und kann wieder geöffnet werden. Neue Tafeln heißen zunächst "<Fach> – <Datum>"; beim
 Schließen schlägt die KI anhand des Vorschaubilds einen Namen vor (nur solange niemand umbenannt hat).
-Leere Tafeln werden beim Schließen verworfen. Thea archiviert statt zu löschen.
+Leere Tafeln werden beim Schließen verworfen. Thea archiviert statt zu löschen; endgültig löschen
+können nur die Eltern.
 
 Tafeln auf Dokumenten (Mitschrift, Arbeitsblatt, Buchseite) sind keine Tafeln in diesem Sinn: ihre
 Striche liegen pro Material und Seite in page_annotations.
@@ -98,6 +99,12 @@ def set_archived(db: Session, board: TutorSession, archived: bool) -> TutorSessi
     db.commit()
     db.refresh(board)
     return board
+
+
+def delete_board(db: Session, board: TutorSession) -> None:
+    """Löscht die Tafel endgültig samt Strichen, Vorschaubild und Tutor-Verlauf (nur Eltern-Modus)."""
+    db.delete(board)
+    db.commit()
 
 
 def close_board(db: Session, board: TutorSession) -> Optional[TutorSession]:

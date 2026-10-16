@@ -1,4 +1,4 @@
-"""Tafeln verwalten (Liste pro Fach, öffnen, schließen, umbenennen, archivieren).
+"""Tafeln verwalten (Liste pro Fach, öffnen, schließen, umbenennen, archivieren, löschen).
 
 Die Striche speichert die Tafel weiterhin per Auto-Save über PUT /api/v1/whiteboard/sessions/{id}/state.
 """
@@ -87,6 +87,12 @@ def close_board(board_id: str, db: Session = Depends(get_db)):
 @router.patch("/{board_id}", response_model=BoardSummary)
 def rename_board(board_id: str, payload: BoardRename, db: Session = Depends(get_db)):
     return _summary(svc.rename_board(db, _get(db, board_id), payload.title))
+
+
+@router.delete("/{board_id}", status_code=204, dependencies=[Depends(require_parent)])
+def delete_board(board_id: str, db: Session = Depends(get_db)):
+    svc.delete_board(db, _get(db, board_id))
+    return Response(status_code=204)
 
 
 @router.post("/{board_id}/archive", response_model=BoardSummary)

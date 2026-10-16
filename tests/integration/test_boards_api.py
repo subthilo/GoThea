@@ -117,3 +117,19 @@ def test_thumbnail_is_served_as_image(client):
     res = client.get(f"/api/v1/boards/{board['id']}/thumbnail")
     assert res.status_code == 200 and res.headers["content-type"] == "image/jpeg"
     assert res.content == b"\xff\xd8fakejpeg"
+
+
+def test_parent_deletes_a_board_for_good(client):
+    board = _new(client)
+    _draw(client, board["id"])
+    assert client.delete(f"/api/v1/boards/{board['id']}").status_code == 204
+    assert board["id"] not in [b["id"] for b in client.get("/api/v1/boards").json()]
+    assert client.get(f"/api/v1/boards/{board['id']}/thumbnail").status_code == 404
+    assert client.delete(f"/api/v1/boards/{board['id']}").status_code == 404
+
+
+def test_deleting_a_board_requires_parent_mode(strict_client):
+    res = strict_client.post("/api/v1/boards", json={"subject_id": "sub_math"})
+    board_id = res.json()["id"]
+    assert strict_client.delete(f"/api/v1/boards/{board_id}").status_code == 403
+    assert strict_client.patch(f"/api/v1/boards/{board_id}", json={"title": "Bruchrechnung"}).status_code == 200

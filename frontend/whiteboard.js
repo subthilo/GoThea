@@ -2008,6 +2008,22 @@
     return queued(startNewBoard)(subjectId);
   };
 
+  // Von der Fachseite aus: Umbenennen (alle) und Löschen (nur Eltern). Läuft hier, weil die Tafel
+  // die gerade geöffnete Tafel kennt – Titel nachziehen, nicht auf eine gelöschte Tafel speichern.
+  window.renameBoardFromList = (b) => renameBoard(b);
+
+  window.deleteBoardFromList = queued(async (b) => {
+    const isCurrent = !surface.isBookPageMode && surface.currentSession && surface.currentSession.id === b.id;
+    if (isCurrent) {
+      clearTimeout(saveDebounceTimer);
+      surface.currentSession = null;
+    }
+    const res = await apiFetch(`/api/v1/boards/${encodeURIComponent(b.id)}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(`Tafel nicht gelöscht (HTTP ${res.status})`);
+    if (isCurrent) await openLastBoard(subjectSelect.value);
+    renderBoardsPanel();
+  });
+
   setTimeout(() => {
     surface.resizeCanvases();
     queued(initSession)();

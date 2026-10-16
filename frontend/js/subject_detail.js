@@ -403,12 +403,16 @@ function buildBoardRow(b) {
       <span class="doc-row-kind">${icon("Tafel")}</span>
       <span class="doc-row-title"><span class="doc-row-name">${escapeHtml(b.title || "Tafel")}</span></span>
       <span class="doc-row-pages">${escapeHtml(dateText)}</span>
+      <button type="button" class="btn-mat-action board-row-rename" title="Tafel umbenennen">${icon("Schreibwerkzeuge")} Umbenennen</button>
       <button type="button" class="btn-mat-action board-row-open" title="Tafel öffnen">${icon("Tafel")} Öffnen</button>
     </div>
     <div class="doc-row-body">
       ${thumbUrl
         ? `<button type="button" class="board-row-preview" title="Tafel öffnen"><img alt="Vorschau: ${escapeHtml(b.title || "Tafel")}"></button>`
         : `<p class="doc-row-summary">Für diese Tafel gibt es noch keine Vorschau.</p>`}
+      <div class="doc-row-actions parent-only">
+        <button type="button" class="btn-mat-action btn-mat-del board-row-delete" title="Tafel endgültig löschen">${icon("Papierkorb")} Löschen</button>
+      </div>
     </div>
   `;
 
@@ -433,6 +437,18 @@ function buildBoardRow(b) {
   row.querySelector(".board-row-open").addEventListener("click", (e) => {
     e.stopPropagation();
     open();
+  });
+  row.querySelector(".board-row-rename").addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (typeof window.renameBoardFromList !== "function") return;
+    await window.renameBoardFromList(b);
+    loadSubjectBoards(b.subject_id);
+  });
+  row.querySelector(".board-row-delete").addEventListener("click", async () => {
+    if (!confirm(`Tafel „${b.title || "Tafel"}“ endgültig löschen? Das lässt sich nicht rückgängig machen.`)) return;
+    if (typeof window.deleteBoardFromList !== "function") return;
+    await window.deleteBoardFromList(b);
+    loadSubjectBoards(b.subject_id);
   });
   const preview = row.querySelector(".board-row-preview");
   if (preview) preview.addEventListener("click", open);
