@@ -194,3 +194,33 @@ def test_correct_check_offers_next_stage_and_twin(app_page):
     app_page.wait_for_function("document.getElementById('wb-board-title').textContent.includes('Stufe 2')")
     assert not app_page.is_visible(".wb-practice-done")
     assert app_page.problems.errors == []
+
+
+def test_list_shows_suggestion_and_marks_solved_stage(app_page):
+    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
+    app_page.click('.nav-tab[data-tab="practice"]')
+    app_page.wait_for_selector(".practice-suggest")
+    assert app_page.locator(".practice-group-title").count() >= 2  # nach Abschnitt gruppiert
+    # Stufe 0 lösen, zurück zur Liste: Punkt 0 ist gefüllt
+    open_practice(app_page)
+    app_page.click('.px-guess-btn[data-guess="mehr"]')
+    for slot, token in SOLUTION.items():
+        fill(app_page, slot, token)
+    app_page.click(".px-answer:text-is('500 g Gummibärchen kosten 10 €.')")
+    with app_page.expect_response(lambda r: r.url.endswith("/events") and '"check"' in (r.request.post_data or "")):
+        app_page.click('[data-action="check"]')
+    app_page.click('.px-topbar [data-action="back"]')
+    app_page.wait_for_selector('.practice-row[data-id="sa-gummibaerchen"] .practice-dot.done[data-stage="0"]')
+    assert app_page.problems.errors == []
+
+
+def test_stage_dot_opens_practice_board(app_page):
+    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
+    app_page.click('.nav-tab[data-tab="practice"]')
+    app_page.wait_for_selector('.practice-row[data-id="sa-flugzeug"]')
+    with app_page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
+        app_page.click('.practice-row[data-id="sa-flugzeug"] .practice-dot[data-stage="3"]')
+    board = created.value.json()
+    assert board["practice_exercise_id"] == "sa-flugzeug" and board["practice_stage"] == 3
+    app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
+    assert app_page.problems.errors == []

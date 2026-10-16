@@ -14,6 +14,15 @@
   const runView = document.getElementById("practice-run-view");
   if (!navBtn || !listView || !listEl || !runView) return;
 
+  // Stufe 0 = Bausteine hier; 1–4 = Blatt auf einer neuen Tafel, mit dem Pencil (weniger Gerüst je Stufe)
+  const STAGE_TITLES = [
+    "Bausteine einsetzen",
+    "Tafel: Tabelle vorgegeben, Antwort angefangen",
+    "Tafel: nur Tabellenkopf",
+    "Tafel: nur R: und A:",
+    "Tafel: leeres Blatt wie im Test",
+  ];
+
   let run = null;  // aktuelle Übung: { ex, guess, placed, answer, checked, hint, selected }
 
   const esc = (s) => escapeHtml(String(s));
@@ -32,32 +41,98 @@
     return `${q.material}${page}, Nr. ${q.nummer}`;
   }
 
-  // ---------- Liste ----------
+  // ---------- Liste: Lunas Vorschlag, Aufgaben nach Abschnitt, Wiederholen ----------
+  // Stand und Vorschlag rechnet der Server aus den Versuchen (services/practice_plan.py).
+
+  let overview = null;  // letzte Antwort von /api/v1/practice
 
   async function loadPracticeList() {
     const data = await apiJson("/api/v1/practice");
-    if (!data.enabled) {
-      listEl.innerHTML = "";
-      return;
-    }
     listEl.innerHTML = "";
-    data.exercises.forEach((ex) => listEl.appendChild(buildRow(ex)));
+    if (!data.enabled) return;
+    overview = data;
+    const families = Object.fromEntries(data.exercises.map((ex) => [ex.id, ex]));
+    if (data.vorschlag) listEl.appendChild(buildSuggestion(data.vorschlag, families[data.vorschlag.familie]));
+
+    const groups = new Map();
+    data.exercises.forEach((ex) => {
+      if (!groups.has(ex.abschnitt)) groups.set(ex.abschnitt, []);
+      groups.get(ex.abschnitt).push(ex);
+    });
+    groups.forEach((list, title) => {
+      const h = document.createElement("h3");
+      h.className = "practice-group-title";
+      h.textContent = title;
+      listEl.appendChild(h);
+      list.forEach((ex) => listEl.appendChild(buildRow(ex, data.stand[ex.id])));
+    });
+
+    if (data.wiederholen.length) {
+      const h = document.createElement("h3");
+      h.className = "practice-group-title icon-heading";
+      h.title = "Wiederholen";
+      h.innerHTML = `${icon("Wiederholen")}<span class="sr-only">Wiederholen</span>`;
+      listEl.appendChild(h);
+      data.wiederholen.forEach((r) => listEl.appendChild(buildRepeatRow(r, families[r.familie])));
+    }
   }
 
-  function buildRow(ex) {
+  // Stufe 0 im Tab, Stufen 1–4 auf einer Übungstafel; ein angefangener Versuch öffnet seine Tafel wieder
+  function startPractice({ exercise_id: exerciseId, stufe: stage, board_id: boardId }, family) {
+    if (boardId && typeof window.openBoardOnWhiteboard === "function") return window.openBoardOnWhiteboard(boardId);
+    if (!stage || typeof window.openPracticeOnWhiteboard !== "function") return openExercise(exerciseId);
+    const ableitung = exerciseId === family.id ? "A" : "B";
+    return window.openPracticeOnWhiteboard({ exerciseId, stage, title: practiceBoardTitle(family.quelle, ableitung, stage) });
+  }
+
+  const SUGGESTION_ICONS = { weiter: "Pfeil rechts", wiederholen: "Wiederholen", neu: "Rakete" };
+
+  function buildSuggestion(sug, family) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "practice-suggest";
+    card.title = sug.art === "wiederholen" ? "Wiederholen" : sug.art === "neu" ? "Neue Aufgabe" : "Weiter";
+    card.style.setProperty("--subject-color", subjectColor("sub_math"));
+    card.innerHTML = `
+      ${icon("Luna", "practice-suggest-luna")}
+      <span class="practice-row-text">
+        <span class="practice-suggest-task">${esc(family.aufgabentext)}</span>
+        <span class="practice-row-src">${esc(sourceLine(family.quelle))}${sug.exercise_id !== family.id ? " · ähnliche Aufgabe" : ""}</span>
+      </span>
+      <span class="practice-suggest-go">${icon(SUGGESTION_ICONS[sug.art] || "Pfeil rechts")}<span class="practice-stage-no">${sug.stufe}</span></span>`;
+    card.addEventListener("click", () => startPractice(sug, family));
+    return card;
+  }
+
+  function stageDots(stand) {
+    const done = new Set(stand ? stand.geschafft : []);
+    const next = stand ? stand.naechste_stufe : 0;
+    return STAGE_TITLES.map((title, n) => {
+      const cls = done.has(n) ? " done" : n === next ? " next" : "";
+      const label = `Stufe ${n}: ${title}${done.has(n) ? " (geschafft)" : ""}`;
+      return `<button type="button" class="practice-dot${cls}" data-stage="${n}" title="${esc(label)}" aria-label="${esc(label)}"><span>${n}</span></button>`;
+    }).join("");
+  }
+
+  function buildRow(ex, stand) {
     const row = document.createElement("div");
     row.className = "practice-row";
+    row.dataset.id = ex.id;
     row.style.setProperty("--subject-color", subjectColor("sub_math"));
     const anti = ex.schema === "dreisatz_antiproportional";
+    const next = stand && stand.naechste_stufe !== null ? stand.naechste_stufe : 0;
     row.innerHTML = `
       <button type="button" class="practice-row-main" title="Üben">
         ${subjectIcon("Mathematik", "practice-row-icon")}
         <span class="practice-row-text">
           <span class="practice-row-task">${esc(ex.aufgabentext)}</span>
-          <span class="practice-row-src">${esc(sourceLine(ex.quelle))} · ${esc(ex.abschnitt)}${anti ? " · antiproportional" : ""}</span>
+          <span class="practice-row-src">${esc(sourceLine(ex.quelle))}${anti ? " · antiproportional" : ""}</span>
         </span>
-      </button>`;
-    row.querySelector(".practice-row-main").addEventListener("click", () => openExercise(ex.id));
+      </button>
+      <div class="practice-dots" role="group" aria-label="Stufen">${stageDots(stand)}</div>`;
+    row.querySelector(".practice-row-main").addEventListener("click", () => startPractice({ exercise_id: ex.id, stufe: next }, ex));
+    row.querySelectorAll(".practice-dot").forEach((dot) => dot.addEventListener("click", () =>
+      startPractice({ exercise_id: ex.id, stufe: Number(dot.dataset.stage) }, ex)));
     if (ex.zwillinge.length) {
       const twin = document.createElement("button");
       twin.type = "button";
@@ -65,9 +140,26 @@
       twin.title = "Ähnliche Aufgabe";
       twin.setAttribute("aria-label", "Ähnliche Aufgabe");
       twin.innerHTML = icon("Wiederholen");
-      twin.addEventListener("click", () => openExercise(ex.zwillinge[0]));
+      twin.addEventListener("click", () => startPractice({ exercise_id: ex.zwillinge[0], stufe: next }, ex));
       row.appendChild(twin);
     }
+    return row;
+  }
+
+  function buildRepeatRow(r, family) {
+    const row = document.createElement("div");
+    row.className = "practice-row practice-repeat";
+    row.style.setProperty("--subject-color", subjectColor("sub_math"));
+    row.innerHTML = `
+      <button type="button" class="practice-row-main" title="Wiederholen">
+        ${subjectIcon("Mathematik", "practice-row-icon")}
+        <span class="practice-row-text">
+          <span class="practice-row-task">${esc(family.aufgabentext)}</span>
+          <span class="practice-row-src">${esc(sourceLine(family.quelle))}${r.exercise_id !== family.id ? " · ähnliche Aufgabe" : ""}</span>
+        </span>
+        <span class="practice-dot next" aria-label="Stufe ${r.stufe}"><span>${r.stufe}</span></span>
+      </button>`;
+    row.querySelector(".practice-row-main").addEventListener("click", () => startPractice(r, family));
     return row;
   }
 
@@ -89,6 +181,7 @@
     show(runView, false);
     runView.innerHTML = "";
     show(listView, true);
+    loadPracticeList().catch((err) => console.warn("Übungen nicht geladen:", err));
   }
 
   function slot(id, kind) {
@@ -255,18 +348,12 @@
       </div>`;
   }
 
-  // Stufe 0 = Bausteine hier; 1–4 = Blatt auf einer neuen Tafel, mit dem Pencil (weniger Gerüst je Stufe)
-  const STAGE_TITLES = [
-    "Bausteine einsetzen",
-    "Tafel: Tabelle vorgegeben, Antwort angefangen",
-    "Tafel: nur Tabellenkopf",
-    "Tafel: nur R: und A:",
-    "Tafel: leeres Blatt wie im Test",
-  ];
 
   function stageButtons() {
+    const family = run.ex.zwilling_von || run.ex.id;
+    const done = new Set(overview && overview.stand[family] ? overview.stand[family].geschafft : []);
     return STAGE_TITLES.map((title, n) =>
-      `<button type="button" class="px-stage${n === 0 ? " active" : ""}" data-stage="${n}" title="${esc(title)}" aria-label="Stufe ${n}: ${esc(title)}">${n}</button>`
+      `<button type="button" class="px-stage${n === 0 ? " active" : ""}${done.has(n) ? " done" : ""}" data-stage="${n}" title="${esc(title)}" aria-label="Stufe ${n}: ${esc(title)}">${n}</button>`
     ).join("");
   }
 

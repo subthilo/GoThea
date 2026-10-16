@@ -108,3 +108,16 @@ def test_trial_off_hides_attempts(client, monkeypatch):
     monkeypatch.setattr(config, "EXERCISE_TRIAL_ENABLED", False)
     assert client.post("/api/v1/practice/sa-gummibaerchen/attempts", json={"stage": 0}).status_code == 404
     assert client.get("/api/v1/practice/progress").json() == {"progress": {}}
+
+
+def test_list_carries_progress_and_suggestion(client):
+    data = client.get("/api/v1/practice").json()
+    first = data["exercises"][0]["id"]
+    assert data["vorschlag"]["art"] == "neu" and data["vorschlag"]["exercise_id"] == first
+    board = _board(client, stage=1)
+    _check(client, board["id"], "noch_nicht")
+    data = client.get("/api/v1/practice").json()
+    # Angefangen und nicht gelöst: weiter auf derselben Tafel
+    assert data["vorschlag"] == {"art": "weiter", "familie": "sa-gummibaerchen", "exercise_id": "sa-gummibaerchen",
+                                 "stufe": 1, "board_id": board["id"]}
+    assert data["wiederholen"][0]["familie"] == "sa-gummibaerchen"

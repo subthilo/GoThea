@@ -17,7 +17,7 @@ from backend.app import config
 from backend.app.database import get_db
 from backend.app.models.whiteboard import TutorSession
 from backend.app.models.practice_attempt import PracticeAttempt
-from backend.app.services import llm, practice_attempts, practice_check, practice_exercises
+from backend.app.services import llm, practice_attempts, practice_check, practice_exercises, practice_plan
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +50,18 @@ def _exercise_or_404(exercise_id: str) -> dict:
 
 
 @router.get("")
-def list_practice() -> dict:
+def list_practice(db: Session = Depends(get_db)) -> dict:
+    """Aufgaben mit Stand pro Stufe, Wiederholen und Lunas Vorschlag (services/practice_plan.py)."""
     # Ausgeschaltet: leere Liste statt Fehler, das Frontend blendet den Bereich dann aus
     if not config.EXERCISE_TRIAL_ENABLED:
         return {"enabled": False, "exercises": []}
-    return {"enabled": True, "exercises": practice_exercises.list_exercises()}
+    families = practice_exercises.list_exercises()
+    attempts = db.query(PracticeAttempt).all()
+    board_ids = {a.board_id for a in attempts if a.board_id}
+    open_boards = {b.id for b in db.query(TutorSession.id).filter(TutorSession.id.in_(board_ids),
+                                                                     TutorSession.archived_at.is_(None))}
+    return {"enabled": True, "exercises": families,
+            **practice_plan.plan(families, attempts, open_boards=open_boards)}
 
 
 @router.get("/progress")
