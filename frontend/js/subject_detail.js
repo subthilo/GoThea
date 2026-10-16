@@ -419,21 +419,6 @@ function buildBoardRow(b) {
   const open = () => {
     if (typeof window.openBoardOnWhiteboard === "function") window.openBoardOnWhiteboard(b.id);
   };
-  const head = row.querySelector(".doc-row-head");
-  const img = row.querySelector(".board-row-preview img");
-  const setOpen = (isOpen) => {
-    row.classList.toggle("open", isOpen);
-    head.setAttribute("aria-expanded", String(isOpen));
-    if (isOpen) openBoardRows.add(b.id); else openBoardRows.delete(b.id);
-    if (isOpen && img && !img.getAttribute("src")) img.src = thumbUrl;
-  };
-  head.addEventListener("click", () => setOpen(!row.classList.contains("open")));
-  head.addEventListener("keydown", (e) => {
-    if ((e.key === "Enter" || e.key === " ") && e.target === head) {
-      e.preventDefault();
-      setOpen(!row.classList.contains("open"));
-    }
-  });
   row.querySelector(".board-row-open").addEventListener("click", (e) => {
     e.stopPropagation();
     open();
@@ -452,7 +437,10 @@ function buildBoardRow(b) {
   });
   const preview = row.querySelector(".board-row-preview");
   if (preview) preview.addEventListener("click", open);
-  if (openBoardRows.has(b.id)) setOpen(true);
+  const img = row.querySelector(".board-row-preview img");
+  makeRowExpandable(row, row.querySelector(".doc-row-head"), openBoardRows, b.id, () => {
+    if (img && !img.getAttribute("src")) img.src = thumbUrl;
+  });
   return row;
 }
 
@@ -481,9 +469,10 @@ async function loadSubjectMaterials(subjectId) {
   }
 }
 
-// Kapitel eines bekannten Schulbuchs stehen nicht einzeln in der Liste, sondern im aufklappbaren Buch
+// Kapitel eines bekannten Schulbuchs stehen nicht einzeln in der Liste, sondern im aufklappbaren Buch.
+// Steht das Buch nicht auf dieser Fachseite, bleibt das Kapitel sichtbar (sonst wäre es unauffindbar).
 function isChapterOfKnownBook(m) {
-  return Boolean(m.parent_id) && currentBooks.some((b) => b.id === m.parent_id);
+  return isBookChapter(m) && currentBooks.some((b) => b.id === m.parent_id);
 }
 
 function renderSubjectMaterialsList(materials) {

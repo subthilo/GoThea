@@ -77,22 +77,22 @@ function subjectStyle(subjectNameOrCode) {
   return `--subject-color: ${c}; --subject-tint: ${c}1f; --subject-edge: ${c}59;`;
 }
 
-// Dokumentart → Icon-Name
+// Dokumentart → Icon-Name (Arten wie in backend/app/services/document_kinds.py;
+// "Lösungsheft" setzt die Kapiteltabelle fundamente_mathe_7.json für den Lösungsteil)
+const DOCUMENT_KIND_ICONS = {
+  Arbeitsblatt: "Arbeitsblätter",
+  Mitschrift: "Mitschriften",
+  Buch: "Bücher",
+  Buchauszug: "Bücher",
+  Lösungsheft: "Arbeitshefte",
+  Test: "Tests",
+  Klassenarbeit: "Arbeiten",
+  Vokabelliste: "Inhaltsverzeichnis",
+  Stundenplan: "Stundenplan"
+};
+
 function documentIconName(docKind) {
-  if (!docKind) return "Dokumente";
-  const norm = String(docKind).toLowerCase().trim();
-  if (norm.includes("stundenplan")) return "Stundenplan";
-  if (norm.includes("vokabel")) return "Inhaltsverzeichnis";
-  if (norm.includes("blatt") || norm.includes("arbeitsblatt")) return "Arbeitsblätter";
-  if (norm.includes("heft") || norm.includes("arbeitsheft")) return "Arbeitshefte";
-  if (norm.includes("mitschrift") || norm.includes("notiz")) return "Mitschriften";
-  if (norm.includes("übung") || norm.includes("uebung")) return "Übungen";
-  if (norm.includes("test")) return "Tests";
-  if (norm.includes("arbeit") || norm.includes("klausur")) return "Arbeiten";
-  if (norm.includes("berichtigung")) return "Berichtigungen";
-  if (norm.includes("hausaufgabe")) return "Hausaufgaben";
-  if (norm.includes("buch")) return "Bücher";
-  return "Dokumente";
+  return DOCUMENT_KIND_ICONS[docKind] || "Dokumente";
 }
 
 // Fach-Icon in Fachfarbe

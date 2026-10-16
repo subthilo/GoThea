@@ -1,5 +1,9 @@
 """Tafel-Verwaltung im Browser: Wer etwas anderes öffnet oder beginnt, schließt die aktuelle Tafel –
 gespeichert, mit Vorschaubild – und kann sie aus der Liste wieder öffnen. Tafeln gehören zu ihrem Fach."""
+import base64
+import json
+import re
+
 from tests.e2e.board_helpers import (
     DRAW_JS,
     INK_PIXELS_JS,
@@ -255,4 +259,46 @@ def test_header_scrolls_sideways_on_narrow_ipad_and_board_list_stays_visible(app
     on_top = app_page.evaluate("([x, y]) => document.elementFromPoint(x, y).closest('#wb-boards-panel') !== null",
                                [p["x"] + p["width"] / 2, p["y"] + min(40, p["height"] / 2)])
     assert on_top
+    assert app_page.problems.errors == []
+
+
+# 1×1-PNG als Vorschaubild
+_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
+
+
+def test_board_row_loads_preview_on_expand_and_stays_open(app_page):
+    board = {"id": "board_row_probe", "title": "Bruchrechnung Probe", "subject_id": "sub_math",
+             "subject_name": "Mathematik", "has_thumbnail": True,
+             "updated_at": "2026-10-16T08:00:00", "created_at": "2026-10-16T08:00:00"}
+    thumb_requests = []
+    app_page.route(re.compile(r".*/api/v1/boards\?subject_id=sub_math$"), lambda r: r.fulfill(
+        status=200, content_type="application/json", body=json.dumps([board])))
+
+    def thumb(route):
+        thumb_requests.append(route.request.url)
+        route.fulfill(status=200, content_type="image/png", body=_PNG)
+    app_page.route(re.compile(r".*/api/v1/boards/board_row_probe/thumbnail.*"), thumb)
+
+    app_page.evaluate("openSubjectDetail('sub_math')")
+    row = app_page.locator('.board-row[data-board-id="board_row_probe"]')
+    row.wait_for(timeout=5000)
+    assert row.locator(".doc-row-head").get_attribute("aria-expanded") == "false"
+    assert thumb_requests == []  # Vorschau erst beim Aufklappen
+
+    row.locator(".doc-row-name").click()
+    app_page.wait_for_function(
+        "document.querySelector('.board-row[data-board-id=\"board_row_probe\"] img').complete")
+    assert "open" in row.get_attribute("class")
+    assert row.locator(".doc-row-head").get_attribute("aria-expanded") == "true"
+    assert len(thumb_requests) == 1
+
+    # Neu zeichnen (z. B. nach Umbenennen): die Zeile bleibt offen
+    app_page.evaluate("loadSubjectBoards('sub_math')")
+    app_page.wait_for_load_state("networkidle")
+    row = app_page.locator('.board-row[data-board-id="board_row_probe"]')
+    assert "open" in row.get_attribute("class")
+
+    row.locator(".doc-row-head").press("Enter")
+    assert "open" not in row.get_attribute("class")
     assert app_page.problems.errors == []

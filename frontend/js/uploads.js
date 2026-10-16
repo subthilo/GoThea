@@ -237,11 +237,31 @@ if (btnProcessInbox) {
 // Aufgeklappte Dokumentzeilen (Fachseite und Upload-Liste), bleiben beim Neuzeichnen offen
 const openDocRows = new Set();
 
+// Listenzeile auf- und zuklappen (Klick oder Enter/Leertaste auf dem Kopf). openSet merkt sich
+// offene Zeilen über ein Neuzeichnen hinweg; Knöpfe im Kopf stoppen das Ereignis selbst.
+// onOpen läuft bei jedem Aufklappen (z. B. Vorschaubild nachladen).
+function makeRowExpandable(row, head, openSet, id, onOpen) {
+  const setOpen = (isOpen) => {
+    row.classList.toggle("open", isOpen);
+    head.setAttribute("aria-expanded", String(isOpen));
+    if (isOpen) openSet.add(id); else openSet.delete(id);
+    if (isOpen && onOpen) onOpen();
+  };
+  head.addEventListener("click", () => setOpen(!row.classList.contains("open")));
+  head.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target === head) {
+      e.preventDefault();
+      setOpen(!row.classList.contains("open"));
+    }
+  });
+  setOpen(openSet.has(id));
+}
+
 // Dokument als aufklappbare Listenzeile: zugeklappt Titel, Thema, Art, Seiten, Ändern und Reader;
 // aufgeklappt alle Angaben, Zusammenfassung und Aktionen.
 function buildMaterialCard(m, onDeleted) {
   const card = document.createElement("div");
-  card.className = `doc-row ${openDocRows.has(m.id) ? "open" : ""}`;
+  card.className = "doc-row";
   card.dataset.materialId = m.id;
   card.style.cssText = subjectStyle(m.subject_name);
 
@@ -256,7 +276,7 @@ function buildMaterialCard(m, onDeleted) {
   const dateStr = created && !isNaN(created) ? created.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
 
   card.innerHTML = `
-    <div class="doc-row-head" role="button" tabindex="0" aria-expanded="${openDocRows.has(m.id)}" title="Mehr Angaben ein- oder ausblenden">
+    <div class="doc-row-head" role="button" tabindex="0" aria-expanded="false" title="Mehr Angaben ein- oder ausblenden">
       <span class="doc-row-chevron">${icon("Aufklappen")}</span>
       <span class="doc-row-kind" title="${escapeHtml(m.kind || "Dokument")}">${docIcon}</span>
       <span class="doc-row-title">
@@ -306,21 +326,7 @@ function buildMaterialCard(m, onDeleted) {
     </div>
   `;
 
-  // Zeile auf- und zuklappen (Knöpfe in der Zeile stoppen das Ereignis selbst)
-  const head = card.querySelector(".doc-row-head");
-  const toggle = () => {
-    const open = !card.classList.contains("open");
-    card.classList.toggle("open", open);
-    head.setAttribute("aria-expanded", String(open));
-    if (open) openDocRows.add(m.id); else openDocRows.delete(m.id);
-  };
-  head.addEventListener("click", toggle);
-  head.addEventListener("keydown", (e) => {
-    if ((e.key === "Enter" || e.key === " ") && e.target === head) {
-      e.preventDefault();
-      toggle();
-    }
-  });
+  makeRowExpandable(card, card.querySelector(".doc-row-head"), openDocRows, m.id);
 
   card.querySelector(".doc-row-open").addEventListener("click", (e) => {
     e.stopPropagation();
@@ -443,8 +449,10 @@ async function loadUploadsHistory() {
 // Suche & Filter der Dokumentliste (bleiben beim Neuladen nach Ändern/Löschen erhalten)
 const uploadsFilter = { term: "", subject: "all", showChapters: false };
 
+// Kapitel eines Buchs (entsteht durch die Zerlegung; parent_id zeigt auf das Buch).
+// Gilt für Upload-Liste und Fachseite gleichermaßen.
 function isBookChapter(m) {
-  return (m.kind || "") === "Buchauszug";
+  return Boolean(m.parent_id) || m.kind === "Buchauszug";
 }
 
 function materialMatchesTerm(m, term) {
