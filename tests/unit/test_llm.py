@@ -5,6 +5,12 @@ from unittest.mock import MagicMock, patch
 import httpx
 import openai
 import pytest
+from openai.types.responses import (
+    ResponseFunctionToolCall,
+    ResponseOutputMessage,
+    ResponseOutputText,
+    ResponseReasoningItem,
+)
 
 from backend.app import config
 from backend.app.services import llm
@@ -106,40 +112,43 @@ def test_speech_uses_configured_voice(fake_key, monkeypatch):
     assert (kwargs["model"], kwargs["voice"], kwargs["input"]) == ("tts-x", "nova", "Hallo")
 
 
-# --- Streaming und Werkzeug-Aufrufe -------------------------------------------------------------
+# --- Streaming und Werkzeug-Aufrufe (Responses API) ------------------------------------------------
 
-def _chunk(content=None, tool_calls=None, usage=None):
-    choices = [] if content is None and tool_calls is None else [
-        SimpleNamespace(delta=SimpleNamespace(content=content, tool_calls=tool_calls))]
-    return SimpleNamespace(choices=choices, usage=usage)
+def _event(type, **kw):
+    return SimpleNamespace(type=type, **kw)
 
 
-def _usage(prompt, completion):
-    return _chunk(usage=SimpleNamespace(prompt_tokens=prompt, completion_tokens=completion))
+def _completed(input_tokens, output_tokens):
+    return _event("response.completed",
+                  response=SimpleNamespace(usage=SimpleNamespace(input_tokens=input_tokens, output_tokens=output_tokens)))
 
 
-def _tool_piece(index, id=None, name=None, arguments=None):
-    return SimpleNamespace(index=index, id=id, function=SimpleNamespace(name=name, arguments=arguments))
+def _reasoning():
+    return _event("response.output_item.done", item=ResponseReasoningItem(
+        id="rs_1", type="reasoning", summary=[], encrypted_content="geheim"))
 
 
 def _tool_round(*calls):
-    """Stream, in dem die KI Werkzeuge aufruft; Argumente kommen wie bei OpenAI in Stücken."""
-    chunks = []
-    for i, (call_id, name, arguments) in enumerate(calls):
-        chunks.append(_chunk(tool_calls=[_tool_piece(i, id=call_id, name=name, arguments="")]))
-        half = len(arguments) // 2
-        chunks.append(_chunk(tool_calls=[_tool_piece(i, arguments=arguments[:half])]))
-        chunks.append(_chunk(tool_calls=[_tool_piece(i, arguments=arguments[half:])]))
-    return chunks + [_usage(20, 5)]
+    """Antwort, in der die KI (nach kurzem Nachdenken) Werkzeuge aufruft."""
+    events = [_reasoning()]
+    for call_id, name, arguments in calls:
+        events.append(_event("response.function_call_arguments.delta", delta=arguments[:3]))
+        events.append(_event("response.output_item.done", item=ResponseFunctionToolCall(
+            type="function_call", id=f"fc_{call_id}", call_id=call_id, name=name, arguments=arguments,
+            status="completed")))
+    return events + [_completed(20, 5)]
 
 
 def _text_round(*pieces):
-    return [_chunk(content=p) for p in pieces] + [_usage(30, 8)]
+    message = ResponseOutputMessage(id="msg_1", type="message", role="assistant", status="completed", content=[
+        ResponseOutputText(type="output_text", text="".join(pieces), annotations=[])])
+    return ([_event("response.output_text.delta", delta=p) for p in pieces]
+            + [_event("response.output_item.done", item=message), _completed(30, 8)])
 
 
 def _streaming_client(*rounds):
     client = MagicMock()
-    client.chat.completions.create.side_effect = [iter(r) for r in rounds]
+    client.responses.create.side_effect = [iter(r) for r in rounds]
     return client
 
 
@@ -161,9 +170,12 @@ def test_stream_yields_text_pieces_and_records_usage(fake_key):
     assert [e.text for e in events if e.type == "text"] == ["Hal", "lo ", "Thea"]
     done = events[-1]
     assert done.type == "done" and done.reply.text == "Hallo Thea"
-    assert done.messages[-1] == {"role": "assistant", "content": "Hallo Thea"}
-    kwargs = client.chat.completions.create.call_args.kwargs
-    assert kwargs["stream"] is True and kwargs["stream_options"] == {"include_usage": True}
+    assert done.messages[-1]["type"] == "message"
+    assert done.messages[-1]["content"][0]["text"] == "Hallo Thea"
+    kwargs = client.responses.create.call_args.kwargs
+    assert kwargs["stream"] is True and kwargs["store"] is False
+    assert kwargs["include"] == ["reasoning.encrypted_content"]
+    assert kwargs["input"][0] == {"role": "user", "content": "hi"}
     assert "temperature" not in kwargs and "tools" not in kwargs
     entry = _usage_lines()[before]
     assert entry["ok"] is True and (entry["prompt_tokens"], entry["completion_tokens"]) == (30, 8)
@@ -187,15 +199,17 @@ def test_stream_runs_tools_and_sends_results_back(fake_key):
     assert events[0].arguments == {"query": "Dreisatz"}
     assert events[-1].reply.text == "Im Mathebuch auf S. 84."
 
-    first, second = (c.kwargs for c in client.chat.completions.create.call_args_list)
-    assert first["tools"][0]["function"]["name"] == "unterlagen_durchsuchen"
+    first, second = (c.kwargs for c in client.responses.create.call_args_list)
+    assert first["tools"][0]["name"] == "unterlagen_durchsuchen" and first["tools"][0]["strict"] is False
     assert "tool_choice" not in first
-    sent = second["messages"]
-    assert sent[1]["tool_calls"][1] == {"id": "call_2", "type": "function",
-                                        "function": {"name": "unterlagen_durchsuchen",
-                                                     "arguments": '{"query": "Prozent"}'}}
-    assert sent[2]["tool_call_id"] == "call_1" and "Dreisatz" in sent[2]["content"]
-    assert sent[3]["tool_call_id"] == "call_2"
+    # Zweite Runde: Nachdenken, beide Aufrufe und beide Ergebnisse gehen mit
+    sent = second["input"]
+    assert sent[1] == {"id": "rs_1", "type": "reasoning", "summary": [], "encrypted_content": "geheim"}
+    assert [m["type"] for m in sent[2:6]] == ["function_call", "function_call",
+                                             "function_call_output", "function_call_output"]
+    assert sent[3]["call_id"] == "call_2" and sent[3]["arguments"] == '{"query": "Prozent"}'
+    assert sent[4]["call_id"] == "call_1" and "Dreisatz" in sent[4]["output"]
+    assert sent[5]["call_id"] == "call_2"
 
     entry = _usage_lines()[before]
     assert entry["rounds"] == 2 and entry["tools"] == ["unterlagen_durchsuchen"] * 2
@@ -207,7 +221,7 @@ def test_last_round_forbids_further_tools(fake_key):
                                _text_round("Fertig"))
     with patch("openai.OpenAI", return_value=client):
         events = list(llm.chat_stream([], purpose="Test", tools=[_search_tool([])], max_rounds=2))
-    assert client.chat.completions.create.call_args_list[1].kwargs["tool_choice"] == "none"
+    assert client.responses.create.call_args_list[1].kwargs["tool_choice"] == "none"
     assert events[-1].reply.text == "Fertig"
 
 
@@ -230,10 +244,10 @@ def test_tool_errors_go_back_to_the_model(fake_key):
 
 def test_stream_errors_become_llm_error_and_are_recorded(fake_key):
     def failing():
-        yield _chunk(content="Hal")
+        yield _event("response.output_text.delta", delta="Hal")
         raise httpx.ReadTimeout("weg")
     client = MagicMock()
-    client.chat.completions.create.side_effect = [failing()]
+    client.responses.create.side_effect = [failing()]
     before = len(_usage_lines())
     received = []
     with patch("openai.OpenAI", return_value=client), pytest.raises(llm.LLMError):
@@ -247,7 +261,7 @@ def test_abandoned_stream_is_closed_and_recorded(fake_key):
     stream = MagicMock()
     stream.__iter__.return_value = iter(_text_round("a", "b", "c"))
     client = MagicMock()
-    client.chat.completions.create.return_value = stream
+    client.responses.create.return_value = stream
     before = len(_usage_lines())
     with patch("openai.OpenAI", return_value=client):
         events = llm.chat_stream([], purpose="Test")
@@ -256,3 +270,19 @@ def test_abandoned_stream_is_closed_and_recorded(fake_key):
     stream.close.assert_called_once()
     entry = _usage_lines()[before]
     assert entry["ok"] is False and "abgebrochen" in entry["error"]
+
+
+def test_failed_response_is_an_error(fake_key):
+    failed = _event("response.failed", response=SimpleNamespace(usage=None, error="server_error"))
+    client = _streaming_client([failed])
+    with patch("openai.OpenAI", return_value=client), pytest.raises(llm.LLMError, match="server_error"):
+        list(llm.chat_stream([], purpose="Test"))
+
+
+def test_stream_drops_rejected_output_limit_once(fake_key):
+    client = MagicMock()
+    client.responses.create.side_effect = [_bad_request("max_output_tokens"), iter(_text_round("ok"))]
+    with patch("openai.OpenAI", return_value=client):
+        events = list(llm.chat_stream([], purpose="Test", max_tokens=100))
+    assert events[-1].reply.text == "ok"
+    assert "max_output_tokens" not in client.responses.create.call_args_list[1].kwargs

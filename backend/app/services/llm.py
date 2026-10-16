@@ -7,6 +7,7 @@ Einziger Zugang zu OpenAI.
 - Jeder Aufruf wird mit Zweck, Modell, Tokens und Dauer protokolliert (Log + DATA_DIR/logs/llm_usage.jsonl).
 - Fehler kommen einheitlich als LLMError; die Dienste entscheiden selbst über ihren Fallback.
 - chat_stream() liefert die Antwort stückweise und führt Werkzeug-Aufrufe (function calling) selbst aus.
+  Es nutzt die Responses API: GPT-6 erlaubt Werkzeuge in Chat Completions nur ohne Nachdenken (Reasoning).
 """
 import json
 import logging
@@ -21,7 +22,7 @@ import backend.app.config as config
 logger = logging.getLogger(__name__)
 
 # Optionale Parameter, ohne die ein Aufruf trotzdem sinnvoll ist
-OPTIONAL_PARAMS = ("temperature", "max_completion_tokens")
+OPTIONAL_PARAMS = ("temperature", "max_completion_tokens", "max_output_tokens")
 
 _client = None
 _client_key: Optional[str] = None
@@ -138,8 +139,9 @@ class Tool:
     run: Callable[..., Any]
 
     def spec(self) -> Dict[str, Any]:
-        return {"type": "function",
-                "function": {"name": self.name, "description": self.description, "parameters": self.parameters}}
+        """Beschreibung für die Responses API. strict=False erlaubt optionale Argumente."""
+        return {"type": "function", "name": self.name, "description": self.description,
+                "parameters": self.parameters, "strict": False}
 
 
 @dataclass
@@ -148,7 +150,8 @@ class StreamEvent:
     'text'        – nächstes Textstück (text)
     'tool_call'   – die KI ruft ein Werkzeug auf (tool, arguments)
     'tool_result' – Ergebnis des Werkzeugs (tool, result)
-    'done'        – fertig (reply mit ganzem Text und Tokens aller Runden, messages = Verlauf inkl. Werkzeugen)"""
+    'done'        – fertig (reply mit ganzem Text und Tokens aller Runden, messages = Verlauf inkl. Werkzeugen
+                    und Nachdenken im Format der Responses API – so lässt sich ein Gespräch fortsetzen)"""
     type: str
     text: str = ""
     tool: Optional[str] = None
@@ -163,6 +166,7 @@ def chat_stream(messages: List[Dict[str, Any]], *, purpose: str, tools: Sequence
                 max_tokens: Optional[int] = None, max_rounds: int = 4) -> Iterator[StreamEvent]:
     """Chat-Aufruf mit stückweiser Antwort. Ruft die KI Werkzeuge auf, werden sie ausgeführt und die
     Ergebnisse zurückgegeben – höchstens 'max_rounds' Anfragen; in der letzten muss die KI antworten.
+    'messages' wie bei chat() ({"role", "content"} mit Text) oder ein Verlauf aus einem früheren 'done'.
     Ein Protokolleintrag für den ganzen Aufruf (Tokens aller Runden, benutzte Werkzeuge)."""
     model = model or config.OPENAI_MODEL
     history = list(messages)
@@ -174,38 +178,41 @@ def chat_stream(messages: List[Dict[str, Any]], *, purpose: str, tools: Sequence
     start = time.monotonic()
     try:
         for rounds in range(1, max_rounds + 1):
-            params = chat_params(model, temperature=temperature, messages=history, stream=True,
-                                 stream_options={"include_usage": True})
+            # Nichts bei OpenAI speichern (Theas Daten); das Nachdenken kommt verschlüsselt zurück und geht
+            # in der nächsten Runde wieder mit, damit die KI nach dem Werkzeug-Aufruf daran anknüpft.
+            params = chat_params(model, temperature=temperature, input=history, stream=True, store=False,
+                                 include=["reasoning.encrypted_content"])
             if max_tokens is not None:
-                params["max_completion_tokens"] = max_tokens
+                params["max_output_tokens"] = max_tokens
             if tools:
                 params["tools"] = [t.spec() for t in tools]
                 if rounds == max_rounds:
                     params["tool_choice"] = "none"
             round_text: List[str] = []
-            calls: Dict[int, Dict[str, str]] = {}
-            stream = _create_with_fallback(params, purpose)
+            calls: List[Dict[str, str]] = []
+            stream = _create_with_fallback(params, purpose, create=client().responses.create)
             try:
-                for chunk in stream:
-                    usage = getattr(chunk, "usage", None)
-                    if usage is not None:
-                        prompt_tokens += _int_or_none(getattr(usage, "prompt_tokens", None)) or 0
-                        completion_tokens += _int_or_none(getattr(usage, "completion_tokens", None)) or 0
-                    if not getattr(chunk, "choices", None):
-                        continue
-                    delta = chunk.choices[0].delta
-                    if getattr(delta, "content", None):
-                        round_text.append(delta.content)
-                        yield StreamEvent("text", text=delta.content)
-                    # Werkzeug-Aufrufe kommen in Stücken: id und Name zuerst, die Argumente nach und nach
-                    for piece in getattr(delta, "tool_calls", None) or []:
-                        slot = calls.setdefault(piece.index, {"id": "", "name": "", "arguments": ""})
-                        if getattr(piece, "id", None):
-                            slot["id"] = piece.id
-                        function = getattr(piece, "function", None)
-                        if function is not None:
-                            slot["name"] += getattr(function, "name", None) or ""
-                            slot["arguments"] += getattr(function, "arguments", None) or ""
+                for event in stream:
+                    kind = getattr(event, "type", "")
+                    if kind == "response.output_text.delta":
+                        round_text.append(event.delta)
+                        yield StreamEvent("text", text=event.delta)
+                    elif kind == "response.output_item.done":
+                        history.append(event.item.model_dump(exclude_none=True))
+                        if event.item.type == "function_call":
+                            calls.append({"id": event.item.call_id, "name": event.item.name,
+                                          "arguments": event.item.arguments})
+                    elif kind in ("response.completed", "response.incomplete", "response.failed"):
+                        usage = getattr(event.response, "usage", None)
+                        prompt_tokens += _int_or_none(getattr(usage, "input_tokens", None)) or 0
+                        completion_tokens += _int_or_none(getattr(usage, "output_tokens", None)) or 0
+                        if kind == "response.failed":
+                            raise LLMError(f"KI-Antwort fehlgeschlagen: {getattr(event.response, 'error', None)}")
+                        if kind == "response.incomplete":
+                            logger.warning("KI-Antwort unvollständig (%s): %s", purpose,
+                                           getattr(event.response, "incomplete_details", None))
+                    elif kind == "error":
+                        raise LLMError(f"KI-Antwort fehlgeschlagen: {getattr(event, 'message', '')}")
             finally:
                 close = getattr(stream, "close", None)
                 if callable(close):
@@ -213,19 +220,14 @@ def chat_stream(messages: List[Dict[str, Any]], *, purpose: str, tools: Sequence
             parts.extend(round_text)
             if not calls:
                 break
-            ordered = [calls[i] for i in sorted(calls)]
-            history.append({"role": "assistant", "content": "".join(round_text) or None,
-                            "tool_calls": [{"id": c["id"], "type": "function",
-                                            "function": {"name": c["name"], "arguments": c["arguments"]}}
-                                           for c in ordered]})
-            for call in ordered:
+            for call in calls:
                 used.append(call["name"])
                 arguments, problem = _tool_arguments(by_name, call)
                 yield StreamEvent("tool_call", tool=call["name"], arguments=arguments)
                 result = problem or _run_tool(by_name[call["name"]], arguments, purpose)
                 yield StreamEvent("tool_result", tool=call["name"], result=result)
-                history.append({"role": "tool", "tool_call_id": call["id"],
-                                "content": json.dumps(result, ensure_ascii=False, default=str)})
+                history.append({"type": "function_call_output", "call_id": call["id"],
+                                "output": json.dumps(result, ensure_ascii=False, default=str)})
     except GeneratorExit:
         _record(purpose, model, time.monotonic() - start, error=LLMError("vom Aufrufer abgebrochen"),
                 rounds=rounds, tools=used, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
@@ -238,8 +240,6 @@ def chat_stream(messages: List[Dict[str, Any]], *, purpose: str, tools: Sequence
     seconds = time.monotonic() - start
     _record(purpose, model, seconds, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens,
             rounds=rounds, tools=used)
-    if not calls:
-        history.append({"role": "assistant", "content": "".join(round_text)})
     yield StreamEvent("done", reply=LLMReply("".join(parts), model, prompt_tokens, completion_tokens, seconds),
                       messages=history)
 
@@ -287,16 +287,17 @@ def speech(text: str, *, purpose: str, voice: Optional[str] = None, model: Optio
     return audio
 
 
-def _create_with_fallback(params: Dict[str, Any], purpose: str):
+def _create_with_fallback(params: Dict[str, Any], purpose: str, create: Optional[Callable[..., Any]] = None):
     import openai
+    create = create or client().chat.completions.create
     try:
-        return client().chat.completions.create(**params)
+        return create(**params)
     except openai.BadRequestError as e:
         rejected = getattr(e, "param", None)
         if rejected not in OPTIONAL_PARAMS or rejected not in params:
             raise
         logger.warning("Modell %s lehnt '%s' ab – erneuter Versuch ohne (%s)", params.get("model"), rejected, purpose)
-        return client().chat.completions.create(**{k: v for k, v in params.items() if k != rejected})
+        return create(**{k: v for k, v in params.items() if k != rejected})
 
 
 def _int_or_none(value: Any) -> Optional[int]:

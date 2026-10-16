@@ -3,6 +3,8 @@ import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from openai.types.responses import ResponseFunctionToolCall
+
 from backend.app import config
 from backend.app.models.material import Material
 from backend.app.models.material_page import MaterialPage
@@ -46,7 +48,7 @@ def test_search_hides_solutions_and_returns_compact_hits(db_session):
 
 
 def test_schema_offers_subjects_and_kinds_but_no_solution_switch(db_session):
-    spec = luna_tools.search_tool(db_session).spec()["function"]
+    spec = luna_tools.search_tool(db_session).spec()
     props = spec["parameters"]["properties"]
     assert spec["name"] == "unterlagen_durchsuchen"
     assert set(props) == {"suchbegriff", "fach", "art"}
@@ -72,20 +74,19 @@ def test_model_can_search_through_chat_stream(db_session, monkeypatch):
     _setup(db_session)
     monkeypatch.setattr(config, "OPENAI_API_KEY", "sk-fake")
 
-    def chunk(content=None, call=None):
-        return SimpleNamespace(usage=None, choices=[SimpleNamespace(delta=SimpleNamespace(
-            content=content, tool_calls=[call] if call else None))])
-    call = SimpleNamespace(index=0, id="c1", function=SimpleNamespace(
-        name="unterlagen_durchsuchen", arguments='{"suchbegriff": "Dreisatz"}'))
+    call = ResponseFunctionToolCall(type="function_call", call_id="c1", name="unterlagen_durchsuchen",
+                                    arguments='{"suchbegriff": "Dreisatz"}')
+    done = SimpleNamespace(type="response.completed", response=SimpleNamespace(usage=None))
     client = MagicMock()
-    client.chat.completions.create.side_effect = [iter([chunk(call=call)]), iter([chunk("Steht im Heft.")])]
+    client.responses.create.side_effect = [
+        iter([SimpleNamespace(type="response.output_item.done", item=call), done]),
+        iter([SimpleNamespace(type="response.output_text.delta", delta="Steht im Heft."), done])]
 
     with patch("openai.OpenAI", return_value=client):
         events = list(llm.chat_stream([{"role": "user", "content": "Dreisatz?"}], purpose="Test",
                                       tools=[luna_tools.search_tool(db_session)]))
 
-    sent = client.chat.completions.create.call_args_list[1].kwargs["messages"]
-    tool_message = next(m for m in sent if m["role"] == "tool")
-    assert "mat_mi" in tool_message["content"]
-    assert "Lösungen" not in tool_message["content"]
+    sent = client.responses.create.call_args_list[1].kwargs["input"]
+    output = next(m for m in sent if m.get("type") == "function_call_output")["output"]
+    assert "mat_mi" in output and "Lösungen" not in output
     assert events[-1].reply.text == "Steht im Heft."
