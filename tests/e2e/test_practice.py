@@ -36,9 +36,15 @@ def test_solve_rule_of_three_by_tapping(app_page):
     for slot, token in SOLUTION.items():
         fill(app_page, slot, token)
     app_page.click(".px-answer:text-is('500 g Gummibärchen kosten 10 €.')")
-    app_page.click('[data-action="check"]')
+    # Die Prüfung landet als Versuch im Lernstand
+    with app_page.expect_response(lambda r: r.url.endswith("/events") and '"check"' in (r.request.post_data or "")) as resp:
+        app_page.click('[data-action="check"]')
+    attempt = resp.value.json()
+    assert resp.value.status == 200 and attempt["solved"] and attempt["stage"] == 0
     assert app_page.locator(".px-slot.ok").count() == len(SOLUTION)
     assert "passt zu deiner Schätzung" in app_page.inner_text(".px-luna")
+    progress = app_page.evaluate("apiJson('/api/v1/practice/progress')")["progress"]
+    assert progress["sa-gummibaerchen"]["0"]["solved"]
     assert app_page.problems.errors == []
 
 

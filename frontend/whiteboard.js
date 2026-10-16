@@ -1086,7 +1086,8 @@
     try {
       const ex = await apiJson(`/api/v1/practice/${encodeURIComponent(board.practice_exercise_id)}`);
       if (surface.currentSession !== board || surface.isBookPageMode) return;  // inzwischen gewechselt
-      practiceContext = { ex, stage: board.practice_stage || 1, solution: false, attempt: 1, hadError: false };
+      practiceContext = { ex, stage: board.practice_stage || 1, solution: false, attempt: 1, hadError: false,
+                          record: startPracticeAttempt(ex.id, board.practice_stage || 1, board.id) };
       showPracticeSheet();
     } catch (err) {
       console.warn("Übungsblatt nicht geladen:", err);
@@ -1176,6 +1177,7 @@
     btnPracticeSolution.addEventListener("click", () => {
       if (!practiceContext) return;
       practiceContext.solution = !practiceContext.solution;
+      if (practiceContext.solution) logPracticeEvent(practiceContext.record, "solution");
       showPracticeSheet();
     });
   }

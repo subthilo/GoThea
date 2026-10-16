@@ -75,7 +75,8 @@
 
   async function openExercise(id) {
     const ex = await apiJson(`/api/v1/practice/${encodeURIComponent(id)}`);
-    run = { ex, guess: null, placed: {}, answer: null, reason: null, checked: false, hint: 0, selected: null };
+    run = { ex, guess: null, placed: {}, answer: null, reason: null, checked: false, hint: 0, selected: null,
+            attempt: startPracticeAttempt(ex.id, 0) };
     if (!ex.schaetzfrage.aktiv) run.guess = "-";
     show(listView, false);
     show(runView, true);
@@ -167,6 +168,18 @@
     const reasons = run.ex.bausteine.begruendungen;
     const reasonOk = !reasons.length || reasons[run.reason]?.richtig;
     return Object.keys(f).every((k) => run.placed[k] === f[k]) && run.ex.bausteine.antworten[run.answer]?.richtig && reasonOk;
+  }
+
+  // Was die Prüfung ergab, für den Lernstand: welche Felder falsch, Antwortsatz/Begründung richtig?
+  function checkResult() {
+    const b = run.ex.bausteine;
+    const result = {
+      status: allRight() ? "richtig" : "noch_nicht",
+      falsch: Object.keys(b.felder).filter((k) => run.placed[k] !== b.felder[k]),
+      antwort_richtig: Boolean(b.antworten[run.answer]?.richtig),
+    };
+    if (b.begruendungen.length) result.begruendung_richtig = Boolean(b.begruendungen[run.reason]?.richtig);
+    return result;
   }
 
   function lunaHtml() {
@@ -286,9 +299,21 @@
       return window.openPracticeOnWhiteboard({ exerciseId: run.ex.id, stage, title: practiceBoardTitle(run.ex.quelle, run.ex.ableitung, stage) });
     }
     if (t.dataset.action === "open") return openExercise(t.dataset.id);
-    if (t.dataset.action === "check") { run.checked = true; return renderRun(); }
-    if (t.dataset.guess) { run.guess = t.dataset.guess; return renderRun(); }
-    if (t.dataset.hint) { run.hint += 1; return renderRun(); }
+    if (t.dataset.action === "check") {
+      run.checked = true;
+      logPracticeEvent(run.attempt, "check", checkResult());
+      return renderRun();
+    }
+    if (t.dataset.guess) {
+      run.guess = t.dataset.guess;
+      logPracticeEvent(run.attempt, "guess", { value: run.guess });
+      return renderRun();
+    }
+    if (t.dataset.hint) {
+      run.hint += 1;
+      logPracticeEvent(run.attempt, "hint", { stufe: run.hint });
+      return renderRun();
+    }
     if (t.dataset.reason !== undefined) {
       if (run.checked && allRight()) return;
       run.reason = Number(t.dataset.reason);

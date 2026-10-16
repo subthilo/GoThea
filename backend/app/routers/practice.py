@@ -1,12 +1,13 @@
 """Übungen aus echten Aufgaben – Probebetrieb (Schalter GOTHEA_EXERCISE_TRIAL, Standard nur Staging).
 
 Noch ohne Freigabe-Ablauf: Die Daten enthalten die Lösungen; Stufe 0 prüft im Browser, die Tafel-Stufen
-prüft der Server („Luna liest, der Code rechnet“, services/practice_check.py).
+prüft der Server („Luna liest, der Code rechnet“, services/practice_check.py). Jeder Versuch wird
+festgehalten (services/practice_attempts.py): Stufe 0 meldet ihre Schritte, Tafel-Prüfungen zählt der Server.
 """
 import base64
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -15,7 +16,8 @@ from sqlalchemy.orm import Session
 from backend.app import config
 from backend.app.database import get_db
 from backend.app.models.whiteboard import TutorSession
-from backend.app.services import llm, practice_check, practice_exercises
+from backend.app.models.practice_attempt import PracticeAttempt
+from backend.app.services import llm, practice_attempts, practice_check, practice_exercises
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,16 @@ class CheckRequest(BaseModel):
     board_id: Optional[str] = None
     attempt: int = Field(default=1, ge=1)
     audio_enabled: bool = False
+
+
+class AttemptStart(BaseModel):
+    stage: int = Field(ge=0, le=4)
+    board_id: Optional[str] = None  # Tafel-Stufen: der Versuch gehört zur Übungstafel
+
+
+class AttemptEvent(BaseModel):
+    kind: Literal["guess", "hint", "solution", "check"]
+    data: dict = Field(default_factory=dict)
 
 
 def _exercise_or_404(exercise_id: str) -> dict:
@@ -45,9 +57,52 @@ def list_practice() -> dict:
     return {"enabled": True, "exercises": practice_exercises.list_exercises()}
 
 
+@router.get("/progress")
+def practice_progress(db: Session = Depends(get_db)) -> dict:
+    """Lernstand pro Übung und Stufe (Häkchen, „weiter mit Stufe …“, Wiederholen)."""
+    if not config.EXERCISE_TRIAL_ENABLED:
+        return {"progress": {}}
+    return {"progress": practice_attempts.progress(db)}
+
+
 @router.get("/{exercise_id}")
 def get_practice(exercise_id: str) -> dict:
     return _exercise_or_404(exercise_id)
+
+
+def _practice_board(db: Session, board_id: str, exercise_id: str) -> TutorSession:
+    board = db.get(TutorSession, board_id)
+    if board is None or board.practice_exercise_id != exercise_id:
+        raise HTTPException(status_code=404, detail="Übungstafel nicht gefunden")
+    return board
+
+
+@router.post("/{exercise_id}/attempts", status_code=201)
+def start_attempt(exercise_id: str, payload: AttemptStart, db: Session = Depends(get_db)) -> dict:
+    """Stufe 0: neuer Versuch beim Öffnen. Übungstafel: deren Versuch (beim Wiederöffnen derselbe)."""
+    ex = _exercise_or_404(exercise_id)
+    if payload.board_id:
+        attempt = practice_attempts.for_board(db, ex, _practice_board(db, payload.board_id, exercise_id))
+    else:
+        attempt = practice_attempts.start(db, ex, payload.stage)
+    return practice_attempts.summary(attempt)
+
+
+@router.post("/attempts/{attempt_id}/events")
+def record_event(attempt_id: str, payload: AttemptEvent, db: Session = Depends(get_db)) -> dict:
+    if not config.EXERCISE_TRIAL_ENABLED:
+        raise HTTPException(status_code=404, detail="Übung nicht gefunden")
+    attempt = db.get(PracticeAttempt, attempt_id)
+    if attempt is None:
+        raise HTTPException(status_code=404, detail="Versuch nicht gefunden")
+    # Tafel-Prüfungen zählt der Server selbst (siehe check_practice)
+    if payload.kind == "check" and attempt.board_id:
+        raise HTTPException(status_code=400, detail="Tafel-Prüfungen werden beim Prüfen gezählt")
+    try:
+        practice_attempts.record(db, attempt, payload.kind, payload.data)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return practice_attempts.summary(attempt)
 
 
 @router.post("/{exercise_id}/check")
@@ -66,9 +121,11 @@ def check_practice(exercise_id: str, payload: CheckRequest, db: Session = Depend
     text = practice_check.feedback(ex, outcome, payload.attempt)
     practice_check.log_check(exercise_id, payload.stage, payload.image_base64, read, outcome)
 
-    if outcome["status"] == practice_check.RICHTIG and payload.board_id:
-        board = db.get(TutorSession, payload.board_id)
-        if board is not None and board.practice_exercise_id == exercise_id:
+    board = db.get(TutorSession, payload.board_id) if payload.board_id else None
+    if board is not None and board.practice_exercise_id == exercise_id:
+        attempt = practice_attempts.for_board(db, ex, board)
+        practice_attempts.record(db, attempt, "check", {"status": outcome["status"], "probleme": outcome["probleme"]})
+        if outcome["status"] == practice_check.RICHTIG:
             board.practice_solved_at = datetime.utcnow()
             db.commit()
 

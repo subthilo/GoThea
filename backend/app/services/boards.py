@@ -18,6 +18,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.app.config import OPENAI_MODEL
+from backend.app.models.practice_attempt import PracticeAttempt
 from backend.app.models.taxonomy import Subject
 from backend.app.models.whiteboard import TutorSession
 from backend.app.prompts.boards import BOARD_TITLE_SYSTEM_PROMPT
@@ -105,16 +106,22 @@ def set_archived(db: Session, board: TutorSession, archived: bool) -> TutorSessi
     return board
 
 
+def _drop_board(db: Session, board: TutorSession) -> None:
+    # Versuche an Übungen gehören zum Lernstand und bleiben, nur ohne Tafel
+    db.query(PracticeAttempt).filter(PracticeAttempt.board_id == board.id).update({PracticeAttempt.board_id: None})
+    db.delete(board)
+
+
 def delete_board(db: Session, board: TutorSession) -> None:
     """Löscht die Tafel endgültig samt Strichen, Vorschaubild und Tutor-Verlauf (nur Eltern-Modus)."""
-    db.delete(board)
+    _drop_board(db, board)
     db.commit()
 
 
 def close_board(db: Session, board: TutorSession) -> Optional[TutorSession]:
     """Schließt die Tafel; leere Tafeln werden verworfen (Rückgabe None)."""
     if is_empty(board):
-        db.delete(board)
+        _drop_board(db, board)
         db.commit()
         return None
     board.end_time = datetime.utcnow()

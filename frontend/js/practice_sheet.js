@@ -15,6 +15,29 @@
 
 const PRACTICE_SHEET_WIDTH = 780;
 
+// Versuch festhalten (Lernstand; genutzt vom Tab „Üben“ und von der Übungstafel). Liefert ein Promise
+// auf den Versuch; schlägt das Melden fehl, übt Thea trotzdem weiter.
+function startPracticeAttempt(exerciseId, stage, boardId = null) {
+  return apiJson(`/api/v1/practice/${encodeURIComponent(exerciseId)}/attempts`, {
+    method: "POST",
+    json: { stage, board_id: boardId },
+  }).catch((err) => {
+    console.warn("Übungsversuch nicht angelegt:", err);
+    return null;
+  });
+}
+
+// Ereignis zum Versuch melden: 'guess' {value}, 'hint', 'solution', 'check' {status, …} (nur Stufe 0)
+function logPracticeEvent(attemptPromise, kind, data = {}) {
+  if (!attemptPromise) return;
+  attemptPromise
+    .then((attempt) => attempt && apiJson(`/api/v1/practice/attempts/${encodeURIComponent(attempt.id)}/events`, {
+      method: "POST",
+      json: { kind, data },
+    }))
+    .catch((err) => console.warn("Übungsereignis nicht gemeldet:", err));
+}
+
 // Name der Übungstafel, z. B. „S. 27 Nr. 3c · Stufe 2“ (Zwillinge: „(ähnlich)“)
 function practiceBoardTitle(quelle, ableitung, stage) {
   const src = quelle.art === "Buch" ? `S. ${quelle.seite} Nr. ${quelle.nummer}` : `${quelle.material} Nr. ${quelle.nummer}`;
