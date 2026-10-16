@@ -443,9 +443,10 @@ body.timetable-zen-mode .content {
   height: 100%;
   border-radius: 5px;
   padding: 1px 4px;
-  background: rgba(30, 41, 59, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-left: 3px solid var(--accent);
+  /* Fachfarbe (js: subjectStyle): farbiger Rand und zarte Fläche über dem Grundton */
+  background: linear-gradient(var(--subject-tint, transparent), var(--subject-tint, transparent)), rgba(30, 41, 59, 0.75);
+  border: 1px solid var(--subject-edge, rgba(255, 255, 255, 0.07));
+  border-left: 3px solid var(--subject-color, var(--accent));
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -461,8 +462,8 @@ body.timetable-zen-mode .content {
 
 .tt-lesson-card:hover {
   transform: translateY(-1px);
-  background: rgba(40, 53, 76, 0.9);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(var(--subject-tint, transparent), var(--subject-tint, transparent)), rgba(40, 53, 76, 0.9);
+  border-color: var(--subject-color, rgba(255, 255, 255, 0.2));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
@@ -475,12 +476,15 @@ body.timetable-zen-mode .content {
   flex-shrink: 0;
 }
 
-.tt-slot-svg {
-  width: 12px;
-  height: 12px;
-  filter: brightness(0) invert(1);
+.tt-slot-icon {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
-  opacity: 0.9;
+}
+
+.tt-modal-subject-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .tt-lesson-name {

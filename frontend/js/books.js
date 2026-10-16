@@ -217,7 +217,7 @@ function renderBookNode(book, term) {
   if (term && !titleHit && !(entries && entries.length)) return "";
 
   const open = term ? true : booksOpenState.books.has(book.id);
-  const color = /^#[0-9a-f]{3,8}$/i.test(book.subject_color || "") ? book.subject_color : "var(--accent)";
+  const color = subjectColor(book.subject_name);
   const meta = book.segmenting
     ? `${icon("Sanduhr")} wird in Kapitel zerlegt …`
     : `${book.chapters_count} Kapitel · ${book.total_pages} S.`;

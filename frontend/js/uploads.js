@@ -242,6 +242,7 @@ if (btnProcessInbox) {
 function buildMaterialCard(m, onDeleted) {
   const card = document.createElement("div");
   card.className = "material-card";
+  card.style.borderLeft = `4px solid ${subjectColor(m.subject_name)}`;
 
   const isPdf = (m.mime_type || "").includes("pdf");
   const kindIcon = documentIconName(m.kind);
@@ -262,7 +263,7 @@ function buildMaterialCard(m, onDeleted) {
         </div>
       </div>
       <div class="mat-card-meta">
-        <span style="color: ${m.subject_color || 'var(--text-primary)'}; font-weight: 600;">
+        <span style="color: ${subjectColor(m.subject_name)}; font-weight: 600;">
           ${subjectLabel(m.subject_name)}
         </span>
         ${m.topic_name ? `<span>• ${icon("Thema")} ${escapeHtml(m.topic_name)}</span>` : ""}

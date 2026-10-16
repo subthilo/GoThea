@@ -296,9 +296,7 @@ function renderTimetableGrid() {
         } else {
           const card = document.createElement("div");
           card.className = "tt-lesson-card";
-          if (matchingSlot.subject_color) {
-            card.style.borderLeftColor = matchingSlot.subject_color;
-          }
+          card.style.cssText = subjectStyle(matchingSlot.subject_name);
 
           let roomStr = matchingSlot.room || "";
           if (roomStr && !roomStr.toLowerCase().includes("halle") && !roomStr.startsWith("R")) {
@@ -307,7 +305,7 @@ function renderTimetableGrid() {
 
           card.innerHTML = `
             <div class="tt-lesson-top">
-              <img src="${getSubjectIconUrl(matchingSlot.subject_name)}" class="tt-slot-svg" alt="">
+              ${subjectIcon(matchingSlot.subject_name, "tt-slot-icon")}
               <span class="tt-lesson-name">${escapeHtml(matchingSlot.subject_name)}</span>
             </div>
             <div class="tt-lesson-meta">
@@ -352,7 +350,7 @@ function openTimetableSlotDetailModal(slot, period) {
   const noteEl = document.getElementById("tt-slot-modal-note");
 
   if (iconEl) {
-    iconEl.innerHTML = `<img src="${getSubjectIconUrl(slot.subject_name)}" style="width: 24px; height: 24px; filter: brightness(0) invert(1);" alt="">`;
+    iconEl.innerHTML = subjectIcon(slot.subject_name, "tt-modal-subject-icon");
   }
   if (titleEl) titleEl.textContent = slot.subject_name;
   if (timeEl) {
@@ -421,7 +419,7 @@ async function loadTodayDashboardWidget() {
     lessons.forEach((l) => {
       const card = document.createElement("div");
       card.className = "dash-tt-slot-card";
-      const subColor = l.subject_color || "var(--accent)";
+      const subColor = subjectColor(l.subject_name);
       card.style.borderLeftColor = subColor;
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
@@ -435,7 +433,7 @@ async function loadTodayDashboardWidget() {
       card.innerHTML = `
         <div class="dash-tt-slot-top">
           <div class="dash-tt-slot-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}40;">
-            <img src="${getSubjectIconUrl(l.subject_name)}" class="dash-tt-slot-svg" alt="${escapeHtml(l.subject_name)}">
+            ${subjectIcon(l.subject_name, "dash-tt-slot-icon")}
           </div>
           <span class="dash-tt-slot-time">${escapeHtml(l.period_label || l.period + '. Std')} • ${escapeHtml(l.start_time || "")}</span>
         </div>

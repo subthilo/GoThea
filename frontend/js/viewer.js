@@ -76,7 +76,7 @@ function openDocumentViewerModal(material) {
   if (container) container.scrollTop = 0;
   if (titleEl) titleEl.textContent = material.title;
   if (badgeEl) {
-    badgeEl.textContent = `${material.subject_name || "Fach"} • ${material.kind || "Material"}${material.topic_name ? " • " + material.topic_name : ""}`;
+    badgeEl.innerHTML = `${subjectLabel(material.subject_name)} • ${escapeHtml(`${material.kind || "Material"}${material.topic_name ? " • " + material.topic_name : ""}`)}`;
   }
   if (dlBtn) {
     dlBtn.href = `/api/v1/materials/${material.id}/file`;

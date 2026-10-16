@@ -53,6 +53,18 @@ def test_every_used_icon_exists():
     assert missing == []
 
 
+def test_subject_table_has_known_icons_and_distinct_colors():
+    """Fächer sind farbcodiert: jedes Fach eine eigene Farbe (Pausen/Freistunden teilen sich ein Grau)."""
+    js = (FRONTEND / "js" / "icons.js").read_text(encoding="utf-8")
+    table = js.split("const SUBJECTS = [", 1)[1].split("];", 1)[0]
+    rows = re.findall(r'icon: "([^"]+)", color: "(#[0-9a-f]{6})"', table)
+    assert len(rows) >= 17
+    assert {i for i, _ in rows} <= _icon_names()
+    neutral = {"Mittagspause", "Pause", "Freistunde"}
+    colors = [c for i, c in rows if i not in neutral]
+    assert len(colors) == len(set(colors)), "zwei Fächer mit derselben Farbe"
+
+
 def test_no_emoji_icons_in_frontend():
     found = []
     for src in SOURCES:

@@ -32,7 +32,7 @@ async function loadPlan() {
       plan.today_plan.tasks.forEach((tsk) => {
         const card = document.createElement("div");
         card.className = `plan-task-card ${tsk.is_completed ? "completed" : ""}`;
-        card.style.borderLeft = `5px solid ${tsk.subject_color}`;
+        card.style.borderLeft = `5px solid ${subjectColor(tsk.subject_name)}`;
 
         const phaseClass = `phase-p${tsk.phase_number}`;
 
@@ -104,7 +104,7 @@ async function loadPlan() {
       plan.upcoming_tests.forEach((t) => {
         const card = document.createElement("div");
         card.className = "test-card";
-        card.style.borderLeft = `4px solid ${t.subject_color}`;
+        card.style.borderLeft = `4px solid ${subjectColor(t.subject_name)}`;
 
         // Datum und Tage berechnen
         const examDate = new Date(t.date);

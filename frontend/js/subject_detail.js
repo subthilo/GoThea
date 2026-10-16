@@ -8,7 +8,7 @@ function renderDashboardSubjects(subjects, topicsMap) {
   subjects.forEach((s) => {
     const card = document.createElement("div");
     card.className = "subject-card subject-app-tile";
-    const subColor = s.color_code || "#2563eb";
+    const subColor = subjectColor(s.name);
     card.style.setProperty("--tile-color", subColor);
     card.dataset.subjectId = s.id;
     card.setAttribute("role", "button");
@@ -17,7 +17,7 @@ function renderDashboardSubjects(subjects, topicsMap) {
 
     card.innerHTML = `
       <div class="subject-tile-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}45;">
-        <img src="${getSubjectIconUrl(s.name)}" class="subject-tile-svg" alt="${escapeHtml(s.name)}">
+        ${subjectIcon(s.name, "subject-tile-icon")}
       </div>
       <div class="subject-tile-name">${escapeHtml(s.name)}</div>
     `;
@@ -46,7 +46,6 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   const s = cachedSubjects.find((sub) => sub.id === subjectId) || {
     id: subjectId,
     name: "Schulfach",
-    color_code: "#6366f1",
     min_grade: 7,
     max_grade: 7
   };
@@ -66,15 +65,16 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
 
   const heroCard = document.getElementById("subject-hero-card");
   if (heroCard) {
-    heroCard.style.borderLeft = `6px solid ${s.color_code}`;
-    heroCard.style.boxShadow = `0 10px 32px rgba(0, 0, 0, 0.35), 0 0 24px ${s.color_code}15`;
+    const heroColor = subjectColor(s.name);
+    heroCard.style.borderLeft = `6px solid ${heroColor}`;
+    heroCard.style.boxShadow = `0 10px 32px rgba(0, 0, 0, 0.35), 0 0 24px ${heroColor}15`;
   }
 
   const iconEl = document.getElementById("subject-detail-icon");
   if (iconEl) {
-    iconEl.innerHTML = `<img src="${getSubjectIconUrl(s.name)}" class="subject-hero-svg" alt="${escapeHtml(s.name)}">`;
-    iconEl.style.background = `${s.color_code}22`;
-    iconEl.style.borderColor = `${s.color_code}44`;
+    iconEl.innerHTML = subjectIcon(s.name, "subject-hero-icon-svg");
+    iconEl.style.background = `${subjectColor(s.name)}22`;
+    iconEl.style.borderColor = `${subjectColor(s.name)}44`;
   }
 
   const nameEl = document.getElementById("subject-detail-name");
