@@ -108,9 +108,3 @@
   color: var(--text-primary);
   white-space: nowrap;
 }
-
-/* Fallback/Legacy level bar wrapper hide */
-.gamification-level-bar-card {
-  display: none !important;
-}
-

@@ -302,7 +302,6 @@
   color: #64748b;
 }
 
-
 .wb-word-bank {
   display: flex;
   flex-wrap: wrap;
@@ -554,5 +553,4 @@
   background: rgba(15, 23, 42, 0.6);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
-
 

@@ -58,13 +58,6 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
-.reorder-page-card.deleted {
-  opacity: 0.35;
-  filter: grayscale(1);
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.05);
-}
-
 .reorder-page-header {
   display: flex;
   align-items: center;

@@ -1,45 +1,6 @@
 /* ==========================================================================
    Positive Subject Score Card Styles (Thea-Modus)
    ========================================================================== */
-.subject-positive-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
-  background: linear-gradient(135deg, rgba(250, 204, 21, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
-  border: 1px solid rgba(250, 204, 21, 0.25);
-  border-radius: 12px;
-  padding: 14px 18px;
-  margin-bottom: 16px;
-}
-
-.subject-positive-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(250, 204, 21, 0.15);
-  border: 1px solid rgba(250, 204, 21, 0.35);
-  color: #facc15;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.subject-stars-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 1.25rem;
-}
-
-.method-score-thea-stars {
-  font-size: 1.1rem;
-  color: #facc15;
-  letter-spacing: 2px;
-  margin-top: 4px;
-}
 
 /* Profile Heading & Inline Icons */
 .prof-heading-icon {

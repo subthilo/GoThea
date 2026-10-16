@@ -2,36 +2,6 @@
    LÜCKENTEXT-TRAINER (DEDIZIERTES ÜBUNGSFENSTER MIT LUNA REVIEW LOOP)
    ========================================================================== */
 
-.btn-cloze-sparkle {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35) !important;
-  font-weight: 600 !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.btn-cloze-sparkle:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5) !important;
-  filter: brightness(1.1);
-}
-
-.cloze-trainer-box {
-  max-width: 1240px;
-  width: 96%;
-  height: 90vh;
-  max-height: 880px;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--bg-surface, #1e1e2d);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
 .cloze-trainer-header {
   padding: 14px 22px;
   background: rgba(255, 255, 255, 0.03);
@@ -382,11 +352,6 @@
   -webkit-user-select: none !important;
   user-select: none !important;
   touch-action: none !important;
-}
-
-.cloze-blank-canvas-wrap.focused {
-  border-color: var(--accent-color, #6366f1);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
 }
 
 .cloze-blank-canvas-wrap.is-correct {

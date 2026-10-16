@@ -28,23 +28,10 @@
   gap: 12px;
 }
 
-.dash-tt-icon {
-  font-size: 2rem;
-  background: rgba(99, 102, 241, 0.15);
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-}
-
 .dash-tt-title {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-primary);
-}
-
-.dash-tt-subtitle {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
 }
 
 .dash-tt-actions {
@@ -234,15 +221,6 @@ body.timetable-zen-mode .content {
   flex-shrink: 0;
 }
 
-.tt-topbar-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-  white-space: nowrap;
-}
-
 .tt-class-badge {
   font-size: 0.7rem;
   font-weight: 600;
@@ -366,16 +344,6 @@ body.timetable-zen-mode .content {
   background: linear-gradient(180deg, rgba(99, 102, 241, 0.28) 0%, rgba(30, 41, 59, 0.95) 100%);
   color: var(--accent-light);
   border-bottom-color: var(--accent);
-}
-
-.tt-today-badge {
-  font-size: 0.58rem;
-  background: var(--accent);
-  color: #fff;
-  padding: 1px 4px;
-  border-radius: 5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
 }
 
 /* Zeit-Spalte (links) */
@@ -553,14 +521,6 @@ body.timetable-zen-mode .content {
   opacity: 0.55;
   filter: brightness(0) invert(1);
   flex-shrink: 0;
-}
-
-.tt-break-label {
-  font-size: clamp(0.6rem, 1.1vh, 0.68rem);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .tt-cell-empty {

@@ -16,8 +16,7 @@
   flex-wrap: wrap;
 }
 
-.upload-dropzone-card:hover,
-.upload-dropzone-card.drag-active {
+.upload-dropzone-card:hover {
   border-color: var(--accent);
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(30, 36, 50, 0.95));
   transform: translateY(-2px);
@@ -37,106 +36,6 @@
   flex-shrink: 0;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
 }
-
-.upload-dropzone-content {
-  flex: 1;
-  min-width: 260px;
-}
-
-.upload-dropzone-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-
-.upload-dropzone-subtitle {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 12px;
-  line-height: 1.4;
-}
-
-.upload-dropzone-badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.dropzone-badge {
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--accent-light);
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-/* Upload-Historie */
-
-.upload-history-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  transition: all 0.2s ease;
-  flex-wrap: wrap;
-}
-
-.upload-history-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.16);
-  transform: translateX(3px);
-}
-
-.upload-history-main {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex: 1;
-  min-width: 240px;
-}
-
-.upload-history-icon {
-  font-size: 1.6rem;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.upload-history-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.upload-history-meta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  flex-wrap: wrap;
-}
-
-.upload-history-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
 
 /* Dokumentliste: Suche, Kapitel-Schalter, Fach-Chips (uploads.js: renderUploadsHistory) */
 .uploads-filter-bar {

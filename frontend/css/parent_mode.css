@@ -90,13 +90,6 @@ body.parent-mode-active .parent-status-pill {
   border-color: rgba(16, 185, 129, 0.35);
 }
 
-.parent-status-box {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 14px 16px;
-}
-
 /* Warning Callout */
 .warning-callout {
   background: rgba(245, 158, 11, 0.12);
@@ -293,7 +286,6 @@ body.parent-mode-active .parent-status-pill {
   margin: 0;
   box-sizing: border-box;
 }
-
 
 /* Modus-Schalter nur als Icon (Kind = Thea, zwei Erwachsene = Eltern): rund und kompakt */
 .btn-parent-pill {

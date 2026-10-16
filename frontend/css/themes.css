@@ -1,37 +1,6 @@
 /* ==========================================================================
    Theme Selector Widget & Dropdown
    ========================================================================== */
-.theme-selector-widget {
-  position: relative;
-  display: inline-block;
-}
-
-.btn-theme-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.btn-theme-pill:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-active);
-  transform: translateY(-1px);
-}
-
-.theme-pill-icon {
-  font-size: 1.05rem;
-  line-height: 1;
-}
 
 .theme-dropdown-menu {
   position: absolute;
@@ -90,11 +59,6 @@
   border-color: var(--border-active);
   color: var(--accent-light);
   font-weight: 600;
-}
-
-.theme-opt-emoji {
-  font-size: 1.15rem;
-  line-height: 1;
 }
 
 /* ==========================================================================

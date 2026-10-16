@@ -119,36 +119,6 @@
   font-weight: 500;
 }
 
-/* Quick-Actions redundant styles removed in favor of top icon dock */
-
-/* Kompakte Statuszeile */
-.dash-stats-bar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  padding: 4px 6px;
-}
-
-.dash-stat-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  padding: 5px 12px;
-  border-radius: 999px;
-}
-
-.stat-mini-svg {
-  width: 14px;
-  height: 14px;
-  filter: brightness(0) invert(0.85);
-}
-
 /* Upgrade für Subject App Tiles (iPadOS Springboard) */
 .subject-tile-icon-wrap {
   width: 68px;
@@ -313,15 +283,6 @@
 }
 
 /* Timetable Raster SVGs */
-.tt-lesson-name-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-  font-size: 0.88rem;
-  flex: 1;
-  min-width: 0;
-}
 
 .tt-slot-icon {
   width: 18px;
@@ -341,4 +302,3 @@
   margin-right: 6px;
   vertical-align: middle;
 }
-
