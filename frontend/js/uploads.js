@@ -291,9 +291,6 @@ function buildMaterialCard(m, onDeleted) {
             ${icon("Stundenplan")} Stundenplan
           </button>
         ` : ""}
-        <button type="button" class="btn-mat-action btn-mat-view" title="${isTimetable ? "Original-Scan als Dokument ansehen" : "Dokument im Popup ansehen"}">
-          ${icon("Anzeigen")} ${isTimetable ? "Scan" : "Öffnen"}
-        </button>
         <button type="button" class="btn-mat-action btn-mat-reader" title="Im Dokument-Reader öffnen & mit Apple Pencil beschreiben">
           ${icon("Lesen")} Reader
         </button>
@@ -369,14 +366,6 @@ function buildMaterialCard(m, onDeleted) {
           sourceMaterialTitle: m.title
         });
       }
-    });
-  }
-
-  const viewBtn = card.querySelector(".btn-mat-view");
-  if (viewBtn) {
-    viewBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openDocumentViewerModal(m);
     });
   }
 

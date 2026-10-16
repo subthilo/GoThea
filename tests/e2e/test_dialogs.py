@@ -70,13 +70,23 @@ def test_subject_detail_and_upload_dialog(parent_page):
 
 
 @pytest.mark.parametrize("button, modal_id, close", [
-    (".btn-mat-view", "modal-material-viewer", "#btn-close-viewer-modal"),
     (".btn-mat-edit", "modal-edit-material", "#btn-close-edit-material-modal"),
     (".btn-mat-reorder", "modal-reorder-pages", "#btn-close-reorder-modal"),
 ])
 def test_material_card_dialogs(uploads_page, button, modal_id, close):
     _expand_first_document(uploads_page)
     _assert_opens_and_closes(uploads_page, f"#tab-uploads .doc-row >> nth=0 >> {button}", modal_id, close)
+    assert uploads_page.problems.errors == []
+
+
+def test_document_viewer_dialog(uploads_page):
+    """Das Vorschau-Fenster öffnet nur noch der Stundenplan (Scan ansehen) – hier direkt aufgerufen."""
+    uploads_page.evaluate(
+        "() => apiJson('/api/v1/materials').then(l => openDocumentViewerModal(l[0]))")
+    uploads_page.wait_for_selector("#modal-material-viewer", state="visible", timeout=5000)
+    _settle(uploads_page)
+    uploads_page.click("#btn-close-viewer-modal")
+    uploads_page.wait_for_selector("#modal-material-viewer", state="hidden", timeout=5000)
     assert uploads_page.problems.errors == []
 
 

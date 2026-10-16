@@ -550,6 +550,7 @@ body.whiteboard-zen-mode .wb-container {
   height: 28px;
 }
 
+.wb-header-bar .wb-btn-subtle .ui-icon,
 .wb-header-actions .ui-icon,
 .wb-boards-btn .ui-icon {
   width: 20px;

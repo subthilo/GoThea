@@ -49,7 +49,7 @@ def test_document_row_expands_and_offers_edit(app_page, parent_pin):
     # Zugeklappt: Ändern und Reader direkt in der Zeile, Aktionen verborgen
     assert row.locator(".btn-mat-edit").is_visible()
     assert row.locator(".doc-row-open").is_visible()
-    assert not row.locator(".btn-mat-view").is_visible()
+    assert not row.locator(".btn-mat-reader").is_visible()
 
     # „Ändern“ öffnet den Dialog, ohne die Zeile aufzuklappen
     row.locator(".btn-mat-edit").click()
@@ -61,6 +61,6 @@ def test_document_row_expands_and_offers_edit(app_page, parent_pin):
     # Aufklappen zeigt Angaben und Aktionen
     row.locator(".doc-row-name").click()
     assert "open" in row.get_attribute("class")
-    assert row.locator(".btn-mat-view").is_visible()
+    assert row.locator(".btn-mat-reader").is_visible()
     assert "Biologie" in row.locator(".doc-row-meta").text_content()
     assert app_page.problems.errors == []
