@@ -97,66 +97,73 @@
   });
 
   // 8. KI-Overlay Visualisierung
+  // Lunas Markierungen (Kasten um eine Stelle, kurzer Hinweis) liegen als eigene Elemente in der
+  // Aufgaben-Ebene: Sie wandern mit Scrollen und Zoom mit, der Radierer lässt sie in Ruhe. Weg sind sie,
+  // sobald Thea in ihren Bereich schreibt oder radiert, spätestens bei der nächsten Prüfung.
+  // (Früher lagen sie auf der Hilfsebene des Zeichenkerns, der beim Schreiben Stücke davon freiwischte.)
+  function clearLunaMarks() {
+    if (tasksLayer) tasksLayer.querySelectorAll(".wb-luna-mark").forEach(el => el.remove());
+  }
+
+  // Bildschirm-Koordinaten der Tafel in Tafel-Koordinaten (die Ebene wird verschoben und skaliert)
+  function screenToWorld(x, y) {
+    return { x: (x - surface.panX) / surface.scale, y: (y - surface.panY) / surface.scale };
+  }
+
+  function markRect(coords) {
+    if (coords.x_pct === undefined) {
+      const p = screenToWorld(coords.x || 0, coords.y || 0);
+      return { x: p.x, y: p.y, w: (coords.w || 200) / surface.scale, h: (coords.h || 60) / surface.scale };
+    }
+    const b = surface.lastCaptureBounds;  // Prozentangaben beziehen sich auf das Bild, das Luna bekam
+    if (b) {
+      return { x: b.minX + coords.x_pct / 100 * b.width, y: b.minY + coords.y_pct / 100 * b.height,
+               w: coords.w_pct / 100 * b.width, h: coords.h_pct / 100 * b.height };
+    }
+    const boardW = overlayCanvas.width / surface.dpr, boardH = overlayCanvas.height / surface.dpr;
+    const p = screenToWorld(coords.x_pct / 100 * boardW, coords.y_pct / 100 * boardH);
+    return { x: p.x, y: p.y, w: coords.w_pct / 100 * boardW / surface.scale, h: coords.h_pct / 100 * boardH / surface.scale };
+  }
+
+  function addLunaMark(rect, className, text) {
+    if (!tasksLayer) return;
+    const el = document.createElement("div");
+    el.className = `wb-luna-mark ${className}`;
+    el.style.left = `${rect.x}px`;
+    el.style.top = `${rect.y}px`;
+    if (rect.w) el.style.width = `${rect.w}px`;
+    if (rect.h) el.style.height = `${rect.h}px`;
+    if (text) el.textContent = text;
+    el.dataset.x = rect.x;
+    el.dataset.y = rect.y;
+    el.dataset.w = rect.w || 420;
+    el.dataset.h = rect.h || 44;
+    tasksLayer.appendChild(el);
+  }
+
+  // Ein neuer Strich (auch Radierer) in einer Markierung entfernt sie
+  function removeMarksTouchedBy(stroke) {
+    if (!tasksLayer || !stroke || !stroke.bbox) return;
+    const b = stroke.bbox;
+    tasksLayer.querySelectorAll(".wb-luna-mark").forEach(el => {
+      const x = Number(el.dataset.x), y = Number(el.dataset.y), w = Number(el.dataset.w), h = Number(el.dataset.h);
+      if (b.maxX >= x && b.minX <= x + w && b.maxY >= y && b.minY <= y + h) el.remove();
+    });
+  }
+
   function drawOverlayActions(actions) {
-    overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
-
-    const boardW = overlayCanvas.width / surface.dpr;
-    const boardH = overlayCanvas.height / surface.dpr;
-
+    clearLunaMarks();
     actions.forEach(item => {
       if (item.action === "highlight_box" && item.coords) {
-        let x = item.coords.x || 0;
-        let y = item.coords.y || 0;
-        let w = item.coords.w || 200;
-        let h = item.coords.h || 60;
-
-        if (item.coords.x_pct !== undefined) {
-          if (surface.lastCaptureBounds) {
-            x = surface.lastCaptureBounds.minX + (item.coords.x_pct / 100) * surface.lastCaptureBounds.width;
-            y = surface.lastCaptureBounds.minY + (item.coords.y_pct / 100) * surface.lastCaptureBounds.height;
-            w = (item.coords.w_pct / 100) * surface.lastCaptureBounds.width;
-            h = (item.coords.h_pct / 100) * surface.lastCaptureBounds.height;
-          } else {
-            x = (item.coords.x_pct / 100) * boardW;
-            y = (item.coords.y_pct / 100) * boardH;
-            w = (item.coords.w_pct / 100) * boardW;
-            h = (item.coords.h_pct / 100) * boardH;
-          }
-        }
-
-        overlayCtx.save();
-        overlayCtx.strokeStyle = item.color || "#f59e0b";
-        overlayCtx.lineWidth = 3;
-        overlayCtx.fillStyle = "rgba(245, 158, 11, 0.12)";
-        overlayCtx.beginPath();
-        overlayCtx.roundRect(x, y, w, h, 12);
-        overlayCtx.fill();
-        overlayCtx.stroke();
-        overlayCtx.restore();
+        addLunaMark(markRect(item.coords), "wb-luna-box");
       } else if (item.action === "latex_hint") {
-        overlayCtx.save();
-        const coords = item.coords || { x: 100, y: 100 };
-
-        overlayCtx.fillStyle = "rgba(30, 41, 59, 0.95)";
-        overlayCtx.strokeStyle = "#6366f1";
-        overlayCtx.lineWidth = 1.5;
-        overlayCtx.beginPath();
-        overlayCtx.roundRect(coords.x - 10, coords.y - 25, 420, 44, 8);
-        overlayCtx.fill();
-        overlayCtx.stroke();
-
-        overlayCtx.fillStyle = "#f8fafc";
-        overlayCtx.font = "600 16px -apple-system, BlinkMacSystemFont, sans-serif";
-        overlayCtx.fillText(item.latex || "Hinweis des KI-Tutors", coords.x + 6, coords.y + 4);
-        overlayCtx.restore();
+        const c = item.coords || { x: 100, y: 100 };
+        const p = screenToWorld(c.x - 10, c.y - 25);
+        addLunaMark({ x: p.x, y: p.y }, "wb-luna-hint", item.latex || "Hinweis von Luna");
       } else if (item.action === "clear") {
-        overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
+        clearLunaMarks();
       }
     });
-
-    setTimeout(() => {
-      overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
-    }, 14000);
   }
 
   // Audio- & Sprachsteuerung des KI-Tutors (OpenAI TTS 'nova' & Barge-In)
@@ -482,6 +489,7 @@
   }
 
   function scheduleAutoSave() {
+    removeMarksTouchedBy(surface.strokes[surface.strokes.length - 1]);
     if (surface.isBookPageMode) {
       scheduleBookPageAutoSave();
       return;
@@ -770,6 +778,7 @@
         surface.strokes = [];
         surface.redrawAllStrokes();
         overlayCtx.clearRect(0, 0, overlayCanvas.width / surface.dpr, overlayCanvas.height / surface.dpr);
+        clearLunaMarks();
         scheduleAutoSave();
       }
     });
