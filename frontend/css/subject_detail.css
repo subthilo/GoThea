@@ -154,3 +154,8 @@
   transform: translateX(3px);
 }
 
+
+/* Thea braucht die Erklärung zum adaptiven Niveau nicht (Eltern sehen sie weiter) */
+body.thea-mode-active .subject-scores-adaptive-hint {
+  display: none;
+}

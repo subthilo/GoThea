@@ -217,3 +217,40 @@
   color: var(--text-muted);
   text-align: center;
 }
+
+/* Upload-Fläche schlank: großes Icon + Auswahlknopf, ohne Erklärtexte */
+.upload-dropzone-card {
+  justify-content: flex-start;
+  padding: 14px 18px;
+}
+
+.upload-dropzone-icon {
+  width: 56px;
+  height: 56px;
+  font-size: 2.2rem;
+}
+
+#btn-trigger-page-upload {
+  width: auto;
+  min-width: 64px;
+  margin-left: auto;
+  font-size: 1.3rem;
+}
+
+.uploads-subject-pill .ui-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Kopf der Upload-Seite in einer Zeile: Icon-Überschrift, daneben der Stundenplan-Import */
+#tab-uploads .pane-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Ohne Hinweistexte keine leeren Flächen im Netzwerk-Eingang */
+.inbox-subtitle:empty,
+.inbox-file-list:empty {
+  display: none;
+}

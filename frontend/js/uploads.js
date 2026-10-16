@@ -89,21 +89,21 @@ async function checkInboxStatus() {
       inboxCard.classList.add("has-pending");
       if (inboxBadgeDot) inboxBadgeDot.style.display = "block";
       if (inboxSubtitle) {
-        inboxSubtitle.textContent = `${pending} neue${pending === 1 ? "s" : ""} Dokument${pending === 1 ? "" : "e"} im Ordner bereit zum Einsortieren.`;
+        inboxSubtitle.textContent = `${pending} neu`;
       }
       if (btnProcessInbox) {
         btnProcessInbox.disabled = false;
-        btnProcessInbox.innerHTML = `${icon("Eingang")} Jetzt einsortieren (${pending})`;
+        btnProcessInbox.innerHTML = `${icon("Eingang")} ${pending}`;
       }
     } else {
       inboxCard.classList.remove("has-pending");
       if (inboxBadgeDot) inboxBadgeDot.style.display = "none";
       if (inboxSubtitle) {
-        inboxSubtitle.textContent = `Keine wartenden Dateien im Netzwerkordner.`;
+        inboxSubtitle.textContent = "";
       }
       if (btnProcessInbox) {
         btnProcessInbox.disabled = true;
-        btnProcessInbox.innerHTML = `${icon("Eingang")} Jetzt einsortieren`;
+        btnProcessInbox.innerHTML = icon("Eingang");
       }
     }
 
@@ -111,12 +111,7 @@ async function checkInboxStatus() {
     if (inboxFileList) {
       inboxFileList.innerHTML = "";
       if (files.length === 0) {
-        inboxFileList.innerHTML = `
-          <div class="inbox-empty-hint">
-            <span>${icon("Luna")}</span>
-            <span>Ziehe PDFs oder Bilder in deinen Mac-Finder Netzwerkordner <code>${shareName}</code>, um sie automatisch hier einzulesen.</span>
-          </div>
-        `;
+        inboxFileList.innerHTML = "";
       } else {
         files.forEach((f) => {
           const chip = document.createElement("div");
@@ -218,10 +213,10 @@ if (btnRefreshInbox) {
   btnRefreshInbox.addEventListener("click", async () => {
     const origHtml = btnRefreshInbox.innerHTML;
     btnRefreshInbox.disabled = true;
-    btnRefreshInbox.innerHTML = `<span class="inbox-spin-icon">${icon("Aktualisieren")}</span> Prüfe...`;
+    btnRefreshInbox.innerHTML = `<span class="inbox-spin-icon">${icon("Aktualisieren")}</span>`;
     try {
       await checkInboxStatus();
-      btnRefreshInbox.innerHTML = iconText("Haken", "Geprüft");
+      btnRefreshInbox.innerHTML = icon("Haken");
     } catch (e) {
       btnRefreshInbox.innerHTML = iconText("Warnung", "Fehler");
     } finally {
@@ -268,10 +263,9 @@ function buildMaterialCard(m, onDeleted) {
         <span class="doc-row-name">${escapeHtml(m.title)}</span>
         ${m.topic_name ? `<span class="doc-row-topic">${escapeHtml(m.topic_name)}</span>` : ""}
       </span>
-      <span class="doc-row-badge">${escapeHtml(m.kind || "Dokument")}</span>
       <span class="doc-row-pages">${m.page_count} S.</span>
-      <button type="button" class="btn-mat-action btn-mat-edit parent-only" title="Dokument anpassen (Titel, Fach, Thema, Art)">
-        ${icon("Schreibwerkzeuge")} Ändern
+      <button type="button" class="btn-mat-action btn-mat-edit parent-only" title="Ändern (Titel, Fach, Thema, Art)" aria-label="Ändern">
+        ${icon("Schreibwerkzeuge")}
       </button>
       <button type="button" class="btn-mat-action doc-row-open" title="Im Reader öffnen">${icon("Lesen")}</button>
     </div>
@@ -466,7 +460,7 @@ function renderUploadsHistory(materials) {
   historyList.innerHTML = "";
 
   if (materials.length === 0) {
-    if (countBadge) countBadge.textContent = "0 Dokumente";
+    if (countBadge) countBadge.textContent = "0";
     renderUploadsSubjectPills([]);
     historyList.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 40px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
@@ -487,9 +481,7 @@ function renderUploadsHistory(materials) {
 
   const listed = materials.filter((m) => uploadsFilter.showChapters || !isBookChapter(m)).length;
   if (countBadge) {
-    countBadge.textContent = shown.length === listed
-      ? `${listed} Dokument${listed === 1 ? "" : "e"}`
-      : `${shown.length} von ${listed}`;
+    countBadge.textContent = shown.length === listed ? String(listed) : `${shown.length} / ${listed}`;
   }
 
   if (shown.length === 0) {
@@ -518,12 +510,12 @@ function renderUploadsSubjectPills(materials) {
   });
   if (uploadsFilter.subject !== "all" && !(uploadsFilter.subject in counts)) counts[uploadsFilter.subject] = 0;
   const names = Object.keys(counts).sort((a, b) => a.localeCompare(b, "de"));
-  const pill = (value, label, count, style = "") => `
-    <button type="button" class="filter-pill uploads-subject-pill ${uploadsFilter.subject === value ? "active" : ""}" data-subject="${escapeHtml(value)}" style="${style}">
+  const pill = (value, label, count, style = "", title = "") => `
+    <button type="button" class="filter-pill uploads-subject-pill ${uploadsFilter.subject === value ? "active" : ""}" data-subject="${escapeHtml(value)}" style="${style}" title="${escapeHtml(title)}">
       ${label} <span class="uploads-pill-count">${count}</span>
     </button>`;
-  wrap.innerHTML = pill("all", "Alle Fächer", materials.length) +
-    names.map((n) => pill(n, subjectLabel(n), counts[n], subjectStyle(n))).join("");
+  wrap.innerHTML = pill("all", "Alle", materials.length) +
+    names.map((n) => pill(n, `${subjectIcon(n)}<span class="sr-only">${escapeHtml(n)}</span>`, counts[n], subjectStyle(n), n)).join("");
 }
 
 function setupUploadsPageEvents() {

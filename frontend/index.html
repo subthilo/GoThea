@@ -50,7 +50,6 @@
     <header class="header">
       <div class="brand">
         <span class="logo">GoThea</span>
-        <span class="badge-grade" id="badge-grade">7. Klasse</span>
       </div>
 
       <!-- Navigation Dock (Reine Icon-Zonen ohne Text) -->
@@ -110,7 +109,7 @@
             <span class="parent-pill-icon" id="parent-pill-icon">
               <img src="/static/Icons/Kind.svg" class="pill-svg-icon" alt="Thea-Modus">
             </span>
-            <span class="parent-pill-text" id="parent-pill-text">Thea-Modus</span>
+            <span class="parent-pill-text sr-only" id="parent-pill-text">Thea-Modus</span>
           </button>
         </div>
         <div class="status-badge status-dot-only" id="status-badge" title="Verbunden">
@@ -184,8 +183,8 @@
               </div>
             </div>
             <div class="dash-tt-actions">
-              <span class="dash-tt-week-pill" id="dash-tt-week-pill">A-Woche</span>
-              <button class="btn-secondary-sm" id="btn-dash-goto-timetable">Stundenplan <span class="ui-icon i-pfeil-rechts" aria-hidden="true"></span></button>
+              <span class="dash-tt-week-pill" id="dash-tt-week-pill" title="Woche">A</span>
+              <button class="btn-secondary-sm" id="btn-dash-goto-timetable" title="Zum Stundenplan" aria-label="Zum Stundenplan"><span class="ui-icon i-stundenplan" aria-hidden="true"></span> <span class="ui-icon i-pfeil-rechts" aria-hidden="true"></span></button>
             </div>
           </div>
           <div class="dash-tt-slots-row" id="dash-tt-slots-row">
@@ -193,7 +192,7 @@
           </div>
         </div>
 
-        <h2 class="section-title">Deine Schulfächer</h2>
+        <h2 class="section-title icon-heading" title="Schulfächer"><span class="ui-icon i-schulranzen" aria-hidden="true"></span><span class="sr-only">Schulfächer</span></h2>
         <div class="subjects-grid" id="dashboard-subjects-grid">
           <!-- Dynamisch befüllt via API -->
         </div>
@@ -204,26 +203,26 @@
         <!-- Schlanke Kopfzeile (alles in einer kompakten Zeile) -->
         <div class="tt-compact-topbar">
           <div class="tt-topbar-title-group">
-            <img src="/static/Icons/Stundenplan.svg" class="tt-topbar-icon" alt="">
-            <h2 class="tt-topbar-title">Stundenplan</h2>
-            <span class="tt-class-badge" id="tt-view-subtitle">Klasse 7D</span>
+            <img src="/static/Icons/Stundenplan.svg" class="tt-topbar-icon" alt="" title="Stundenplan">
+            <h2 class="sr-only">Stundenplan</h2>
+            <span class="tt-class-badge" id="tt-view-subtitle" style="display: none;">Klasse 7D</span>
           </div>
 
           <!-- Turnus Segmented Control (A-Woche / B-Woche) -->
           <div class="tt-segmented-control" role="tablist" aria-label="Turnus-Woche">
-            <button type="button" class="tt-seg-btn active" data-week="A" id="btn-tt-week-a">A-Woche</button>
-            <button type="button" class="tt-seg-btn" data-week="B" id="btn-tt-week-b">B-Woche</button>
+            <button type="button" class="tt-seg-btn active" data-week="A" id="btn-tt-week-a" title="A-Woche">A</button>
+            <button type="button" class="tt-seg-btn" data-week="B" id="btn-tt-week-b" title="B-Woche">B</button>
             <span id="tt-auto-week-tag" style="display: none;"></span>
           </div>
 
           <div class="tt-topbar-actions">
             <button id="btn-tt-view-scan" class="btn-secondary-sm" title="Original-Scan ansehen">
               <img src="/static/Icons/Dokumente.svg" class="btn-sm-svg" alt="">
-              <span>Scan</span>
+              <span class="sr-only">Scan</span>
             </button>
             <button id="btn-tt-upload-new" class="btn-primary-sm parent-only" title="Neuen Stundenplan scannen oder hochladen">
               <img src="/static/Icons/Upload.svg" class="btn-sm-svg" alt="">
-              <span>Plan ändern</span>
+              <span class="sr-only">Plan ändern</span>
             </button>
           </div>
         </div>
@@ -243,9 +242,9 @@
         <div class="books-container">
           <!-- Kopfleiste: Suche über alle Bücher -->
           <div class="books-top-bar" id="books-top-bar">
-            <h2 class="books-heading">Inhaltsverzeichnis</h2>
+            <h2 class="books-heading icon-heading" title="Inhaltsverzeichnis"><span class="ui-icon i-inhaltsverzeichnis" aria-hidden="true"></span><span class="sr-only">Inhaltsverzeichnis</span></h2>
             <div class="book-catalog-search">
-              <input type="text" id="book-catalog-filter-input" placeholder="Buch, Kapitel, Abschnitt oder Seite suchen …" />
+              <input type="text" id="book-catalog-filter-input" placeholder="Suchen …" aria-label="Buch, Kapitel, Abschnitt oder Seite suchen" />
             </div>
           </div>
 
@@ -347,11 +346,10 @@
       <section id="tab-uploads" class="tab-pane">
         <div class="pane-header">
           <div>
-            <h2><span class="ui-icon i-upload" aria-hidden="true"></span> Upload & Eingang</h2>
-            <p class="subtitle">Materialien manuell hochladen, Netzwerk-Scans einsortieren und Upload-Historie einsehen</p>
+            <h2 class="icon-heading" title="Upload"><span class="ui-icon i-upload" aria-hidden="true"></span><span class="sr-only">Upload</span></h2>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button id="btn-open-timetable-modal" class="btn-secondary-sm" title="Stundenplan hochladen und Fächer automatisch anlegen"><span class="ui-icon i-stundenplan" aria-hidden="true"></span> Stundenplan importieren</button>
+            <button id="btn-open-timetable-modal" class="btn-secondary-sm" title="Stundenplan importieren" aria-label="Stundenplan importieren"><span class="ui-icon i-stundenplan" aria-hidden="true"></span></button>
             <input type="file" id="timetable-file-input" accept="application/pdf,image/png,image/jpeg,image/webp" style="display: none;">
             <button id="btn-open-material-modal" class="btn-primary-sm" style="display: none;"><span class="ui-icon i-plus" aria-hidden="true"></span> Dokument hochladen</button>
           </div>
@@ -360,16 +358,8 @@
         <!-- 1. Manuelle Upload-Zone (Groß & Modern) -->
         <div class="upload-dropzone-card" id="page-upload-dropzone">
           <div class="upload-dropzone-icon"><span class="ui-icon i-upload" aria-hidden="true"></span></div>
-          <div class="upload-dropzone-content">
-            <div class="upload-dropzone-title">Dateien hier ablegen oder zum Auswählen klicken</div>
-            <p class="upload-dropzone-subtitle">Unterstützt PDF-Dokumente, Arbeitsblätter, Buchkapitel und hochauflösende Fotos (PNG, JPG, WebP)</p>
-            <div class="upload-dropzone-badges">
-              <span class="dropzone-badge"><span class="ui-icon i-blitz" aria-hidden="true"></span> Automatische Fach- & Themenerkennung</span>
-              <span class="dropzone-badge"><span class="ui-icon i-anzeigen" aria-hidden="true"></span> Vorschau mit Bestätigung</span>
-              <span class="dropzone-badge"><span class="ui-icon i-luna" aria-hidden="true"></span> Didaktische KI-Zusammenfassung</span>
-            </div>
-          </div>
-          <button type="button" class="btn-primary" id="btn-trigger-page-upload"><span class="ui-icon i-ordner" aria-hidden="true"></span> Datei auswählen</button>
+          <span class="sr-only">Dateien hier ablegen oder auswählen</span>
+          <button type="button" class="btn-primary" id="btn-trigger-page-upload" title="Datei auswählen (PDF oder Foto) – oder hierher ziehen" aria-label="Datei auswählen"><span class="ui-icon i-ordner" aria-hidden="true"></span></button>
           <input type="file" id="page-file-input" accept="application/pdf,image/png,image/jpeg,image/webp" style="display: none;">
         </div>
 
@@ -383,7 +373,7 @@
               </div>
               <div>
                 <div class="inbox-title">
-                  <span>Netzwerk-Posteingang</span>
+                  <span class="sr-only">Netzwerk-Posteingang</span>
                   <span class="inbox-env-badge" id="inbox-env-badge">Finder: GoThea</span>
                 </div>
                 <p class="inbox-subtitle" id="inbox-subtitle">
@@ -392,11 +382,11 @@
               </div>
             </div>
             <div class="inbox-actions">
-              <button id="btn-refresh-inbox" class="btn-inbox-refresh" title="Netzwerkordner erneut prüfen">
-                <span class="ui-icon i-aktualisieren" aria-hidden="true"></span> Prüfen
+              <button id="btn-refresh-inbox" class="btn-inbox-refresh" title="Netzwerkordner prüfen" aria-label="Prüfen">
+                <span class="ui-icon i-aktualisieren" aria-hidden="true"></span>
               </button>
-              <button id="btn-process-inbox" class="btn-inbox-process" disabled>
-                <span class="ui-icon i-eingang" aria-hidden="true"></span> Jetzt einsortieren
+              <button id="btn-process-inbox" class="btn-inbox-process" disabled title="Einsortieren" aria-label="Einsortieren">
+                <span class="ui-icon i-eingang" aria-hidden="true"></span>
               </button>
             </div>
           </div>
@@ -417,19 +407,18 @@
         <div class="upload-history-section" style="margin-top: 36px;">
           <div class="section-title-row">
             <div>
-              <h3><span class="ui-icon i-klemmbrett" aria-hidden="true"></span> Alle Dokumente</h3>
-              <p class="subtitle" style="margin-top: 4px;">Neueste zuerst – suchen, nach Fach filtern, im Eltern-Modus ändern</p>
+              <h3 class="icon-heading" title="Alle Dokumente"><span class="ui-icon i-dokumente" aria-hidden="true"></span><span class="sr-only">Alle Dokumente</span></h3>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
-              <button id="btn-open-uploads-merge-modal" class="btn-secondary-sm parent-only" title="Mehrere Dokumente zu einem Dokument vereinen"><span class="ui-icon i-verknuepfen" aria-hidden="true"></span> Dokumente zusammenführen</button>
+              <button id="btn-open-uploads-merge-modal" class="btn-secondary-sm parent-only" aria-label="Dokumente zusammenführen" title="Mehrere Dokumente zu einem Dokument vereinen"><span class="ui-icon i-verknuepfen" aria-hidden="true"></span></button>
               <span class="badge-minutes" id="uploads-history-count">0 Dokumente</span>
             </div>
           </div>
           <!-- Suche & Filter (uploads.js: renderUploadsHistory) -->
           <div class="uploads-filter-bar">
-            <input type="search" id="uploads-filter-input" class="uploads-filter-input" placeholder="Titel, Fach, Art oder Thema suchen …" autocomplete="off">
+            <input type="search" id="uploads-filter-input" class="uploads-filter-input" placeholder="Suchen …" aria-label="Titel, Fach, Art oder Thema suchen" autocomplete="off">
             <label class="uploads-filter-toggle" title="Kapitel, die automatisch aus Büchern geschnitten wurden (auch im Bücher-Inhaltsverzeichnis)">
-              <input type="checkbox" id="uploads-show-chapters"> Buchkapitel zeigen
+              <input type="checkbox" id="uploads-show-chapters"> <span class="ui-icon i-buecher" aria-hidden="true"></span> Kapitel
             </label>
           </div>
           <div class="uploads-subject-pills" id="uploads-subject-pills"></div>
@@ -442,10 +431,10 @@
       <!-- Tab: Fach-Detailseite (Mediathek & Materialien) -->
       <section id="tab-subject-detail" class="tab-pane">
         <div class="subject-detail-nav">
-          <button id="btn-back-to-dashboard" class="btn-secondary-sm">
-            <span><span class="ui-icon i-pfeil-links" aria-hidden="true"></span> Zurück zur Übersicht</span>
+          <button id="btn-back-to-dashboard" class="btn-secondary-sm" title="Zurück" aria-label="Zurück">
+            <span><span class="ui-icon i-pfeil-links" aria-hidden="true"></span></span>
           </button>
-          <span class="subject-breadcrumb" id="subject-detail-breadcrumb">Übersicht / Schulfach</span>
+          <span class="subject-breadcrumb" id="subject-detail-breadcrumb" style="display: none;">Übersicht / Schulfach</span>
         </div>
 
         <!-- Fach Hero Header -->
@@ -457,7 +446,7 @@
             <div>
               <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <h1 class="subject-hero-title" id="subject-detail-name">Mathematik</h1>
-                <span class="badge-grade" id="subject-detail-grade">7. Klasse</span>
+                <span class="badge-grade" id="subject-detail-grade" style="display: none;">7. Klasse</span>
               </div>
             </div>
           </div>
@@ -469,33 +458,31 @@
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Tafel.svg" class="action-card-svg" alt="Tafel">
             </div>
-            <div class="action-card-title">Tafel</div>
+            <div class="action-card-title sr-only">Tafel</div>
           </div>
 
           <div class="subject-action-card card-accent-exercise" id="btn-subject-start-exercise" role="button" tabindex="0" title="Üben">
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Übungen.svg" class="action-card-svg" alt="Übungen">
             </div>
-            <div class="action-card-title">Üben</div>
+            <div class="action-card-title sr-only">Üben</div>
           </div>
 
           <div class="subject-action-card card-accent-upload" id="btn-subject-upload-doc" role="button" tabindex="0" title="Upload">
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Upload.svg" class="action-card-svg" alt="Upload">
             </div>
-            <div class="action-card-title">Upload</div>
+            <div class="action-card-title sr-only">Upload</div>
           </div>
         </div>
 
         <!-- Tafeln des Fachs (zuletzt bearbeitete zuerst) -->
         <div class="subject-boards-section">
           <div class="section-title-row">
-            <div>
-              <h3>Tafeln</h3>
-            </div>
+            <h3 class="icon-heading" title="Tafeln"><span class="ui-icon i-tafel" aria-hidden="true"></span><span class="sr-only">Tafeln</span></h3>
             <div style="display: flex; gap: 8px; align-items: center;">
-              <button type="button" id="btn-subject-new-board" class="btn-secondary-sm"><span class="ui-icon i-plus" aria-hidden="true"></span> Neue Tafel</button>
-              <span class="badge-minutes" id="subject-boards-count">0 Tafeln</span>
+              <button type="button" id="btn-subject-new-board" class="btn-secondary-sm" title="Neue Tafel" aria-label="Neue Tafel"><span class="ui-icon i-plus" aria-hidden="true"></span></button>
+              <span class="badge-minutes" id="subject-boards-count" title="Tafeln">0</span>
             </div>
           </div>
           <div id="subject-boards-grid" class="doc-list">
@@ -508,8 +495,8 @@
           <div class="subject-topics-bar-header" id="btn-toggle-subject-topics">
             <div style="display: flex; gap: 8px; align-items: center;">
               <span><span class="ui-icon i-inhaltsverzeichnis" aria-hidden="true"></span></span>
-              <span style="font-weight: 600;">Themenkatalog (Klasse 7)</span>
-              <span class="badge-minutes" id="subject-topics-count">0 Themen</span>
+              <span class="sr-only">Themenkatalog</span>
+              <span class="badge-minutes" id="subject-topics-count" title="Themen">0</span>
             </div>
             <span class="toggle-arrow" id="subject-topics-arrow"><span class="ui-icon i-aufklappen" aria-hidden="true"></span></span>
           </div>
@@ -524,14 +511,14 @@
             <div style="display: flex; align-items: center; gap: 10px;">
               <span class="subject-scores-icon"><span class="ui-icon i-ziel" aria-hidden="true"></span></span>
               <div>
-                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Trainingsstand & Niveau</h3>
+                <h3 class="sr-only">Trainingsstand</h3>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <span class="badge-adaptive-level" id="subject-adaptive-level-badge"><span class="ui-icon i-ziel" aria-hidden="true"></span> Stufe 2 (Mittel)</span>
               <button id="btn-toggle-subject-scores-visibility" class="btn-secondary-xs" title="Scores einblenden oder ausblenden, um Leistungsdruck zu vermeiden">
                 <span id="btn-toggle-subject-scores-icon"><span class="ui-icon i-anzeigen" aria-hidden="true"></span></span>
-                <span id="btn-toggle-subject-scores-text">Scores ausblenden</span>
+                <span id="btn-toggle-subject-scores-text" class="sr-only">Scores ausblenden</span>
               </button>
             </div>
           </div>
@@ -554,8 +541,7 @@
             <div class="subject-scores-hidden-content">
               <span><span class="ui-icon i-pflanze" aria-hidden="true"></span></span>
               <div>
-                <strong>Lernmodus aktiv</strong>
-                <p>Ergebnis-Zahlen sind ausgeblendet. Luna passt die Aufgaben im Hintergrund optimal an Theas Lerntempo an.</p>
+
               </div>
             </div>
           </div>
@@ -564,37 +550,35 @@
         <!-- Materialien & Dokumente des Fachs -->
         <div class="materials-section" style="margin-top: 28px;">
           <div class="section-title-row">
-            <div>
-              <h3>Dokumente</h3>
-            </div>
+            <h3 class="icon-heading" title="Dokumente"><span class="ui-icon i-dokumente" aria-hidden="true"></span><span class="sr-only">Dokumente</span></h3>
             <div style="display: flex; gap: 8px; align-items: center;">
-              <button id="btn-open-subject-merge-modal" class="btn-secondary-sm parent-only" title="Ausgewählte Dokumente dieses Fachs vereinen"><span class="ui-icon i-verknuepfen" aria-hidden="true"></span> Dokumente zusammenführen</button>
-              <span class="badge-minutes" id="subject-materials-count">0 Dokumente</span>
+              <button id="btn-open-subject-merge-modal" class="btn-secondary-sm parent-only" aria-label="Dokumente zusammenführen" title="Ausgewählte Dokumente dieses Fachs vereinen"><span class="ui-icon i-verknuepfen" aria-hidden="true"></span></button>
+              <span class="badge-minutes" id="subject-materials-count" title="Dokumente">0</span>
             </div>
           </div>
 
           <!-- Filter-Pills für Dokumentarten -->
           <div class="materials-filter-bar" id="subject-materials-filter-bar">
             <button class="filter-pill active" data-kind="all">
-              <img src="/static/Icons/Dokumente.svg" class="filter-pill-svg" alt=""> Alle
+              Alle
             </button>
             <button class="filter-pill" data-kind="Arbeitsblatt">
-              <img src="/static/Icons/Arbeitsblätter.svg" class="filter-pill-svg" alt=""> Arbeitsblätter
+              <img src="/static/Icons/Arbeitsblätter.svg" class="filter-pill-svg" alt="Arbeitsblätter" title="Arbeitsblätter">
             </button>
             <button class="filter-pill" data-kind="Mitschrift">
-              <img src="/static/Icons/Mitschriften.svg" class="filter-pill-svg" alt=""> Mitschriften
+              <img src="/static/Icons/Mitschriften.svg" class="filter-pill-svg" alt="Mitschriften" title="Mitschriften">
             </button>
             <button class="filter-pill" data-kind="Buch">
-              <img src="/static/Icons/Bücher.svg" class="filter-pill-svg" alt=""> Schulbücher
+              <img src="/static/Icons/Bücher.svg" class="filter-pill-svg" alt="Schulbücher" title="Schulbücher">
             </button>
             <button class="filter-pill" data-kind="Test">
-              <img src="/static/Icons/Tests.svg" class="filter-pill-svg" alt=""> Tests &amp; Arbeiten
+              <img src="/static/Icons/Tests.svg" class="filter-pill-svg" alt="Tests und Arbeiten" title="Tests und Arbeiten">
             </button>
             <button class="filter-pill" data-kind="Vokabelliste">
-              <img src="/static/Icons/Inhaltsverzeichnis.svg" class="filter-pill-svg" alt=""> Vokabeln
+              <img src="/static/Icons/Inhaltsverzeichnis.svg" class="filter-pill-svg" alt="Vokabeln" title="Vokabeln">
             </button>
             <button class="filter-pill" data-kind="Sonstiges">
-              <img src="/static/Icons/Dokumente.svg" class="filter-pill-svg" alt=""> Sonstiges
+              <img src="/static/Icons/Dokumente.svg" class="filter-pill-svg" alt="Sonstiges" title="Sonstiges">
             </button>
           </div>
 
@@ -608,21 +592,20 @@
       <section id="tab-planner" class="tab-pane">
         <div class="planner-header">
           <div>
-            <h2><span class="ui-icon i-lernplan" aria-hidden="true"></span> Lernplan & Countdown</h2>
-            <p class="subtitle" id="planner-subtitle">Altersadaptiv • Countdown N(k,g) • Zeitbudgets B(k,g)</p>
+            <h2 class="icon-heading" title="Lernplan"><span class="ui-icon i-lernplan" aria-hidden="true"></span><span class="sr-only">Lernplan</span></h2>
           </div>
           <div class="planner-actions">
-            <button id="btn-open-test-modal" class="btn-primary-sm parent-only"><span class="ui-icon i-plus" aria-hidden="true"></span> Neue Prüfung</button>
-            <button id="btn-open-block-modal" class="btn-secondary-sm parent-only"><span class="ui-icon i-sperrtag" aria-hidden="true"></span> Sperrtag</button>
-            <button id="btn-seed-dummies" class="btn-staging-sm parent-only" style="display: none;"><span class="ui-icon i-blitz" aria-hidden="true"></span> 3 Test-Arbeiten anlegen</button>
+            <button id="btn-open-test-modal" class="btn-primary-sm parent-only" title="Neue Prüfung" aria-label="Neue Prüfung"><span class="ui-icon i-plus" aria-hidden="true"></span><span class="ui-icon i-tests" aria-hidden="true"></span></button>
+            <button id="btn-open-block-modal" class="btn-secondary-sm parent-only" title="Sperrtag eintragen" aria-label="Sperrtag"><span class="ui-icon i-sperrtag" aria-hidden="true"></span></button>
+            <button id="btn-seed-dummies" class="btn-staging-sm parent-only" style="display: none;" title="3 Test-Arbeiten anlegen (Staging)"><span class="ui-icon i-blitz" aria-hidden="true"></span></button>
           </div>
         </div>
 
         <!-- Heutige Lerneinheiten -->
         <div class="planner-section">
           <div class="section-title-row">
-            <h3 id="planner-today-title">Heutige Lerneinheiten</h3>
-            <span class="badge-minutes" id="planner-today-minutes">0 Min. verbleibend</span>
+            <h3 id="planner-today-title">Heute</h3>
+            <span class="badge-minutes" id="planner-today-minutes" title="Lernzeit heute">0 Min.</span>
           </div>
           <div id="planner-today-tasks" class="planner-tasks-list">
             <!-- Dynamisch via API -->
@@ -631,7 +614,7 @@
 
         <!-- Nächste 7 Tage Vorschau -->
         <div class="planner-section">
-          <h3>Vorschau (Nächste 7 Tage)</h3>
+          <h3 class="icon-heading" title="Nächste 7 Tage"><span class="ui-icon i-kalender" aria-hidden="true"></span><span class="sr-only">Nächste 7 Tage</span></h3>
           <div class="week-timeline" id="planner-week-timeline">
             <!-- Dynamisch via API -->
           </div>
@@ -639,7 +622,7 @@
 
         <!-- Alle Prüfungen -->
         <div class="planner-section">
-          <h3>Alle anstehenden Prüfungen</h3>
+          <h3 class="icon-heading" title="Prüfungen"><span class="ui-icon i-tests" aria-hidden="true"></span><span class="sr-only">Prüfungen</span></h3>
           <div class="tests-grid" id="planner-tests-grid">
             <!-- Dynamisch via API -->
           </div>
@@ -893,7 +876,7 @@
       <!-- Tab 5: Profil -->
       <section id="tab-profile" class="tab-pane">
         <div class="profile-card">
-          <h2><img src="/static/Icons/Kind.svg" class="prof-heading-icon" alt=""> Schülerprofil & Schulform</h2>
+          <h2><img src="/static/Icons/Kind.svg" class="prof-heading-icon" alt=""><span class="sr-only">Profil</span></h2>
           <div class="form-group">
             <label>Name</label>
             <input type="text" id="prof-name" class="input-field" value="Thea">
@@ -918,7 +901,7 @@
             </select>
           </div>
           <div style="display: flex; gap: 12px; align-items: center; margin-top: 18px; flex-wrap: wrap;">
-            <button id="btn-save-profile" class="btn-primary parent-only">Profil aktualisieren</button>
+            <button id="btn-save-profile" class="btn-primary parent-only">Speichern</button>
             <div id="prof-thea-notice" class="thea-only text-muted-sm" style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
               <img src="/static/Icons/Einstellungen.svg" class="prof-inline-icon" alt="">
               <em>Schulform & Klassenstufe können im Eltern-Modus geändert werden.</em>
@@ -929,37 +912,30 @@
 
         <!-- App-Design & Farbschema (Themes) -->
         <div class="profile-card" id="card-app-theme" style="margin-top: 24px;">
-          <h2><img src="/static/Icons/Kunst.svg" class="prof-heading-icon" alt=""> Design & Farbschema</h2>
-          <p class="subtitle" style="margin-bottom: 16px;">
-            Wähle dein Lieblings-Aussehen für GoThea. Das Design wird sofort auf allen Seiten angewendet!
-          </p>
+          <h2><img src="/static/Icons/Kunst.svg" class="prof-heading-icon" alt=""><span class="sr-only">Design</span></h2>
           <div class="theme-grid-selector" id="theme-grid-selector">
             <button type="button" class="theme-card-btn active" data-theme="space">
               <span class="theme-card-preview theme-preview-space"></span>
               <div class="theme-card-info">
-                <strong>Weltall (Standard)</strong>
-                <span>Dunkles Nachtblau mit Neon-Indigo</span>
+                <strong>Weltall</strong>
               </div>
             </button>
             <button type="button" class="theme-card-btn" data-theme="sunset">
               <span class="theme-card-preview theme-preview-sunset"></span>
               <div class="theme-card-info">
                 <strong>Sonnenuntergang</strong>
-                <span>Warme Beeren- & Korallentöne</span>
               </div>
             </button>
             <button type="button" class="theme-card-btn" data-theme="nature">
               <span class="theme-card-preview theme-preview-nature"></span>
               <div class="theme-card-info">
                 <strong>Zauberwald</strong>
-                <span>Frisches Smaragd- & Minzgrün</span>
               </div>
             </button>
             <button type="button" class="theme-card-btn" data-theme="candy">
               <span class="theme-card-preview theme-preview-candy"></span>
               <div class="theme-card-info">
                 <strong>Zauberwelt</strong>
-                <span>Magisches Violett & Flieder</span>
               </div>
             </button>
           </div>
@@ -968,7 +944,7 @@
         <!-- Theas Erfolge & Level-Roadmap -->
         <div class="profile-card" id="card-thea-trophies" style="margin-top: 24px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-            <h2 style="margin: 0;"><img src="/static/Icons/Stern.svg" class="prof-heading-icon" alt=""> Theas Auszeichnungen & Level-Reise</h2>
+            <h2 style="margin: 0;"><img src="/static/Icons/Stern.svg" class="prof-heading-icon" alt=""><span class="sr-only">Auszeichnungen</span></h2>
             <span class="badge-grade" id="prof-level-badge"><img src="/static/Icons/Level.svg" class="badge-svg-icon" alt=""> Level 1</span>
           </div>
           <div id="prof-achievements-grid" class="achievements-grid">
@@ -979,18 +955,13 @@
         <!-- Eltern-Sicherheit & PIN-Verwaltung (nur im Eltern-Modus sichtbar, redundant im Thea-Modus da im Header) -->
         <div class="profile-card parent-only" id="card-parent-security" style="margin-top: 24px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-            <h2 style="margin: 0;"><img src="/static/Icons/Einstellungen.svg" class="prof-heading-icon" alt=""> Eltern-PIN Verwaltung</h2>
+            <h2 style="margin: 0;"><img src="/static/Icons/Einstellungen.svg" class="prof-heading-icon" alt=""> PIN</h2>
             <span id="prof-parent-badge" class="parent-status-pill">Eltern-Modus aktiv</span>
           </div>
 
           <div id="parent-security-locked" style="display: none;"></div>
 
           <div id="parent-security-unlocked">
-            <div class="parent-status-box" style="margin-bottom: 16px;">
-              <p class="subtitle" style="margin: 0; color: var(--text-primary);">
-                Der Eltern-Modus ist freigeschaltet. Alle Verwaltungsfunktionen sind aktiv.
-              </p>
-            </div>
             <div id="parent-default-pin-warn" class="warning-callout" style="display: none; margin-bottom: 16px;">
               <strong>Sicherheitshinweis:</strong> Aktuell wird noch die Standard-PIN (<code>1234</code>) verwendet. Bitte ändere sie zu deiner persönlichen Wunsch-PIN.
             </div>

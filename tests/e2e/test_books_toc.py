@@ -137,7 +137,7 @@ def test_subject_page_shows_book_as_one_expandable_entry(app_page):
     # Ein Eintrag für das Buch, keine Kapitel als eigene Zeilen, normales Dokument als Zeile
     assert app_page.locator("#subject-materials-grid .btree-embed").count() == 1
     assert app_page.locator("#subject-materials-grid .doc-row").count() == 1
-    assert app_page.text_content("#subject-materials-count") == "2 Dokumente"
+    assert app_page.text_content("#subject-materials-count") == "2"
 
     # Aufklappen → Kapitel; Aufschlagen → Reader; Zurück → Fachseite
     app_page.click("#subject-materials-grid .btree-book-row")

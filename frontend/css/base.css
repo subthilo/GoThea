@@ -1053,3 +1053,16 @@ body {
   white-space: nowrap;
   border: 0;
 }
+
+/* Überschrift als Icon (Text nur für Screenreader und Tooltip) */
+.icon-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+}
+
+.icon-heading .ui-icon {
+  width: 30px;
+  height: 30px;
+}

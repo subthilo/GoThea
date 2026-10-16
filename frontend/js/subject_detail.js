@@ -60,7 +60,8 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
 
   const btnBack = document.getElementById("btn-back-to-dashboard");
   if (btnBack) {
-    btnBack.innerHTML = `<span>${icon("Pfeil links")} Zurück ${sourceTab === "timetable" ? "zum Stundenplan" : "zur Übersicht"}</span>`;
+    btnBack.innerHTML = `<span>${icon("Pfeil links")}</span>`;
+    btnBack.title = sourceTab === "timetable" ? "Zurück zum Stundenplan" : "Zurück zur Übersicht";
   }
 
   const heroCard = document.getElementById("subject-hero-card");
@@ -135,7 +136,7 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
 
   const topics = cachedTopicsMap[s.id] || [];
   const topicsCount = document.getElementById("subject-topics-count");
-  if (topicsCount) topicsCount.textContent = `${topics.length} Thema${topics.length === 1 ? "" : "n"}`;
+  if (topicsCount) topicsCount.textContent = String(topics.length);
 
   const topicsContainer = document.getElementById("subject-detail-topics");
   if (topicsContainer) {
@@ -242,8 +243,8 @@ async function loadSubjectScores(subjectId) {
         badgeEl.innerHTML = iconText("Ziel", data.difficulty_label || "Stufe 2 (Mittel)");
         badgeEl.className = `badge-adaptive-level level-${data.difficulty_level_code || 2}`;
       } else {
-        const badgeTitle = data.positive_summary?.badge || "Gymnasial-Profi";
-        badgeEl.innerHTML = `${iconText("Ziel", badgeTitle)} <span>(${data.subject_stars || 0} ${icon("Stern")})</span>`;
+        badgeEl.innerHTML = `${data.subject_stars || 0} ${icon("Stern")}`;
+        badgeEl.title = data.positive_summary?.badge || "Sterne in diesem Fach";
         badgeEl.className = `badge-adaptive-level level-2`;
       }
     }
@@ -283,7 +284,7 @@ async function loadSubjectScores(subjectId) {
       if (!isParentActive) {
         // THEA-MODUS: Positives Gamified Scoring, niemals Fehlerprozente oder rote Warnfarben
         const starsCount = hasData ? Math.min(3, Math.max(1, Math.round((scorePct / 100) * 3))) : 0;
-        const starsDisplay = hasData ? icon("Stern").repeat(starsCount) : "Noch keine Sterne";
+        const starsDisplay = hasData ? icon("Stern").repeat(starsCount) : "";
         return `
           <div class="method-score-card">
             <div class="method-score-header">
@@ -292,18 +293,17 @@ async function loadSubjectScores(subjectId) {
                 <strong class="method-score-name">${escapeHtml(m.name)}</strong>
               </div>
               <span class="method-difficulty-pill" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35);">
-                ${hasData ? starsDisplay : `Bereit zum Üben ${icon("Pflanze")}`}
+                ${hasData ? starsDisplay : icon("Pflanze")}
               </span>
             </div>
 
             <div class="method-score-metrics">
               <div class="method-score-main">
                 <span class="method-score-percent" style="color: #facc15;">${hasData ? `+${m.completed_count * 10} XP` : "–"}</span>
-                <span class="method-score-sublabel">${hasData ? "Punkte gesammelt" : "Neu"}</span>
+
               </div>
               <div class="method-score-details">
-                <div><strong>${m.completed_count}</strong> Übung${m.completed_count === 1 ? "" : "en"} gemeistert</div>
-                <div>${hasData ? `Toller Einsatz! Weiter so ${icon("Daumen hoch")}` : "Starte deine erste Runde!"}</div>
+                <div title="Übungen geschafft"><strong>${m.completed_count}</strong> ${icon("Haken")}</div>
               </div>
             </div>
 
@@ -362,7 +362,7 @@ async function loadSubjectBoards(subjectId) {
   } catch (err) {
     console.warn("Tafeln des Fachs nicht geladen:", err);
   }
-  if (count) count.textContent = `${boards.length} ${boards.length === 1 ? "Tafel" : "Tafeln"}`;
+  if (count) count.textContent = String(boards.length);
 
   const btnNew = document.getElementById("btn-subject-new-board");
   if (btnNew) {
@@ -403,8 +403,8 @@ function buildBoardRow(b) {
       <span class="doc-row-kind">${icon("Tafel")}</span>
       <span class="doc-row-title"><span class="doc-row-name">${escapeHtml(b.title || "Tafel")}</span></span>
       <span class="doc-row-pages">${escapeHtml(dateText)}</span>
-      <button type="button" class="btn-mat-action board-row-rename" title="Tafel umbenennen">${icon("Schreibwerkzeuge")} Umbenennen</button>
-      <button type="button" class="btn-mat-action board-row-open" title="Tafel öffnen">${icon("Tafel")} Öffnen</button>
+      <button type="button" class="btn-mat-action board-row-rename" title="Umbenennen" aria-label="Umbenennen">${icon("Schreibwerkzeuge")}</button>
+      <button type="button" class="btn-mat-action board-row-open" title="Öffnen" aria-label="Öffnen">${icon("Tafel")}</button>
     </div>
     <div class="doc-row-body">
       ${thumbUrl
@@ -469,7 +469,7 @@ async function loadSubjectMaterials(subjectId) {
       currentSubjectMaterials = await res.json();
       if (countBadge) {
         const n = currentSubjectMaterials.filter((m) => !isChapterOfKnownBook(m)).length;
-        countBadge.textContent = `${n} Dokument${n === 1 ? "" : "e"}`;
+        countBadge.textContent = String(n);
       }
       renderSubjectMaterialsList(currentSubjectMaterials);
     } else {

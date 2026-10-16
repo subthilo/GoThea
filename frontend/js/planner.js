@@ -10,22 +10,21 @@ async function loadPlan() {
     const todayMinutes = document.getElementById("planner-today-minutes");
     const todayTitle = document.getElementById("planner-today-title");
 
-    todayTitle.textContent = `Heutige Lerneinheiten (${plan.today_plan.day_name})`;
-    todayMinutes.textContent = `${plan.today_plan.total_minutes} Min. verbleibend`;
+    todayTitle.textContent = plan.today_plan.day_name.split(",")[0];
+    todayMinutes.innerHTML = `${icon("Countdown")} ${plan.today_plan.total_minutes} Min.`;
 
     todayTasksList.innerHTML = "";
     if (plan.today_plan.is_blocked) {
       todayTasksList.innerHTML = `
         <div class="empty-placeholder" style="padding: 24px;">
-          <h3>${icon("Sperrtag")} Heute ist Sperrtag!</h3>
-          <p>${plan.today_plan.block_info || "Für heute sind keine Lerneinheiten geplant."}</p>
+          <h3>${icon("Sperrtag")}</h3>
+          ${plan.today_plan.block_info ? `<p>${escapeHtml(plan.today_plan.block_info)}</p>` : ""}
         </div>
       `;
     } else if (plan.today_plan.tasks.length === 0) {
       todayTasksList.innerHTML = `
         <div class="empty-placeholder" style="padding: 24px;">
-          <h3>${icon("Feier")} Alles im grünen Bereich!</h3>
-          <p>Für heute stehen keine anstehenden Klassenarbeiten im Lernfenster an.</p>
+          <h3>${icon("Feier")} Frei</h3>
         </div>
       `;
     } else {
@@ -86,7 +85,7 @@ async function loadPlan() {
       dayCard.innerHTML = `
         <div class="day-card-header">${day.day_name.split(",")[0]}</div>
         <div class="day-card-tasks">${taskListHtml}</div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">${day.total_minutes} Min.</div>
+        ${day.total_minutes ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">${day.total_minutes} Min.</div>` : ""}
       `;
       weekTimeline.appendChild(dayCard);
     });
@@ -97,7 +96,7 @@ async function loadPlan() {
     if (plan.upcoming_tests.length === 0) {
       testsGrid.innerHTML = `
         <div class="empty-placeholder" style="padding: 24px; grid-column: 1 / -1;">
-          <p>Keine bevorstehenden Prüfungen eingetragen. Tippe oben auf „Neue Prüfung“, um einen Countdown zu starten.</p>
+          <p>Keine Prüfungen</p>
         </div>
       `;
     } else {

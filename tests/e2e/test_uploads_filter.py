@@ -22,7 +22,7 @@ def test_uploads_list_filters_by_subject_and_search(app_page, parent_pin):
     app_page.click(".uploads-subject-pill[data-subject='Biologie']")
     assert cards.count() == 1
     assert "Zellen QZX" in cards.first.text_content()
-    assert app_page.text_content("#uploads-history-count").startswith("1 von ")
+    assert app_page.text_content("#uploads-history-count").startswith("1 / ")
 
     # Fach erneut antippen hebt den Filter auf; die Suche wirkt allein
     app_page.click(".uploads-subject-pill[data-subject='Biologie']")

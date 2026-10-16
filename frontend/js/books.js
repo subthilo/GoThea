@@ -265,7 +265,7 @@ function renderBookNode(book, term) {
   const color = subjectColor(book.subject_name);
   const meta = book.segmenting
     ? `${icon("Sanduhr")} wird in Kapitel zerlegt …`
-    : `${book.chapters_count} Kapitel · ${book.total_pages} S.`;
+    : `${icon("Inhaltsverzeichnis")} ${book.chapters_count} · ${book.total_pages} S.`;
 
   let children = "";
   if (open) {
@@ -285,7 +285,7 @@ function renderBookNode(book, term) {
         <span class="btree-book-icon">${subjectIcon(book.subject_name)}</span>
         <span class="btree-title">${escapeHtml(book.title)}</span>
         <button type="button" class="btn-mat-action btree-edit parent-only" data-action="edit-book" data-book-id="${escapeHtml(book.id)}" title="Buch ändern (Titel, Fach, Art)">
-          ${icon("Schreibwerkzeuge")} Ändern
+          ${icon("Schreibwerkzeuge")}
         </button>
         <span class="btree-meta">${meta}</span>
       </div>
@@ -376,7 +376,7 @@ function renderChapterNode(detail, { ch, nodes, open }) {
         </span>
         <span class="btree-pages">S. ${ch.start_page}–${ch.end_page}</span>
         <button type="button" class="btree-open" data-action="open-chapter" ${ids} title="Kapitel aufschlagen">
-          ${icon("Lesen")}<span class="btree-open-label">Aufschlagen</span>
+          ${icon("Lesen")}<span class="btree-open-label sr-only">Aufschlagen</span>
         </button>
       </div>
       ${isOpen ? `<div class="btree-children btree-sections">${renderSectionNodes(ids, ch.id, nodes)}</div>` : ""}

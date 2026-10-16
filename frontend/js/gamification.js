@@ -131,9 +131,9 @@ async function loadGamificationOverview() {
       }
       if (barXpEl) {
         if (lvl.max_xp === null) {
-          barXpEl.innerHTML = `Maximales Level erreicht! ${icon("Stern")} (${data.total_xp} XP)`;
+          barXpEl.innerHTML = `${icon("Stern")} ${data.total_xp}`;
         } else {
-          barXpEl.textContent = `${lvl.current_level_xp} / ${lvl.needed_level_xp} XP bis Level ${lvl.level + 1}`;
+          barXpEl.textContent = `${lvl.current_level_xp} / ${lvl.needed_level_xp}`;
         }
       }
       if (barFillEl) {
@@ -165,7 +165,6 @@ async function loadGamificationOverview() {
           </span>
           <div class="achievement-content">
             <strong>${escapeHtml(ach.title)}</strong>
-            <p>${escapeHtml(ach.description)}</p>
           </div>
         </div>
       `;

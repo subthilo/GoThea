@@ -235,7 +235,7 @@ function renderTimetableGrid() {
   // 1. Header-Zeile: Zeit + 5 Wochentage
   const timeHeader = document.createElement("div");
   timeHeader.className = "tt-grid-header tt-corner-header";
-  timeHeader.innerHTML = `<span>Zeit</span>`;
+  timeHeader.innerHTML = "";
   gridEl.appendChild(timeHeader);
 
   weekdays.forEach((day) => {
@@ -244,7 +244,6 @@ function renderTimetableGrid() {
     dayHeader.className = `tt-grid-header ${isToday ? "today" : ""}`;
     dayHeader.innerHTML = `
       <span>${day}</span>
-      ${isToday ? `<span class="tt-today-badge">Heute</span>` : ""}
     `;
     gridEl.appendChild(dayHeader);
   });
@@ -290,7 +289,6 @@ function renderTimetableGrid() {
           slotCell.innerHTML = `
             <div class="tt-lesson-card tt-lesson-break" title="${escapeHtml(matchingSlot.subject_name || 'Pause')}">
               <img src="${breakIcon}" class="tt-break-svg" alt="">
-              <span class="tt-break-label">${escapeHtml(matchingSlot.subject_name || "Pause")}</span>
             </div>
           `;
         } else {
@@ -299,9 +297,7 @@ function renderTimetableGrid() {
           card.style.cssText = subjectStyle(matchingSlot.subject_name);
 
           let roomStr = matchingSlot.room || "";
-          if (roomStr && !roomStr.toLowerCase().includes("halle") && !roomStr.startsWith("R")) {
-            roomStr = `R ${roomStr}`;
-          }
+
 
           card.innerHTML = `
             <div class="tt-lesson-top">
@@ -401,11 +397,11 @@ async function loadTodayDashboardWidget() {
 
     if (titleEl) {
       titleEl.textContent = data.is_weekend
-        ? `Nächster Schultag (Montag)`
-        : `Heute • ${data.day}`;
+        ? "Montag"
+        : data.day;
     }
     if (weekPill) {
-      weekPill.textContent = `${data.active_week}-Woche`;
+      weekPill.textContent = data.active_week;
     }
 
     container.innerHTML = "";
@@ -426,16 +422,14 @@ async function loadTodayDashboardWidget() {
       card.setAttribute("title", `${l.subject_name} öffnen`);
 
       let roomStr = l.room || "";
-      if (roomStr && !roomStr.toLowerCase().includes("halle") && !roomStr.startsWith("R")) {
-        roomStr = `R ${roomStr}`;
-      }
+
 
       card.innerHTML = `
         <div class="dash-tt-slot-top">
           <div class="dash-tt-slot-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}40;">
             ${subjectIcon(l.subject_name, "dash-tt-slot-icon")}
           </div>
-          <span class="dash-tt-slot-time">${escapeHtml(l.period_label || l.period + '. Std')} • ${escapeHtml(l.start_time || "")}</span>
+          <span class="dash-tt-slot-time">${escapeHtml(String(l.period_label || l.period).replace(/\.?\s*Std\.?$/, ""))} · ${escapeHtml(l.start_time || "")}</span>
         </div>
         <div class="dash-tt-slot-subject">
           <span>${escapeHtml(l.subject_name)}</span>
