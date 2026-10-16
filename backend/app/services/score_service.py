@@ -12,17 +12,17 @@ logger = logging.getLogger(__name__)
 DIFFICULTY_CONFIG: Dict[str, Dict[str, Any]] = {
     "leicht": {
         "level_code": 1,
-        "label": "Stufe 1 (Grundwissen & Leicht) 🌱",
+        "label": "Stufe 1 (Grundwissen & Leicht)",
         "description": "Fokus auf Erfolgserlebnisse und Festigung der Grundlagen."
     },
     "mittel": {
         "level_code": 2,
-        "label": "Stufe 2 (Mittel - Ausgewogen) 🎯",
+        "label": "Stufe 2 (Mittel - Ausgewogen)",
         "description": "Ausgewogener Gymnasial-Standard für Klasse 7."
     },
     "schwer": {
         "level_code": 3,
-        "label": "Stufe 3 (Anspruchsvoll & Vertiefung) 🚀",
+        "label": "Stufe 3 (Anspruchsvoll & Vertiefung)",
         "description": "Herausfordernde Aufgaben für höchste Denkschärfe."
     }
 }
@@ -38,11 +38,11 @@ METHOD_META: Dict[str, Dict[str, str]] = {
 }
 
 LEVELS: List[Dict[str, Any]] = [
-    {"level": 1, "title": "Wissens-Entdeckerin 🌱", "min_xp": 0, "max_xp": 250},
-    {"level": 2, "title": "Rätsel-Meisterin 🔍", "min_xp": 250, "max_xp": 600},
-    {"level": 3, "title": "Gymnasial-Profi 🎯", "min_xp": 600, "max_xp": 1200},
-    {"level": 4, "title": "Olympia-Denkerin ⚡", "min_xp": 1200, "max_xp": 2500},
-    {"level": 5, "title": "GoThea-Meisterin ✨", "min_xp": 2500, "max_xp": 999999},
+    {"level": 1, "title": "Wissens-Entdeckerin", "icon": "🌱", "min_xp": 0, "max_xp": 250},
+    {"level": 2, "title": "Rätsel-Meisterin", "icon": "🔍", "min_xp": 250, "max_xp": 600},
+    {"level": 3, "title": "Gymnasial-Profi", "icon": "🎯", "min_xp": 600, "max_xp": 1200},
+    {"level": 4, "title": "Olympia-Denkerin", "icon": "⚡", "min_xp": 1200, "max_xp": 2500},
+    {"level": 5, "title": "GoThea-Meisterin", "icon": "✨", "min_xp": 2500, "max_xp": 999999},
 ]
 
 
@@ -75,9 +75,8 @@ def get_level_info(total_xp: int) -> Dict[str, Any]:
     current_in_level = max(0, total_xp - current["min_xp"])
     progress = 100 if current["level"] == len(LEVELS) else min(100, int((current_in_level / needed_for_level) * 100))
 
-    # Icon aus dem Titel extrahieren
-    title_parts = current["title"].split()
-    icon = title_parts[-1] if title_parts else "🌱"
+    # Das Frontend zeigt eigene SVG-Icons; "icon" bleibt nur als API-Feld erhalten
+    icon = current["icon"]
 
     return {
         "level": current["level"],
@@ -237,11 +236,11 @@ def record_exercise_result(
 
     # Ermutigende, rein positive Rückmeldung für Thea (keine Demotivation)
     if accuracy >= 90.0:
-        feedback = f"Hervorragend, Thea! {accuracy}% gemeistert – du hast {stars_earned} Sterne und +{xp_earned} XP verdient! 🌟"
+        feedback = f"Hervorragend, Thea! {accuracy}% gemeistert – du hast {stars_earned} Sterne und +{xp_earned} XP verdient!"
     elif accuracy >= 70.0:
-        feedback = f"Super gemacht! {accuracy}% richtig gelöst – du hast {stars_earned} Sterne und +{xp_earned} XP gesammelt! ⭐"
+        feedback = f"Super gemacht! {accuracy}% richtig gelöst – du hast {stars_earned} Sterne und +{xp_earned} XP gesammelt!"
     else:
-        feedback = f"Klasse Einsatz! Jede Übung macht dich sicherer – du hast {stars_earned} Stern und +{xp_earned} XP gesammelt! 🌱"
+        feedback = f"Klasse Einsatz! Jede Übung macht dich sicherer – du hast {stars_earned} Stern und +{xp_earned} XP gesammelt!"
 
     return {
         "status": "success",
@@ -385,7 +384,7 @@ def get_subject_scores_summary(db: Session, subject_id: str) -> Dict[str, Any]:
         "positive_summary": {
             "stars": subject_stars,
             "xp": subject_xp,
-            "badge": "Meisterin 🚀" if main_diff == "schwer" else ("Gymnasial-Profi 🎯" if main_diff == "mittel" else "Wissens-Entdeckerin 🌱"),
+            "badge": "Meisterin" if main_diff == "schwer" else ("Gymnasial-Profi" if main_diff == "mittel" else "Wissens-Entdeckerin"),
             "encouragement": f"Schon {subject_stars} Wissens-Sterne in {subject_name} gesammelt!" if subject_stars > 0 else f"Starte deine erste Übung in {subject_name} und sammle Sterne!"
         },
         "methods": methods_summary

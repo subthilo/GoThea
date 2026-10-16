@@ -154,7 +154,7 @@ def generate_mock_tutor_hint(session_id: str, db: Session = Depends(get_db)):
             },
             {
               "action": "latex_hint",
-              "latex": "💡 Tipp: Achte auf die Vorzeichenregel: -(-a) = +a",
+              "latex": "Tipp: Achte auf die Vorzeichenregel: -(-a) = +a",
               "coords": {"x": 130, "y": 250}
             }
         ]
@@ -552,7 +552,7 @@ async def tutor_websocket_endpoint(websocket: WebSocket, session_id: str):
                         },
                         {
                             "action": "latex_hint",
-                            "latex": "💡 Was passiert hier mit dem Vorzeichen?",
+                            "latex": "Was passiert hier mit dem Vorzeichen?",
                             "coords": {"x": 110, "y": 235}
                         }
                     ]
