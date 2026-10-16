@@ -184,20 +184,17 @@ body.reader-zen-mode .book-reader-view {
   border-color: #60a5fa;
 }
 
+/* nur bei einem Speicherfehler sichtbar (whiteboard.js: setBookDocSaveStatus) */
 .wb-doc-save-status {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.15);
+  align-items: center;
+  gap: 4px;
   padding: 3px 8px;
   border-radius: 6px;
-  white-space: nowrap;
-  transition: color 0.2s ease, opacity 0.2s ease;
-}
-
-.wb-doc-save-status.saving {
-  color: #f59e0b;
   background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* 2. Schwebende, ein-/ausklappbare Stift-Palette (Vorschlag 1) */

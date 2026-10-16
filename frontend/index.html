@@ -651,6 +651,16 @@
         <div class="wb-container">
           <!-- Top Bar: Fach-Auswahl, Titel, Status, Fullscreen -->
           <div class="wb-header-bar">
+            <!-- Dokument auf der Tafel (Buchseite, Mitschrift …): nur zurück und blättern, nichts über dem Bild -->
+            <div id="wb-doc-topbar" class="wb-doc-controls" style="display: none;">
+              <button type="button" class="btn-wb-doc-return" id="btn-wb-doc-return-to-book" style="display: none;" title="Notizen sichern und zurück zum Buchleser"><span class="ui-icon i-lesen" aria-hidden="true"></span> Zurück zum Buch</button>
+              <button type="button" class="btn-pager" id="btn-wb-doc-close" title="Notizen speichern und Dokument schließen"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
+              <button type="button" class="btn-pager" id="btn-wb-doc-prev" title="Vorherige Seite"><span class="ui-icon i-pfeil-links" aria-hidden="true"></span></button>
+              <span id="wb-doc-page-info" class="wb-doc-page-info">Seite 1 / 1</span>
+              <button type="button" class="btn-pager" id="btn-wb-doc-next" title="Nächste Seite"><span class="ui-icon i-pfeil-rechts" aria-hidden="true"></span></button>
+              <!-- erscheint nur, wenn das Speichern scheitert -->
+              <span id="wb-doc-save-status" class="wb-doc-save-status" style="display: none;"></span>
+            </div>
             <div class="wb-session-info">
               <span class="wb-label">Fach:</span>
               <select id="wb-subject-select" class="wb-select">
@@ -719,22 +729,6 @@
 
             <!-- 0.5 Interaktive Aufgabenkarten von Luna auf der Tafel -->
             <div id="wb-tasks-layer" class="wb-tasks-layer"></div>
-
-            <!-- Dokument-Leiste oben auf der Tafel -->
-            <div id="wb-doc-topbar" class="wb-doc-topbar" style="display: none;">
-              <div class="wb-doc-info">
-                <button type="button" class="btn-wb-doc-return" id="btn-wb-doc-return-to-book" style="display: none;" title="Notizen sichern und zurück zum Buchleser"><span class="ui-icon i-lesen" aria-hidden="true"></span> Zurück zum Buch</button>
-                <span class="wb-doc-badge" id="wb-doc-badge">Arbeitsblatt</span>
-                <span class="wb-doc-title-text" id="wb-doc-title">Titel</span>
-                <span id="wb-doc-save-status" class="wb-doc-save-status" style="display: none;"><span class="ui-icon i-haken" aria-hidden="true"></span> Gespeichert</span>
-              </div>
-              <div class="wb-doc-pager">
-                <button type="button" class="btn-pager" id="btn-wb-doc-prev" title="Vorherige Seite"><span class="ui-icon i-pfeil-links" aria-hidden="true"></span></button>
-                <span id="wb-doc-page-info">Seite 1 / 1</span>
-                <button type="button" class="btn-pager" id="btn-wb-doc-next" title="Nächste Seite"><span class="ui-icon i-pfeil-rechts" aria-hidden="true"></span></button>
-                <button type="button" class="btn-pager" id="btn-wb-doc-close" title="Notizen speichern und Dokument schließen"><span class="ui-icon i-schliessen" aria-hidden="true"></span> Schließen</button>
-              </div>
-            </div>
 
             <!-- 1. Base Ink Canvas (Zeichenebene des Schülers für freie Lernsessions) -->
             <canvas id="wb-canvas" class="wb-canvas-layer"></canvas>

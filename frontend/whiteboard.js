@@ -41,8 +41,6 @@
   const docUnderlay = document.getElementById("wb-doc-underlay");
   const docUnderlayImg = document.getElementById("wb-doc-underlay-img");
   const docTopbar = document.getElementById("wb-doc-topbar");
-  const docBadge = document.getElementById("wb-doc-badge");
-  const docTitle = document.getElementById("wb-doc-title");
   const docPageInfo = document.getElementById("wb-doc-page-info");
   const btnDocPrev = document.getElementById("btn-wb-doc-prev");
   const btnDocNext = document.getElementById("btn-wb-doc-next");
@@ -412,18 +410,14 @@
   }
 
   // 9. Backend-Persistenz (Auto-Save OHNE teures toDataURL)
+  // Speichern läuft unbemerkt im Hintergrund; sichtbar wird nur ein Fehler (sonst gingen Notizen verloren)
   function setBookDocSaveStatus(status) {
     if (!docSaveStatus) return;
-    docSaveStatus.style.display = "inline-block";
-    if (status === "saving") {
-      docSaveStatus.textContent = "Speichere...";
-      docSaveStatus.className = "wb-doc-save-status saving";
+    if (status === "error") {
+      docSaveStatus.innerHTML = iconText("Warnung", "Nicht gespeichert");
+      docSaveStatus.style.display = "inline-flex";
     } else if (status === "saved") {
-      docSaveStatus.innerHTML = iconText("Haken", "Gespeichert");
-      docSaveStatus.className = "wb-doc-save-status";
-    } else if (status === "error") {
-      docSaveStatus.innerHTML = iconText("Warnung", "Fehler");
-      docSaveStatus.className = "wb-doc-save-status saving";
+      docSaveStatus.style.display = "none";
     }
   }
 
@@ -1796,8 +1790,6 @@
     // Topbar anpassen
     if (docTopbar) docTopbar.style.display = "flex";
     if (btnReturnToBook) btnReturnToBook.style.display = returnToBook ? "inline-flex" : "none";
-    if (docBadge) docBadge.textContent = badge;
-    if (docTitle) docTitle.textContent = title;
     if (docPageInfo) docPageInfo.textContent = `Seite ${page} / ${pageCount || 1}`;
     if (btnDocPrev) btnDocPrev.disabled = page <= 1;
     if (btnDocNext) btnDocNext.disabled = page >= pageCount;
