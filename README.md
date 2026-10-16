@@ -235,8 +235,7 @@ GoThea/
 │   ├── dialogs/               # Dialoge (vom Server eingesetzt)
 │   ├── js/                    # api.js (Backend-Zugang), ink_core.js (Zeichenkern), je Bereich eine Datei
 │   ├── css/                   # Stile je Bereich (Reihenfolge = Kaskade)
-│   ├── whiteboard.js          # Tafel (nutzt den Zeichenkern)
-│   └── cloze_trainer.js       # Lückentext-Übung
+│   └── whiteboard.js          # Tafel (nutzt den Zeichenkern)
 ├── scripts/                   # Pflege-Skripte (Neu-Einordnung, Themenkatalog, Klassifizierungs-Messung)
 ├── tests/
 │   ├── unit/, integration/    # pytest

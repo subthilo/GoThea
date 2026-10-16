@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
-from backend.app.config import EXERCISE_POOL_DIR, CLOZE_POOL_DIR
+from backend.app.config import EXERCISE_POOL_DIR
 from backend.app.models.taxonomy import Subject
 from backend.app.models.material import Material
 from backend.app.services.tutor_service import generate_board_exercise, normalize_cloze_content
@@ -92,7 +92,6 @@ class ExercisePoolManager:
         if exercise_type == "fill_in_the_blank":
             legacy_files = [
                 self.storage_dir / f"pool_{subject_key}.json",
-                CLOZE_POOL_DIR / f"pool_{subject_key}.json"
             ]
             for lf in legacy_files:
                 if lf.exists():
@@ -168,17 +167,6 @@ class ExercisePoolManager:
                 except Exception:
                     status[key] = 0
 
-            # Auch CLOZE_POOL_DIR prüfen für Altdaten
-            if CLOZE_POOL_DIR != self.storage_dir and CLOZE_POOL_DIR.exists():
-                for f in CLOZE_POOL_DIR.glob("pool_*.json"):
-                    key = f.stem.replace("pool_", "")
-                    if key not in status:
-                        try:
-                            with open(f, "r", encoding="utf-8") as fp:
-                                items = json.load(fp)
-                                status[key] = len(items) if isinstance(items, list) else 0
-                        except Exception:
-                            pass
             return status
 
     def trigger_background_replenish(self, subject_id: Optional[str], exercise_type: str = "fill_in_the_blank"):

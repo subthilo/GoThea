@@ -343,7 +343,10 @@
 
   // Tab nur zeigen, wenn der Probebetrieb eingeschaltet ist
   apiJson("/api/v1/practice")
-    .then((data) => show(navBtn, data.enabled))
+    .then((data) => {
+      window.practiceEnabled = data.enabled;  // die Fachseite blendet danach ihre Karte „Üben“ ein
+      show(navBtn, data.enabled);
+    })
     .catch(() => show(navBtn, false));
 
   window.openPracticeExercise = openExercise;

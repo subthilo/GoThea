@@ -72,12 +72,6 @@ INBOX_ERRORS_DIR = INBOX_DIR / "_errors"
 PAGE_CACHE_DIR = DATA_DIR / "cache" / "rendered_pages"
 PAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-AUDIO_PHRASES_DIR = DATA_DIR / "audio_phrases"
-AUDIO_PHRASES_DIR.mkdir(parents=True, exist_ok=True)
-
-CLOZE_POOL_DIR = DATA_DIR / "cloze_pool"
-CLOZE_POOL_DIR.mkdir(parents=True, exist_ok=True)
-
 EXERCISE_POOL_DIR = DATA_DIR / "exercise_pool"
 EXERCISE_POOL_DIR.mkdir(parents=True, exist_ok=True)
 

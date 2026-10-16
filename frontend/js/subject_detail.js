@@ -100,16 +100,12 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   if (btnExercise) {
     btnExercise.dataset.subjectId = s.id;
     btnExercise.dataset.subjectName = s.name;
+    // Übungen aus echten Aufgaben (Tab „Üben“); ohne Probebetrieb keine Karte
+    btnExercise.style.display = window.practiceEnabled ? "" : "none";
     btnExercise.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (typeof window.openClozeTrainer === "function") {
-        window.openClozeTrainer({
-          subjectId: s.id,
-          subjectName: s.name,
-          sourceMaterialTitle: null
-        });
-      }
+      switchToTab("practice");
     };
   }
 
@@ -269,7 +265,7 @@ async function loadSubjectScores(subjectId) {
     if (methodKeys.length === 0) {
       container.innerHTML = `
         <div class="subject-score-empty" style="grid-column: 1 / -1; text-align: center; padding: 24px; color: var(--text-muted);">
-          <span>Noch keine Übungen für dieses Fach absolviert. Starte oben eine Lückentext-Übung!</span>
+          <span>Noch keine Übungen in diesem Fach.</span>
         </div>
       `;
       return;

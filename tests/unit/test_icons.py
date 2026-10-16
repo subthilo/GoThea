@@ -11,7 +11,7 @@ from urllib.parse import unquote
 from scripts.build_icon_css import CSS_FILE, ICON_DIR, build_css, icon_slug
 
 FRONTEND = ICON_DIR.parent
-SOURCES = [FRONTEND / "index.html", FRONTEND / "whiteboard.js", FRONTEND / "cloze_trainer.js",
+SOURCES = [FRONTEND / "index.html", FRONTEND / "whiteboard.js",
            *sorted((FRONTEND / "dialogs").glob("*.html")), *sorted((FRONTEND / "js").glob("*.js"))]
 
 # Emoji und Bildzeichen, die früher als Icons dienten; typografische Zeichen (→ ↳ • …) bleiben erlaubt

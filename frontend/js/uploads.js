@@ -311,9 +311,6 @@ function buildMaterialCard(m, onDeleted) {
         <button type="button" class="btn-mat-action btn-mat-wb" title="Dieses Dokument auf der digitalen Tafel mit KI-Tutorin Luna üben">
           ${icon("Tafel")} Tafel
         </button>
-        <button type="button" class="btn-mat-action btn-mat-cloze" title="Lückentext-Übung direkt aus diesem Dokument erstellen">
-          ${icon("Übungen")} Üben
-        </button>
         ${(m.page_count > 1 || isPdf) ? `
           <button type="button" class="btn-mat-action btn-mat-reorder parent-only" title="Seitenreihenfolge ändern & verwalten">
             ${icon("Seiten anzeigen")} Seiten
@@ -349,22 +346,6 @@ function buildMaterialCard(m, onDeleted) {
         window.openMaterialOnWhiteboard(m.id, m.subject_id);
       } else {
         switchToTab("whiteboard");
-      }
-    });
-  }
-
-  const clozeBtn = card.querySelector(".btn-mat-cloze");
-  if (clozeBtn) {
-    clozeBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (typeof window.openClozeTrainer === "function") {
-        const subName = (cachedSubjects.find(s => s.id === m.subject_id) || {}).name || "Schulfach";
-        window.openClozeTrainer({
-          subjectId: m.subject_id,
-          subjectName: subName,
-          materialId: m.id,
-          sourceMaterialTitle: m.title
-        });
       }
     });
   }
