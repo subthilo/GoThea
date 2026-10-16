@@ -514,7 +514,7 @@
 }
 
 .wb-doc-page-info {
-  min-width: 6.5em;
+  min-width: 3.5em;
   color: var(--text-secondary);
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;

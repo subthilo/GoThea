@@ -651,20 +651,20 @@
         <div class="wb-container">
           <!-- Top Bar: Fach-Auswahl, Titel, Status, Fullscreen -->
           <div class="wb-header-bar">
-            <button id="btn-wb-request-hint" class="wb-btn-primary wb-btn-tutor" title="Tutorin Luna fragen: Tafel ansehen und einen Tipp geben" aria-label="Tutorin Luna fragen">
-              <span id="wb-hint-icon" class="wb-btn-icon-wrap"><span class="ui-icon i-tutor" aria-hidden="true"></span></span>
-              <span id="wb-hint-label" class="sr-only">Tutor fragen</span>
-            </button>
-            <!-- Dokument auf der Tafel (Buchseite, Mitschrift …): nur zurück und blättern, nichts über dem Bild -->
+            <!-- Dokument auf der Tafel (Buchseite, Mitschrift …): ganz links nur zurück und blättern, nichts über dem Bild -->
             <div id="wb-doc-topbar" class="wb-doc-controls" style="display: none;">
-              <button type="button" class="btn-wb-doc-return" id="btn-wb-doc-return-to-book" style="display: none;" title="Notizen sichern und zurück zum Buchleser"><span class="ui-icon i-lesen" aria-hidden="true"></span> Zurück zum Buch</button>
+              <button type="button" class="btn-wb-doc-return" id="btn-wb-doc-return-to-book" style="display: none;" title="Zurück zum Buch (Notizen werden gesichert)" aria-label="Zurück zum Buch"><span class="ui-icon i-lesen" aria-hidden="true"></span></button>
               <button type="button" class="btn-pager" id="btn-wb-doc-close" title="Notizen speichern und Dokument schließen"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
               <button type="button" class="btn-pager" id="btn-wb-doc-prev" title="Vorherige Seite"><span class="ui-icon i-pfeil-links" aria-hidden="true"></span></button>
-              <span id="wb-doc-page-info" class="wb-doc-page-info">Seite 1 / 1</span>
+              <span id="wb-doc-page-info" class="wb-doc-page-info">1 / 1</span>
               <button type="button" class="btn-pager" id="btn-wb-doc-next" title="Nächste Seite"><span class="ui-icon i-pfeil-rechts" aria-hidden="true"></span></button>
               <!-- erscheint nur, wenn das Speichern scheitert -->
               <span id="wb-doc-save-status" class="wb-doc-save-status" style="display: none;"></span>
             </div>
+            <button id="btn-wb-request-hint" class="wb-btn-primary wb-btn-tutor" title="Tutorin Luna fragen: Tafel ansehen und einen Tipp geben" aria-label="Tutorin Luna fragen">
+              <span id="wb-hint-icon" class="wb-btn-icon-wrap"><span class="ui-icon i-tutor" aria-hidden="true"></span></span>
+              <span id="wb-hint-label" class="sr-only">Tutor fragen</span>
+            </button>
             <div class="wb-session-info">
               <select id="wb-subject-select" class="wb-select" title="Fach" aria-label="Fach">
                 <!-- Dynamisch mit Schulfächern befüllt -->

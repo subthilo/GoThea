@@ -907,7 +907,7 @@
         await saveBookPageAnnotationsNow();
         bookPageContext.page--;
         const p = bookPageContext.page;
-        if (docPageInfo) docPageInfo.textContent = `Seite ${p} / ${bookPageContext.pageCount || 1}`;
+        if (docPageInfo) docPageInfo.textContent = `${p} / ${bookPageContext.pageCount || 1}`;
         btnDocPrev.disabled = p <= 1;
         if (btnDocNext) btnDocNext.disabled = p >= bookPageContext.pageCount;
         clearPageStrokes();
@@ -922,7 +922,7 @@
         await saveBookPageAnnotationsNow();
         bookPageContext.page++;
         const p = bookPageContext.page;
-        if (docPageInfo) docPageInfo.textContent = `Seite ${p} / ${bookPageContext.pageCount || 1}`;
+        if (docPageInfo) docPageInfo.textContent = `${p} / ${bookPageContext.pageCount || 1}`;
         btnDocPrev.disabled = p <= 1;
         if (btnDocNext) btnDocNext.disabled = p >= bookPageContext.pageCount;
         clearPageStrokes();
@@ -1800,7 +1800,7 @@
     // Topbar anpassen
     if (docTopbar) docTopbar.style.display = "flex";
     if (btnReturnToBook) btnReturnToBook.style.display = returnToBook ? "inline-flex" : "none";
-    if (docPageInfo) docPageInfo.textContent = `Seite ${page} / ${pageCount || 1}`;
+    if (docPageInfo) docPageInfo.textContent = `${page} / ${pageCount || 1}`;
     if (btnDocPrev) btnDocPrev.disabled = page <= 1;
     if (btnDocNext) btnDocNext.disabled = page >= pageCount;
     if (btnDocClose) btnDocClose.style.display = returnToBook ? "none" : "inline-block";
