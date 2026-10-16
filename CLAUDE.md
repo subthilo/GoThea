@@ -25,7 +25,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 | Produktion | 8000 | `~/GoThea` | `~/GoThea/data/prod/` | `gothea.service` |
 | Staging | 8001 | `~/GoThea-staging` (eigene `.venv`) | `~/GoThea/data/staging/` (Pfade in `~/GoThea-staging/.env`) | `gothea-staging.service` |
 
-- Pi: `pi@192.168.1.135`, Logs: `sudo journalctl -u gothea-staging -f`.
+- Pi: `pi@192.168.1.135`, Logs: `sudo journalctl -u gothea-staging -f`. Hängt per **WLAN** im Netz (eth0 ungesteckt), startet jede Nacht um 03:22 neu (root-Crontab). Der WLAN-Stromsparmodus machte den Pi minutenweise unerreichbar, obwohl er lief (16.10.); seitdem aus per `wifi-powersave-off.service` + `/etc/dhcpcd.exit-hook`. Prüfen: `/usr/sbin/iw dev wlan0 get power_save`. „App geht nicht auf“ → erst Ping/SSH, dann `journalctl -b -1` (läuft das Log bis zum Neustart weiter, war es das Netz, nicht der Pi).
 - `data/`, `inbox/`, `experiments/` werden beim Deploy nicht synchronisiert. `.env` (API-Key, `OPENAI_MODEL`) liegt nur auf dem Pi bzw. lokal in `experiments/openai_study/.env`.
 - `data/shared/` gehört beiden Umgebungen (inhaltsadressierter Cache der Seiten-Erschließung).
 - **Hintergrund-Worker:** Seiten-Erschließung und Renderer müssen immer laufen (sie füllen die Datenbank, Grundlage für den Tutor) – `GOTHEA_BACKGROUND_WORKERS` nie dafür abschalten. Der Übungs-Vorrat hat einen eigenen Schalter `GOTHEA_EXERCISE_POOL` (Standard aus, bis Tutor/Übungen neu gebaut sind).
