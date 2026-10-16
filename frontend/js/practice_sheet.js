@@ -15,6 +15,13 @@
 
 const PRACTICE_SHEET_WIDTH = 780;
 
+// Name der Übungstafel, z. B. „S. 27 Nr. 3c · Stufe 2“ (Zwillinge: „(ähnlich)“)
+function practiceBoardTitle(quelle, ableitung, stage) {
+  const src = quelle.art === "Buch" ? `S. ${quelle.seite} Nr. ${quelle.nummer}` : `${quelle.material} Nr. ${quelle.nummer}`;
+  const suffix = `${ableitung === "B" ? " (ähnlich)" : ""} · Stufe ${stage}`;
+  return (src.slice(0, 60 - suffix.length) + suffix).trim();
+}
+
 function renderPracticeSheet(ex, stage, { light = false, solution = false } = {}) {
   const W = PRACTICE_SHEET_WIDTH;
   const dpr = 2;

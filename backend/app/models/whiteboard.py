@@ -27,6 +27,7 @@ class TutorSession(Base):
     # Übungstafel (Tab „Üben“, Tafel-Stufen 1–4): welche Übung als Blatt unterliegt, auf welcher Stufe
     practice_exercise_id = Column(String, nullable=True)
     practice_stage = Column(Integer, nullable=True)
+    practice_solved_at = Column(DateTime, nullable=True)  # zuletzt richtig gelöst (Häkchen in der Liste)
 
     subject = relationship("Subject")
     topic = relationship("Topic")

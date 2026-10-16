@@ -106,6 +106,7 @@ def test_stage_opens_sheet_on_new_board_with_solution_toggle(app_page):
         app_page.click('.px-stage[data-stage="2"]')
     board = created.value.json()
     assert board["practice_exercise_id"] == "sa-gummibaerchen" and board["practice_stage"] == 2
+    app_page.wait_for_function(f"document.getElementById('wb-viewport').dataset.boardId === '{board['id']}'")
     app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
     assert app_page.get_attribute("#wb-doc-underlay-img", "src").startswith("data:image/png")
     assert "Stufe 2" in app_page.inner_text("#wb-board-title")
@@ -129,4 +130,61 @@ def test_stage_opens_sheet_on_new_board_with_solution_toggle(app_page):
     # Übungstafel wieder öffnen: das Blatt ist wieder da
     app_page.evaluate(f"window.openBoardOnWhiteboard('{board['id']}')")
     app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
+    assert app_page.problems.errors == []
+
+
+def _open_practice_board(page, stage=1):
+    """Öffnet die Übung auf einer neuen Tafel und wartet, bis genau diese Tafel samt Blatt offen ist
+    (beim Laden öffnet die Tafel sonst noch die zuletzt benutzte, evtl. eine Übungstafel eines anderen Tests)."""
+    open_practice(page)
+    with page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
+        page.click(f'.px-stage[data-stage="{stage}"]')
+    board_id = created.value.json()["id"]
+    page.wait_for_function(f"document.getElementById('wb-viewport').dataset.boardId === '{board_id}'")
+    page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
+    return board_id
+
+
+def _fake_check(page, body):
+    import json
+    page.route("**/api/v1/practice/*/check",
+               lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(body)))
+
+
+def test_check_marks_error_and_mark_leaves_when_written_over(app_page):
+    from tests.e2e.board_helpers import _draw_and_capture_save, _line
+    _open_practice_board(app_page)
+    _draw_and_capture_save(app_page, _line(120, 300, 220, 310))
+    _fake_check(app_page, {"status": "noch_nicht", "text": "Beim Ergebnis lese ich 1. Das stimmt noch nicht.",
+                           "probleme": [], "gelesen": {}, "audio_base64": None,
+                           "actions": [{"action": "highlight_box", "coords": {"x_pct": 10, "y_pct": 10, "w_pct": 30, "h_pct": 20}}]})
+    app_page.click("#btn-wb-request-hint")
+    app_page.wait_for_selector(".wb-luna-mark.wb-luna-box")
+    assert "lese ich 1" in app_page.inner_text("#wb-tutor-speech-text")
+    assert not app_page.is_visible(".wb-practice-done")
+    # Schreiben in den Kasten lässt ihn verschwinden
+    box = app_page.locator(".wb-luna-box").bounding_box()
+    canvas = app_page.locator("#wb-canvas").bounding_box()
+    x, y = box["x"] - canvas["x"] + box["width"] / 2, box["y"] - canvas["y"] + box["height"] / 2
+    _draw_and_capture_save(app_page, _line(x - 20, y, x + 20, y + 5))
+    assert app_page.locator(".wb-luna-mark").count() == 0
+    assert app_page.problems.errors == []
+
+
+def test_correct_check_offers_next_stage_and_twin(app_page):
+    from tests.e2e.board_helpers import _draw_and_capture_save, _line
+    _open_practice_board(app_page)
+    _draw_and_capture_save(app_page, _line(120, 300, 220, 310))
+    _fake_check(app_page, {"status": "richtig", "text": "Richtig! Alles stimmt.", "probleme": [], "gelesen": {},
+                           "actions": [], "audio_base64": None})
+    app_page.click("#btn-wb-request-hint")
+    app_page.wait_for_selector(".wb-practice-done", state="visible")
+    best = app_page.locator(".wb-practice-done-btn.best")
+    assert best.get_attribute("title") == "Weiter mit Stufe 2"  # auf Anhieb richtig → nächste Stufe
+    assert app_page.locator('.wb-practice-done-btn[title="Ähnliche Aufgabe"]').count() == 1
+    with app_page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
+        best.click()
+    assert created.value.json()["practice_stage"] == 2
+    app_page.wait_for_function("document.getElementById('wb-board-title').textContent.includes('Stufe 2')")
+    assert not app_page.is_visible(".wb-practice-done")
     assert app_page.problems.errors == []

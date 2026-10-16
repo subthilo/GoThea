@@ -257,13 +257,6 @@
     ).join("");
   }
 
-  function boardTitle(ex, stage) {
-    const q = ex.quelle;
-    const src = q.art === "Buch" ? `S. ${q.seite} Nr. ${q.nummer}` : `${q.material} Nr. ${q.nummer}`;
-    const suffix = `${ex.ableitung === "B" ? " (ähnlich)" : ""} · Stufe ${stage}`;
-    return (src.slice(0, 60 - suffix.length) + suffix).trim();
-  }
-
   function nextButtons() {
     const ex = run.ex;
     const twinId = ex.ableitung === "A" ? ex.zwillinge[0] : ex.zwilling_von;
@@ -290,7 +283,7 @@
     if (t.dataset.stage !== undefined) {
       const stage = Number(t.dataset.stage);
       if (stage === 0 || typeof window.openPracticeOnWhiteboard !== "function") return;
-      return window.openPracticeOnWhiteboard({ exerciseId: run.ex.id, stage, title: boardTitle(run.ex, stage) });
+      return window.openPracticeOnWhiteboard({ exerciseId: run.ex.id, stage, title: practiceBoardTitle(run.ex.quelle, run.ex.ableitung, stage) });
     }
     if (t.dataset.action === "open") return openExercise(t.dataset.id);
     if (t.dataset.action === "check") { run.checked = true; return renderRun(); }

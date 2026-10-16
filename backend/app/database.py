@@ -69,6 +69,7 @@ def ensure_schema_migrations(target_engine):
                 ("archived_at", "DATETIME"),
                 ("practice_exercise_id", "TEXT"),
                 ("practice_stage", "INTEGER"),
+                ("practice_solved_at", "DATETIME"),
             ]:
                 if col_name not in session_cols:
                     try:

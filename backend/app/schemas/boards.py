@@ -31,6 +31,7 @@ class BoardSummary(BaseModel):
     has_thumbnail: bool
     practice_exercise_id: Optional[str] = None
     practice_stage: Optional[int] = None
+    practice_solved: bool = False
 
 
 class BoardDetail(BoardSummary):

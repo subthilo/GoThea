@@ -452,3 +452,74 @@
   color: var(--text-primary);
   background: rgba(99, 102, 241, 0.2);
 }
+
+/* Geschafft-Leiste auf der Übungstafel (whiteboard.js, showPracticeDone): oben mittig über der Tafel */
+.wb-practice-done {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--success);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+}
+
+.wb-practice-done-label {
+  display: inline-flex;
+  padding: 0 6px;
+  color: var(--success);
+}
+
+.wb-practice-done-label .ui-icon {
+  width: 30px;
+  height: 30px;
+}
+
+.wb-practice-done-btn {
+  min-width: 52px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wb-practice-done-btn.best {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.wb-practice-done-btn .ui-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Häkchen vor gelösten Übungstafeln in der Tafel-Liste */
+.wb-boards-solved {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  color: var(--success);
+  vertical-align: -2px;
+}
+
+.wb-practice-done-text {
+  max-width: 360px;
+  padding-right: 6px;
+  color: var(--text-primary);
+  line-height: 1.35;
+}

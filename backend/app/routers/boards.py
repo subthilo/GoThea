@@ -34,6 +34,7 @@ def _summary_fields(b: TutorSession) -> dict:
         has_thumbnail=svc.thumbnail_bytes(b) is not None,
         practice_exercise_id=b.practice_exercise_id,
         practice_stage=b.practice_stage,
+        practice_solved=b.practice_solved_at is not None,
     )
 
 

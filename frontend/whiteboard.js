@@ -892,6 +892,11 @@
     btnRequestHint.addEventListener("click", async () => {
       if (!surface.currentSession) return;
       stopTutorSpeech();
+      const checkingPractice = practiceContext !== null;
+      if (checkingPractice && surface.strokes.length === 0) {
+        playTutorSpeech(null, "Schreib zuerst deine Lösung aufs Blatt, dann schaue ich sie mir an.");
+        return;
+      }
 
       if (surface.strokes.length === 0 && !surface.isUnderlayVisible) {
         playTutorSpeech(null, "Deine Tafel ist noch ganz leer. Schreib mir gerne eine Aufgabe oder deinen Rechenschritt auf!");
@@ -908,6 +913,10 @@
       btnRequestHint.disabled = true;
 
       try {
+        if (checkingPractice) {
+          await runPracticeCheck();
+          return;
+        }
         const snapshot = captureBoardSnapshot();
         const res = await apiFetch(`/api/v1/whiteboard/sessions/${surface.currentSession.id}/ask-tutor`, {
           method: "POST",
@@ -1015,6 +1024,7 @@
 
   function applyBoard(board) {
     surface.currentSession = board;
+    viewport.dataset.boardId = board.id;  // welche Tafel offen ist (für Browser-Tests)
     let loaded = [];
     try {
       loaded = JSON.parse(board.board_state_json || "[]") || [];
@@ -1059,6 +1069,7 @@
   function hidePracticeSheet() {
     const shown = practiceContext !== null || docUnderlayImg.classList.contains("practice-sheet");
     practiceContext = null;
+    hidePracticeDone();
     if (btnPracticeSolution) btnPracticeSolution.style.display = "none";
     if (!shown) return;
     docUnderlayImg.classList.remove("practice-sheet");
@@ -1075,11 +1086,90 @@
     try {
       const ex = await apiJson(`/api/v1/practice/${encodeURIComponent(board.practice_exercise_id)}`);
       if (surface.currentSession !== board || surface.isBookPageMode) return;  // inzwischen gewechselt
-      practiceContext = { ex, stage: board.practice_stage || 1, solution: false };
+      practiceContext = { ex, stage: board.practice_stage || 1, solution: false, attempt: 1, hadError: false };
       showPracticeSheet();
     } catch (err) {
       console.warn("Übungsblatt nicht geladen:", err);
     }
+  }
+
+  // Übung prüfen (Tutor-Knopf auf einer Übungstafel): Luna liest die Handschrift, der Server prüft die
+  // Mathematik und nennt bei Fehlern den gelesenen Wert. Ist alles richtig, kommt die Geschafft-Leiste.
+  async function runPracticeCheck() {
+    const ctx = practiceContext;
+    const boardId = surface.currentSession && surface.currentSession.id;
+    clearLunaMarks();
+    hidePracticeDone();
+    const res = await apiFetch(`/api/v1/practice/${encodeURIComponent(ctx.ex.id)}/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image_base64: captureBoardSnapshot(), stage: ctx.stage, board_id: boardId,
+                             attempt: ctx.attempt, audio_enabled: tutorAudioEnabled })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (practiceContext !== ctx) return;  // inzwischen andere Tafel
+    if (!res.ok) {
+      playTutorSpeech(null, data.detail || "Ich konnte deine Tafel gerade nicht ansehen. Versuch es gleich noch mal.");
+      return;
+    }
+    if (data.actions && data.actions.length) drawOverlayActions(data.actions);
+    if (data.status === "richtig") {
+      // Lunas Satz steht in der Geschafft-Leiste; die Sprechblase würde sie verdecken (nur die Stimme)
+      if (tutorBubble) tutorBubble.style.display = "none";
+      playTutorSpeech(data.audio_base64, null);
+      showPracticeDone(data.text);
+      return;
+    }
+    playTutorSpeech(data.audio_base64, data.text);
+    if (data.status === "noch_nicht") {
+      ctx.attempt += 1;
+      ctx.hadError = true;
+    }
+  }
+
+  // Geschafft: nächste Stufe (empfohlen, wenn es auf Anhieb klappte), ähnliche Aufgabe auf derselben
+  // Stufe (empfohlen nach einem Fehler) oder zurück zur Liste
+  let practiceDoneBar = null;
+  function hidePracticeDone() {
+    if (practiceDoneBar) practiceDoneBar.style.display = "none";
+  }
+
+  function showPracticeDone(message) {
+    const ctx = practiceContext;
+    if (!ctx) return;
+    if (!practiceDoneBar) {
+      practiceDoneBar = document.createElement("div");
+      practiceDoneBar.className = "wb-practice-done";
+      practiceDoneBar.setAttribute("role", "status");
+      viewport.appendChild(practiceDoneBar);
+    }
+    const ex = ctx.ex;
+    const twinId = ex.ableitung === "A" ? (ex.zwillinge || [])[0] : ex.zwilling_von;
+    const options = [];
+    if (ctx.stage < 4) options.push({ id: ex.id, ableitung: ex.ableitung, stage: ctx.stage + 1, icon: "Pfeil hoch", title: `Weiter mit Stufe ${ctx.stage + 1}`, best: !ctx.hadError });
+    if (twinId) options.push({ id: twinId, ableitung: ex.ableitung === "A" ? "B" : "A", stage: ctx.stage, icon: "Wiederholen", title: "Ähnliche Aufgabe", best: ctx.hadError || ctx.stage === 4 });
+    practiceDoneBar.innerHTML = `<span class="wb-practice-done-label">${icon("Haken")}<span class="sr-only">Geschafft</span></span>`
+      + (message ? `<span class="wb-practice-done-text">${escapeHtml(message)}</span>` : "");
+    options.forEach((o) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `wb-practice-done-btn${o.best ? " best" : ""}`;
+      btn.title = o.title;
+      btn.setAttribute("aria-label", o.title);
+      btn.innerHTML = icon(o.icon) + (o.stage !== ctx.stage ? `<span>${o.stage}</span>` : "");
+      btn.addEventListener("click", () => window.openPracticeOnWhiteboard({
+        exerciseId: o.id, stage: o.stage, title: practiceBoardTitle(ex.quelle, o.ableitung, o.stage) }));
+      practiceDoneBar.appendChild(btn);
+    });
+    const back = document.createElement("button");
+    back.type = "button";
+    back.className = "wb-practice-done-btn";
+    back.title = "Zur Übungsliste";
+    back.setAttribute("aria-label", "Zur Übungsliste");
+    back.innerHTML = icon("Übungen");
+    back.addEventListener("click", () => switchToTab("practice"));
+    practiceDoneBar.appendChild(back);
+    practiceDoneBar.style.display = "flex";
   }
 
   if (btnPracticeSolution) {
@@ -1320,6 +1410,7 @@
     const title = document.createElement("div");
     title.className = "wb-boards-title";
     title.textContent = b.title || "Tafel";
+    if (b.practice_solved) title.insertAdjacentHTML("afterbegin", icon("Haken", "wb-boards-solved"));
     const meta = document.createElement("div");
     meta.className = "wb-boards-meta";
     meta.textContent = formatBoardDate(b.updated_at || b.created_at);
