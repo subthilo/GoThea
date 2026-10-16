@@ -103,15 +103,24 @@
     const head = (g) => esc(g.name) + (g.einheit ? ` (in ${esc(g.einheit)})` : "");
     const [[x0, y0], , [x2]] = ex.zeilen;
     const money = g2.einheit === "€";
+    // Echte Tabelle statt CSS-Grid: Safari auf dem iPad rechnete die Grid-Zeilenhöhen falsch
+    const valueRow = (left, right) =>
+      `<tr class="px-row-val"><td></td><td class="px-l">${left}</td><td class="px-r">${right}</td><td></td></tr>`;
+    const opRow = (n) =>
+      `<tr class="px-row-op"><td class="px-op-l">${slot(`op_links_${n}`, "op")}<span class="px-arrow">↓</span></td>
+        <td class="px-l"></td><td class="px-r"></td>
+        <td class="px-op-r"><span class="px-arrow">↓</span>${slot(`op_rechts_${n}`, "op")}</td></tr>`;
     return `
-      <div class="px-table">
-        <div></div><div class="px-head">${head(g1)}</div><div class="px-head">${head(g2)}</div><div></div>
-        <div></div><div class="px-val">${esc(fmt(x0))}</div><div class="px-val r">${esc(fmt(y0, money ? "€" : ""))}</div><div></div>
-        <div class="px-op">${slot("op_links_1", "op")}<span>↓</span></div><div class="px-gap"></div><div class="px-gap r"></div><div class="px-op"><span>↓</span>${slot("op_rechts_1", "op")}</div>
-        <div></div><div class="px-val">${slot("mitte_links", "val")}</div><div class="px-val r">${slot("mitte_rechts", "val")}</div><div></div>
-        <div class="px-op">${slot("op_links_2", "op")}<span>↓</span></div><div class="px-gap"></div><div class="px-gap r"></div><div class="px-op"><span>↓</span>${slot("op_rechts_2", "op")}</div>
-        <div></div><div class="px-val">${esc(fmt(x2))}</div><div class="px-val r">${slot("ergebnis", "val")}</div><div></div>
-      </div>`;
+      <table class="px-table">
+        <thead><tr><th></th><th class="px-head">${head(g1)}</th><th class="px-head">${head(g2)}</th><th></th></tr></thead>
+        <tbody>
+          ${valueRow(esc(fmt(x0)), esc(fmt(y0, money ? "€" : "")))}
+          ${opRow(1)}
+          ${valueRow(slot("mitte_links", "val"), slot("mitte_rechts", "val"))}
+          ${opRow(2)}
+          ${valueRow(esc(fmt(x2)), slot("ergebnis", "val"))}
+        </tbody>
+      </table>`;
   }
 
   function calcHtml(ex) {
@@ -207,8 +216,8 @@
           <div class="px-answers"><span class="px-label">A:</span>${answersHtml(ex)}</div>
         </div>
         <aside class="px-side">
-          <div class="px-palette">${paletteHtml(ex)}</div>
           <div class="px-luna" aria-live="polite">${lunaHtml()}</div>
+          <div class="px-palette">${paletteHtml(ex)}</div>
           <div class="px-actions">
             ${done ? nextButtons() : `<button type="button" class="px-check" data-action="check" title="Prüfen" aria-label="Prüfen"${run.guess && allFilled() ? "" : " disabled"}>${icon("Haken")}</button>`}
           </div>
