@@ -9,15 +9,41 @@ let activeChapter = null;
 let currentChapterPage = 1;
 let bookZoomMode = "width"; // Standard: Volle Dokumentbreite (100% Breite)
 
+// Inhaltsverzeichnis aller Bücher: Buch → Kapitel → Abschnitte, jede Ebene aufklappbar.
+// Kapitel-Details werden erst beim Aufklappen (oder Suchen) geladen.
+const bookDetailsCache = {};
+let booksTreeFilter = "";
+const BOOKS_OPEN_KEY = "gothea_books_open";
+const booksOpenState = loadBooksOpenState();
+
+function loadBooksOpenState() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(BOOKS_OPEN_KEY) || "{}");
+    return { books: new Set(raw.books || []), chapters: new Set(raw.chapters || []) };
+  } catch (e) {
+    return { books: new Set(), chapters: new Set() };
+  }
+}
+
+function saveBooksOpenState() {
+  try {
+    localStorage.setItem(BOOKS_OPEN_KEY, JSON.stringify({
+      books: [...booksOpenState.books],
+      chapters: [...booksOpenState.chapters]
+    }));
+  } catch (e) {}
+}
+
 async function loadBooks() {
+  const grid = document.getElementById("book-catalog-grid");
+  const topBar = document.getElementById("books-top-bar");
   try {
     const res = await apiFetch("/api/v1/books");
     if (!res.ok) {
       console.error("HTTP error loading books:", res.status);
-      const grid = document.getElementById("book-catalog-grid");
       if (grid && currentBooks.length === 0) {
         grid.innerHTML = `
-          <div class="empty-state-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 16px; margin: 20px 0;">
+          <div class="empty-state-card" style="padding: 48px 24px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 16px; margin: 20px 0;">
             <div style="font-size: 2.5rem; margin-bottom: 12px;">${icon("Warnung")}</div>
             <h3 style="margin-bottom: 6px; color: #ef4444;">Lehrbücher konnten nicht geladen werden</h3>
             <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
@@ -30,17 +56,21 @@ async function loadBooks() {
       return;
     }
     currentBooks = await res.json();
-    renderBooksShelf();
     scheduleBooksRefreshWhileSegmenting();
 
-    const toolbar = document.getElementById("book-catalog-toolbar");
-    const grid = document.getElementById("book-catalog-grid");
+    // Veraltete Details verwerfen (Buch wird noch zerlegt oder wurde neu zerlegt)
+    currentBooks.forEach((b) => {
+      const cached = bookDetailsCache[b.id];
+      if (cached && (b.segmenting || cached.chapters_count !== b.chapters_count || cached.total_pages !== b.total_pages)) {
+        delete bookDetailsCache[b.id];
+      }
+    });
 
     if (currentBooks.length === 0) {
-      if (toolbar) toolbar.style.display = "none";
+      if (topBar) topBar.style.display = "none";
       if (grid) {
         grid.innerHTML = `
-          <div class="empty-state-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 16px; margin: 20px 0;">
+          <div class="empty-state-card" style="padding: 48px 24px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 16px; margin: 20px 0;">
             <div style="font-size: 3rem; margin-bottom: 12px;">${icon("Bücher")}</div>
             <h3 style="margin-bottom: 6px;">Noch keine Schulbücher hinterlegt</h3>
             <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
@@ -60,15 +90,13 @@ async function loadBooks() {
       return;
     }
 
-    if (toolbar) toolbar.style.display = "flex";
+    if (topBar) topBar.style.display = "flex";
+    if (currentBooks.length === 1) booksOpenState.books.add(currentBooks[0].id);
 
-    if (currentBooks.length > 0) {
-      if (!activeBookId || !currentBooks.some(b => b.id === activeBookId)) {
-        await selectBook(currentBooks[0].id);
-      } else {
-        await selectBook(activeBookId);
-      }
-    }
+    renderBooksTree();
+    const ids = booksTreeFilter ? currentBooks.map((b) => b.id) : [...booksOpenState.books];
+    await ensureBookDetails(ids);
+    renderBooksTree();
   } catch (err) {
     console.error("Fehler beim Laden der Schulbücher:", err);
   }
@@ -89,191 +117,263 @@ function scheduleBooksRefreshWhileSegmenting() {
   }, 5000);
 }
 
-function renderBooksShelf() {
-  const container = document.getElementById("books-shelf-selector");
-  if (!container) return;
-  container.innerHTML = "";
-
-  currentBooks.forEach((book) => {
-    const pill = document.createElement("button");
-    pill.type = "button";
-    pill.className = `shelf-book-pill ${book.id === activeBookId ? "active" : ""}`;
-    pill.dataset.bookId = book.id;
-    pill.innerHTML = `
-      <span class="shelf-book-icon">${subjectIcon(book.subject_name)}</span>
-      <span class="shelf-book-title">${escapeHtml(book.title)}</span>
-      <span class="shelf-book-badge">${book.segmenting ? `${icon("Sanduhr")} wird in Kapitel zerlegt…` : `${book.chapters_count} Kap. • ${book.total_pages} S.`}</span>
-    `;
-    pill.addEventListener("click", () => selectBook(book.id));
-    container.appendChild(pill);
-  });
+// Lädt fehlende Buch-Details (mit Kapiteln und Abschnitten) parallel nach
+async function ensureBookDetails(bookIds) {
+  const known = new Set(currentBooks.map((b) => b.id));
+  const missing = bookIds.filter((id) => known.has(id) && !bookDetailsCache[id]);
+  await Promise.all(missing.map(async (id) => {
+    try {
+      const res = await apiFetch(`/api/v1/books/${id}`);
+      if (res.ok) bookDetailsCache[id] = await res.json();
+    } catch (err) {
+      console.error("Buch-Details konnten nicht geladen werden:", err);
+    }
+  }));
 }
 
-async function selectBook(bookId) {
-  activeBookId = bookId;
-  renderBooksShelf();
+// Macht ein Buch zum aktiven Buch für Reader, Inhalts-Schublade und Kapitel-Blättern
+function activateBook(detail) {
+  activeBookId = detail.id;
+  activeBookDetail = detail;
+  const drawerSubEl = document.getElementById("drawer-book-subtitle");
+  if (drawerSubEl) drawerSubEl.textContent = detail.title;
+  renderDrawerTOC();
+}
 
+// Buch frisch laden und aktivieren (z. B. für Suchtreffer)
+async function selectBook(bookId) {
   try {
     const res = await apiFetch(`/api/v1/books/${bookId}`);
     if (!res.ok) return;
-    activeBookDetail = await res.json();
-
-    // Katalog-Header befüllen
-    const iconEl = document.getElementById("catalog-book-icon");
-    const titleEl = document.getElementById("catalog-book-title");
-    const subEl = document.getElementById("catalog-book-subtitle");
-    const drawerSubEl = document.getElementById("drawer-book-subtitle");
-
-    if (iconEl) iconEl.innerHTML = subjectIcon(activeBookDetail.subject_name);
-    if (titleEl) titleEl.textContent = activeBookDetail.title;
-    if (subEl) subEl.textContent = `${activeBookDetail.chapters_count} Lerneinheiten • ${activeBookDetail.total_pages} Seiten`;
-    if (drawerSubEl) drawerSubEl.textContent = activeBookDetail.title;
-
-    // Standardmäßig Katalog anzeigen (oder Reader aktualisieren falls bereits geöffnet)
-    const readerView = document.getElementById("book-reader-view");
-    const isReaderOpen = readerView && readerView.style.display !== "none";
-
-    renderBookCatalog();
-    renderDrawerTOC();
-
-    if (isReaderOpen && activeChapter) {
-      // Wenn das Buch gewechselt wurde während der Reader offen war, selbes Kapitel oder erstes Kapitel laden
-      const chaps = activeBookDetail.chapters || [];
-      const sameChap = chaps.find(c => c.id === activeChapter.id);
-      if (sameChap) {
-        openChapter(sameChap, currentChapterPage);
-      } else {
-        const newChap = chaps.find(c => c.chapter_number === 1) || chaps[0];
-        if (newChap) openChapter(newChap, 1);
-      }
-    }
+    const detail = await res.json();
+    bookDetailsCache[bookId] = detail;
+    activateBook(detail);
+    booksOpenState.books.add(bookId);
+    saveBooksOpenState();
+    renderBooksTree();
   } catch (err) {
     console.error("Fehler beim Abruf der Buch-Details:", err);
   }
 }
 
-// Ansicht 1: Übersicht aller Kapitel / Lerneinheiten als Kacheln (Progressive Disclosure)
-function renderBookCatalog(filterTerm = "") {
+// Bücher ohne Kapitel-Einteilung als Ganzes öffnen
+function fullBookChapter(detail) {
+  return {
+    id: detail.id,
+    chapter_number: 0,
+    title: detail.title,
+    start_page: 1,
+    end_page: detail.total_pages,
+    page_count: detail.total_pages,
+    focus: detail.summary || "Gesamtes Lehrwerk",
+    file_url: `/api/v1/materials/${detail.id}/file`,
+    filename: `${detail.title}.pdf`
+  };
+}
+
+function openBookChapter(detail, ch, page = 1) {
+  activateBook(detail);
+  booksOpenState.books.add(detail.id);
+  saveBooksOpenState();
+  openChapter(ch, page);
+}
+
+function sectionMatches(sec, term) {
+  return sec.title.toLowerCase().includes(term) || String(sec.book_page).includes(term);
+}
+
+function chapterMatches(ch, term) {
+  return ch.title.toLowerCase().includes(term) ||
+    (ch.topic_name && ch.topic_name.toLowerCase().includes(term)) ||
+    (ch.focus && ch.focus.toLowerCase().includes(term));
+}
+
+function renderBooksTree() {
   const container = document.getElementById("book-catalog-grid");
-  if (!container || !activeBookDetail) return;
-  container.innerHTML = "";
+  if (!container || currentBooks.length === 0) return;
+  const term = booksTreeFilter.toLowerCase().trim();
+  const nodes = currentBooks.map((book) => renderBookNode(book, term)).filter(Boolean);
+  container.innerHTML = nodes.length
+    ? nodes.join("")
+    : `<div class="btree-empty">Keine Kapitel oder Abschnitte zu „${escapeHtml(booksTreeFilter)}“ gefunden.</div>`;
+}
 
-  const term = (filterTerm || "").toLowerCase().trim();
-  const chapters = (activeBookDetail.chapters || []).filter((ch) => {
-    if (!term) return true;
-    const hasSectionMatch = (ch.sections || []).some(
-      (s) =>
-        s.title.toLowerCase().includes(term) ||
-        String(s.book_page).includes(term)
-    );
-    return (
-      ch.title.toLowerCase().includes(term) ||
-      (ch.topic_name && ch.topic_name.toLowerCase().includes(term)) ||
-      (ch.focus && ch.focus.toLowerCase().includes(term)) ||
-      hasSectionMatch
-    );
+function renderBookNode(book, term) {
+  const detail = bookDetailsCache[book.id];
+  const titleHit = Boolean(term) && book.title.toLowerCase().includes(term);
+
+  // Beim Suchen: nur passende Kapitel zeigen; Kapitel mit passenden Abschnitten aufklappen
+  let entries = null;
+  if (detail) {
+    entries = (detail.chapters || []).map((ch) => {
+      const nodes = buildSectionTree(ch.sections || []);
+      if (!term || titleHit || chapterMatches(ch, term)) {
+        return { ch, nodes, open: booksOpenState.chapters.has(ch.id) };
+      }
+      const hits = filterSectionTree(nodes, term);
+      return hits.length ? { ch, nodes: hits, open: true } : null;
+    }).filter(Boolean);
+  }
+  if (term && !titleHit && !(entries && entries.length)) return "";
+
+  const open = term ? true : booksOpenState.books.has(book.id);
+  const color = /^#[0-9a-f]{3,8}$/i.test(book.subject_color || "") ? book.subject_color : "var(--accent)";
+  const meta = book.segmenting
+    ? `${icon("Sanduhr")} wird in Kapitel zerlegt …`
+    : `${book.chapters_count} Kapitel · ${book.total_pages} S.`;
+
+  let children = "";
+  if (open) {
+    if (!detail) {
+      children = `<div class="btree-loading">Kapitel werden geladen …</div>`;
+    } else if (!(detail.chapters || []).length) {
+      children = renderFullBookRow(detail);
+    } else {
+      children = entries.map((e) => renderChapterNode(detail, e)).join("");
+    }
+  }
+
+  return `
+    <div class="btree-book ${open ? "open" : ""}" style="--book-color: ${color};">
+      <div class="btree-row btree-book-row" data-action="toggle-book" data-book-id="${escapeHtml(book.id)}" role="button" tabindex="0" aria-expanded="${open}">
+        <span class="btree-chevron">${icon("Aufklappen")}</span>
+        <span class="btree-book-icon">${subjectIcon(book.subject_name)}</span>
+        <span class="btree-title">${escapeHtml(book.title)}</span>
+        <span class="btree-meta">${meta}</span>
+      </div>
+      ${open ? `<div class="btree-children">${children}</div>` : ""}
+    </div>
+  `;
+}
+
+function renderFullBookRow(detail) {
+  return `
+    <div class="btree-chapter">
+      <div class="btree-row btree-chapter-row" data-action="open-full-book" data-book-id="${escapeHtml(detail.id)}" role="button" tabindex="0">
+        <span class="btree-chevron"></span>
+        <span class="btree-num">${icon("Lesen")}</span>
+        <span class="btree-title">Gesamtes Buch</span>
+        <span class="btree-pages">${detail.total_pages} S.</span>
+        <span class="btree-open">${icon("Pfeil rechts")}</span>
+      </div>
+    </div>
+  `;
+}
+
+// Abschnitte eines Kapitels (flach mit "level") → verschachtelter Baum
+function buildSectionTree(sections) {
+  const root = [];
+  const stack = [];
+  sections.forEach((sec, i) => {
+    const node = { sec, key: i, children: [] };
+    const level = sec.level || 2;
+    while (stack.length && stack[stack.length - 1].level >= level) stack.pop();
+    (stack.length ? stack[stack.length - 1].node.children : root).push(node);
+    stack.push({ level, node });
   });
+  return root;
+}
 
-  if (chapters.length === 0) {
-    container.innerHTML = `
-      <div style="padding: 36px; text-align: center; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); width: 100%;">
-        <p style="margin-bottom: 16px;">${filterTerm ? `Keine Lerneinheiten für "${escapeHtml(filterTerm)}" gefunden.` : "Für dieses Lehrwerk wurden noch keine separaten Lerneinheiten aufgeteilt."}</p>
-        <button type="button" class="btn-primary" id="btn-open-full-book-fallback" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px;">
-          <span>${icon("Lesen")}</span>
-          <span>Gesamtes Buch aufschlagen (${activeBookDetail.total_pages} Seiten)</span>
+// Beim Suchen: passende Abschnitte samt ihrer Eltern behalten, Eltern aufklappen
+function filterSectionTree(nodes, term) {
+  return nodes.map((n) => {
+    const kids = filterSectionTree(n.children, term);
+    if (sectionMatches(n.sec, term)) return { ...n, forceOpen: kids.length > 0 };
+    return kids.length ? { ...n, children: kids, forceOpen: true } : null;
+  }).filter(Boolean);
+}
+
+function renderSectionNodes(ids, chapterId, nodes) {
+  const indentLeaves = nodes.some((n) => n.children.length);
+  return nodes.map((n) => {
+    const { sec } = n;
+    const title = `<span class="btree-section-title">${escapeHtml(sec.title)}</span><span class="btree-leader" aria-hidden="true"></span>`;
+    if (!n.children.length) {
+      return `
+        <button type="button" class="btree-row btree-section-row" data-action="open-section" ${ids} data-page="${sec.relative_page}" title="Buchseite ${sec.book_page} aufschlagen">
+          ${indentLeaves ? `<span class="btree-chevron"></span>` : ""}${title}
+          <span class="btree-section-page">${sec.book_page}</span>
+        </button>`;
+    }
+    const key = `${chapterId}#${n.key}`;
+    const open = n.forceOpen || booksOpenState.chapters.has(key);
+    return `
+      <div class="btree-node ${open ? "open" : ""}">
+        <div class="btree-row btree-section-row" data-action="toggle-node" data-key="${escapeHtml(key)}" role="button" tabindex="0" aria-expanded="${open}">
+          <span class="btree-chevron">${icon("Aufklappen")}</span>${title}
+          <button type="button" class="btree-section-page btree-page-btn" data-action="open-section" ${ids} data-page="${sec.relative_page}" title="Buchseite ${sec.book_page} aufschlagen">${sec.book_page}</button>
+        </div>
+        ${open ? `<div class="btree-subsections">${renderSectionNodes(ids, chapterId, n.children)}</div>` : ""}
+      </div>`;
+  }).join("");
+}
+
+function renderChapterNode(detail, { ch, nodes, open }) {
+  const isFullBook = ch.id === detail.id;
+  const hasSections = nodes.length > 0;
+  const num = isFullBook ? icon("Lesen") : (ch.chapter_number === 0 ? "00" : String(ch.chapter_number ?? "").padStart(2, "0"));
+  const title = isFullBook ? "Gesamtes Buch" : escapeHtml(ch.title);
+  const isActive = activeChapter && activeChapter.id === ch.id;
+  const ids = `data-book-id="${escapeHtml(detail.id)}" data-chapter-id="${escapeHtml(ch.id)}"`;
+  const isOpen = open && hasSections;
+
+  return `
+    <div class="btree-chapter ${isOpen ? "open" : ""}">
+      <div class="btree-row btree-chapter-row ${isActive ? "active" : ""}" ${hasSections ? `data-action="toggle-node" data-key="${escapeHtml(ch.id)}" aria-expanded="${isOpen}"` : `data-action="open-chapter"`} ${ids} role="button" tabindex="0">
+        <span class="btree-chevron">${hasSections ? icon("Aufklappen") : ""}</span>
+        <span class="btree-num">${num}</span>
+        <span class="btree-title">
+          ${title}
+          ${ch.topic_name ? `<span class="btree-topic">${icon("Thema")} ${escapeHtml(ch.topic_name)}</span>` : ""}
+        </span>
+        <span class="btree-pages">S. ${ch.start_page}–${ch.end_page}</span>
+        <button type="button" class="btree-open" data-action="open-chapter" ${ids} title="Kapitel aufschlagen">
+          ${icon("Lesen")}<span class="btree-open-label">Aufschlagen</span>
         </button>
       </div>
-    `;
-    const openBtn = document.getElementById("btn-open-full-book-fallback");
-    if (openBtn) {
-      openBtn.addEventListener("click", () => {
-        openChapter({
-          id: activeBookDetail.id,
-          chapter_number: 0,
-          title: activeBookDetail.title,
-          start_page: 1,
-          end_page: activeBookDetail.total_pages,
-          page_count: activeBookDetail.total_pages,
-          focus: activeBookDetail.summary || "Gesamtes Lehrwerk",
-          file_url: `/api/v1/materials/${activeBookDetail.id}/file`,
-          filename: `${activeBookDetail.title}.pdf`
-        }, 1);
-      });
+      ${isOpen ? `<div class="btree-children btree-sections">${renderSectionNodes(ids, ch.id, nodes)}</div>` : ""}
+    </div>
+  `;
+}
+
+async function onBooksTreeClick(e) {
+  const el = e.target.closest("[data-action]");
+  if (!el || !e.currentTarget.contains(el)) return;
+  const { action, bookId, chapterId } = el.dataset;
+
+  if (action === "toggle-book" || action === "toggle-node") {
+    if (booksTreeFilter) return; // beim Suchen ist alles Passende aufgeklappt
+    const set = action === "toggle-book" ? booksOpenState.books : booksOpenState.chapters;
+    const key = action === "toggle-book" ? bookId : el.dataset.key;
+    if (set.has(key)) set.delete(key); else set.add(key);
+    saveBooksOpenState();
+    renderBooksTree();
+    if (action === "toggle-book" && set.has(key) && !bookDetailsCache[key]) {
+      await ensureBookDetails([key]);
+      renderBooksTree();
     }
     return;
   }
 
-  chapters.forEach((ch) => {
-    const item = document.createElement("div");
-    item.className = "book-toc-item";
-    item.dataset.chapterId = ch.id;
+  const detail = bookDetailsCache[bookId];
+  if (!detail) return;
+  if (action === "open-full-book") {
+    openBookChapter(detail, fullBookChapter(detail), 1);
+    return;
+  }
+  const ch = (detail.chapters || []).find((c) => c.id === chapterId);
+  if (!ch) return;
+  const page = action === "open-section" ? (parseInt(el.dataset.page, 10) || 1) : 1;
+  openBookChapter(detail, ch, page);
+}
 
-    const isSingleFullBook = ch.id === activeBookDetail.id;
-    const numDisplay = isSingleFullBook
-      ? icon("Stern")
-      : (ch.chapter_number === 0 ? "00" : String(ch.chapter_number).padStart(2, "0"));
-    const unitLabel = isSingleFullBook
-      ? "Gesamtbuch"
-      : (ch.chapter_number === 0 ? "Titelei & Inhaltsverzeichnis" : `Einheit ${ch.chapter_number}`);
-
-    let sectionsHtml = "";
-    if (ch.sections && ch.sections.length > 0) {
-      const hasSecMatch = Boolean(term && ch.sections.some(s => s.title.toLowerCase().includes(term) || String(s.book_page).includes(term)));
-      sectionsHtml = `
-        <details class="toc-subsections-accordion" ${hasSecMatch ? "open" : ""} onclick="event.stopPropagation()">
-          <summary class="toc-summary">
-            <span class="toc-summary-label">${icon("Inhaltsverzeichnis")} ${ch.sections.length} Unterthemen & Abschnitte</span>
-            <span class="toc-chevron">${icon("Aufklappen")}</span>
-          </summary>
-          <div class="toc-subsections-grid">
-            ${ch.sections.map(sec => `
-              <button type="button" class="toc-sub-pill" data-target-page="${sec.relative_page}" title="Direkt aufschlagen: ${escapeHtml(sec.title)} (Buchseite ${sec.book_page})">
-                <span class="toc-sub-title">${escapeHtml(sec.title)}</span>
-                <span class="toc-sub-page">S. ${sec.book_page}</span>
-              </button>
-            `).join("")}
-          </div>
-        </details>
-      `;
-    }
-
-    item.innerHTML = `
-      <div class="toc-num-badge" title="${unitLabel}">
-        ${numDisplay}
-      </div>
-      <div class="toc-item-main">
-        <div class="toc-title-row">
-          <div class="toc-item-title">${escapeHtml(ch.title)}</div>
-        </div>
-        <div class="toc-meta-row">
-          <span class="toc-badge-pages">${icon("Dokumente")} S. ${ch.start_page}–${ch.end_page} (${ch.page_count} S.)</span>
-          ${ch.topic_name ? `<span class="toc-badge-topic">${icon("Thema")} ${escapeHtml(ch.topic_name)}</span>` : ""}
-          ${isSingleFullBook ? `<span class="toc-badge-topic">${icon("Stern")} Vollständige Ausgabe</span>` : ""}
-        </div>
-        ${sectionsHtml}
-      </div>
-      <div class="toc-item-action">
-        <button type="button" class="btn-toc-open">
-          <span>${isSingleFullBook ? "Gesamtbuch öffnen" : "Aufschlagen"}</span>
-          <span>${icon("Pfeil rechts")}</span>
-        </button>
-      </div>
-    `;
-
-    // Klicken auf die Zeile öffnet das Kapitel ab Seite 1
-    item.addEventListener("click", () => openChapter(ch, 1));
-
-    // Klicken auf einzelne Unterseiten springt direkt zu dieser Seite
-    item.querySelectorAll(".toc-sub-pill").forEach(pill => {
-      pill.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const p = parseInt(pill.dataset.targetPage, 10) || 1;
-        openChapter(ch, p);
-      });
-    });
-
-    container.appendChild(item);
-  });
+async function onBooksFilterInput(value) {
+  booksTreeFilter = value;
+  renderBooksTree();
+  if (value.trim()) {
+    await ensureBookDetails(currentBooks.map((b) => b.id));
+    if (booksTreeFilter === value) renderBooksTree();
+  }
 }
 
 // Ansicht 2: Vollbreiten-Reader für ein gewähltes Kapitel öffnen
@@ -334,7 +434,11 @@ function closeReaderToCatalog() {
   if (catalogView) catalogView.style.display = "flex";
   document.body.classList.remove("reader-zen-mode");
   closeTOCDrawer();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  // Zurück an die Stelle im Inhaltsverzeichnis, von der aus gelesen wurde
+  renderBooksTree();
+  const activeRow = document.querySelector("#book-catalog-grid .btree-chapter-row.active");
+  if (activeRow) activeRow.scrollIntoView({ block: "center" });
+  else window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function updateChapterNavButtons() {
@@ -683,8 +787,18 @@ function setupBookBrowserEvents() {
   // Filter in Katalog-Ansicht
   const catalogFilter = document.getElementById("book-catalog-filter-input");
   if (catalogFilter) {
-    catalogFilter.addEventListener("input", (e) => {
-      renderBookCatalog(e.target.value);
+    catalogFilter.addEventListener("input", (e) => onBooksFilterInput(e.target.value));
+  }
+
+  // Inhaltsverzeichnis: Auf-/Zuklappen und Aufschlagen (ein Listener für alle Zeilen)
+  const booksTree = document.getElementById("book-catalog-grid");
+  if (booksTree) {
+    booksTree.addEventListener("click", onBooksTreeClick);
+    booksTree.addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.matches("[role='button']")) {
+        e.preventDefault();
+        e.target.click();
+      }
     });
   }
 

@@ -241,20 +241,18 @@
       <!-- Tab: Bücher-Browser (Lehrwerke & Kapitel-Navigator) -->
       <section id="tab-books" class="tab-pane">
         <div class="books-container">
-          <!-- Schlanke Bücher-Kopfleiste (Buchauswahl & Suche auf einen Blick) -->
+          <!-- Kopfleiste: Suche über alle Bücher -->
           <div class="books-top-bar" id="books-top-bar">
-            <div class="books-shelf-selector" id="books-shelf-selector">
-              <!-- Dynamisch gerenderte Buchauswahl-Pills -->
-            </div>
+            <h2 class="books-heading">Inhaltsverzeichnis</h2>
             <div class="book-catalog-search">
-              <input type="text" id="book-catalog-filter-input" placeholder="Kapitel oder Thema suchen..." />
+              <input type="text" id="book-catalog-filter-input" placeholder="Buch, Kapitel, Abschnitt oder Seite suchen …" />
             </div>
           </div>
 
-          <!-- Ansicht 1: Übersicht aller Lerneinheiten (Kapitel-Katalog / Inhaltsverzeichnis) -->
+          <!-- Ansicht 1: Inhaltsverzeichnis aller Bücher (Buch → Kapitel → Abschnitte) -->
           <div class="book-catalog-view" id="book-catalog-view">
-            <div class="book-catalog-grid book-toc-list" id="book-catalog-grid">
-              <!-- Dynamisch gerenderte Liste für alle Lerneinheiten (Vorschlag A) -->
+            <div class="btree" id="book-catalog-grid">
+              <!-- Dynamisch gerendert (books.js: renderBooksTree) -->
             </div>
           </div>
 
