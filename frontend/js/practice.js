@@ -75,7 +75,7 @@
 
   async function openExercise(id) {
     const ex = await apiJson(`/api/v1/practice/${encodeURIComponent(id)}`);
-    run = { ex, guess: null, placed: {}, answer: null, checked: false, hint: 0, selected: null };
+    run = { ex, guess: null, placed: {}, answer: null, reason: null, checked: false, hint: 0, selected: null };
     if (!ex.schaetzfrage.aktiv) run.guess = "-";
     show(listView, false);
     show(runView, true);
@@ -138,6 +138,15 @@
     }).join("");
   }
 
+  // Begründung (z. B. „Begründe, dass die Zuordnung proportional ist“): Vorschlag wählen
+  function reasonsHtml(ex) {
+    return ex.bausteine.begruendungen.map((r, i) => {
+      let state = "";
+      if (run.checked && run.reason === i) state = r.richtig ? " ok" : " wrong";
+      return `<button type="button" class="px-answer${run.reason === i ? " chosen" : ""}${state}" data-reason="${i}">${esc(r.text)}</button>`;
+    }).join("");
+  }
+
   function paletteHtml(ex) {
     const locked = !run.guess || run.checked && allRight();
     const tokens = (list, kind) => list.map((t) =>
@@ -148,12 +157,16 @@
   }
 
   function allFilled() {
-    return Object.keys(run.ex.bausteine.felder).every((k) => run.placed[k]) && run.answer !== null;
+    const needsReason = run.ex.bausteine.begruendungen.length > 0;
+    return Object.keys(run.ex.bausteine.felder).every((k) => run.placed[k]) && run.answer !== null
+      && (!needsReason || run.reason !== null);
   }
 
   function allRight() {
     const f = run.ex.bausteine.felder;
-    return Object.keys(f).every((k) => run.placed[k] === f[k]) && run.ex.bausteine.antworten[run.answer]?.richtig;
+    const reasons = run.ex.bausteine.begruendungen;
+    const reasonOk = !reasons.length || reasons[run.reason]?.richtig;
+    return Object.keys(f).every((k) => run.placed[k] === f[k]) && run.ex.bausteine.antworten[run.answer]?.richtig && reasonOk;
   }
 
   function lunaHtml() {
@@ -190,6 +203,8 @@
     const wrongCount = Object.keys(ex.bausteine.felder).filter((k) => run.placed[k] !== ex.bausteine.felder[k]).length;
     const chosen = ex.bausteine.antworten[run.answer];
     if (wrongCount) h += say(wrongCount === 1 ? "Fast! Ein Feld stimmt noch nicht." : `${wrongCount} Felder stimmen noch nicht.`);
+    const reason = ex.bausteine.begruendungen[run.reason];
+    if (reason && !reason.richtig) h += say(`Bei der Begründung: ${reason.grund}`);
     if (chosen && !chosen.richtig) h += say(`Beim Antwortsatz: ${chosen.grund}.`);
     const hints = [ex.hilfen.denkanstoss];
     if (ex.nachschlagen) hints.push(`Schau mal in ${ex.nachschlagen.material}, S. ${ex.nachschlagen.seite}, ${ex.nachschlagen.stelle}.`);
@@ -212,6 +227,7 @@
       <div class="px-layout">
         <div class="px-sheet">
           <p class="px-task">${esc(ex.aufgabentext)}</p>
+          ${ex.bausteine.begruendungen.length ? `<div class="px-answers"><span class="px-label">Begründung:</span>${reasonsHtml(ex)}</div>` : ""}
           ${ex.schema === "rechnung" ? calcHtml(ex) : tableHtml(ex)}
           <div class="px-answers"><span class="px-label">A:</span>${answersHtml(ex)}</div>
         </div>
@@ -252,6 +268,12 @@
     if (t.dataset.action === "check") { run.checked = true; return renderRun(); }
     if (t.dataset.guess) { run.guess = t.dataset.guess; return renderRun(); }
     if (t.dataset.hint) { run.hint += 1; return renderRun(); }
+    if (t.dataset.reason !== undefined) {
+      if (run.checked && allRight()) return;
+      run.reason = Number(t.dataset.reason);
+      run.checked = false;
+      return renderRun();
+    }
     if (t.dataset.answer !== undefined) {
       if (run.checked && allRight()) return;
       run.answer = Number(t.dataset.answer);

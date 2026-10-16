@@ -97,6 +97,11 @@ def validate(ex: dict) -> List[str]:
         errors.append("Antwort der Schätzfrage fehlt in den Optionen")
     if _num(ex["fehlerbeispiel"]["wert"]) == result:
         errors.append("Fehlerbeispiel ist gleich dem Ergebnis")
+    reasoning = ex.get("begruendung") or {}
+    if reasoning.get("verlangt"):
+        options = reasoning.get("optionen") or []
+        if sum(o["richtig"] for o in options) != 1 or any(not o["richtig"] and not o.get("grund") for o in options):
+            errors.append("Begründung braucht genau einen richtigen Vorschlag, falsche mit Grund")
     return errors
 
 
@@ -187,6 +192,14 @@ def _answer_options(ex: dict) -> List[dict]:
 
 def building_blocks(ex: dict) -> dict:
     """Felder und Bausteine für Stufe 0. Jedes Feld nennt den richtigen Baustein."""
+    blocks = _building_blocks(ex)
+    reasoning = ex.get("begruendung") or {}
+    blocks["begruendungen"] = (_shuffled(reasoning["optionen"], ex["id"] + "-begruendung")
+                               if reasoning.get("verlangt") else [])
+    return blocks
+
+
+def _building_blocks(ex: dict) -> dict:
     result = _num(ex["ergebnis"]["wert"])
     if ex["schema"] == "rechnung":
         a, b = (_num(z) for z in ex["rechnung"]["zahlen"])

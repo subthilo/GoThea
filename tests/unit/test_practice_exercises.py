@@ -33,6 +33,13 @@ def test_building_blocks_can_fill_every_field(ex):
     assert len({a["text"] for a in answers}) == len(answers) >= 2
 
 
+def test_reasoning_task_offers_reasoning_choices():
+    blocks = pe.get_exercise("sa-flugzeug")["bausteine"]
+    assert len(blocks["begruendungen"]) == 3
+    assert sum(b["richtig"] for b in blocks["begruendungen"]) == 1
+    assert pe.get_exercise("sa-gummibaerchen")["bausteine"]["begruendungen"] == []
+
+
 def test_twin_reference_points_to_original():
     for ex in all_exercises():
         if ex["ableitung"] == "B":

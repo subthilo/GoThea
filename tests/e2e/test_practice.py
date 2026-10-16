@@ -79,3 +79,21 @@ def test_division_task_starts_with_estimate_line(app_page):
     assert app_page.locator(".px-guess-btn").count() == 0
     assert not app_page.locator(".px-token").first.is_disabled()
     assert app_page.problems.errors == []
+
+
+def test_reasoning_task_needs_a_chosen_reasoning(app_page):
+    open_practice(app_page, "sa-flugzeug")
+    app_page.click('.px-guess-btn[data-guess="weniger"]')
+    for slot, token in {"op_links_1": ":6", "op_rechts_1": ":6", "op_links_2": "·5", "op_rechts_2": "·5",
+                        "mitte_links": "0,5", "mitte_rechts": "440", "ergebnis": "2200"}.items():
+        fill(app_page, slot, token)
+    app_page.click(".px-answer:text-is('In 2,5 Stunden fliegt das Flugzeug 2200 km.')")
+    # Ohne Begründung lässt sich nicht prüfen
+    assert app_page.locator('[data-action="check"]').is_disabled()
+    app_page.click(".px-answer:text-is('Je länger das Flugzeug fliegt, desto weiter kommt es.')")
+    app_page.click('[data-action="check"]')
+    assert "„Je mehr, desto mehr“ reicht nicht" in app_page.inner_text(".px-luna")
+    app_page.click(".px-answer:has-text('In der doppelten Zeit')")
+    app_page.click('[data-action="check"]')
+    assert "Richtig" in app_page.inner_text(".px-luna")
+    assert app_page.problems.errors == []

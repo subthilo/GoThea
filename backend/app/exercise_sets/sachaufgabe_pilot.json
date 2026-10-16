@@ -474,7 +474,24 @@
       "schema": "dreisatz_proportional",
       "begruendung": {
         "verlangt": true,
-        "erwartung": "Das Flugzeug fliegt (ungefähr) gleich schnell. In der doppelten Zeit legt es die doppelte Strecke zurück."
+        "erwartung": "Das Flugzeug fliegt (ungefähr) gleich schnell. In der doppelten Zeit legt es die doppelte Strecke zurück.",
+        "quelle": "Fundamente der Mathematik 7, S. 22, Wissen und Beispiel 1",
+        "optionen": [
+          {
+            "text": "Das Flugzeug fliegt gleich schnell. In der doppelten Zeit legt es die doppelte Strecke zurück.",
+            "richtig": true
+          },
+          {
+            "text": "Je länger das Flugzeug fliegt, desto weiter kommt es.",
+            "richtig": false,
+            "grund": "„Je mehr, desto mehr“ reicht nicht. Proportional heißt: doppelte Zeit, genau doppelte Strecke."
+          },
+          {
+            "text": "Weil man es mit dem Dreisatz ausrechnen kann.",
+            "richtig": false,
+            "grund": "Andersherum: Den Dreisatz darf man erst benutzen, wenn die Zuordnung proportional ist."
+          }
+        ]
       },
       "groessen": [
         {
@@ -560,7 +577,24 @@
       "schema": "dreisatz_proportional",
       "begruendung": {
         "verlangt": true,
-        "erwartung": "Der Zug fährt (ungefähr) gleich schnell. In der doppelten Zeit legt er die doppelte Strecke zurück."
+        "erwartung": "Der Zug fährt (ungefähr) gleich schnell. In der doppelten Zeit legt er die doppelte Strecke zurück.",
+        "quelle": "Fundamente der Mathematik 7, S. 22, Wissen und Beispiel 1",
+        "optionen": [
+          {
+            "text": "Der Zug fährt gleich schnell. In der doppelten Zeit legt er die doppelte Strecke zurück.",
+            "richtig": true
+          },
+          {
+            "text": "Je länger der Zug fährt, desto weiter kommt er.",
+            "richtig": false,
+            "grund": "„Je mehr, desto mehr“ reicht nicht. Proportional heißt: doppelte Zeit, genau doppelte Strecke."
+          },
+          {
+            "text": "Weil man es mit dem Dreisatz ausrechnen kann.",
+            "richtig": false,
+            "grund": "Andersherum: Den Dreisatz darf man erst benutzen, wenn die Zuordnung proportional ist."
+          }
+        ]
       },
       "groessen": [
         {
