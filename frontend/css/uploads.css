@@ -74,12 +74,6 @@
 }
 
 /* Upload-Historie */
-.uploads-history-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 14px;
-}
 
 .upload-history-card {
   background: var(--bg-card);

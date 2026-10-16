@@ -28,6 +28,14 @@ def _assert_opens_and_closes(page, open_selector, modal_id, close_selector):
     page.wait_for_selector(f"#{modal_id}", state="hidden", timeout=5000)
 
 
+def _expand_first_document(page):
+    """Dokumentzeilen sind zugeklappt; die Aktionen stehen erst nach dem Aufklappen bereit."""
+    row = page.locator("#tab-uploads .doc-row >> nth=0")
+    if "open" not in (row.get_attribute("class") or ""):
+        row.locator(".doc-row-head").click(position={"x": 30, "y": 20})
+    page.wait_for_selector("#tab-uploads .doc-row.open .doc-row-body", state="visible", timeout=5000)
+
+
 @pytest.fixture
 def parent_page(app_page, parent_pin):
     _unlock_parent_mode(app_page, parent_pin)
@@ -39,7 +47,7 @@ def uploads_page(parent_page):
     """Uploads-Seite im Eltern-Modus mit (mindestens) einem mehrseitigen Dokument."""
     upload_document(parent_page, "Dialog-Test", "sub_bio", pages=2, kind="Arbeitsblatt")
     parent_page.click('.nav-tab[data-tab="uploads"]')
-    parent_page.wait_for_selector("#tab-uploads .material-card", timeout=5000)
+    parent_page.wait_for_selector("#tab-uploads .doc-row", timeout=5000)
     _settle(parent_page)
     return parent_page
 
@@ -67,7 +75,8 @@ def test_subject_detail_and_upload_dialog(parent_page):
     (".btn-mat-reorder", "modal-reorder-pages", "#btn-close-reorder-modal"),
 ])
 def test_material_card_dialogs(uploads_page, button, modal_id, close):
-    _assert_opens_and_closes(uploads_page, f"#tab-uploads .material-card >> nth=0 >> {button}", modal_id, close)
+    _expand_first_document(uploads_page)
+    _assert_opens_and_closes(uploads_page, f"#tab-uploads .doc-row >> nth=0 >> {button}", modal_id, close)
     assert uploads_page.problems.errors == []
 
 
@@ -77,7 +86,7 @@ def test_merge_dialog_from_uploads(uploads_page):
 
 
 def test_document_opens_in_reader(uploads_page):
-    uploads_page.click("#tab-uploads .material-card >> nth=0 >> .btn-mat-reader")
+    uploads_page.click("#tab-uploads .doc-row >> nth=0 >> .doc-row-open")
     uploads_page.wait_for_selector("#tab-books.active", timeout=5000)
     uploads_page.wait_for_selector("#book-reader-view", state="visible", timeout=5000)
     _settle(uploads_page)

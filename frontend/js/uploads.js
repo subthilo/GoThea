@@ -239,70 +239,102 @@ if (btnProcessInbox) {
   });
 }
 
+// Aufgeklappte Dokumentzeilen (Fachseite und Upload-Liste), bleiben beim Neuzeichnen offen
+const openDocRows = new Set();
+
+// Dokument als aufklappbare Listenzeile: zugeklappt Titel, Thema, Art, Seiten, Ändern und Reader;
+// aufgeklappt alle Angaben, Zusammenfassung und Aktionen.
 function buildMaterialCard(m, onDeleted) {
   const card = document.createElement("div");
-  card.className = "material-card";
-  card.style.borderLeft = `4px solid ${subjectColor(m.subject_name)}`;
+  card.className = `doc-row ${openDocRows.has(m.id) ? "open" : ""}`;
+  card.dataset.materialId = m.id;
+  card.style.cssText = subjectStyle(m.subject_name);
 
   const isPdf = (m.mime_type || "").includes("pdf");
   const kindIcon = documentIconName(m.kind);
   const docIcon = icon(kindIcon === "Dokumente" && !isPdf ? "Bild" : kindIcon);
+  const isTimetable = (m.kind || "").includes("Stundenplan");
 
   const sizeKb = Math.round((m.file_size || 0) / 1024);
   const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+  const created = m.created_at ? new Date(m.created_at) : null;
+  const dateStr = created && !isNaN(created) ? created.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
 
   card.innerHTML = `
-    <div>
-      <div class="mat-card-header">
-        <div class="mat-card-title">${escapeHtml(m.title)}</div>
-        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-          ${m.dossier_title ? `<span class="mat-dossier-badge" title="Zugeordneter Hefter">${icon("Ordner")} ${escapeHtml(m.dossier_title)}</span>` : ""}
-          <span class="mat-card-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-light); border: 1px solid rgba(99, 102, 241, 0.3);">
-            ${escapeHtml(m.kind || "Dokument")}
-          </span>
-        </div>
-      </div>
-      <div class="mat-card-meta">
-        <span style="color: ${subjectColor(m.subject_name)}; font-weight: 600;">
-          ${subjectLabel(m.subject_name)}
-        </span>
-        ${m.topic_name ? `<span>• ${icon("Thema")} ${escapeHtml(m.topic_name)}</span>` : ""}
-        <span>• ${docIcon} ${m.page_count} S. (${sizeStr})</span>
-        ${m.start_page && m.end_page ? `<span>• S. ${m.start_page}–${m.end_page}</span>` : ""}
-      </div>
-      ${m.summary ? `<div class="mat-card-summary">“${escapeHtml(m.summary)}”</div>` : ""}
-    </div>
-    <div class="mat-card-actions">
-      ${m.kind && m.kind.includes("Stundenplan") ? `
-        <button class="btn-mat-action btn-mat-tt" style="background: rgba(99, 102, 241, 0.2); border-color: var(--accent); color: var(--accent-light); font-weight: 700;" title="Als interaktives Stundenplan-Widget öffnen">
-          ${icon("Stundenplan")} Stundenplan
-        </button>
-      ` : ""}
-      <button class="btn-mat-action btn-mat-view" title="${m.kind && m.kind.includes('Stundenplan') ? 'Original-Scan als Dokument ansehen' : 'Dokument im Popup ansehen'}">
-        ${icon("Anzeigen")} ${m.kind && m.kind.includes('Stundenplan') ? 'Scan' : 'Öffnen'}
-      </button>
-      <button class="btn-mat-action btn-mat-reader" title="Im Dokument-Reader öffnen & mit Apple Pencil beschreiben">
-        ${icon("Lesen")} Reader
-      </button>
-      <button class="btn-mat-action btn-mat-wb" title="Dieses Dokument auf der digitalen Tafel mit KI-Tutorin Luna üben">
-        ${icon("Tafel")} Tafel
-      </button>
-      <button class="btn-mat-action btn-mat-cloze" title="Lückentext-Übung direkt aus diesem Dokument erstellen">
-        ${icon("Übungen")} Üben
-      </button>
-      <button class="btn-mat-action btn-mat-edit parent-only" title="Dokument anpassen (Fach, Thema, Titel)">
+    <div class="doc-row-head" role="button" tabindex="0" aria-expanded="${openDocRows.has(m.id)}" title="Mehr Angaben ein- oder ausblenden">
+      <span class="doc-row-chevron">${icon("Aufklappen")}</span>
+      <span class="doc-row-kind" title="${escapeHtml(m.kind || "Dokument")}">${docIcon}</span>
+      <span class="doc-row-title">
+        <span class="doc-row-name">${escapeHtml(m.title)}</span>
+        ${m.topic_name ? `<span class="doc-row-topic">${escapeHtml(m.topic_name)}</span>` : ""}
+      </span>
+      <span class="doc-row-badge">${escapeHtml(m.kind || "Dokument")}</span>
+      <span class="doc-row-pages">${m.page_count} S.</span>
+      <button type="button" class="btn-mat-action btn-mat-edit parent-only" title="Dokument anpassen (Titel, Fach, Thema, Art)">
         ${icon("Schreibwerkzeuge")} Ändern
       </button>
-      ${(m.page_count > 1 || (m.mime_type || "").includes("pdf")) ? `
-        <button class="btn-mat-action btn-mat-reorder parent-only" title="Seitenreihenfolge ändern & verwalten">
-          ${icon("Seiten anzeigen")} Seiten
+      <button type="button" class="btn-mat-action doc-row-open" title="Im Reader öffnen">${icon("Lesen")}</button>
+    </div>
+    <div class="doc-row-body">
+      <div class="doc-row-meta">
+        <span class="doc-row-subject">${subjectLabel(m.subject_name)}</span>
+        ${m.topic_name ? `<span>${icon("Thema")} ${escapeHtml(m.topic_name)}</span>` : ""}
+        ${m.dossier_title ? `<span title="Zugeordneter Hefter">${icon("Ordner")} ${escapeHtml(m.dossier_title)}</span>` : ""}
+        <span>${docIcon} ${m.page_count} S. (${sizeStr})</span>
+        ${m.start_page && m.end_page ? `<span>Buchseiten ${m.start_page}–${m.end_page}</span>` : ""}
+        ${dateStr ? `<span>${icon("Kalender")} ${dateStr}</span>` : ""}
+      </div>
+      ${m.summary ? `<p class="doc-row-summary">${escapeHtml(m.summary)}</p>` : ""}
+      <div class="doc-row-actions">
+        ${isTimetable ? `
+          <button type="button" class="btn-mat-action btn-mat-tt" title="Als interaktives Stundenplan-Widget öffnen">
+            ${icon("Stundenplan")} Stundenplan
+          </button>
+        ` : ""}
+        <button type="button" class="btn-mat-action btn-mat-view" title="${isTimetable ? "Original-Scan als Dokument ansehen" : "Dokument im Popup ansehen"}">
+          ${icon("Anzeigen")} ${isTimetable ? "Scan" : "Öffnen"}
         </button>
-      ` : ""}
-      <button class="btn-mat-action btn-mat-del parent-only" data-id="${m.id}" title="Material löschen">
-        ${icon("Papierkorb")}
-      </button>
+        <button type="button" class="btn-mat-action btn-mat-reader" title="Im Dokument-Reader öffnen & mit Apple Pencil beschreiben">
+          ${icon("Lesen")} Reader
+        </button>
+        <button type="button" class="btn-mat-action btn-mat-wb" title="Dieses Dokument auf der digitalen Tafel mit KI-Tutorin Luna üben">
+          ${icon("Tafel")} Tafel
+        </button>
+        <button type="button" class="btn-mat-action btn-mat-cloze" title="Lückentext-Übung direkt aus diesem Dokument erstellen">
+          ${icon("Übungen")} Üben
+        </button>
+        ${(m.page_count > 1 || isPdf) ? `
+          <button type="button" class="btn-mat-action btn-mat-reorder parent-only" title="Seitenreihenfolge ändern & verwalten">
+            ${icon("Seiten anzeigen")} Seiten
+          </button>
+        ` : ""}
+        <button type="button" class="btn-mat-action btn-mat-del parent-only" data-id="${m.id}" title="Material löschen">
+          ${icon("Papierkorb")} Löschen
+        </button>
+      </div>
     </div>
   `;
+
+  // Zeile auf- und zuklappen (Knöpfe in der Zeile stoppen das Ereignis selbst)
+  const head = card.querySelector(".doc-row-head");
+  const toggle = () => {
+    const open = !card.classList.contains("open");
+    card.classList.toggle("open", open);
+    head.setAttribute("aria-expanded", String(open));
+    if (open) openDocRows.add(m.id); else openDocRows.delete(m.id);
+  };
+  head.addEventListener("click", toggle);
+  head.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target === head) {
+      e.preventDefault();
+      toggle();
+    }
+  });
+
+  card.querySelector(".doc-row-open").addEventListener("click", (e) => {
+    e.stopPropagation();
+    openMaterialInReader(m);
+  });
 
   const ttBtn = card.querySelector(".btn-mat-tt");
   if (ttBtn) {

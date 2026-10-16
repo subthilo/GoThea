@@ -114,44 +114,164 @@
   box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
 }
 
-/* Materialien Grid & Cards */
-.materials-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 16px;
+/* Dokumentliste (Fachseite und Upload): aufklappbare Zeilen (uploads.js: buildMaterialCard) */
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 12px;
 }
 
-.material-card {
+.doc-row {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.2s, border-color 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-left: 4px solid var(--subject-color, var(--accent));
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.material-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-active);
+.doc-row-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
 }
 
-.mat-card-header {
+.doc-row-head:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.doc-row-head:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.doc-row-chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+
+.doc-row.open .doc-row-chevron {
+  transform: rotate(0deg);
+}
+
+.doc-row-kind {
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  color: var(--subject-color, var(--text-secondary));
+}
+
+.doc-row-title {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: baseline;
   gap: 10px;
-  margin-bottom: 8px;
 }
 
-.mat-card-title {
-  font-size: 1rem;
-  font-weight: 600;
+.doc-row-name {
+  min-width: 0;
+  overflow: hidden;
   color: var(--text-primary);
-  line-height: 1.3;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-row-topic {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-row-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-light);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.doc-row-pages {
+  flex-shrink: 0;
+  min-width: 3.5em;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.doc-row-head .btn-mat-action {
+  flex-shrink: 0;
+  min-height: 34px;
+}
+
+.doc-row-body {
+  display: none;
+  padding: 4px 16px 14px 50px;
+  border-top: 1px solid var(--border-color);
+}
+
+.doc-row.open .doc-row-body {
+  display: block;
+}
+
+.doc-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding-top: 10px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.doc-row-subject {
+  font-weight: 600;
+}
+
+.doc-row-summary {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.doc-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.doc-row-actions .btn-mat-action {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 760px) {
+  .doc-row-topic,
+  .doc-row-badge {
+    display: none;
+  }
+  .doc-row-body {
+    padding-left: 16px;
+  }
 }
 
 .mat-card-badge {
@@ -160,34 +280,6 @@
   border-radius: 6px;
   font-weight: 600;
   white-space: nowrap;
-}
-
-.mat-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.mat-card-summary {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  margin-bottom: 14px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.mat-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 12px;
 }
 
 .btn-mat-action {
