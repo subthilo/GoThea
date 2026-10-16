@@ -23,6 +23,7 @@ from backend.app.routers.exercises import router as exercises_router
 from backend.app.routers.auth import router as auth_router
 from backend.app.routers.boards import router as boards_router
 from backend.app.routers.search import router as search_router
+from backend.app.routers.practice import router as practice_router
 
 # Meldungen der App-Module (Renderer, Segmentierung, Importe) im systemd-Journal sichtbar machen
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -88,6 +89,7 @@ app.include_router(exercises_router)
 app.include_router(auth_router)
 app.include_router(boards_router)
 app.include_router(search_router)
+app.include_router(practice_router)
 
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():

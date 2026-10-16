@@ -1,7 +1,7 @@
 """Smoke-Test der Hauptansichten: Jede Ansicht öffnet sich ohne JS-Fehler und ohne fehlgeschlagene API-Aufrufe."""
 import pytest
 
-MAIN_TABS = ["dashboard", "timetable", "books", "whiteboard", "planner", "uploads", "profile"]
+MAIN_TABS = ["dashboard", "timetable", "books", "whiteboard", "practice", "planner", "uploads", "profile"]
 
 
 def test_start_page_loads_without_errors(app_page):

@@ -39,6 +39,10 @@ EXERCISE_POOL_ENABLED = os.getenv("GOTHEA_EXERCISE_POOL", "0") == "1"
 APP_ENV = os.getenv("APP_ENV", "staging").lower()
 IS_STAGING = APP_ENV == "staging"
 
+# Übungen aus echten Aufgaben (Probebetrieb, ohne Freigabe durch die Eltern; Daten liefern Lösungen
+# mit). Standard: nur auf Staging an, damit Thea sie auf Produktion nicht vorzeitig sieht.
+EXERCISE_TRIAL_ENABLED = os.getenv("GOTHEA_EXERCISE_TRIAL", "1" if IS_STAGING else "0") == "1"
+
 # Datenverzeichnis getrennt nach Umgebung: data/staging oder data/prod
 ENV_SUBDIR = "staging" if IS_STAGING else "prod"
 DATA_DIR = Path(os.getenv("DATA_DIR", str(PROJECT_ROOT / "data" / ENV_SUBDIR)))

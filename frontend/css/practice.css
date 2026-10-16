@@ -1,0 +1,415 @@
+/* ==========================================================================
+   Üben: Liste der Übungen und Übungsansicht Stufe 0 „Bausteine“ (js/practice.js)
+   Das Blatt sieht aus wie die Tafel (dunkel, Mathe-Gitter); Tippflächen ≥ 48 px.
+   ========================================================================== */
+
+.practice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.practice-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--subject-color, var(--accent));
+  border-radius: 12px;
+}
+
+.practice-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: none;
+  border: 0;
+  color: var(--text-primary);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.practice-row-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  color: var(--subject-color, var(--accent));
+}
+
+.practice-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.practice-row-task {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.practice-row-src {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.practice-icon-btn {
+  flex: none;
+  min-width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.practice-icon-btn:hover,
+.practice-icon-btn:focus-visible {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+.practice-icon-btn .ui-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* ---------- Übungsansicht ---------- */
+
+.px-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.px-src {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.px-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .px-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.px-sheet {
+  background-color: #121620;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: #e8eaf2;
+  border-radius: 14px;
+  padding: 22px 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+.px-task {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  max-width: 62ch;
+}
+
+.px-label {
+  font-weight: 700;
+}
+
+/* Dreisatz-Tabelle wie im Buch: Rechenschritte links und rechts, Pfeile nach unten */
+.px-table {
+  display: grid;
+  grid-template-columns: 96px minmax(110px, 150px) minmax(110px, 150px) 96px;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.15rem;
+}
+
+.px-head {
+  text-align: center;
+  font-size: 0.92rem;
+  padding-bottom: 6px;
+  border-bottom: 2px solid rgba(232, 234, 242, 0.35);
+}
+
+.px-val {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 2px solid rgba(232, 234, 242, 0.35);
+}
+
+.px-val.r,
+.px-gap.r {
+  border-right: 0;
+}
+
+.px-gap {
+  height: 100%;
+  border-right: 2px solid rgba(232, 234, 242, 0.35);
+}
+
+.px-op {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: rgba(232, 234, 242, 0.5);
+  min-height: 56px;
+}
+
+.px-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.15rem;
+}
+
+/* Felder und Bausteine */
+.px-slot {
+  min-width: 72px;
+  min-height: 48px;
+  padding: 0 10px;
+  border: 2px dashed rgba(232, 234, 242, 0.4);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #e8eaf2;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.px-slot.px-kind-op {
+  min-width: 62px;
+}
+
+.px-slot.filled {
+  border-style: solid;
+  border-color: rgba(129, 140, 248, 0.8);
+  background: rgba(99, 102, 241, 0.18);
+}
+
+.px-slot.ok {
+  border-color: var(--success);
+  background: rgba(16, 185, 129, 0.18);
+}
+
+.px-slot.wrong {
+  border-color: var(--warning);
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.px-answers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.px-answer {
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 2px solid rgba(232, 234, 242, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #e8eaf2;
+  font: inherit;
+  font-size: 1.05rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.px-answer.chosen {
+  border-color: rgba(129, 140, 248, 0.9);
+  background: rgba(99, 102, 241, 0.18);
+}
+
+.px-answer.ok {
+  border-color: var(--success);
+}
+
+.px-answer.wrong {
+  border-color: var(--warning);
+}
+
+.px-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.px-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.px-palette-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.px-token {
+  min-width: 60px;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  cursor: grab;
+  touch-action: none;  /* Ziehen mit Finger/Pencil statt Seite scrollen */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.px-token.px-kind-op {
+  color: var(--accent-light);
+}
+
+.px-token.selected {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.px-token:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.px-ghost {
+  position: fixed;
+  z-index: 1000;
+  transform: translate(-50%, -60%);
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* Lunas Leiste */
+.px-luna {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.px-say {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.px-say p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.px-luna-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  color: var(--accent-light);
+}
+
+.px-guess {
+  display: flex;
+  gap: 10px;
+  padding-left: 36px;
+}
+
+.px-guess-btn {
+  min-width: 110px;
+  min-height: 52px;
+  border-radius: 12px;
+  border: 2px solid var(--border-active);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.px-hint-btn,
+.px-check {
+  min-width: 56px;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 0;
+  cursor: pointer;
+}
+
+.px-hint-btn {
+  align-self: flex-start;
+  margin-left: 36px;
+  background: var(--bg-card);
+  color: var(--warning);
+  border: 1px solid var(--border-color);
+}
+
+.px-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.px-check {
+  flex: 1;
+  background: var(--accent);
+  color: #fff;
+}
+
+.px-check.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.px-check:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.px-check .ui-icon,
+.px-hint-btn .ui-icon {
+  width: 26px;
+  height: 26px;
+}
