@@ -51,6 +51,8 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
   - `timetable_slots.py` / `timetable_analyzer.py` – Stundenplan-Import (Untis-Zeilen → Slots).
   - `tutor_service.py` – Tutor „Luna“ (Tafel-Feedback, Übungen, Lückenprüfung, TTS).
 - `frontend/` – klassische Skripte ohne Build, gemeinsamer globaler Bereich, Ladereihenfolge in `index.html`: `js/api.js` (**einziger Weg zum Backend**: `apiFetch()`/`apiJson()`, Eltern-Token, 403 → PIN-Dialog), `js/*.js` (eine Datei pro Bereich, früher `app.js`), `js/ink_core.js` (Zeichenkern), `whiteboard.js` (Tafel, nutzt den Kern über `surface.…`), `cloze_trainer.js`; Stile in `css/*.css` (Reihenfolge = Kaskade, nicht umsortieren); Dialoge in `dialogs/*.html`.
+  - **Icons:** alle aus `frontend/Icons/*.svg` (Linienstil: 100er-Raster, `stroke-width="4"`, runde Enden; Übersicht `Icons/uebersicht.html`). Eingebunden als CSS-Maske (`css/icons.css`, **erzeugt** von `scripts/build_icon_css.py` – nach neuem Icon ausführen), folgen `currentColor`. In JS `icon("Name")`, `iconText()`; Überschrift als Icon: `.icon-heading` + `sr-only`-Text. `js/icons.js` ist die **einzige Quelle für Fach-Icon und Fachfarbe** (`SUBJECTS`: `subjectIcon()`, `subjectColor()`, `subjectStyle()`, `subjectLabel()`) und Dokumentart-Icons; Emojis und `color_code` aus der API werden nicht angezeigt. `tests/unit/test_icons.py`: CSS aktuell, jedes verwendete Icon existiert, keine Emojis, keine zwei Fächer mit gleicher Farbe.
+  - **Listen:** Dokumente (Fachseite, Upload) = aufklappbare Zeilen `buildMaterialCard()` in `uploads.js`; Bücher = Inhaltsverzeichnis-Baum in `books.js` (`renderBookNode`, auch eingebettet auf der Fachseite via `buildEmbeddedBookNode`, Abschnitte nach `level` verschachtelt); Tafeln der Fachseite = `buildBoardRow()` in `subject_detail.js`. Der Reader merkt sich, woher er geöffnet wurde (`rememberReaderOrigin`), „Zurück“ führt dorthin.
 - `scripts/` – Pflege-Skripte (Neu-Einordnung, Themenkatalog, Zusammenführung, Klassifizierungs-Messung).
 
 ## Fachliche Konzepte (mit dem Nutzer abgestimmt)
@@ -59,6 +61,15 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - **Bearbeitungs-Ablauf** (noch nicht gebaut), gemeinsam für Arbeitsblatt, Arbeitsheft-Seiten und Tests: offen → abgegeben (gesperrt) → ausgewertet → besprochen. Viele Blätter sind schon auf Papier ausgefüllt → direkt auswerten. Lösungen bleiben für Thea **serverseitig** verborgen, bis abgegeben ist. Getrennte Ebenen: Original, Theas Antworten, Lösungen, Auswertung, Besprechungsnotizen. **XP:** voll, wenn alle Fehler besprochen sind; anteilig, wenn Thea vorher beendet.
 - **Themen:** mittlere Ebene (Unterrichtseinheit) mit **Bereich** darüber (z. B. Mechanik › Hookesches Gesetz). Katalog aus den Inhaltsverzeichnissen der Bücher (`topic_book_refs` = Thema → Kapitel + Seiten); Bio 7/8 gemeinsam. Themen aus Theas Dokumenten nie zusammenlegen, Buchthemen nie umbenennen/zusammenlegen. Bücher/Kapitel tragen kein Thema. Pflege-Skripte: erst Vorschau (wird gespeichert), dann `--apply` wendet **genau** diese an.
 - **Tutor braucht vollen Zugriff auf Theas Unterlagen** (harte Anforderung). Grundlage ist die Seiten-Erschließung; Tutor-Anbindung (Seite mitschicken, Werkzeuge: Unterlagen durchsuchen, Lernstand, Tests, frühere Sitzungen) steht noch aus.
+
+## Gestaltung der Oberfläche (mit dem Nutzer abgestimmt, 16.10.2026)
+
+- **Icons statt Text**, wo Text nichts hinzufügt: Überschriften als Icon (Text nur als Tooltip/`sr-only`), Zähler als reine Zahl, Knöpfe nur mit Icon + `title`, keine Erklärsätze, keine doppelten Abzeichen. Beschriftungen nur, wo nötig (Formularfelder im Eltern-Bereich, Dokumenttitel). Thea lernt die App durch Benutzen.
+- **Personen-Icons geschlechtsneutral** (keine Zöpfe o. Ä.): Thea-Modus `Kind.svg` (eine Figur mit Kinderproportionen), Eltern-Modus `Eltern.svg` (zwei Erwachsene). Keine Icons mit irreführender Nebenbedeutung (Mondsichel für den Tutor las sich als „schlafen gehen“).
+- **Fächer konsequent farbcodiert** (Stundenplan, Kacheln, Listen, Bücher …), Farben aus `SUBJECTS` in `js/icons.js`, gemessen unterscheidbar (CIEDE2000 ≥ 17,9 unter Theas 14 Fächern).
+- **Listen statt Kartenraster**, aufklappbar für Details (Dokumente, Bücher, Tafeln).
+- **Tafel-Kopfleiste** (links → rechts): bei Dokumenten Zurück-zum-Buch + ← 2 / 3 →, Tutor (`Tutor.svg`), Aufgabe, Ton, Fach/Tafel/Unterlage-Dropdowns, rechts „+“, Vollbild, Verbindungspunkt. Nichts liegt über der Seite; Speichern läuft unsichtbar, sichtbar nur bei Fehler. Zu schmal → Leiste scrollt seitlich.
+- Kopfzeile der App muss auch auf dem iPad im Hochformat einzeilig bleiben.
 
 ## Stolperfallen
 
@@ -69,7 +80,11 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - **Pencil/Zeichenkern (`frontend/js/ink_core.js`, `createInkSurface()`; Tafel und Dokument-Notizen) ist fragil und mühsam erarbeitet:** darf besser, auf keinen Fall schlechter werden. `tests/unit/test_ink_core_guard.py` schlägt bei jeder Änderung an der Datei an (Prüfsumme bewusst nachziehen). Nur unverändert verschieben; Änderungen am Schreibverhalten als eigene, einzeln getestete Commits, vom Nutzer auf dem iPad geprüft. Dazu gehören auch die iOS-relevanten CSS-Regeln (`touch-action`, `user-select`, `-webkit-touch-callout`).
 - Stundenplan und Tafel nutzen Zen-Modi (fixierte Seite ohne Scrollen). Jede Ansicht, die einen Tab aktiviert, muss `applyTabViewModes()` aufrufen.
 - Endpunkte, die Inhalte inkl. Lösungen liefern, bleiben im Eltern-Modus, bis Lösungen serverseitig verborgen werden.
-- Tests (`tests/conftest.py`): temporäres `DATA_DIR`/`SHARED_DATA_DIR`, leerer API-Key, keine Hintergrund-Worker, frische In-Memory-DB pro Test. `client` und `strict_client` nie im selben Test (teilen sich die Dependency-Overrides). Suite läuft in ~65 s (davon ~55 s Browser-Tests; ohne Playwright werden sie übersprungen). `tests/e2e/test_dialogs.py` öffnet jeden Dialog einmal – fängt Ladereihenfolge-Fehler der klassischen Skripte.
+- Tests (`tests/conftest.py`): temporäres `DATA_DIR`/`SHARED_DATA_DIR`, leerer API-Key, keine Hintergrund-Worker, frische In-Memory-DB pro Test. `client` und `strict_client` nie im selben Test (teilen sich die Dependency-Overrides). Suite läuft in ~75 s (überwiegend Browser-Tests; ohne Playwright werden sie übersprungen). `tests/e2e/test_dialogs.py` öffnet jeden Dialog einmal – fängt Ladereihenfolge-Fehler der klassischen Skripte.
+- **Browser-Tests teilen sich einen Testserver** (Session-Fixture): Daten anderer Tests sind da. Eindeutige Titel verwenden und nichts über das voreingestellte Fach/die Reihenfolge annehmen; neue Tests auch einzeln laufen lassen. Bücher mit Kapiteln entstehen nur durch die Hintergrund-Zerlegung (im Test aus) → `/api/v1/books` per `page.route` einspielen (siehe `test_books_toc.py`). Für Sichtprüfungen echte Staging-Daten per GET holen und ebenso einspielen.
+- `index.html` nie per Regex über mehrere Blöcke ändern: ein zu gieriges Muster hat einmal Zeichenfläche und Werkzeugleiste der Tafel mit entfernt (Tests fingen es). Exakte Textstellen ersetzen und den entfernten Block vorher ausgeben.
+- Die Tafel kennt die gerade geöffnete Tafel: Umbenennen/Löschen von außen (Fachseite) läuft über `window.renameBoardFromList`/`deleteBoardFromList` in `whiteboard.js` (Titel nachziehen, Auto-Save stoppen). Die Tafel-Liste in der seitlich scrollenden Kopfleiste ist `position: fixed` (sonst abgeschnitten).
+- Lesemodus (`body.reader-zen-mode`) ist genau eine Bildschirmhöhe: jeder zusätzliche Abstand oben schiebt die Seitenleiste unten aus dem Bild.
 
 ## Stand & nächste Schritte
 
@@ -80,7 +95,9 @@ Konzept Tutor „Luna“ + Übungsarten: Claude-Doc https://claude.ai/code/artif
 
 **Erledigt am 16.10.2026 (auf Staging, Produktion steht aus):** KI-Schicht mit Streaming und Werkzeug-Aufrufen (`chat_stream`, Responses API) und erstes Werkzeug „Unterlagen durchsuchen“. Offen: lange Wartezeit bis zum ersten Wort (Nachdenken) – beim Tutor-Bau Nachdenk-Aufwand (`reasoning.effort`) messen und eine Zwischenmeldung („Luna schaut in deinen Unterlagen nach …“) zeigen.
 
-**Nächster Schritt (Nutzer, 16.10.):** zuerst die **Oberfläche aufräumen** (eigener Chat; Anhaltspunkte unter „Kleinere Reste“ bei Aufräumen, Teil 2). Danach Gedächtnis/Lernstand in der DB (mit dem Nutzer abstimmen), dann HTTPS. Später, eigener Chat: „Luna fragen“-Testseite (Eltern-Modus, nur Staging) zum Sammeln echter Fragen.
+**Erledigt am 16.10.2026: Oberfläche aufgeräumt (nur auf Staging, Produktion steht aus – gesammelt nach Sichtung durch den Nutzer):** einheitlicher Icon-Satz statt Emojis (50+ neue Icons, `js/icons.js`), Fächer farbcodiert, Bücher als aufklappbares Inhaltsverzeichnis (auch auf der Fachseite, Bücher mit „Ändern“), Dokumente und Tafeln als aufklappbare Listen, Suche + Fach-Filter in der Upload-Liste (Buchkapitel ausgeblendet), Tafeln auf der Fachseite umbenennen (alle) und löschen (Eltern, neu: `DELETE /api/v1/boards/{id}`), Tafel-Kopfleiste verschlankt und seitlich scrollbar, Dokumentleiste über der Seite entfernt, Reader-Seitenleiste nicht mehr abgeschnitten, durchgehend Icons statt Text, neutrale Kind/Eltern-Icons. Backend: Level-/Stufentexte ohne Emojis. Pi: WLAN-Stromsparmodus aus (siehe Umgebungen).
+
+**Nächster Schritt:** Staging-Stand nach Sichtung auf dem iPad gesammelt nach Produktion (`./deploy.sh prod`). Danach Gedächtnis/Lernstand in der DB (mit dem Nutzer abstimmen), dann HTTPS. Später, eigener Chat: „Luna fragen“-Testseite (Eltern-Modus, nur Staging) zum Sammeln echter Fragen.
 
 Vereinbarte Reihenfolge:
 1. **Aufräumen, Teil 2:** erledigt am 15./16.10.2026, alles auf Produktion (Frontend-Aufteilung + Zeichenkern, Upload-Weg entflochten, Kapiteltabellen als JSON, README). Dabei behoben: Löschen/Zusammenführen erschlossener Dokumente scheiterte (500), erschlossene Seiten folgten Umsortieren/Zusammenführen nicht. Kleinere Reste bei Gelegenheit: Aufräumen innerhalb der `js/`-Dateien, zusammengehörige CSS-Abschnitte (nur mit Bildschirmfoto-Vergleich), Tabs aus `index.html` wie die Dialoge auslagern, `docs/` ist teils überholt.
@@ -93,4 +110,4 @@ Vereinbarte Reihenfolge:
 
 Entschieden: Bei beschädigter PIN-Datei bleibt der Rückfall auf die Standard-PIN (wird als Fehler geloggt).
 
-Bekannte offene Punkte: Tutor-WebSocket `/ws/tutor/…` ist eine Attrappe (`/ws` dagegen speist die Online-Anzeige); „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar.
+Bekannte offene Punkte: Tutor-WebSocket `/ws/tutor/…` ist eine Attrappe (`/ws` dagegen speist die Online-Anzeige); „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar. Liegt eine Buchseite auf der Tafel, zeigt das Unterlage-Dropdown trotzdem „Freies Üben“. Kapiteltitel lassen sich nicht umbenennen (eine neue Zerlegung würde sie überschreiben). Buchdeckel (Seite 1 des Buch-Scans) werden bewusst noch nicht angezeigt; `cover_preview_url` zeigt fälschlich auf Kapitel 1.
