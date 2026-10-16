@@ -427,17 +427,48 @@
     }
   }
 
+  // Die Notizen einer Seite werden relativ zum Seitenbild gespeichert – dafür muss es geladen sein
+  function waitForUnderlayImage(timeoutMs = 8000) {
+    if (docUnderlayImg.complete && docUnderlayImg.naturalWidth > 0) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const done = (ok) => {
+        clearTimeout(timer);
+        docUnderlayImg.removeEventListener("load", onLoad);
+        docUnderlayImg.removeEventListener("error", onError);
+        resolve(ok);
+      };
+      const onLoad = () => done(docUnderlayImg.naturalWidth > 0);
+      const onError = () => done(false);
+      const timer = setTimeout(() => done(false), timeoutMs);
+      docUnderlayImg.addEventListener("load", onLoad);
+      docUnderlayImg.addEventListener("error", onError);
+    });
+  }
+
   async function saveBookPageAnnotationsNow() {
     if (!surface.isBookPageMode || !bookPageContext || !docUnderlayImg) return;
     clearTimeout(bookPageSaveDebounceTimer);
     bookPageSaveDebounceTimer = null;
     setBookDocSaveStatus("saving");
+    const context = bookPageContext;
+    const page = context.page;
+
+    if (!(await waitForUnderlayImage()) || bookPageContext !== context || context.page !== page) {
+      // Bild nicht da oder Seite inzwischen gewechselt: sichtbar machen und später erneut versuchen
+      setBookDocSaveStatus("error");
+      if (bookPageContext === context && context.page === page) scheduleBookPageAutoSave(3000);
+      return;
+    }
 
     const dx = docUnderlayImg.offsetLeft || 0;
     const dy = docUnderlayImg.offsetTop || 0;
     const dw = docUnderlayImg.offsetWidth || docUnderlayImg.naturalWidth;
     const dh = docUnderlayImg.offsetHeight || docUnderlayImg.naturalHeight;
-    if (dw === 0 || dh === 0) return;
+    if (dw === 0 || dh === 0) {
+      setBookDocSaveStatus("error");
+      scheduleBookPageAutoSave(3000);
+      return;
+    }
 
     const normalizedStrokes = surface.strokes.map(s => ({
       id: s.id,
@@ -453,40 +484,50 @@
 
     try {
       const payload = {
-        material_id: bookPageContext.materialId,
-        page_number: bookPageContext.page,
+        material_id: context.materialId,
+        page_number: page,
         strokes: normalizedStrokes,
         strokes_json: JSON.stringify(normalizedStrokes)
       };
-      const res = await apiFetch(`/api/v1/materials/${bookPageContext.materialId}/pages/${bookPageContext.page}/annotations`, {
+      const res = await apiFetch(`/api/v1/materials/${context.materialId}/pages/${page}/annotations`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       if (res.ok) {
         setBookDocSaveStatus("saved");
-      } else {
-        setBookDocSaveStatus("error");
+        return;
       }
+      console.error("Speichern der Seiten-Notizen: HTTP", res.status);
     } catch (err) {
       console.error("Fehler beim Speichern der Buchseiten-Notizen:", err);
-      setBookDocSaveStatus("error");
     }
+    // Fehlgeschlagen: anzeigen und erneut versuchen, solange die Seite offen ist
+    setBookDocSaveStatus("error");
+    if (bookPageContext === context && context.page === page) scheduleBookPageAutoSave(3000);
   }
 
-  function scheduleBookPageAutoSave() {
+  function scheduleBookPageAutoSave(delayMs = 700) {
     clearTimeout(bookPageSaveDebounceTimer);
     bookPageSaveDebounceTimer = setTimeout(() => {
       saveBookPageAnnotationsNow();
-    }, 700);
+    }, delayMs);
   }
 
-  async function loadBookPageAnnotations() {
-    if (!surface.isBookPageMode || !bookPageContext || !docUnderlayImg) return;
+  // Neue Seite: Striche der vorigen Seite entfernen (erst nachdem sie gespeichert sind)
+  function clearPageStrokes() {
     surface.strokes = [];
     surface.undoStack = [];
     surface.redoStack = [];
     surface.redrawAllStrokes();
+  }
+
+  // Lädt die gespeicherten Notizen der Seite. Was Thea inzwischen schon gezeichnet hat, bleibt erhalten
+  // (zusammengeführt über die Strich-IDs, daher schadet doppeltes Laden nicht).
+  async function loadBookPageAnnotations() {
+    if (!surface.isBookPageMode || !bookPageContext || !docUnderlayImg) return;
+    const context = bookPageContext;
+    const page = context.page;
 
     const dx = docUnderlayImg.offsetLeft || 0;
     const dy = docUnderlayImg.offsetTop || 0;
@@ -495,7 +536,8 @@
     if (dw === 0 || dh === 0) return;
 
     try {
-      const res = await apiFetch(`/api/v1/materials/${bookPageContext.materialId}/pages/${bookPageContext.page}/annotations`);
+      const res = await apiFetch(`/api/v1/materials/${context.materialId}/pages/${page}/annotations`);
+      if (bookPageContext !== context || context.page !== page) return;  // Seite inzwischen gewechselt
       if (res.ok) {
         const data = await res.json();
         let loaded = [];
@@ -505,7 +547,7 @@
           try { loaded = JSON.parse(data.strokes_json) || []; } catch (_) {}
         }
 
-        surface.strokes = loaded.map(s => ({
+        const loadedStrokes = loaded.map(s => ({
           id: s.id || ("str_" + Date.now() + "_" + Math.floor(Math.random() * 10000)),
           tool: s.tool || "pen",
           color: s.color || "#2563eb",
@@ -521,8 +563,12 @@
             };
           })
         }));
+        const loadedIds = new Set(loadedStrokes.map(s => s.id));
+        const drawnMeanwhile = surface.strokes.filter(s => !loadedIds.has(s.id));
+        surface.strokes = loadedStrokes.concat(drawnMeanwhile);
         surface.redrawAllStrokes();
-        setBookDocSaveStatus("saved");
+        if (drawnMeanwhile.length) scheduleBookPageAutoSave();
+        else setBookDocSaveStatus("saved");
       }
     } catch (err) {
       console.error("Fehler beim Laden der Buch-Notizen auf Tafel:", err);
@@ -867,6 +913,7 @@
         if (docPageInfo) docPageInfo.textContent = `Seite ${p} / ${bookPageContext.pageCount || 1}`;
         btnDocPrev.disabled = p <= 1;
         if (btnDocNext) btnDocNext.disabled = p >= bookPageContext.pageCount;
+        clearPageStrokes();
         docUnderlayImg.src = `/api/v1/materials/${bookPageContext.materialId}/preview?page=${p}`;
         loadBookPageAnnotations();
       }
@@ -881,6 +928,7 @@
         if (docPageInfo) docPageInfo.textContent = `Seite ${p} / ${bookPageContext.pageCount || 1}`;
         btnDocPrev.disabled = p <= 1;
         if (btnDocNext) btnDocNext.disabled = p >= bookPageContext.pageCount;
+        clearPageStrokes();
         docUnderlayImg.src = `/api/v1/materials/${bookPageContext.materialId}/preview?page=${p}`;
         loadBookPageAnnotations();
       }
