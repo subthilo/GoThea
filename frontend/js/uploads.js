@@ -425,17 +425,28 @@ async function loadUploadsHistory() {
   }
 }
 
+// Suche & Filter der Dokumentliste (bleiben beim Neuladen nach Ändern/Löschen erhalten)
+const uploadsFilter = { term: "", subject: "all", showChapters: false };
+
+function isBookChapter(m) {
+  return (m.kind || "") === "Buchauszug";
+}
+
+function materialMatchesTerm(m, term) {
+  if (!term) return true;
+  return [m.title, m.subject_name, m.kind, m.topic_name, m.dossier_title, m.filename]
+    .some((v) => v && String(v).toLowerCase().includes(term));
+}
+
 function renderUploadsHistory(materials) {
   const historyList = document.getElementById("uploads-history-list");
   const countBadge = document.getElementById("uploads-history-count");
   if (!historyList) return;
-
   historyList.innerHTML = "";
-  if (countBadge) {
-    countBadge.textContent = `${materials.length} Dokument${materials.length === 1 ? "" : "e"}`;
-  }
 
   if (materials.length === 0) {
+    if (countBadge) countBadge.textContent = "0 Dokumente";
+    renderUploadsSubjectPills([]);
     historyList.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 40px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
         <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">${icon("Eingang")}</span>
@@ -446,7 +457,26 @@ function renderUploadsHistory(materials) {
     return;
   }
 
-  materials.forEach((m) => {
+  // Stufe 1: Kapitel-Schalter und Suchbegriff → Grundlage für die Fach-Chips (mit Anzahl)
+  const term = uploadsFilter.term.toLowerCase().trim();
+  const base = materials.filter((m) => (uploadsFilter.showChapters || !isBookChapter(m)) && materialMatchesTerm(m, term));
+  renderUploadsSubjectPills(base);
+  // Stufe 2: Fach
+  const shown = uploadsFilter.subject === "all" ? base : base.filter((m) => (m.subject_name || "") === uploadsFilter.subject);
+
+  const listed = materials.filter((m) => uploadsFilter.showChapters || !isBookChapter(m)).length;
+  if (countBadge) {
+    countBadge.textContent = shown.length === listed
+      ? `${listed} Dokument${listed === 1 ? "" : "e"}`
+      : `${shown.length} von ${listed}`;
+  }
+
+  if (shown.length === 0) {
+    historyList.innerHTML = `<div class="uploads-filter-empty">Keine Dokumente${term ? ` zu „${escapeHtml(uploadsFilter.term)}“` : ""}${uploadsFilter.subject !== "all" ? ` in ${escapeHtml(uploadsFilter.subject)}` : ""}.</div>`;
+    return;
+  }
+
+  shown.forEach((m) => {
     const card = buildMaterialCard(m, async () => {
       await loadMaterials();
       await loadUploadsHistory();
@@ -456,7 +486,52 @@ function renderUploadsHistory(materials) {
   });
 }
 
+// Fach-Chips in Fachfarbe mit Anzahl; ein gewähltes Fach ohne Treffer bleibt sichtbar
+function renderUploadsSubjectPills(materials) {
+  const wrap = document.getElementById("uploads-subject-pills");
+  if (!wrap) return;
+  const counts = {};
+  materials.forEach((m) => {
+    const name = m.subject_name || "Ohne Fach";
+    counts[name] = (counts[name] || 0) + 1;
+  });
+  if (uploadsFilter.subject !== "all" && !(uploadsFilter.subject in counts)) counts[uploadsFilter.subject] = 0;
+  const names = Object.keys(counts).sort((a, b) => a.localeCompare(b, "de"));
+  const pill = (value, label, count, style = "") => `
+    <button type="button" class="filter-pill uploads-subject-pill ${uploadsFilter.subject === value ? "active" : ""}" data-subject="${escapeHtml(value)}" style="${style}">
+      ${label} <span class="uploads-pill-count">${count}</span>
+    </button>`;
+  wrap.innerHTML = pill("all", "Alle Fächer", materials.length) +
+    names.map((n) => pill(n, subjectLabel(n), counts[n], subjectStyle(n))).join("");
+}
+
 function setupUploadsPageEvents() {
+  // Suche & Filter der Dokumentliste
+  const filterInput = document.getElementById("uploads-filter-input");
+  if (filterInput) {
+    filterInput.addEventListener("input", () => {
+      uploadsFilter.term = filterInput.value;
+      renderUploadsHistory(currentMaterials);
+    });
+  }
+  const chaptersToggle = document.getElementById("uploads-show-chapters");
+  if (chaptersToggle) {
+    chaptersToggle.addEventListener("change", () => {
+      uploadsFilter.showChapters = chaptersToggle.checked;
+      renderUploadsHistory(currentMaterials);
+    });
+  }
+  const subjectPills = document.getElementById("uploads-subject-pills");
+  if (subjectPills) {
+    subjectPills.addEventListener("click", (e) => {
+      const btn = e.target.closest(".uploads-subject-pill");
+      if (!btn) return;
+      const value = btn.dataset.subject;
+      uploadsFilter.subject = uploadsFilter.subject === value ? "all" : value;
+      renderUploadsHistory(currentMaterials);
+    });
+  }
+
   const dropzone = document.getElementById("page-upload-dropzone");
   const fileInput = document.getElementById("page-file-input");
   const btnTrigger = document.getElementById("btn-trigger-page-upload");

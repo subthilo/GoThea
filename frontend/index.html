@@ -417,14 +417,22 @@
         <div class="upload-history-section" style="margin-top: 36px;">
           <div class="section-title-row">
             <div>
-              <h3><span class="ui-icon i-klemmbrett" aria-hidden="true"></span> Upload-Historie & Zuletzt importiert</h3>
-              <p class="subtitle" style="margin-top: 4px;">Alle importierten Unterlagen und deren automatische Fachzuordnung</p>
+              <h3><span class="ui-icon i-klemmbrett" aria-hidden="true"></span> Alle Dokumente</h3>
+              <p class="subtitle" style="margin-top: 4px;">Neueste zuerst – suchen, nach Fach filtern, im Eltern-Modus ändern</p>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
               <button id="btn-open-uploads-merge-modal" class="btn-secondary-sm parent-only" title="Mehrere Dokumente zu einem Dokument vereinen"><span class="ui-icon i-verknuepfen" aria-hidden="true"></span> Dokumente zusammenführen</button>
               <span class="badge-minutes" id="uploads-history-count">0 Dokumente</span>
             </div>
           </div>
+          <!-- Suche & Filter (uploads.js: renderUploadsHistory) -->
+          <div class="uploads-filter-bar">
+            <input type="search" id="uploads-filter-input" class="uploads-filter-input" placeholder="Titel, Fach, Art oder Thema suchen …" autocomplete="off">
+            <label class="uploads-filter-toggle" title="Kapitel, die automatisch aus Büchern geschnitten wurden (auch im Bücher-Inhaltsverzeichnis)">
+              <input type="checkbox" id="uploads-show-chapters"> Buchkapitel zeigen
+            </label>
+          </div>
+          <div class="uploads-subject-pills" id="uploads-subject-pills"></div>
           <div id="uploads-history-list" class="uploads-history-grid">
             <!-- Dynamisch via API befüllt -->
           </div>
