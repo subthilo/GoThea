@@ -6,6 +6,7 @@ Einziger Zugang zu OpenAI.
   die API trotzdem einen optionalen Parameter ab, folgt genau ein Versuch ohne ihn.
 - Jeder Aufruf wird mit Zweck, Modell, Tokens und Dauer protokolliert (Log + DATA_DIR/logs/llm_usage.jsonl).
 - Fehler kommen einheitlich als LLMError; die Dienste entscheiden selbst über ihren Fallback.
+- chat_stream() liefert die Antwort stückweise und führt Werkzeug-Aufrufe (function calling) selbst aus.
 """
 import json
 import logging
@@ -13,7 +14,7 @@ import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence
 
 import backend.app.config as config
 
@@ -124,6 +125,145 @@ def chat(messages: List[Dict[str, Any]], *, purpose: str, model: Optional[str] =
 def chat_json(messages: List[Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
     """Chat-Aufruf mit JSON-Antwort; ungültiges JSON ergibt LLMError."""
     return chat(messages, json_mode=True, **kwargs).json()
+
+
+@dataclass
+class Tool:
+    """Werkzeug, das die KI während einer Antwort aufrufen kann. 'run' bekommt die Argumente als
+    Schlüsselwörter; das Ergebnis geht als JSON an die KI zurück. Kontext (DB-Session, Rolle) wird beim
+    Anlegen des Werkzeugs gebunden, nie von der KI übergeben."""
+    name: str
+    description: str
+    parameters: Dict[str, Any]          # JSON-Schema der Argumente
+    run: Callable[..., Any]
+
+    def spec(self) -> Dict[str, Any]:
+        return {"type": "function",
+                "function": {"name": self.name, "description": self.description, "parameters": self.parameters}}
+
+
+@dataclass
+class StreamEvent:
+    """Ereignis aus chat_stream():
+    'text'        – nächstes Textstück (text)
+    'tool_call'   – die KI ruft ein Werkzeug auf (tool, arguments)
+    'tool_result' – Ergebnis des Werkzeugs (tool, result)
+    'done'        – fertig (reply mit ganzem Text und Tokens aller Runden, messages = Verlauf inkl. Werkzeugen)"""
+    type: str
+    text: str = ""
+    tool: Optional[str] = None
+    arguments: Optional[Dict[str, Any]] = None
+    result: Any = None
+    reply: Optional[LLMReply] = None
+    messages: Optional[List[Dict[str, Any]]] = None
+
+
+def chat_stream(messages: List[Dict[str, Any]], *, purpose: str, tools: Sequence[Tool] = (),
+                model: Optional[str] = None, temperature: Optional[float] = None,
+                max_tokens: Optional[int] = None, max_rounds: int = 4) -> Iterator[StreamEvent]:
+    """Chat-Aufruf mit stückweiser Antwort. Ruft die KI Werkzeuge auf, werden sie ausgeführt und die
+    Ergebnisse zurückgegeben – höchstens 'max_rounds' Anfragen; in der letzten muss die KI antworten.
+    Ein Protokolleintrag für den ganzen Aufruf (Tokens aller Runden, benutzte Werkzeuge)."""
+    model = model or config.OPENAI_MODEL
+    history = list(messages)
+    by_name = {t.name: t for t in tools}
+    parts: List[str] = []
+    used: List[str] = []
+    prompt_tokens = completion_tokens = 0
+    rounds = 0
+    start = time.monotonic()
+    try:
+        for rounds in range(1, max_rounds + 1):
+            params = chat_params(model, temperature=temperature, messages=history, stream=True,
+                                 stream_options={"include_usage": True})
+            if max_tokens is not None:
+                params["max_completion_tokens"] = max_tokens
+            if tools:
+                params["tools"] = [t.spec() for t in tools]
+                if rounds == max_rounds:
+                    params["tool_choice"] = "none"
+            round_text: List[str] = []
+            calls: Dict[int, Dict[str, str]] = {}
+            stream = _create_with_fallback(params, purpose)
+            try:
+                for chunk in stream:
+                    usage = getattr(chunk, "usage", None)
+                    if usage is not None:
+                        prompt_tokens += _int_or_none(getattr(usage, "prompt_tokens", None)) or 0
+                        completion_tokens += _int_or_none(getattr(usage, "completion_tokens", None)) or 0
+                    if not getattr(chunk, "choices", None):
+                        continue
+                    delta = chunk.choices[0].delta
+                    if getattr(delta, "content", None):
+                        round_text.append(delta.content)
+                        yield StreamEvent("text", text=delta.content)
+                    # Werkzeug-Aufrufe kommen in Stücken: id und Name zuerst, die Argumente nach und nach
+                    for piece in getattr(delta, "tool_calls", None) or []:
+                        slot = calls.setdefault(piece.index, {"id": "", "name": "", "arguments": ""})
+                        if getattr(piece, "id", None):
+                            slot["id"] = piece.id
+                        function = getattr(piece, "function", None)
+                        if function is not None:
+                            slot["name"] += getattr(function, "name", None) or ""
+                            slot["arguments"] += getattr(function, "arguments", None) or ""
+            finally:
+                close = getattr(stream, "close", None)
+                if callable(close):
+                    close()
+            parts.extend(round_text)
+            if not calls:
+                break
+            ordered = [calls[i] for i in sorted(calls)]
+            history.append({"role": "assistant", "content": "".join(round_text) or None,
+                            "tool_calls": [{"id": c["id"], "type": "function",
+                                            "function": {"name": c["name"], "arguments": c["arguments"]}}
+                                           for c in ordered]})
+            for call in ordered:
+                used.append(call["name"])
+                arguments, problem = _tool_arguments(by_name, call)
+                yield StreamEvent("tool_call", tool=call["name"], arguments=arguments)
+                result = problem or _run_tool(by_name[call["name"]], arguments, purpose)
+                yield StreamEvent("tool_result", tool=call["name"], result=result)
+                history.append({"role": "tool", "tool_call_id": call["id"],
+                                "content": json.dumps(result, ensure_ascii=False, default=str)})
+    except GeneratorExit:
+        _record(purpose, model, time.monotonic() - start, error=LLMError("vom Aufrufer abgebrochen"),
+                rounds=rounds, tools=used, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
+        raise
+    except Exception as e:
+        _record(purpose, model, time.monotonic() - start, error=e, rounds=rounds, tools=used)
+        if isinstance(e, LLMError):
+            raise
+        raise LLMError(f"KI-Aufruf '{purpose}' fehlgeschlagen: {e}") from e
+    seconds = time.monotonic() - start
+    _record(purpose, model, seconds, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens,
+            rounds=rounds, tools=used)
+    if not calls:
+        history.append({"role": "assistant", "content": "".join(round_text)})
+    yield StreamEvent("done", reply=LLMReply("".join(parts), model, prompt_tokens, completion_tokens, seconds),
+                      messages=history)
+
+
+def _tool_arguments(by_name: Dict[str, Tool], call: Dict[str, str]):
+    """Argumente eines Werkzeug-Aufrufs; bei unbekanntem Werkzeug oder kaputtem JSON ein Fehler-Ergebnis."""
+    if call["name"] not in by_name:
+        return {}, {"fehler": f"Unbekanntes Werkzeug '{call['name']}'"}
+    try:
+        arguments = json.loads(call["arguments"] or "{}")
+    except ValueError as e:
+        return {}, {"fehler": f"Ungültige Argumente: {e}"}
+    if not isinstance(arguments, dict):
+        return {}, {"fehler": "Ungültige Argumente: kein Objekt"}
+    return arguments, None
+
+
+def _run_tool(tool: Tool, arguments: Dict[str, Any], purpose: str) -> Any:
+    """Führt ein Werkzeug aus. Fehler gehen als Ergebnis an die KI (sie kann darauf reagieren)."""
+    try:
+        return tool.run(**arguments)
+    except Exception as e:
+        logger.warning("Werkzeug %s fehlgeschlagen (%s): %s", tool.name, purpose, e, exc_info=True)
+        return {"fehler": f"Werkzeug fehlgeschlagen: {e}"}
 
 
 def speech(text: str, *, purpose: str, voice: Optional[str] = None, model: Optional[str] = None,

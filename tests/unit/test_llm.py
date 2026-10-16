@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -103,3 +104,155 @@ def test_speech_uses_configured_voice(fake_key, monkeypatch):
         assert llm.speech("Hallo", purpose="Test") == b"mp3"
     kwargs = client.audio.speech.create.call_args.kwargs
     assert (kwargs["model"], kwargs["voice"], kwargs["input"]) == ("tts-x", "nova", "Hallo")
+
+
+# --- Streaming und Werkzeug-Aufrufe -------------------------------------------------------------
+
+def _chunk(content=None, tool_calls=None, usage=None):
+    choices = [] if content is None and tool_calls is None else [
+        SimpleNamespace(delta=SimpleNamespace(content=content, tool_calls=tool_calls))]
+    return SimpleNamespace(choices=choices, usage=usage)
+
+
+def _usage(prompt, completion):
+    return _chunk(usage=SimpleNamespace(prompt_tokens=prompt, completion_tokens=completion))
+
+
+def _tool_piece(index, id=None, name=None, arguments=None):
+    return SimpleNamespace(index=index, id=id, function=SimpleNamespace(name=name, arguments=arguments))
+
+
+def _tool_round(*calls):
+    """Stream, in dem die KI Werkzeuge aufruft; Argumente kommen wie bei OpenAI in Stücken."""
+    chunks = []
+    for i, (call_id, name, arguments) in enumerate(calls):
+        chunks.append(_chunk(tool_calls=[_tool_piece(i, id=call_id, name=name, arguments="")]))
+        half = len(arguments) // 2
+        chunks.append(_chunk(tool_calls=[_tool_piece(i, arguments=arguments[:half])]))
+        chunks.append(_chunk(tool_calls=[_tool_piece(i, arguments=arguments[half:])]))
+    return chunks + [_usage(20, 5)]
+
+
+def _text_round(*pieces):
+    return [_chunk(content=p) for p in pieces] + [_usage(30, 8)]
+
+
+def _streaming_client(*rounds):
+    client = MagicMock()
+    client.chat.completions.create.side_effect = [iter(r) for r in rounds]
+    return client
+
+
+def _search_tool(calls):
+    def run(query):
+        calls.append(query)
+        return {"treffer": [f"Mathebuch S. 84 zu {query}"]}
+    return llm.Tool("unterlagen_durchsuchen", "Sucht in den Unterlagen",
+                    {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}, run)
+
+
+def test_stream_yields_text_pieces_and_records_usage(fake_key):
+    client = _streaming_client(_text_round("Hal", "lo ", "Thea"))
+    before = len(_usage_lines())
+    with patch("openai.OpenAI", return_value=client):
+        events = list(llm.chat_stream([{"role": "user", "content": "hi"}], purpose="Test", model="gpt-6-luna",
+                                      temperature=0.3))
+
+    assert [e.text for e in events if e.type == "text"] == ["Hal", "lo ", "Thea"]
+    done = events[-1]
+    assert done.type == "done" and done.reply.text == "Hallo Thea"
+    assert done.messages[-1] == {"role": "assistant", "content": "Hallo Thea"}
+    kwargs = client.chat.completions.create.call_args.kwargs
+    assert kwargs["stream"] is True and kwargs["stream_options"] == {"include_usage": True}
+    assert "temperature" not in kwargs and "tools" not in kwargs
+    entry = _usage_lines()[before]
+    assert entry["ok"] is True and (entry["prompt_tokens"], entry["completion_tokens"]) == (30, 8)
+    assert entry["rounds"] == 1 and entry["tools"] == []
+
+
+def test_stream_runs_tools_and_sends_results_back(fake_key):
+    client = _streaming_client(
+        _tool_round(("call_1", "unterlagen_durchsuchen", '{"query": "Dreisatz"}'),
+                    ("call_2", "unterlagen_durchsuchen", '{"query": "Prozent"}')),
+        _text_round("Im Mathebuch ", "auf S. 84."))
+    searched = []
+    before = len(_usage_lines())
+    with patch("openai.OpenAI", return_value=client):
+        events = list(llm.chat_stream([{"role": "user", "content": "Dreisatz?"}], purpose="Test",
+                                      tools=[_search_tool(searched)]))
+
+    assert searched == ["Dreisatz", "Prozent"]
+    assert [(e.type, e.tool) for e in events if e.type.startswith("tool")] == [
+        ("tool_call", "unterlagen_durchsuchen"), ("tool_result", "unterlagen_durchsuchen")] * 2
+    assert events[0].arguments == {"query": "Dreisatz"}
+    assert events[-1].reply.text == "Im Mathebuch auf S. 84."
+
+    first, second = (c.kwargs for c in client.chat.completions.create.call_args_list)
+    assert first["tools"][0]["function"]["name"] == "unterlagen_durchsuchen"
+    assert "tool_choice" not in first
+    sent = second["messages"]
+    assert sent[1]["tool_calls"][1] == {"id": "call_2", "type": "function",
+                                        "function": {"name": "unterlagen_durchsuchen",
+                                                     "arguments": '{"query": "Prozent"}'}}
+    assert sent[2]["tool_call_id"] == "call_1" and "Dreisatz" in sent[2]["content"]
+    assert sent[3]["tool_call_id"] == "call_2"
+
+    entry = _usage_lines()[before]
+    assert entry["rounds"] == 2 and entry["tools"] == ["unterlagen_durchsuchen"] * 2
+    assert (entry["prompt_tokens"], entry["completion_tokens"]) == (50, 13)
+
+
+def test_last_round_forbids_further_tools(fake_key):
+    client = _streaming_client(_tool_round(("c1", "unterlagen_durchsuchen", '{"query": "a"}')),
+                               _text_round("Fertig"))
+    with patch("openai.OpenAI", return_value=client):
+        events = list(llm.chat_stream([], purpose="Test", tools=[_search_tool([])], max_rounds=2))
+    assert client.chat.completions.create.call_args_list[1].kwargs["tool_choice"] == "none"
+    assert events[-1].reply.text == "Fertig"
+
+
+def test_tool_errors_go_back_to_the_model(fake_key):
+    def broken(query):
+        raise RuntimeError("Datenbank weg")
+    tool = llm.Tool("kaputt", "", {"type": "object"}, broken)
+    client = _streaming_client(
+        _tool_round(("c1", "kaputt", '{"query": "x"}'), ("c2", "gibts_nicht", "{}"), ("c3", "kaputt", "{nope")),
+        _text_round("Leider nichts gefunden."))
+    with patch("openai.OpenAI", return_value=client):
+        events = list(llm.chat_stream([], purpose="Test", tools=[tool]))
+
+    results = [e.result for e in events if e.type == "tool_result"]
+    assert "Datenbank weg" in results[0]["fehler"]
+    assert "Unbekanntes Werkzeug" in results[1]["fehler"]
+    assert "Ungültige Argumente" in results[2]["fehler"]
+    assert events[-1].reply.text == "Leider nichts gefunden."
+
+
+def test_stream_errors_become_llm_error_and_are_recorded(fake_key):
+    def failing():
+        yield _chunk(content="Hal")
+        raise httpx.ReadTimeout("weg")
+    client = MagicMock()
+    client.chat.completions.create.side_effect = [failing()]
+    before = len(_usage_lines())
+    received = []
+    with patch("openai.OpenAI", return_value=client), pytest.raises(llm.LLMError):
+        for event in llm.chat_stream([], purpose="Test"):
+            received.append(event.text)
+    assert received == ["Hal"]
+    assert _usage_lines()[before]["ok"] is False
+
+
+def test_abandoned_stream_is_closed_and_recorded(fake_key):
+    stream = MagicMock()
+    stream.__iter__.return_value = iter(_text_round("a", "b", "c"))
+    client = MagicMock()
+    client.chat.completions.create.return_value = stream
+    before = len(_usage_lines())
+    with patch("openai.OpenAI", return_value=client):
+        events = llm.chat_stream([], purpose="Test")
+        next(events)
+        events.close()
+    stream.close.assert_called_once()
+    entry = _usage_lines()[before]
+    assert entry["ok"] is False and "abgebrochen" in entry["error"]
