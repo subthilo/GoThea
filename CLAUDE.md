@@ -80,7 +80,7 @@ Konzept Tutor „Luna“ + Übungsarten: Claude-Doc https://claude.ai/code/artif
 
 **Erledigt am 16.10.2026 (auf Staging, Produktion steht aus):** KI-Schicht mit Streaming und Werkzeug-Aufrufen (`chat_stream`, Responses API) und erstes Werkzeug „Unterlagen durchsuchen“. Offen: lange Wartezeit bis zum ersten Wort (Nachdenken) – beim Tutor-Bau Nachdenk-Aufwand (`reasoning.effort`) messen und eine Zwischenmeldung („Luna schaut in deinen Unterlagen nach …“) zeigen.
 
-**Nächster Schritt:** Gedächtnis/Lernstand in der DB (mit dem Nutzer abstimmen), danach HTTPS.
+**Nächster Schritt (Nutzer, 16.10.):** zuerst die **Oberfläche aufräumen** (eigener Chat; Anhaltspunkte unter „Kleinere Reste“ bei Aufräumen, Teil 2). Danach Gedächtnis/Lernstand in der DB (mit dem Nutzer abstimmen), dann HTTPS. Später, eigener Chat: „Luna fragen“-Testseite (Eltern-Modus, nur Staging) zum Sammeln echter Fragen.
 
 Vereinbarte Reihenfolge:
 1. **Aufräumen, Teil 2:** erledigt am 15./16.10.2026, alles auf Produktion (Frontend-Aufteilung + Zeichenkern, Upload-Weg entflochten, Kapiteltabellen als JSON, README). Dabei behoben: Löschen/Zusammenführen erschlossener Dokumente scheiterte (500), erschlossene Seiten folgten Umsortieren/Zusammenführen nicht. Kleinere Reste bei Gelegenheit: Aufräumen innerhalb der `js/`-Dateien, zusammengehörige CSS-Abschnitte (nur mit Bildschirmfoto-Vergleich), Tabs aus `index.html` wie die Dialoge auslagern, `docs/` ist teils überholt.
