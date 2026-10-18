@@ -24,8 +24,9 @@ def att(ex, stage, hours_ago, solved=False, first_try=None, failed=0, hints=0, s
 
 def test_nothing_done_suggests_first_new_task():
     out = plan(FAMILIES, [], NOW)
-    assert out["vorschlag"] == {"art": "neu", "familie": "a", "exercise_id": "a", "stufe": 0, "board_id": None}
-    assert out["stand"]["a"] == {"geschafft": [], "naechste_stufe": 0, "zuletzt": None}
+    # Neu beginnt auf der leichtesten Stufe: Gedankengang (-1)
+    assert out["vorschlag"] == {"art": "neu", "familie": "a", "exercise_id": "a", "stufe": -1, "board_id": None}
+    assert out["stand"]["a"] == {"geschafft": [], "naechste_stufe": -1, "zuletzt": None}
     assert out["wiederholen"] == []
 
 
@@ -79,3 +80,9 @@ def test_all_done_offers_repeat_even_if_fresh():
     out = plan(families, attempts, NOW)
     assert out["stand"]["c"]["naechste_stufe"] is None
     assert out["vorschlag"] == {"art": "wiederholen", "familie": "c", "exercise_id": "c", "stufe": 4, "board_id": None}
+
+
+def test_reasoning_stage_counts_like_any_other():
+    out = plan(FAMILIES, [att("a", -1, 2, solved=True)], NOW)
+    assert out["stand"]["a"]["geschafft"] == [-1] and out["stand"]["a"]["naechste_stufe"] == 0
+    assert out["vorschlag"] == {"art": "weiter", "familie": "a", "exercise_id": "a", "stufe": 0, "board_id": None}

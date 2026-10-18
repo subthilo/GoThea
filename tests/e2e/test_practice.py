@@ -224,3 +224,41 @@ def test_stage_dot_opens_practice_board(app_page):
     assert board["practice_exercise_id"] == "sa-flugzeug" and board["practice_stage"] == 3
     app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
     assert app_page.problems.errors == []
+
+
+def _guided_answer(page, *values):
+    blanks = page.locator(".gg-step.current .gg-blank")
+    assert blanks.count() == len(values)
+    for i, v in enumerate(values):
+        blanks.nth(i).fill(v)
+    page.click('[data-action="gg-check"]')
+
+
+def test_reasoning_path_step_by_step(app_page):
+    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
+    app_page.click('.nav-tab[data-tab="practice"]')
+    app_page.wait_for_selector('.practice-row[data-id="sa-gummibaerchen"] .practice-dot[data-stage="-1"]')
+    app_page.click('.practice-row[data-id="sa-gummibaerchen"] .practice-dot[data-stage="-1"]')
+    app_page.wait_for_selector(".gg-step.current")
+    assert app_page.locator(".gg-step").count() == 1  # nur der erste Satz
+
+    _guided_answer(app_page, "3")
+    assert app_page.locator(".gg-step").count() == 2
+    # Fehler markiert nur das Kästchen; danach gibt es einen Tipp
+    _guided_answer(app_page, "3", "60")
+    assert app_page.locator(".gg-step.current .gg-blank.wrong").count() == 1
+    app_page.click('[data-action="gg-tip"]')
+    assert "Wie oft passt 50 in 150" in app_page.inner_text(".px-luna")
+    _guided_answer(app_page, "3", "50")
+    _guided_answer(app_page, "1")
+    _guided_answer(app_page, "10")
+    _guided_answer(app_page, "10")
+    with app_page.expect_response(lambda r: r.url.endswith("/events") and '"richtig"' in (r.request.post_data or "")) as resp:
+        _guided_answer(app_page, "10,00")  # Komma und Nullen zählen wie 10
+    assert resp.value.json()["solved"] and resp.value.json()["stage"] == -1
+    assert "Geschafft" in app_page.inner_text(".px-luna")
+    assert app_page.locator(".gg-step.done").count() == 6
+    # Weiter mit den Bausteinen (Stufe 0)
+    app_page.click('.gg .px-check[data-stage="0"]')
+    app_page.wait_for_selector(".px-sheet")
+    assert app_page.problems.errors == []

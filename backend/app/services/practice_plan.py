@@ -1,5 +1,6 @@
 """Was Thea als Nächstes üben könnte: Stand pro Aufgabe, Wiederholen und Lunas Vorschlag.
 
+Stufen: -1 Gedankengang (Rechenweg in Sätzen, nur Zahlen ergänzen), 0 Bausteine, 1–4 Tafel.
 Eine Aufgabe = das Original (A) mit seinen Zwillingen (B); eine Stufe gilt als geschafft, wenn
 irgendeine davon auf dieser Stufe gelöst wurde. Was „dran“ ist, kommt vorerst aus dem Vorrat selbst
 (alle Übungen); das Markieren der Abschnitte durch die Eltern folgt mit dem Freigabe-Ablauf.
@@ -8,7 +9,7 @@ Vorschlag, in dieser Reihenfolge:
 1. ein angefangener, noch nicht gelöster Versuch (zuletzt geübt zuerst),
 2. Wiederholen, was gehakt hat und mindestens einen Tag zurückliegt (mit einer ähnlichen Aufgabe),
 3. die nächste Stufe der zuletzt geübten Aufgabe,
-4. eine neue Aufgabe (Reihenfolge des Vorrats),
+4. eine neue Aufgabe (Reihenfolge des Vorrats), auf der leichtesten Stufe,
 5. Wiederholen, auch wenn es frisch ist.
 """
 from __future__ import annotations
@@ -18,7 +19,7 @@ from typing import Dict, List, Optional
 
 from backend.app.models.practice_attempt import PracticeAttempt
 
-MAX_STAGE = 4
+MIN_STAGE, MAX_STAGE = -1, 4
 REPEAT_AFTER = timedelta(hours=20)  # „am nächsten Tag“, auch wenn abends geübt wurde
 
 
@@ -57,7 +58,7 @@ def plan(families: List[dict], attempts: List[PracticeAttempt], now: Optional[da
     for fam in families:
         own = by_family.get(fam["id"], [])
         solved = sorted({a.stage for a in own if a.solved_at is not None})
-        next_stage = (solved[-1] + 1 if solved else 0)
+        next_stage = (solved[-1] + 1 if solved else MIN_STAGE)
         progress[fam["id"]] = {
             "geschafft": solved,
             "naechste_stufe": next_stage if next_stage <= MAX_STAGE else None,
@@ -108,7 +109,7 @@ def plan(families: List[dict], attempts: List[PracticeAttempt], now: Optional[da
         fresh = [f for f in families if progress[f["id"]]["zuletzt"] is None]
         if fresh:
             suggestion = {"art": "neu", "familie": fresh[0]["id"], "exercise_id": fresh[0]["id"],
-                          "stufe": 0, "board_id": None}
+                          "stufe": MIN_STAGE, "board_id": None}
     if suggestion is None and repeats:
         r = min(repeats, key=lambda r: r["_at"])
         suggestion = {"art": "wiederholen", "familie": r["familie"], "exercise_id": r["exercise_id"],

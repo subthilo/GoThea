@@ -33,7 +33,7 @@ class CheckRequest(BaseModel):
 
 
 class AttemptStart(BaseModel):
-    stage: int = Field(ge=0, le=4)
+    stage: int = Field(ge=-1, le=4)  # -1 = Gedankengang, 0 = Bausteine, 1–4 = Tafel
     board_id: Optional[str] = None  # Tafel-Stufen: der Versuch gehört zur Übungstafel
 
 

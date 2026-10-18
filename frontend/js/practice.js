@@ -1,6 +1,8 @@
 // ==========================================================================
 // Üben: Übungen aus echten Aufgaben (Probebetrieb, Schalter GOTHEA_EXERCISE_TRIAL)
 // --------------------------------------------------------------------------
+// Stufe -1 „Gedankengang“: der Rechenweg steht als Sätze da, Thea ergänzt nur
+// Zahlen, Schritt für Schritt (mit dem Pencil per Scribble oder per Tastatur).
 // Stufe 0 „Bausteine“: Thea setzt Rechenschritte und Werte in die Dreisatz-
 // Tabelle (Antippen oder Ziehen) und wählt den Antwortsatz. Vorher fragt Luna
 // nach einer Schätzung. Die Prüfung läuft hier im Browser gegen die Lösung aus
@@ -14,14 +16,18 @@
   const runView = document.getElementById("practice-run-view");
   if (!navBtn || !listView || !listEl || !runView) return;
 
-  // Stufe 0 = Bausteine hier; 1–4 = Blatt auf einer neuen Tafel, mit dem Pencil (weniger Gerüst je Stufe)
-  const STAGE_TITLES = [
-    "Bausteine einsetzen",
-    "Tafel: Tabelle vorgegeben, Antwort angefangen",
-    "Tafel: nur Tabellenkopf",
-    "Tafel: nur R: und A:",
-    "Tafel: leeres Blatt wie im Test",
+  // Stufe -1 und 0 hier im Tab; 1–4 = Blatt auf einer neuen Tafel, mit dem Pencil (weniger Gerüst je Stufe).
+  // Die leichteste Stufe trägt ein Icon statt einer Zahl, damit die Nummern der Tafel-Stufen bleiben.
+  const STAGES = [
+    { n: -1, title: "Gedankengang: Schritt für Schritt", icon: "Tipp" },
+    { n: 0, title: "Bausteine einsetzen" },
+    { n: 1, title: "Tafel: Tabelle vorgegeben, Antwort angefangen" },
+    { n: 2, title: "Tafel: nur Tabellenkopf" },
+    { n: 3, title: "Tafel: nur R: und A:" },
+    { n: 4, title: "Tafel: leeres Blatt wie im Test" },
   ];
+  const stageMark = (n) => (n < 0 ? icon("Tipp") : String(n));
+  const stageName = (n) => (n < 0 ? "Gedankengang" : `Stufe ${n}`);
 
   let run = null;  // aktuelle Übung: { ex, guess, placed, answer, checked, hint, selected }
 
@@ -80,7 +86,7 @@
   // Stufe 0 im Tab, Stufen 1–4 auf einer Übungstafel; ein angefangener Versuch öffnet seine Tafel wieder
   function startPractice({ exercise_id: exerciseId, stufe: stage, board_id: boardId }, family) {
     if (boardId && typeof window.openBoardOnWhiteboard === "function") return window.openBoardOnWhiteboard(boardId);
-    if (!stage || typeof window.openPracticeOnWhiteboard !== "function") return openExercise(exerciseId);
+    if (!(stage > 0) || typeof window.openPracticeOnWhiteboard !== "function") return openExercise(exerciseId, stage > 0 ? 0 : stage || 0);
     const ableitung = exerciseId === family.id ? "A" : "B";
     return window.openPracticeOnWhiteboard({ exerciseId, stage, title: practiceBoardTitle(family.quelle, ableitung, stage) });
   }
@@ -99,18 +105,18 @@
         <span class="practice-suggest-task">${esc(family.aufgabentext)}</span>
         <span class="practice-row-src">${esc(sourceLine(family.quelle))}${sug.exercise_id !== family.id ? " · ähnliche Aufgabe" : ""}</span>
       </span>
-      <span class="practice-suggest-go">${icon(SUGGESTION_ICONS[sug.art] || "Pfeil rechts")}<span class="practice-stage-no">${sug.stufe}</span></span>`;
+      <span class="practice-suggest-go">${icon(SUGGESTION_ICONS[sug.art] || "Pfeil rechts")}<span class="practice-stage-no">${stageMark(sug.stufe)}</span></span>`;
     card.addEventListener("click", () => startPractice(sug, family));
     return card;
   }
 
   function stageDots(stand) {
     const done = new Set(stand ? stand.geschafft : []);
-    const next = stand ? stand.naechste_stufe : 0;
-    return STAGE_TITLES.map((title, n) => {
+    const next = stand ? stand.naechste_stufe : -1;
+    return STAGES.map(({ n, title }) => {
       const cls = done.has(n) ? " done" : n === next ? " next" : "";
-      const label = `Stufe ${n}: ${title}${done.has(n) ? " (geschafft)" : ""}`;
-      return `<button type="button" class="practice-dot${cls}" data-stage="${n}" title="${esc(label)}" aria-label="${esc(label)}"><span>${n}</span></button>`;
+      const label = `${stageName(n)}: ${title}${done.has(n) ? " (geschafft)" : ""}`;
+      return `<button type="button" class="practice-dot${cls}" data-stage="${n}" title="${esc(label)}" aria-label="${esc(label)}"><span>${stageMark(n)}</span></button>`;
     }).join("");
   }
 
@@ -120,7 +126,7 @@
     row.dataset.id = ex.id;
     row.style.setProperty("--subject-color", subjectColor("sub_math"));
     const anti = ex.schema === "dreisatz_antiproportional";
-    const next = stand && stand.naechste_stufe !== null ? stand.naechste_stufe : 0;
+    const next = !stand ? -1 : stand.naechste_stufe ?? 0;
     row.innerHTML = `
       <button type="button" class="practice-row-main" title="Üben">
         ${subjectIcon("Mathematik", "practice-row-icon")}
@@ -157,7 +163,7 @@
           <span class="practice-row-task">${esc(family.aufgabentext)}</span>
           <span class="practice-row-src">${esc(sourceLine(family.quelle))}${r.exercise_id !== family.id ? " · ähnliche Aufgabe" : ""}</span>
         </span>
-        <span class="practice-dot next" aria-label="Stufe ${r.stufe}"><span>${r.stufe}</span></span>
+        <span class="practice-dot next" aria-label="${stageName(r.stufe)}"><span>${stageMark(r.stufe)}</span></span>
       </button>`;
     row.querySelector(".practice-row-main").addEventListener("click", () => startPractice(r, family));
     return row;
@@ -165,10 +171,12 @@
 
   // ---------- Übung ----------
 
-  async function openExercise(id) {
+  async function openExercise(id, stage = 0) {
     const ex = await apiJson(`/api/v1/practice/${encodeURIComponent(id)}`);
-    run = { ex, guess: null, placed: {}, answer: null, reason: null, checked: false, hint: 0, selected: null,
-            attempt: startPracticeAttempt(ex.id, 0) };
+    if (stage < 0 && !(ex.gedankengang || []).length) stage = 0;
+    run = { ex, stage, guess: null, placed: {}, answer: null, reason: null, checked: false, hint: 0, selected: null,
+            attempt: startPracticeAttempt(ex.id, stage),
+            guided: { step: 0, values: {}, wrong: new Set(), fails: 0, tip: false, empty: false, done: false } };
     if (!ex.schaetzfrage.aktiv) run.guess = "-";
     show(listView, false);
     show(runView, true);
@@ -322,15 +330,22 @@
     return h;
   }
 
-  function renderRun() {
+  function topbarHtml() {
     const ex = run.ex;
-    const done = run.checked && allRight();
-    runView.innerHTML = `
+    return `
       <div class="px-topbar">
         <button type="button" class="practice-icon-btn" data-action="back" title="Zur Liste" aria-label="Zur Liste">${icon("Pfeil links")}</button>
         <span class="px-src">${esc(sourceLine(ex.quelle))}${ex.ableitung === "B" ? " · ähnliche Aufgabe" : ""}</span>
         <div class="px-stages" role="group" aria-label="Stufe">${stageButtons()}</div>
-      </div>
+      </div>`;
+  }
+
+  function renderRun() {
+    if (run.stage < 0) return renderGuided();
+    const ex = run.ex;
+    const done = run.checked && allRight();
+    runView.innerHTML = `
+      ${topbarHtml()}
       <div class="px-layout">
         <div class="px-sheet">
           <p class="px-task">${esc(ex.aufgabentext)}</p>
@@ -352,8 +367,8 @@
   function stageButtons() {
     const family = run.ex.zwilling_von || run.ex.id;
     const done = new Set(overview && overview.stand[family] ? overview.stand[family].geschafft : []);
-    return STAGE_TITLES.map((title, n) =>
-      `<button type="button" class="px-stage${n === 0 ? " active" : ""}${done.has(n) ? " done" : ""}" data-stage="${n}" title="${esc(title)}" aria-label="Stufe ${n}: ${esc(title)}">${n}</button>`
+    return STAGES.map(({ n, title }) =>
+      `<button type="button" class="px-stage${n === run.stage ? " active" : ""}${done.has(n) ? " done" : ""}" data-stage="${n}" title="${esc(title)}" aria-label="${stageName(n)}: ${esc(title)}">${stageMark(n)}</button>`
     ).join("");
   }
 
@@ -365,6 +380,125 @@
       <button type="button" class="px-check" data-action="open" data-id="${esc(twinId)}" title="${ex.ableitung === "A" ? "Ähnliche Aufgabe" : "Original"}">${icon("Wiederholen")}</button>
       <button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;
   }
+
+  // ---------- Stufe -1: Gedankengang ----------
+  // Ein Satz nach dem anderen; Lücken sind Eingabefelder (Scribble wandelt die Handschrift des Pencils
+  // in Text). Ein Fehler markiert nur das Kästchen, ab dem zweiten gibt es den Tipp, ab dem dritten
+  // darf Thea sich die Zahlen zeigen lassen. Abgebrochen wird ohne Kommentar.
+
+  // „2,40“, „2.4“, „1.500“, „10 €“ → Zahl; leer oder unlesbar → NaN
+  function parseAnswer(text) {
+    let t = String(text).replace(/[^\d,.-]/g, "");
+    if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+    else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+    return t ? Number(t) : NaN;
+  }
+  const sameNumber = (a, b) => Math.abs(parseAnswer(a) - parseAnswer(b)) < 1e-9;
+
+  function guidedSentence(sentence, index) {
+    const g = run.guided;
+    const current = !g.done && index === g.step;
+    let k = 0;
+    return esc(sentence).replace(/\[\[([^\]]+)\]\]/g, (_, expected) => {
+      const id = `${index}-${k++}`;
+      if (!current) return `<span class="gg-filled">${expected}</span>`;
+      const wrong = g.wrong.has(id) ? " wrong" : "";
+      return `<input class="gg-blank${wrong}" data-blank="${id}" data-expect="${expected}" value="${esc(g.values[id] || "")}"
+        inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        aria-label="Lücke" style="--len:${Math.max(2, expected.length)}">`;
+    });
+  }
+
+  function guidedLuna() {
+    const g = run.guided, steps = run.ex.gedankengang;
+    const say = (t) => `<div class="px-say">${icon("Luna", "px-luna-icon")}<p>${esc(t)}</p></div>`;
+    if (g.done) return say("Geschafft! Du hast den ganzen Rechenweg aufgeschrieben.");
+    const step = steps[g.step];
+    let h = "";
+    if (g.empty) h += say("Da fehlt noch eine Zahl.");
+    else if (g.wrong.size) h += say(g.wrong.size === 1 ? "Fast! Schau noch mal auf das markierte Kästchen." : "Schau noch mal auf die markierten Kästchen.");
+    else if (g.step === 0 && !g.fails) h += say("Schreib die fehlenden Zahlen in die Kästchen.");
+    if (g.tip && step.tipp) h += say(step.tipp);
+    const buttons = [];
+    if (step.tipp && !g.tip && g.fails >= 1) buttons.push(`<button type="button" class="px-hint-btn" data-action="gg-tip" title="Tipp" aria-label="Tipp">${icon("Tipp")}</button>`);
+    if (g.fails >= 2) buttons.push(`<button type="button" class="px-hint-btn" data-action="gg-show" title="Zahlen zeigen" aria-label="Zahlen zeigen">${icon("Anzeigen")}</button>`);
+    return h + (buttons.length ? `<div class="gg-help">${buttons.join("")}</div>` : "");
+  }
+
+  function guidedNextButtons() {
+    const ex = run.ex;
+    const twinId = ex.ableitung === "A" ? ex.zwillinge[0] : ex.zwilling_von;
+    let h = `<button type="button" class="px-check" data-stage="0" title="Weiter mit den Bausteinen" aria-label="Weiter mit den Bausteinen">${icon("Pfeil hoch")}<span>0</span></button>`;
+    if (twinId) h += `<button type="button" class="px-check secondary" data-action="open" data-id="${esc(twinId)}" data-at="-1" title="Ähnliche Aufgabe">${icon("Wiederholen")}</button>`;
+    return h + `<button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;
+  }
+
+  function keepGuidedInput() {
+    runView.querySelectorAll(".gg-blank").forEach((inp) => { run.guided.values[inp.dataset.blank] = inp.value; });
+  }
+
+  function renderGuided() {
+    keepGuidedInput();
+    const ex = run.ex, g = run.guided, steps = ex.gedankengang;
+    const shown = steps.slice(0, g.done ? steps.length : g.step + 1);
+    runView.innerHTML = `
+      ${topbarHtml()}
+      <div class="gg">
+        <p class="px-task">${esc(ex.aufgabentext)}</p>
+        <ol class="gg-steps">
+          ${shown.map((s, i) => `<li class="gg-step${g.done || i < g.step ? " done" : " current"}">${guidedSentence(s.satz, i)}</li>`).join("")}
+        </ol>
+        <div class="px-luna" aria-live="polite">${guidedLuna()}</div>
+        <div class="px-actions">
+          ${g.done ? guidedNextButtons() : `<button type="button" class="px-check" data-action="gg-check" title="Prüfen" aria-label="Prüfen">${icon("Haken")}</button>`}
+        </div>
+      </div>`;
+    // Mit Tastatur gleich ins erste leere Feld; auf dem iPad nicht (sonst klappt die Bildschirmtastatur auf)
+    if (window.matchMedia("(hover: hover)").matches) {
+      const first = [...runView.querySelectorAll(".gg-blank")].find((inp) => !inp.value);
+      if (first) first.focus();
+    }
+  }
+
+  function guidedCheck() {
+    keepGuidedInput();
+    const g = run.guided, steps = run.ex.gedankengang;
+    const inputs = [...runView.querySelectorAll(".gg-blank")];
+    g.empty = inputs.some((inp) => !inp.value.trim());
+    if (g.empty) { g.wrong = new Set(); return renderGuided(); }
+    g.wrong = new Set(inputs.filter((inp) => !sameNumber(inp.value, inp.dataset.expect)).map((inp) => inp.dataset.blank));
+    if (g.wrong.size) {
+      g.fails += 1;
+      logPracticeEvent(run.attempt, "check", { status: "noch_nicht", schritt: g.step + 1,
+        gelesen: inputs.filter((inp) => g.wrong.has(inp.dataset.blank)).map((inp) => inp.value) });
+      return renderGuided();
+    }
+    g.step += 1;
+    g.fails = 0;
+    g.tip = false;
+    if (g.step >= steps.length) {
+      g.done = true;
+      logPracticeEvent(run.attempt, "check", { status: "richtig", schritte: steps.length });
+    }
+    renderGuided();
+  }
+
+  function guidedReveal() {
+    runView.querySelectorAll(".gg-blank").forEach((inp) => { inp.value = inp.dataset.expect; inp.classList.remove("wrong"); });
+    run.guided.wrong = new Set();
+    logPracticeEvent(run.attempt, "solution", { schritt: run.guided.step + 1 });
+    renderGuided();
+  }
+
+  runView.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.classList && e.target.classList.contains("gg-blank")) {
+      e.preventDefault();
+      guidedCheck();
+    }
+  });
+  runView.addEventListener("input", (e) => {
+    if (e.target.classList && e.target.classList.contains("gg-blank")) e.target.classList.remove("wrong");
+  });
 
   // ---------- Bedienung: Antippen und Ziehen ----------
 
@@ -382,10 +516,14 @@
     if (t.dataset.action === "back") return closeExercise();
     if (t.dataset.stage !== undefined) {
       const stage = Number(t.dataset.stage);
-      if (stage === 0 || typeof window.openPracticeOnWhiteboard !== "function") return;
+      if (stage <= 0) return stage === run.stage ? undefined : openExercise(run.ex.id, stage);
+      if (typeof window.openPracticeOnWhiteboard !== "function") return;
       return window.openPracticeOnWhiteboard({ exerciseId: run.ex.id, stage, title: practiceBoardTitle(run.ex.quelle, run.ex.ableitung, stage) });
     }
-    if (t.dataset.action === "open") return openExercise(t.dataset.id);
+    if (t.dataset.action === "open") return openExercise(t.dataset.id, Number(t.dataset.at || 0));
+    if (t.dataset.action === "gg-check") return guidedCheck();
+    if (t.dataset.action === "gg-tip") { run.guided.tip = true; logPracticeEvent(run.attempt, "hint", { schritt: run.guided.step + 1 }); return renderGuided(); }
+    if (t.dataset.action === "gg-show") return guidedReveal();
     if (t.dataset.action === "check") {
       run.checked = true;
       logPracticeEvent(run.attempt, "check", checkResult());
