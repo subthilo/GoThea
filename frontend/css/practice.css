@@ -826,3 +826,140 @@
 .gg-write-clear {
   min-width: 56px;
 }
+
+/* Gedankengang als fixierte Seite (body.practice-zen-mode, gesetzt von js/practice.js): nichts scrollt mit,
+   Aufgabe und Eingabefelder bleiben an ihrem Platz. Aufbau wie timetable-zen-mode. */
+html:has(body.practice-zen-mode),
+html.practice-zen-mode,
+body.practice-zen-mode {
+  height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body.practice-zen-mode .staging-banner {
+  display: none !important;
+}
+
+body.practice-zen-mode .app-container {
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 auto !important;
+  padding: max(6px, env(safe-area-inset-top)) 12px max(8px, env(safe-area-inset-bottom)) 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+body.practice-zen-mode .header {
+  flex-shrink: 0 !important;
+  position: relative !important;
+  margin-bottom: 0 !important;
+}
+
+body.practice-zen-mode .content {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding-top: 4px !important;
+}
+
+body.practice-zen-mode #tab-practice.active {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.practice-zen-mode #practice-run-view {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+body.practice-zen-mode .gg {
+  flex: 1 1 0%;
+  min-height: 0;
+  width: 100%;
+  max-width: 1180px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr);
+  gap: 16px;
+}
+
+body.practice-zen-mode .gg-left,
+body.practice-zen-mode .gg-right {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.practice-zen-mode .gg-left .px-task {
+  flex-shrink: 0;
+  margin: 0;
+  max-height: 34%;
+  overflow: auto;
+}
+
+/* Sätze: eigener Scrollbereich; der erste Satz schiebt sich nach unten, damit der aktuelle unten steht */
+body.practice-zen-mode .gg-steps {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+body.practice-zen-mode .gg-steps > :first-child {
+  margin-top: auto;
+}
+
+body.practice-zen-mode .gg-write {
+  flex: 1 1 0%;
+  min-height: 140px;
+  max-height: 300px;
+}
+
+body.practice-zen-mode .gg-write-area {
+  height: auto;
+}
+
+body.practice-zen-mode .gg-pad {
+  flex-shrink: 0;
+}
+
+body.practice-zen-mode .gg-right .px-luna {
+  flex-shrink: 0;
+  max-height: 22%;
+  overflow: auto;
+}
+
+body.practice-zen-mode .gg-right .px-actions {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+/* Hochformat: untereinander, Sätze oben, Schreibfeld und Tasten darunter */
+@media (orientation: portrait), (max-width: 820px) {
+  body.practice-zen-mode .gg {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  body.practice-zen-mode .gg-write {
+    flex: 0 0 auto;
+    height: 170px;
+  }
+}

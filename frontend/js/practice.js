@@ -185,6 +185,7 @@
   }
 
   function closeExercise() {
+    setPracticeZen(false);
     run = null;
     show(runView, false);
     runView.innerHTML = "";
@@ -340,8 +341,18 @@
       </div>`;
   }
 
+  // Der Gedankengang nutzt die ganze Bildschirmhöhe ohne Seiten-Scrollen (wie Tafel und Stundenplan)
+  function setPracticeZen(on) {
+    document.documentElement.classList.toggle("practice-zen-mode", on);
+    document.body.classList.toggle("practice-zen-mode", on);
+  }
+  document.querySelectorAll(".nav-tab").forEach((tab) => tab.addEventListener("click", () => {
+    setPracticeZen(tab.dataset.tab === "practice" && !!run && run.stage < 0 && runView.style.display !== "none");
+  }));
+
   function renderRun() {
     if (run.stage < 0) return renderGuided();
+    setPracticeZen(false);
     const ex = run.ex;
     const done = run.checked && allRight();
     runView.innerHTML = `
@@ -571,19 +582,28 @@
     keepGuidedInput();
     const ex = run.ex, g = run.guided, steps = ex.gedankengang;
     const shown = steps.slice(0, g.done ? steps.length : g.step + 1);
+    // Fixierte Seite: links Aufgabe + Sätze (der aktuelle Satz steht immer unten am selben Platz,
+    // erledigte rutschen nach oben), rechts Schreibfeld, Tasten, Luna, Prüfen
+    setPracticeZen(true);
     runView.innerHTML = `
       ${topbarHtml()}
       <div class="gg">
-        <p class="px-task">${esc(ex.aufgabentext)}</p>
-        <ol class="gg-steps">
-          ${shown.map((s, i) => `<li class="gg-step${g.done || i < g.step ? " done" : " current"}">${guidedSentence(s.satz, i)}</li>`).join("")}
-        </ol>
-        ${g.done ? "" : `<div class="gg-write-slot"></div>${padHtml()}`}
-        <div class="px-luna" aria-live="polite">${guidedLuna()}</div>
-        <div class="px-actions">
-          ${g.done ? guidedNextButtons() : `<button type="button" class="px-check" data-action="gg-check" title="Prüfen" aria-label="Prüfen">${icon("Haken")}</button>`}
+        <div class="gg-left">
+          <p class="px-task">${esc(ex.aufgabentext)}</p>
+          <ol class="gg-steps">
+            ${shown.map((s, i) => `<li class="gg-step${g.done || i < g.step ? " done" : " current"}">${guidedSentence(s.satz, i)}</li>`).join("")}
+          </ol>
+        </div>
+        <div class="gg-right">
+          ${g.done ? "" : `<div class="gg-write-slot"></div>${padHtml()}`}
+          <div class="px-luna" aria-live="polite">${guidedLuna()}</div>
+          <div class="px-actions">
+            ${g.done ? guidedNextButtons() : `<button type="button" class="px-check" data-action="gg-check" title="Prüfen" aria-label="Prüfen">${icon("Haken")}</button>`}
+          </div>
         </div>
       </div>`;
+    const list = runView.querySelector(".gg-steps");
+    if (list) list.scrollTop = list.scrollHeight;
     ensureActive();
     if (!g.done) mountPad();
     // Mit Tastatur gleich ins erste leere Feld; auf dem iPad nicht (sonst klappt die Bildschirmtastatur auf)
