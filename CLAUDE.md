@@ -109,6 +109,8 @@ Vereinbarte Reihenfolge:
 
 **Tutor & Übungen werden neu gedacht** (eigene Session, „muss sauber sein und Spaß machen“). Der bisherige Tutor-Code (`tutor_service.py`, Tafel-Feedback) ist ein früher Schnellschuss: einfrieren, nicht polieren (nutzt aber schon den gemeinsamen KI-Client). Am 16.10.2026 entfernt, weil Luna dort Übungen frei erfand: Lückentext-Trainer mit Vorrat und Phrasen-Audio sowie die Tafel-Aufgabe (Knopf „Aufgabe“, Kästen auf der Tafel, Übungs-Vorrat). Die Tabelle `tutor_exercises` mit alten Aufgaben bleibt bestehen; der Zeichenkern enthält noch inerten Code zum Verschieben der Kästen (unverändert gelassen). Tafeln liegen vorerst in `tutor_sessions`; beim Tutor-Umbau „Tafel“ und „Lernsitzung“ trennen.
 
+Geparkt (18.10.2026): spielerische Startansicht für Thea (Campus-Insel mit Fachgebäuden, wachsendem Baum, laufender Figur; Modelle https://claude.ai/artifact/3n1cxtJQ9tRHLDGwJV1ZLD und https://claude.ai/artifact/Cq2Tijgzuc6NVQTB6XmN69). Überzeugt noch nicht; das jetzige Layout bleibt. Falls es wiederkommt: nur umschaltbar und nur im Thea-Modus, Figuren als gezeichnete Bilder (Code-SVG wirkte steif), Gebäude/Kleinkram per Code.
+
 Entschieden: Bei beschädigter PIN-Datei bleibt der Rückfall auf die Standard-PIN (wird als Fehler geloggt).
 
 Bekannte offene Punkte: Tutor-WebSocket `/ws/tutor/…` ist eine Attrappe (`/ws` dagegen speist die Online-Anzeige); „Städte den Ländern zuordnen“ steht in Mathe, Fach unklar. Liegt eine Buchseite auf der Tafel, zeigt das Unterlage-Dropdown trotzdem „Freies Üben“. Kapiteltitel lassen sich nicht umbenennen (eine neue Zerlegung würde sie überschreiben). Buchdeckel (Seite 1 des Buch-Scans) werden bewusst noch nicht angezeigt; `cover_preview_url` zeigt fälschlich auf Kapitel 1.
