@@ -124,10 +124,12 @@ def test_list_carries_progress_and_suggestion(client):
 
 
 def _sample(label, x=0.0):
-    return {"label": label, "points": [[x + i / 100, -0.3 + i / 50, 0] for i in range(32)]}
+    return {"label": label, "strokes": [[[x, 0.0], [0.3, 0.5], [0.4, 1.0]], [[0.1, 0.6], [0.6, 0.6]]]}
 
 
-def test_handwriting_samples_are_kept_per_digit_newest_last(client):
+def test_handwriting_samples_are_kept_per_digit_newest_last(client, monkeypatch):
+    from backend.app.routers import practice as practice_router
+    monkeypatch.setattr(practice_router, "SAMPLES_PER_DIGIT", 10)
     assert client.get("/api/v1/practice/handwriting").json() == {"samples": []}
     for k in range(12):
         res = client.post("/api/v1/practice/handwriting", json={"samples": [_sample("4", k / 100), _sample("7")]})
@@ -135,12 +137,12 @@ def test_handwriting_samples_are_kept_per_digit_newest_last(client):
     samples = client.get("/api/v1/practice/handwriting").json()["samples"]
     fours = [s for s in samples if s["label"] == "4"]
     assert len(fours) == 10 and len([s for s in samples if s["label"] == "7"]) == 10
-    assert fours[-1]["points"][0][0] == 0.11  # die neueste bleibt
+    assert fours[-1]["strokes"][0][0][0] == 0.11  # die neueste bleibt
 
 
 def test_handwriting_rejects_bad_samples(client):
     assert client.post("/api/v1/practice/handwriting", json={"samples": [_sample("x")]}).status_code == 422
-    short = {"label": "3", "points": [[0, 0, 0]] * 5}
-    assert client.post("/api/v1/practice/handwriting", json={"samples": [short]}).status_code == 422
-    far = {"label": "3", "points": [[9, 0, 0]] * 32}
+    empty = {"label": "3", "strokes": []}
+    assert client.post("/api/v1/practice/handwriting", json={"samples": [empty]}).status_code == 422
+    far = {"label": "3", "strokes": [[[9, 0], [0, 0]]]}
     assert client.post("/api/v1/practice/handwriting", json={"samples": [far]}).status_code == 422

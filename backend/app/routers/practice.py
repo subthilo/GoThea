@@ -40,7 +40,8 @@ class AttemptStart(BaseModel):
 
 class HandwritingSample(BaseModel):
     label: str = Field(pattern=r"^[0-9]$")
-    points: List[List[float]] = Field(min_length=32, max_length=32)  # normalisiert: [x, y, Strich-Nr.]
+    # Striche der Ziffer, auf ihr Kästchen bezogen (längste Seite = 1): [[[x, y], …], …]
+    strokes: List[List[List[float]]] = Field(min_length=1, max_length=8)
 
 
 class HandwritingUpload(BaseModel):
@@ -82,9 +83,10 @@ def practice_progress(db: Session = Depends(get_db)) -> dict:
     return {"progress": practice_attempts.progress(db)}
 
 
-# --- Theas Handschrift (Ziffern) für die Erkennung im Schreibfeld (js/digit_ink.js) ---------------------
-# Nur bestätigte Ziffern: die gelesene Zahl war genau die richtige Lösung. Je Ziffer bleiben die neuesten.
-SAMPLES_PER_DIGIT = 10
+# --- Theas Handschrift (Ziffern) aus dem Schreibfeld (js/digit_ink.js) -------------------------------------
+# Nur bestätigte Ziffern: die gelesene Zahl war genau die richtige Lösung. Gesammelt zum Messen der Erkennung
+# und zum Nachtrainieren des Modells (scripts/train_digit_model.py). Je Ziffer bleiben die neuesten.
+SAMPLES_PER_DIGIT = 200
 
 
 def _handwriting_file():
@@ -94,7 +96,8 @@ def _handwriting_file():
 def _load_handwriting() -> list:
     path = _handwriting_file()
     try:
-        return json.loads(path.read_text(encoding="utf-8")).get("samples", [])
+        samples = json.loads(path.read_text(encoding="utf-8")).get("samples", [])
+        return [s for s in samples if "strokes" in s]  # frühes Format (Punktwolken) verwerfen
     except FileNotFoundError:
         return []
     except (OSError, ValueError) as e:
@@ -114,8 +117,9 @@ def add_handwriting(payload: HandwritingUpload) -> dict:
     if not config.EXERCISE_TRIAL_ENABLED:
         raise HTTPException(status_code=404, detail="Übung nicht gefunden")
     for sample in payload.samples:
-        if any(len(p) != 3 or not all(-2 <= v <= 2 for v in p[:2]) or not 0 <= p[2] < 10 for p in sample.points):
-            raise HTTPException(status_code=422, detail="Ungültige Punkte")
+        for stroke in sample.strokes:
+            if not 1 <= len(stroke) <= 200 or any(len(p) != 2 or not all(-0.1 <= v <= 1.1 for v in p) for p in stroke):
+                raise HTTPException(status_code=422, detail="Ungültige Striche")
     samples = _load_handwriting() + [s.model_dump() for s in payload.samples]
     kept = []
     for label in "0123456789":

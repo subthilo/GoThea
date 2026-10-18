@@ -394,9 +394,10 @@
 
   // ---------- Stufe -1: Gedankengang ----------
   // Ein Satz nach dem anderen; Lücken sind Felder. Zwei Wege hinein: Zahlentasten (Finger wählt das
-  // Kästchen) oder das Schreibfeld darunter: derselbe Zeichenkern wie die Tafel (kein Stocken wie bei
-  // Scribble), die Ziffern erkennt js/digit_ink.js im Browser. Die gelesene Zahl steht sofort im Kästchen.
-  // Bestätigte Ziffern (richtiger Schritt, gelesene Zahl unverändert) werden zu Mustern für Theas Schrift.
+  // Kästchen) oder das Schreibfeld daneben: derselbe Zeichenkern wie die Tafel (kein Stocken wie bei
+  // Scribble), die Ziffern erkennt ein kleines Netz im Browser (js/digit_ink.js). Die gelesene Zahl steht
+  // sofort im Kästchen. Bestätigte Ziffern (richtiger Schritt, gelesene Zahl unverändert) werden mit ihren
+  // Strichen gespeichert – zum Messen und späteren Nachtrainieren auf Theas Schrift.
   // Ein Fehler markiert nur das Kästchen, ab dem zweiten gibt es den Tipp, ab dem dritten die Zahlen.
 
   // „2,40“, „2.4“, „1.500“, „10 €“ → Zahl; leer oder unlesbar → NaN
@@ -458,15 +459,6 @@
 
   // ---------- Schreibfeld (ein Exemplar, wird bei jedem Zeichnen der Ansicht nur umgehängt) ----------
   let pad = null;
-  let handwriting = null;  // Theas bestätigte Ziffern (vom Server)
-
-  function loadHandwriting() {
-    if (handwriting) return;
-    handwriting = [];
-    apiJson("/api/v1/practice/handwriting")
-      .then((data) => { handwriting = data.samples || []; })
-      .catch((err) => console.warn("Handschrift-Muster nicht geladen:", err));
-  }
 
   function writingPad() {
     if (pad || typeof createInkSurface !== "function" || typeof DigitInk === "undefined") return pad;
@@ -487,14 +479,15 @@
       scheduleAutoSave: () => padStrokeDone(),  // „Strich fertig“ (oder radiert)
       sendCanvasUpdate: () => {},
     });
-    pad = { el, surface, timer: null, gap: null, chars: null, text: null };
-    loadHandwriting();
+    pad = { el, surface, timer: null, gap: null, chars: null, text: null, reading: 0 };
+    DigitInk.load();
     return pad;
   }
 
   function clearPad() {
     if (!pad) return;
     clearTimeout(pad.timer);
+    pad.reading++;  // eine noch laufende Erkennung verwerfen
     pad.surface.strokes = [];
     pad.surface.undoStack = [];
     pad.surface.redoStack = [];
@@ -510,14 +503,18 @@
   }
 
   // Striche lesen und die Zahl ins aktive Kästchen schreiben
-  function readPad() {
+  async function readPad() {
     if (!run || run.stage >= 0 || !pad) return;
     const g = run.guided;
     ensureActive();
-    const inp = runView.querySelector(`.gg-blank[data-blank="${g.active}"]`);
+    const gap = g.active;
     const strokes = pad.surface.strokes.filter((st) => st.tool === "pen" && st.points && st.points.length);
-    if (!inp || !strokes.length) return;
-    const result = DigitInk.recognize(strokes, handwriting);
+    if (!gap || !strokes.length) return;
+    const reading = ++pad.reading;
+    const result = await DigitInk.recognize(strokes);
+    if (reading !== pad.reading || !run || run.guided !== g || g.active !== gap) return;  // inzwischen weiter
+    const inp = runView.querySelector(`.gg-blank[data-blank="${gap}"]`);
+    if (!inp) return;
     pad.gap = g.active;
     pad.chars = result.chars;
     pad.text = result.text;
@@ -536,9 +533,7 @@
     if (value !== pad.text || pad.text.includes("?") || !sameNumber(value, expectedById[pad.gap])) return;
     const samples = pad.chars.filter((c) => /^[0-9]$/.test(c.label)).map((c) => DigitInk.toStored(c.label, c.strokes));
     if (!samples.length) return;
-    handwriting = (handwriting || []).concat(samples);
     apiJson("/api/v1/practice/handwriting", { method: "POST", json: { samples } })
-      .then((data) => { handwriting = data.samples; })
       .catch((err) => console.warn("Handschrift-Muster nicht gespeichert:", err));
   }
 

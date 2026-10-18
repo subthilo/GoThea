@@ -1,97 +1,23 @@
 // ==========================================================================
 // Ziffern aus Pencil-Strichen erkennen (Schreibfeld der Stufe „Gedankengang“)
 // --------------------------------------------------------------------------
-// Ohne KI und ohne Wartezeit, direkt im Browser:
+// Ohne KI-Dienst und ohne Wartezeit, direkt im Browser:
 //   1. segment(): Striche nach links/rechts zu Zeichen gruppieren (überlappende
-//      Striche gehören zusammen, z. B. die zwei Striche einer 4); ein kleiner
-//      Strich unten ist ein Komma.
-//   2. classify(): jedes Zeichen mit dem $P-Punktwolken-Erkenner (Vatavu, Anthony,
-//      Wobbrock 2012) gegen Muster vergleichen. Strichreihenfolge und -richtung
-//      spielen keine Rolle. Mitgeliefert sind gezeichnete Musterziffern; dazu
-//      kommen Theas eigene Ziffern, sobald sie bestätigt sind (personal samples).
+//      oder sich berührende Striche gehören zusammen, z. B. die zwei Striche einer
+//      4); ein kleiner, schmaler Strich unten ist ein Komma.
+//   2. renderChar(): jedes Zeichen wie im Training zu einem 28×28-Bild machen
+//      (112×112 zeichnen, runde Linien, 4×4 mitteln, Schwerpunkt in die Mitte).
+//   3. classify(): kleines faltendes Netz (models/digits_cnn.bin, trainiert mit
+//      scripts/train_digit_model.py auf MNIST + verzerrten Musterziffern).
+// renderChar und das Netz müssen exakt zu render_strokes/DigitNet im Trainings-
+// skript passen. SHAPES (Musterziffern) dienen dem Training und den Tests.
 // Striche im Format des Zeichenkerns: { points: [{ x, y }, …] }.
 // ==========================================================================
 
 const DigitInk = (function () {
-  const N = 32;                 // Punkte je Zeichen nach dem Neuabtasten
-  const UNSURE_DISTANCE = 2.6;  // schlechter als das: Zeichen gilt als nicht lesbar (gemessen: echte Ziffern < ~2)
-  const LABELS = "0123456789";
-
-  // ---------- $P: Punktwolke vorbereiten und vergleichen ----------
-
-  function flatten(strokes) {
-    const pts = [];
-    strokes.forEach((s, id) => s.points.forEach((p) => pts.push({ x: p.x, y: p.y, id })));
-    return pts;
-  }
-
-  function pathLength(pts) {
-    let d = 0;
-    for (let i = 1; i < pts.length; i++) {
-      if (pts[i].id === pts[i - 1].id) d += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
-    }
-    return d;
-  }
-
-  function resample(input, n) {
-    const pts = input.map((p) => ({ ...p }));
-    const I = pathLength(pts) / (n - 1);
-    if (!I) return Array.from({ length: n }, () => ({ ...pts[0] }));
-    let D = 0;
-    const out = [{ ...pts[0] }];
-    for (let i = 1; i < pts.length; i++) {
-      if (pts[i].id !== pts[i - 1].id) continue;
-      const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
-      if (D + d >= I) {
-        const t = (I - D) / d;
-        const q = { x: pts[i - 1].x + t * (pts[i].x - pts[i - 1].x), y: pts[i - 1].y + t * (pts[i].y - pts[i - 1].y), id: pts[i].id };
-        out.push(q);
-        pts.splice(i, 0, q);
-        D = 0;
-      } else {
-        D += d;
-      }
-    }
-    while (out.length < n) out.push({ ...pts[pts.length - 1] });
-    return out.slice(0, n);
-  }
-
-  function normalize(points) {
-    let pts = resample(points, N);
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    pts.forEach((p) => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); });
-    const size = Math.max(maxX - minX, maxY - minY) || 1;
-    pts = pts.map((p) => ({ x: (p.x - minX) / size, y: (p.y - minY) / size, id: p.id }));
-    const cx = pts.reduce((s, p) => s + p.x, 0) / N, cy = pts.reduce((s, p) => s + p.y, 0) / N;
-    return pts.map((p) => ({ x: p.x - cx, y: p.y - cy, id: p.id }));
-  }
-
-  function cloudDistance(a, b, start) {
-    const matched = new Array(N).fill(false);
-    let sum = 0, i = start;
-    do {
-      let min = Infinity, index = -1;
-      for (let j = 0; j < N; j++) {
-        if (matched[j]) continue;
-        const d = Math.hypot(a[i].x - b[j].x, a[i].y - b[j].y);
-        if (d < min) { min = d; index = j; }
-      }
-      matched[index] = true;
-      const weight = 1 - ((i - start + N) % N) / N;
-      sum += weight * min;
-      i = (i + 1) % N;
-    } while (i !== start);
-    return sum;
-  }
-
-  function greedyMatch(a, b) {
-    const step = Math.floor(Math.pow(N, 0.5));
-    let min = Infinity;
-    for (let i = 0; i < N; i += step) {
-      min = Math.min(min, cloudDistance(a, b, i), cloudDistance(b, a, i));
-    }
-    return min;
-  }
+  const MODEL_URL = "/static/models/digits_cnn.bin";
+  const UNSURE_PROBABILITY = 0.6;  // darunter gilt ein Zeichen als nicht lesbar („?“)
+  const RENDER = 112, BOX = 80, LINE = 8;
 
   // ---------- Mitgelieferte Musterziffern (im Einheitsquadrat, y nach unten) ----------
   // Je Ziffer mehrere übliche Schreibweisen; Kurven werden aus Stützpunkten geglättet.
@@ -167,23 +93,6 @@ const DigitInk = (function () {
     ],
   };
 
-  // Gezeichnet im Einheitsquadrat; echte Ziffern sind schmaler als hoch (der Vergleich behält das Seitenverhältnis)
-  const DIGIT_ASPECT = 0.62;
-  const narrow = (strokes) => strokes.map((s) => ({ points: s.points.map((p) => ({ x: p.x * DIGIT_ASPECT, y: p.y })) }));
-  const BUILTIN = [];
-  Object.entries(SHAPES).forEach(([label, variants]) =>
-    variants.forEach((strokes) => BUILTIN.push({ label, cloud: normalize(flatten(narrow(strokes))), builtin: true })));
-
-  // Eigene Muster: { label, points: [[x, y, id], …] } (bereits normalisiert gespeichert)
-  function fromStored(samples) {
-    return (samples || [])
-      .filter((s) => LABELS.includes(s.label) && Array.isArray(s.points) && s.points.length === N)
-      .map((s) => ({ label: s.label, cloud: s.points.map(([x, y, id]) => ({ x, y, id })) }));
-  }
-  function toStored(label, strokes) {
-    return { label, points: normalize(flatten(strokes)).map((p) => [+p.x.toFixed(4), +p.y.toFixed(4), p.id]) };
-  }
-
   // ---------- Zeichen trennen ----------
 
   function box(points) {
@@ -214,8 +123,10 @@ const DigitInk = (function () {
     items.sort((a, b) => a.box.minX - b.box.minX);
     const groups = [];
     for (const item of items) {
-      const comma = isComma(item.box);
       const last = groups[groups.length - 1];
+      // Liegt der kleine Strich größtenteils unter der Ziffer davor, ist er ihr Teil (Fuß der 1), kein Komma
+      const under = last && Math.min(last.box.maxX, item.box.maxX) - Math.max(last.box.minX, item.box.minX) > 0.5 * item.box.w;
+      const comma = isComma(item.box) && !under;
       if (last && !comma && !last.comma) {
         // Gleiches Zeichen, wenn sich die Striche waagerecht deutlich überdecken oder einer mitten im
         // anderen steht (senkrechter Strich der 4, Querstrich der 7)
@@ -234,28 +145,159 @@ const DigitInk = (function () {
     return groups;
   }
 
-  // ---------- Erkennen ----------
+  // ---------- Bild wie im Training ----------
 
-  function classify(strokes, personal) {
-    const cloud = normalize(flatten(strokes));
-    let best = null;
-    for (const t of [...BUILTIN, ...personal]) {
-      const d = greedyMatch(cloud, t.cloud);
-      if (!best || d < best.distance) best = { label: t.label, distance: d };
+  function renderChar(strokes) {
+    const pts = strokes.flatMap((s) => s.points);
+    const b = box(pts);
+    const scale = BOX / Math.max(b.w, b.h, 1e-6);
+    const cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = RENDER;
+    canvas.height = RENDER;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, RENDER, RENDER);
+    ctx.strokeStyle = ctx.fillStyle = "#fff";
+    ctx.lineWidth = LINE;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const map = (p) => [(p.x - cx) * scale + RENDER / 2, (p.y - cy) * scale + RENDER / 2];
+    strokes.forEach((s) => {
+      const q = s.points.map(map);
+      if (q.length === 1) {
+        ctx.beginPath();
+        ctx.arc(q[0][0], q[0][1], LINE / 2, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+      }
+      ctx.beginPath();
+      ctx.moveTo(q[0][0], q[0][1]);
+      q.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.stroke();
+    });
+    const data = ctx.getImageData(0, 0, RENDER, RENDER).data;
+    const img = new Float32Array(28 * 28);
+    for (let y = 0; y < 28; y++) {
+      for (let x = 0; x < 28; x++) {
+        let sum = 0;
+        for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 4; dx++) sum += data[((y * 4 + dy) * RENDER + x * 4 + dx) * 4];
+        img[y * 28 + x] = sum / 16 / 255;
+      }
     }
-    return best;
+    return centerOfMass(img);
   }
 
-  // → { text, chars: [{ label, distance, strokes }], unsure }; „?“ für nicht lesbare Zeichen
-  function recognize(strokes, storedSamples) {
-    const personal = fromStored(storedSamples);
+  function centerOfMass(img) {
+    let total = 0, sx = 0, sy = 0;
+    for (let y = 0; y < 28; y++) for (let x = 0; x < 28; x++) { const v = img[y * 28 + x]; total += v; sx += x * v; sy += y * v; }
+    if (total <= 0) return img;
+    const dx = Math.round(13.5 - sx / total), dy = Math.round(13.5 - sy / total);
+    const out = new Float32Array(28 * 28);
+    for (let y = 0; y < 28; y++) {
+      for (let x = 0; x < 28; x++) {
+        const ty = y + dy, tx = x + dx;
+        if (ty >= 0 && ty < 28 && tx >= 0 && tx < 28) out[ty * 28 + tx] = img[y * 28 + x];
+      }
+    }
+    return out;
+  }
+
+  // ---------- Netz (wie DigitNet im Trainingsskript) ----------
+
+  let weights = null;
+  let loading = null;
+
+  function load() {
+    if (!loading) {
+      loading = fetch(MODEL_URL, { cache: "no-cache" })
+        .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); })
+        .then((buf) => {
+          const all = new Float32Array(buf);
+          const sizes = [["c1w", 144], ["c1b", 16], ["c2w", 4608], ["c2b", 32], ["f1w", 51200], ["f1b", 64], ["f2w", 640], ["f2b", 10]];
+          let at = 0;
+          weights = {};
+          sizes.forEach(([name, n]) => { weights[name] = all.subarray(at, at + n); at += n; });
+          if (at !== all.length) throw new Error("Modell hat eine unerwartete Größe");
+        })
+        .catch((err) => { console.warn("Ziffernmodell nicht geladen:", err); weights = null; });
+    }
+    return loading;
+  }
+
+  function convReluPool(input, size, cin, w, b, cout) {
+    const conv = size - 2, pooled = Math.floor(conv / 2);
+    const out = new Float32Array(cout * pooled * pooled);
+    const tmp = new Float32Array(conv * conv);
+    for (let o = 0; o < cout; o++) {
+      for (let y = 0; y < conv; y++) {
+        for (let x = 0; x < conv; x++) {
+          let sum = b[o];
+          for (let c = 0; c < cin; c++) {
+            const wBase = ((o * cin + c) * 3) * 3, iBase = c * size * size;
+            for (let ky = 0; ky < 3; ky++) {
+              for (let kx = 0; kx < 3; kx++) sum += w[wBase + ky * 3 + kx] * input[iBase + (y + ky) * size + x + kx];
+            }
+          }
+          tmp[y * conv + x] = sum > 0 ? sum : 0;
+        }
+      }
+      for (let y = 0; y < pooled; y++) {
+        for (let x = 0; x < pooled; x++) {
+          const i = 2 * y * conv + 2 * x;
+          out[o * pooled * pooled + y * pooled + x] = Math.max(tmp[i], tmp[i + 1], tmp[i + conv], tmp[i + conv + 1]);
+        }
+      }
+    }
+    return out;
+  }
+
+  function dense(input, w, b, n, relu) {
+    const out = new Float32Array(n);
+    for (let o = 0; o < n; o++) {
+      let sum = b[o];
+      for (let i = 0; i < input.length; i++) sum += w[o * input.length + i] * input[i];
+      out[o] = relu && sum < 0 ? 0 : sum;
+    }
+    return out;
+  }
+
+  function logits(img) {
+    const a = convReluPool(img, 28, 1, weights.c1w, weights.c1b, 16);
+    const b = convReluPool(a, 13, 16, weights.c2w, weights.c2b, 32);
+    return dense(dense(b, weights.f1w, weights.f1b, 64, true), weights.f2w, weights.f2b, 10, false);
+  }
+
+  function classify(strokes) {
+    const z = logits(renderChar(strokes));
+    const max = Math.max(...z);
+    const exp = Array.from(z, (v) => Math.exp(v - max));
+    const total = exp.reduce((s, v) => s + v, 0);
+    let best = 0;
+    for (let i = 1; i < 10; i++) if (exp[i] > exp[best]) best = i;
+    return { label: String(best), probability: exp[best] / total };
+  }
+
+  // ---------- Erkennen ----------
+
+  // → Promise { text, chars: [{ label, probability, strokes }], unsure }; „?“ für nicht lesbare Zeichen
+  async function recognize(strokes) {
+    await load();
     const chars = segment(strokes).map((g) => {
-      if (g.comma) return { label: ",", distance: 0, strokes: g.strokes };
-      const r = classify(g.strokes, personal);
-      return { label: r.distance <= UNSURE_DISTANCE ? r.label : "?", distance: r.distance, strokes: g.strokes };
+      if (g.comma) return { label: ",", probability: 1, strokes: g.strokes };
+      if (!weights) return { label: "?", probability: 0, strokes: g.strokes };
+      const r = classify(g.strokes);
+      return { label: r.probability >= UNSURE_PROBABILITY ? r.label : "?", probability: r.probability, strokes: g.strokes };
     });
     return { text: chars.map((c) => c.label).join(""), chars, unsure: chars.some((c) => c.label === "?") };
   }
 
-  return { recognize, segment, toStored, SHAPES, N };
+  // Bestätigte Ziffer zum Speichern: Striche auf das Kästchen der Ziffer bezogen (Höhe = 1)
+  function toStored(label, strokes) {
+    const b = box(strokes.flatMap((s) => s.points));
+    const size = Math.max(b.h, b.w, 1e-6);
+    return { label, strokes: strokes.map((s) => s.points.slice(0, 200).map((p) => [+((p.x - b.minX) / size).toFixed(3), +((p.y - b.minY) / size).toFixed(3)])) };
+  }
+
+  return { recognize, segment, toStored, load, renderChar, logits: (img) => (weights ? logits(img) : null), SHAPES };
 })();
