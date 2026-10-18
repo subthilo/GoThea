@@ -121,3 +121,26 @@ def test_list_carries_progress_and_suggestion(client):
     assert data["vorschlag"] == {"art": "weiter", "familie": "sa-gummibaerchen", "exercise_id": "sa-gummibaerchen",
                                  "stufe": 1, "board_id": board["id"]}
     assert data["wiederholen"][0]["familie"] == "sa-gummibaerchen"
+
+
+def _sample(label, x=0.0):
+    return {"label": label, "points": [[x + i / 100, -0.3 + i / 50, 0] for i in range(32)]}
+
+
+def test_handwriting_samples_are_kept_per_digit_newest_last(client):
+    assert client.get("/api/v1/practice/handwriting").json() == {"samples": []}
+    for k in range(12):
+        res = client.post("/api/v1/practice/handwriting", json={"samples": [_sample("4", k / 100), _sample("7")]})
+        assert res.status_code == 200
+    samples = client.get("/api/v1/practice/handwriting").json()["samples"]
+    fours = [s for s in samples if s["label"] == "4"]
+    assert len(fours) == 10 and len([s for s in samples if s["label"] == "7"]) == 10
+    assert fours[-1]["points"][0][0] == 0.11  # die neueste bleibt
+
+
+def test_handwriting_rejects_bad_samples(client):
+    assert client.post("/api/v1/practice/handwriting", json={"samples": [_sample("x")]}).status_code == 422
+    short = {"label": "3", "points": [[0, 0, 0]] * 5}
+    assert client.post("/api/v1/practice/handwriting", json={"samples": [short]}).status_code == 422
+    far = {"label": "3", "points": [[9, 0, 0]] * 32}
+    assert client.post("/api/v1/practice/handwriting", json={"samples": [far]}).status_code == 422

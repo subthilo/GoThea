@@ -382,10 +382,11 @@
   }
 
   // ---------- Stufe -1: Gedankengang ----------
-  // Ein Satz nach dem anderen; Lücken sind Eingabefelder. Zwei Wege hinein: Zahlentasten (Finger wählt
-  // das Kästchen, ohne dass die Bildschirmtastatur aufklappt) oder Pencil über Scribble (iPadOS wandelt
-  // die Handschrift in Text, stockt aber kurz beim ersten Strich). Ein Fehler markiert nur das Kästchen,
-  // ab dem zweiten gibt es den Tipp, ab dem dritten darf Thea sich die Zahlen zeigen lassen.
+  // Ein Satz nach dem anderen; Lücken sind Felder. Zwei Wege hinein: Zahlentasten (Finger wählt das
+  // Kästchen) oder das Schreibfeld darunter: derselbe Zeichenkern wie die Tafel (kein Stocken wie bei
+  // Scribble), die Ziffern erkennt js/digit_ink.js im Browser. Die gelesene Zahl steht sofort im Kästchen.
+  // Bestätigte Ziffern (richtiger Schritt, gelesene Zahl unverändert) werden zu Mustern für Theas Schrift.
+  // Ein Fehler markiert nur das Kästchen, ab dem zweiten gibt es den Tipp, ab dem dritten die Zahlen.
 
   // „2,40“, „2.4“, „1.500“, „10 €“ → Zahl; leer oder unlesbar → NaN
   function parseAnswer(text) {
@@ -405,7 +406,7 @@
       if (!current) return `<span class="gg-filled">${expected}</span>`;
       const wrong = g.wrong.has(id) ? " wrong" : "";
       const active = g.active === id ? " active" : "";
-      return `<input class="gg-blank${wrong}${active}" data-blank="${id}" data-expect="${expected}" value="${esc(g.values[id] || "")}"
+      return `<input class="gg-blank${wrong}${active}" data-blank="${id}" data-expect="${expected}" value="${esc(g.values[id] || "")}"${COARSE ? " readonly" : ""}
         inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         aria-label="Lücke" style="--len:${Math.max(2, expected.length)}">`;
     });
@@ -417,7 +418,8 @@
     if (g.done) return say("Geschafft! Du hast den ganzen Rechenweg aufgeschrieben.");
     const step = steps[g.step];
     let h = "";
-    if (g.empty) h += say("Da fehlt noch eine Zahl.");
+    if (g.unreadable) h += say("Eine Ziffer konnte ich nicht lesen. Schreib sie noch mal oder tipp sie ein.");
+    else if (g.empty) h += say("Da fehlt noch eine Zahl.");
     else if (g.wrong.size) h += say(g.wrong.size === 1 ? "Fast! Schau noch mal auf das markierte Kästchen." : "Schau noch mal auf die markierten Kästchen.");
     else if (g.step === 0 && !g.fails) h += say("Ergänze die fehlenden Zahlen.");
     if (g.tip && step.tipp) h += say(step.tipp);
@@ -440,6 +442,105 @@
   }
 
   const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "⌫"];
+  // Auf dem iPad sind die Felder nur auswählbar: geschrieben wird im Schreibfeld, getippt mit den Tasten
+  const COARSE = window.matchMedia("(pointer: coarse)").matches;
+
+  // ---------- Schreibfeld (ein Exemplar, wird bei jedem Zeichnen der Ansicht nur umgehängt) ----------
+  let pad = null;
+  let handwriting = null;  // Theas bestätigte Ziffern (vom Server)
+
+  function loadHandwriting() {
+    if (handwriting) return;
+    handwriting = [];
+    apiJson("/api/v1/practice/handwriting")
+      .then((data) => { handwriting = data.samples || []; })
+      .catch((err) => console.warn("Handschrift-Muster nicht geladen:", err));
+  }
+
+  function writingPad() {
+    if (pad || typeof createInkSurface !== "function" || typeof DigitInk === "undefined") return pad;
+    const el = document.createElement("div");
+    el.className = "gg-write";
+    el.innerHTML = `
+      <div class="gg-write-area" title="Hier schreiben"><canvas class="gg-write-ink"></canvas><canvas class="gg-write-overlay"></canvas></div>
+      <button type="button" class="gg-key gg-write-clear" data-pad="clear" title="Neu schreiben" aria-label="Neu schreiben">${icon("Radierer")}</button>`;
+    const area = el.querySelector(".gg-write-area");
+    const ink = el.querySelector(".gg-write-ink"), overlay = el.querySelector(".gg-write-overlay");
+    const surface = createInkSurface({
+      viewport: area, inkCanvas: ink, overlayCanvas: overlay,
+      btnScrollTop: null, scrollTrack: null, scrollThumb: null,
+      btnWbZoomIn: null, btnWbZoomOut: null, btnWbZoomReset: null, wbZoomLevelText: null,
+      docUnderlay: null, docUnderlayImg: null, tasksLayer: null,
+      inkCtx: ink.getContext("2d", { desynchronized: true }), overlayCtx: overlay.getContext("2d"),
+      stopTutorSpeech: () => {},
+      scheduleAutoSave: () => padStrokeDone(),  // „Strich fertig“ (oder radiert)
+      sendCanvasUpdate: () => {},
+    });
+    pad = { el, surface, timer: null, gap: null, chars: null, text: null };
+    loadHandwriting();
+    return pad;
+  }
+
+  function clearPad() {
+    if (!pad) return;
+    clearTimeout(pad.timer);
+    pad.surface.strokes = [];
+    pad.surface.undoStack = [];
+    pad.surface.redoStack = [];
+    pad.surface.redrawAllStrokes();
+    pad.gap = null;
+    pad.chars = null;
+    pad.text = null;
+  }
+
+  function padStrokeDone() {
+    clearTimeout(pad.timer);
+    pad.timer = setTimeout(readPad, 450);
+  }
+
+  // Striche lesen und die Zahl ins aktive Kästchen schreiben
+  function readPad() {
+    if (!run || run.stage >= 0 || !pad) return;
+    const g = run.guided;
+    ensureActive();
+    const inp = runView.querySelector(`.gg-blank[data-blank="${g.active}"]`);
+    const strokes = pad.surface.strokes.filter((st) => st.tool === "pen" && st.points && st.points.length);
+    if (!inp || !strokes.length) return;
+    const result = DigitInk.recognize(strokes, handwriting);
+    pad.gap = g.active;
+    pad.chars = result.chars;
+    pad.text = result.text;
+    inp.value = result.text;
+    inp.classList.remove("wrong");
+    g.values[g.active] = result.text;
+    g.unreadable = result.unsure;
+    const luna = runView.querySelector(".gg .px-luna");
+    if (luna) luna.innerHTML = guidedLuna();
+  }
+
+  // Richtiger Schritt: Ziffern, deren gelesene Zahl unverändert die Lösung war, werden Muster für Theas Schrift
+  function learnFromPad(expectedById) {
+    if (!pad || !pad.chars || !pad.gap) return;
+    const value = run.guided.values[pad.gap];
+    if (value !== pad.text || pad.text.includes("?") || !sameNumber(value, expectedById[pad.gap])) return;
+    const samples = pad.chars.filter((c) => /^[0-9]$/.test(c.label)).map((c) => DigitInk.toStored(c.label, c.strokes));
+    if (!samples.length) return;
+    handwriting = (handwriting || []).concat(samples);
+    apiJson("/api/v1/practice/handwriting", { method: "POST", json: { samples } })
+      .then((data) => { handwriting = data.samples; })
+      .catch((err) => console.warn("Handschrift-Muster nicht gespeichert:", err));
+  }
+
+  function mountPad() {
+    const slot = runView.querySelector(".gg-write-slot");
+    const p = writingPad();
+    if (!slot || !p) return;
+    slot.replaceWith(p.el);
+    p.surface.currentColor = getComputedStyle(runView).color || "#f8fafc";
+    p.surface.currentTool = "pen";
+    p.surface.resizeCanvases();
+    p.surface.redrawAllStrokes();
+  }
 
   function padHtml() {
     return `<div class="gg-pad" role="group" aria-label="Zahlen">${PAD_KEYS.map((k) => k === "⌫"
@@ -452,6 +553,7 @@
     const g = run.guided;
     const ids = [...runView.querySelectorAll(".gg-blank")].map((inp) => inp.dataset.blank);
     if (!ids.includes(g.active)) g.active = ids.find((id) => !g.values[id]) || ids[0] || null;
+    if (pad && pad.gap && pad.gap !== g.active) clearPad();  // neues Kästchen, neues Schreibfeld
     runView.querySelectorAll(".gg-blank").forEach((inp) => inp.classList.toggle("active", inp.dataset.blank === g.active));
   }
 
@@ -476,13 +578,14 @@
         <ol class="gg-steps">
           ${shown.map((s, i) => `<li class="gg-step${g.done || i < g.step ? " done" : " current"}">${guidedSentence(s.satz, i)}</li>`).join("")}
         </ol>
-        ${g.done ? "" : padHtml()}
+        ${g.done ? "" : `<div class="gg-write-slot"></div>${padHtml()}`}
         <div class="px-luna" aria-live="polite">${guidedLuna()}</div>
         <div class="px-actions">
           ${g.done ? guidedNextButtons() : `<button type="button" class="px-check" data-action="gg-check" title="Prüfen" aria-label="Prüfen">${icon("Haken")}</button>`}
         </div>
       </div>`;
     ensureActive();
+    if (!g.done) mountPad();
     // Mit Tastatur gleich ins erste leere Feld; auf dem iPad nicht (sonst klappt die Bildschirmtastatur auf)
     if (window.matchMedia("(hover: hover)").matches) {
       const first = [...runView.querySelectorAll(".gg-blank")].find((inp) => !inp.value);
@@ -503,9 +606,12 @@
         gelesen: inputs.filter((inp) => g.wrong.has(inp.dataset.blank)).map((inp) => inp.value) });
       return renderGuided();
     }
+    learnFromPad(Object.fromEntries(inputs.map((inp) => [inp.dataset.blank, inp.dataset.expect])));
+    clearPad();
     g.step += 1;
     g.fails = 0;
     g.tip = false;
+    g.unreadable = false;
     if (g.step >= steps.length) {
       g.done = true;
       logPracticeEvent(run.attempt, "check", { status: "richtig", schritte: steps.length });
@@ -567,6 +673,14 @@
     if (t.dataset.action === "open") return openExercise(t.dataset.id, Number(t.dataset.at || 0));
     if (t.dataset.action === "gg-check") return guidedCheck();
     if (t.dataset.key !== undefined) return guidedKey(t.dataset.key);
+    if (t.dataset.pad === "clear") {
+      const gap = pad && (pad.gap || run.guided.active);
+      clearPad();
+      const inp = gap && runView.querySelector(`.gg-blank[data-blank="${gap}"]`);
+      if (inp) { inp.value = ""; run.guided.values[gap] = ""; }
+      run.guided.unreadable = false;
+      return;
+    }
     if (t.dataset.action === "gg-tip") { run.guided.tip = true; logPracticeEvent(run.attempt, "hint", { schritt: run.guided.step + 1 }); return renderGuided(); }
     if (t.dataset.action === "gg-show") return guidedReveal();
     if (t.dataset.action === "check") {

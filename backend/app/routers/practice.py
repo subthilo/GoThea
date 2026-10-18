@@ -5,9 +5,10 @@ prüft der Server („Luna liest, der Code rechnet“, services/practice_check.p
 festgehalten (services/practice_attempts.py): Stufe 0 meldet ihre Schritte, Tafel-Prüfungen zählt der Server.
 """
 import base64
+import json
 import logging
 from datetime import datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -35,6 +36,15 @@ class CheckRequest(BaseModel):
 class AttemptStart(BaseModel):
     stage: int = Field(ge=-1, le=4)  # -1 = Gedankengang, 0 = Bausteine, 1–4 = Tafel
     board_id: Optional[str] = None  # Tafel-Stufen: der Versuch gehört zur Übungstafel
+
+
+class HandwritingSample(BaseModel):
+    label: str = Field(pattern=r"^[0-9]$")
+    points: List[List[float]] = Field(min_length=32, max_length=32)  # normalisiert: [x, y, Strich-Nr.]
+
+
+class HandwritingUpload(BaseModel):
+    samples: List[HandwritingSample] = Field(max_length=20)
 
 
 class AttemptEvent(BaseModel):
@@ -70,6 +80,50 @@ def practice_progress(db: Session = Depends(get_db)) -> dict:
     if not config.EXERCISE_TRIAL_ENABLED:
         return {"progress": {}}
     return {"progress": practice_attempts.progress(db)}
+
+
+# --- Theas Handschrift (Ziffern) für die Erkennung im Schreibfeld (js/digit_ink.js) ---------------------
+# Nur bestätigte Ziffern: die gelesene Zahl war genau die richtige Lösung. Je Ziffer bleiben die neuesten.
+SAMPLES_PER_DIGIT = 10
+
+
+def _handwriting_file():
+    return config.DATA_DIR / "handwriting" / "usr_thea.json"
+
+
+def _load_handwriting() -> list:
+    path = _handwriting_file()
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("samples", [])
+    except FileNotFoundError:
+        return []
+    except (OSError, ValueError) as e:
+        logger.warning(f"Handschrift-Muster nicht lesbar ({path}): {e}")
+        return []
+
+
+@router.get("/handwriting")
+def get_handwriting() -> dict:
+    if not config.EXERCISE_TRIAL_ENABLED:
+        return {"samples": []}
+    return {"samples": _load_handwriting()}
+
+
+@router.post("/handwriting")
+def add_handwriting(payload: HandwritingUpload) -> dict:
+    if not config.EXERCISE_TRIAL_ENABLED:
+        raise HTTPException(status_code=404, detail="Übung nicht gefunden")
+    for sample in payload.samples:
+        if any(len(p) != 3 or not all(-2 <= v <= 2 for v in p[:2]) or not 0 <= p[2] < 10 for p in sample.points):
+            raise HTTPException(status_code=422, detail="Ungültige Punkte")
+    samples = _load_handwriting() + [s.model_dump() for s in payload.samples]
+    kept = []
+    for label in "0123456789":
+        kept += [s for s in samples if s["label"] == label][-SAMPLES_PER_DIGIT:]
+    path = _handwriting_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"samples": kept}), encoding="utf-8")
+    return {"samples": kept}
 
 
 @router.get("/{exercise_id}")

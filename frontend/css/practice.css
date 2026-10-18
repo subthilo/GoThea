@@ -784,3 +784,45 @@
   width: 24px;
   height: 24px;
 }
+
+/* Schreibfeld unter dem Satz (Zeichenkern wie die Tafel): Ziffern groß hineinschreiben.
+   Wie bei der Tafel: kein Scrollen, Auswählen oder Kontextmenü auf der Zeichenfläche. */
+.gg-write {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.gg-write-area {
+  position: relative;
+  flex: 1;
+  height: 150px;
+  border-radius: 14px;
+  border: 2px solid var(--border-color);
+  background:
+    linear-gradient(to bottom, transparent calc(78% - 1px), rgba(148, 163, 184, 0.35) calc(78% - 1px), rgba(148, 163, 184, 0.35) 78%, transparent 78%),
+    var(--bg-card);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
+.gg-write-area canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: crosshair;
+}
+
+.gg-write-overlay {
+  pointer-events: none;
+}
+
+.gg-write-clear {
+  min-width: 56px;
+}

@@ -227,10 +227,15 @@ def test_stage_dot_opens_practice_board(app_page):
 
 
 def _guided_answer(page, *values):
+    """Wie auf dem iPad: Kästchen antippen (nur auswählbar), Zahl mit den Tasten eingeben, prüfen."""
     blanks = page.locator(".gg-step.current .gg-blank")
     assert blanks.count() == len(values)
     for i, v in enumerate(values):
-        blanks.nth(i).fill(v)
+        blanks.nth(i).click()
+        for _ in range(len(blanks.nth(i).input_value())):
+            page.click('.gg-key[data-key="back"]')
+        for ch in v:
+            page.click(f'.gg-key[data-key="{ch}"]')
     page.click('[data-action="gg-check"]')
 
 
@@ -266,4 +271,47 @@ def test_reasoning_path_step_by_step(app_page):
     # Weiter mit den Bausteinen (Stufe 0)
     app_page.click('.gg .px-check[data-stage="0"]')
     app_page.wait_for_selector(".px-sheet")
+    assert app_page.problems.errors == []
+
+
+# Schreibt Ziffern als Stift-Striche ins Schreibfeld (Formen aus js/digit_ink.js, leicht schräg)
+WRITE_DIGITS_JS = """
+(text) => {
+  const c = document.querySelector(".gg-write-ink");
+  const r = c.getBoundingClientRect();
+  let id = 10;
+  [...text].forEach((ch, k) => {
+    const strokes = DigitInk.SHAPES[ch][0];
+    strokes.forEach((s) => {
+      const pts = s.points.map((p) => [20 + k * 70 + (p.x * 0.62 + 0.08 * (1 - p.y)) * 90, 20 + p.y * 95]);
+      const fire = (type, [x, y]) => c.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: "pen",
+        pressure: 0.6, isPrimary: true, clientX: r.left + x, clientY: r.top + y, bubbles: true, cancelable: true }));
+      fire("pointerdown", pts[0]);
+      pts.slice(1).forEach((p) => fire("pointermove", p));
+      fire("pointerup", pts[pts.length - 1]);
+      id++;
+    });
+  });
+}
+"""
+
+
+def test_writing_pad_reads_digits_into_the_gap(app_page):
+    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
+    app_page.click('.nav-tab[data-tab="practice"]')
+    app_page.wait_for_selector(".practice-row")
+    app_page.evaluate("window.openPracticeExercise('sa-gummibaerchen', -1)")
+    app_page.wait_for_selector(".gg-write-ink")
+    _guided_answer(app_page, "3")
+    # Zweiter Satz: erstes Kästchen tippen, zweites mit dem Stift schreiben
+    app_page.click('.gg-key[data-key="3"]')
+    app_page.click('.gg-step.current .gg-blank >> nth=1')
+    app_page.evaluate(WRITE_DIGITS_JS, "50")
+    app_page.wait_for_function("document.querySelectorAll('.gg-step.current .gg-blank')[1].value === '50'")
+    with app_page.expect_response(lambda r: r.url.endswith("/handwriting") and r.request.method == "POST") as learned:
+        app_page.click('[data-action="gg-check"]')
+    assert {s["label"] for s in learned.value.json()["samples"]} >= {"5", "0"}
+    assert app_page.locator(".gg-step").count() == 3
+    # Schreibfeld ist für den nächsten Satz wieder leer
+    assert app_page.evaluate("document.querySelector('.gg-write-ink').getContext('2d').getImageData(0,0,50,50).data.some(v => v)") is False
     assert app_page.problems.errors == []
