@@ -713,6 +713,11 @@
   background: rgba(99, 102, 241, 0.18);
 }
 
+.gg-blank.active {
+  border-style: solid;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+}
+
 .gg-blank.wrong {
   border-color: var(--warning);
   background: rgba(245, 158, 11, 0.16);
@@ -743,4 +748,39 @@
 .practice-stage-no .ui-icon {
   width: 16px;
   height: 16px;
+}
+
+/* Zahlentasten unter dem aktuellen Satz (Ausweg ohne Schreiben, Tippflächen ≥ 48 px) */
+.gg-pad {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(48px, 64px));
+  gap: 8px;
+  justify-content: center;
+}
+
+.gg-key {
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gg-key:active {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+}
+
+.gg-key .ui-icon {
+  width: 24px;
+  height: 24px;
 }

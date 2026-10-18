@@ -250,7 +250,12 @@ def test_reasoning_path_step_by_step(app_page):
     app_page.click('[data-action="gg-tip"]')
     assert "Wie oft passt 50 in 150" in app_page.inner_text(".px-luna")
     _guided_answer(app_page, "3", "50")
-    _guided_answer(app_page, "1")
+    # Nächster Satz nur mit den Zahlentasten (ohne Schreiben): Tippfehler, löschen, richtig
+    for key in ("7", "back", "1"):
+        app_page.click(f'.gg-key[data-key="{key}"]')
+    assert app_page.input_value(".gg-step.current .gg-blank") == "1"
+    app_page.click('[data-action="gg-check"]')
+    assert app_page.locator(".gg-step").count() == 4
     _guided_answer(app_page, "10")
     _guided_answer(app_page, "10")
     with app_page.expect_response(lambda r: r.url.endswith("/events") and '"richtig"' in (r.request.post_data or "")) as resp:

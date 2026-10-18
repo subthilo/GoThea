@@ -176,7 +176,7 @@
     if (stage < 0 && !(ex.gedankengang || []).length) stage = 0;
     run = { ex, stage, guess: null, placed: {}, answer: null, reason: null, checked: false, hint: 0, selected: null,
             attempt: startPracticeAttempt(ex.id, stage),
-            guided: { step: 0, values: {}, wrong: new Set(), fails: 0, tip: false, empty: false, done: false } };
+            guided: { step: 0, values: {}, wrong: new Set(), fails: 0, tip: false, empty: false, done: false, active: null } };
     if (!ex.schaetzfrage.aktiv) run.guess = "-";
     show(listView, false);
     show(runView, true);
@@ -382,9 +382,10 @@
   }
 
   // ---------- Stufe -1: Gedankengang ----------
-  // Ein Satz nach dem anderen; Lücken sind Eingabefelder (Scribble wandelt die Handschrift des Pencils
-  // in Text). Ein Fehler markiert nur das Kästchen, ab dem zweiten gibt es den Tipp, ab dem dritten
-  // darf Thea sich die Zahlen zeigen lassen. Abgebrochen wird ohne Kommentar.
+  // Ein Satz nach dem anderen; Lücken sind Eingabefelder. Zwei Wege hinein: Zahlentasten (Finger wählt
+  // das Kästchen, ohne dass die Bildschirmtastatur aufklappt) oder Pencil über Scribble (iPadOS wandelt
+  // die Handschrift in Text, stockt aber kurz beim ersten Strich). Ein Fehler markiert nur das Kästchen,
+  // ab dem zweiten gibt es den Tipp, ab dem dritten darf Thea sich die Zahlen zeigen lassen.
 
   // „2,40“, „2.4“, „1.500“, „10 €“ → Zahl; leer oder unlesbar → NaN
   function parseAnswer(text) {
@@ -403,7 +404,8 @@
       const id = `${index}-${k++}`;
       if (!current) return `<span class="gg-filled">${expected}</span>`;
       const wrong = g.wrong.has(id) ? " wrong" : "";
-      return `<input class="gg-blank${wrong}" data-blank="${id}" data-expect="${expected}" value="${esc(g.values[id] || "")}"
+      const active = g.active === id ? " active" : "";
+      return `<input class="gg-blank${wrong}${active}" data-blank="${id}" data-expect="${expected}" value="${esc(g.values[id] || "")}"
         inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         aria-label="Lücke" style="--len:${Math.max(2, expected.length)}">`;
     });
@@ -417,7 +419,7 @@
     let h = "";
     if (g.empty) h += say("Da fehlt noch eine Zahl.");
     else if (g.wrong.size) h += say(g.wrong.size === 1 ? "Fast! Schau noch mal auf das markierte Kästchen." : "Schau noch mal auf die markierten Kästchen.");
-    else if (g.step === 0 && !g.fails) h += say("Schreib die fehlenden Zahlen in die Kästchen.");
+    else if (g.step === 0 && !g.fails) h += say("Ergänze die fehlenden Zahlen.");
     if (g.tip && step.tipp) h += say(step.tipp);
     const buttons = [];
     if (step.tipp && !g.tip && g.fails >= 1) buttons.push(`<button type="button" class="px-hint-btn" data-action="gg-tip" title="Tipp" aria-label="Tipp">${icon("Tipp")}</button>`);
@@ -437,6 +439,32 @@
     runView.querySelectorAll(".gg-blank").forEach((inp) => { run.guided.values[inp.dataset.blank] = inp.value; });
   }
 
+  const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "⌫"];
+
+  function padHtml() {
+    return `<div class="gg-pad" role="group" aria-label="Zahlen">${PAD_KEYS.map((k) => k === "⌫"
+      ? `<button type="button" class="gg-key" data-key="back" title="Löschen" aria-label="Löschen">${icon("Rückgängig")}</button>`
+      : `<button type="button" class="gg-key" data-key="${k}">${k}</button>`).join("")}</div>`;
+  }
+
+  // Aktives Kästchen: das zuletzt gewählte, sonst das erste leere des aktuellen Satzes
+  function ensureActive() {
+    const g = run.guided;
+    const ids = [...runView.querySelectorAll(".gg-blank")].map((inp) => inp.dataset.blank);
+    if (!ids.includes(g.active)) g.active = ids.find((id) => !g.values[id]) || ids[0] || null;
+    runView.querySelectorAll(".gg-blank").forEach((inp) => inp.classList.toggle("active", inp.dataset.blank === g.active));
+  }
+
+  function guidedKey(key) {
+    const g = run.guided;
+    ensureActive();
+    const inp = runView.querySelector(`.gg-blank[data-blank="${g.active}"]`);
+    if (!inp) return;
+    inp.value = key === "back" ? inp.value.slice(0, -1) : (inp.value + key).slice(0, 12);
+    inp.classList.remove("wrong");
+    g.values[g.active] = inp.value;
+  }
+
   function renderGuided() {
     keepGuidedInput();
     const ex = run.ex, g = run.guided, steps = ex.gedankengang;
@@ -448,11 +476,13 @@
         <ol class="gg-steps">
           ${shown.map((s, i) => `<li class="gg-step${g.done || i < g.step ? " done" : " current"}">${guidedSentence(s.satz, i)}</li>`).join("")}
         </ol>
+        ${g.done ? "" : padHtml()}
         <div class="px-luna" aria-live="polite">${guidedLuna()}</div>
         <div class="px-actions">
           ${g.done ? guidedNextButtons() : `<button type="button" class="px-check" data-action="gg-check" title="Prüfen" aria-label="Prüfen">${icon("Haken")}</button>`}
         </div>
       </div>`;
+    ensureActive();
     // Mit Tastatur gleich ins erste leere Feld; auf dem iPad nicht (sonst klappt die Bildschirmtastatur auf)
     if (window.matchMedia("(hover: hover)").matches) {
       const first = [...runView.querySelectorAll(".gg-blank")].find((inp) => !inp.value);
@@ -499,6 +529,20 @@
   runView.addEventListener("input", (e) => {
     if (e.target.classList && e.target.classList.contains("gg-blank")) e.target.classList.remove("wrong");
   });
+  // Finger wählt nur das Kästchen (keine Bildschirmtastatur, die Zahlentasten tippen); Pencil und Maus
+  // fokussieren normal – der Pencil schreibt dann über Scribble
+  runView.addEventListener("pointerdown", (e) => {
+    const inp = e.target.closest && e.target.closest(".gg-blank");
+    if (!inp || !run) return;
+    if (e.pointerType === "touch") e.preventDefault();
+    run.guided.active = inp.dataset.blank;
+    ensureActive();
+  });
+  runView.addEventListener("focusin", (e) => {
+    if (!run || !e.target.classList || !e.target.classList.contains("gg-blank")) return;
+    run.guided.active = e.target.dataset.blank;
+    ensureActive();
+  });
 
   // ---------- Bedienung: Antippen und Ziehen ----------
 
@@ -522,6 +566,7 @@
     }
     if (t.dataset.action === "open") return openExercise(t.dataset.id, Number(t.dataset.at || 0));
     if (t.dataset.action === "gg-check") return guidedCheck();
+    if (t.dataset.key !== undefined) return guidedKey(t.dataset.key);
     if (t.dataset.action === "gg-tip") { run.guided.tip = true; logPracticeEvent(run.attempt, "hint", { schritt: run.guided.step + 1 }); return renderGuided(); }
     if (t.dataset.action === "gg-show") return guidedReveal();
     if (t.dataset.action === "check") {
