@@ -51,6 +51,29 @@
       },
       "antwort_anfang": "500 g Gummibärchen kosten",
       "antwortsatz": "500 g Gummibärchen kosten 10 €.",
+      "gedankengang": [
+        {
+          "satz": "150 g Gummibärchen kosten [[3]] €.",
+          "tipp": "Die Zahl steht in der Aufgabe."
+        },
+        {
+          "satz": "Erst rechnen wir auf 50 g herunter: 150 g : [[3]] = [[50]] g.",
+          "tipp": "Wie oft passt 50 in 150?"
+        },
+        {
+          "satz": "Der Preis wird genauso geteilt: 3 € : 3 = [[1]] €. 50 g kosten also 1 €."
+        },
+        {
+          "satz": "Von 50 g auf 500 g: 500 : 50 = [[10]]. Das ist zehnmal so viel.",
+          "tipp": "Wie oft passt 50 in 500?"
+        },
+        {
+          "satz": "Dann wird auch der Preis zehnmal so groß: 1 € · 10 = [[10]] €."
+        },
+        {
+          "satz": "500 g Gummibärchen kosten [[10]] €."
+        }
+      ],
       "ueberschlag": null,
       "theas_loesung": "Tabelle mit :3 und ·10 richtig, Ergebnis 10 € richtig. Antwortsatz fehlte (3 von 4 Punkten).",
       "typische_fehler": [
@@ -134,6 +157,30 @@
       },
       "antwort_anfang": "700 g Studentenfutter kosten",
       "antwortsatz": "700 g Studentenfutter kosten 8,40 €.",
+      "gedankengang": [
+        {
+          "satz": "200 g Studentenfutter kosten [[2,40]] €.",
+          "tipp": "Die Zahl steht in der Aufgabe."
+        },
+        {
+          "satz": "Erst rechnen wir auf 100 g herunter: 200 g : [[2]] = [[100]] g.",
+          "tipp": "Wie oft passt 100 in 200?"
+        },
+        {
+          "satz": "Der Preis wird genauso geteilt: 2,40 € : 2 = [[1,20]] €. 100 g kosten also 1,20 €.",
+          "tipp": "Die Hälfte von 2,40 €."
+        },
+        {
+          "satz": "Von 100 g auf 700 g: 700 : 100 = [[7]]. Das ist siebenmal so viel."
+        },
+        {
+          "satz": "Dann wird auch der Preis siebenmal so groß: 1,20 € · 7 = [[8,40]] €.",
+          "tipp": "Rechne erst 1 € · 7 und 0,20 € · 7."
+        },
+        {
+          "satz": "700 g Studentenfutter kosten [[8,40]] €."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "Antwortsatz fehlt",
@@ -197,6 +244,26 @@
       },
       "antwort_anfang": "Es werden",
       "antwortsatz": "Es werden 3000 Flaschen mit Apfelsaft gefüllt.",
+      "gedankengang": [
+        {
+          "satz": "Es gibt [[2100]] Liter Saft. Jede Flasche fasst [[0,7]] Liter.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Wir teilen die Saftmenge durch die Flaschengröße. Überschlag mit 1 Liter: 2100 : 1 = [[2100]]. Eine Flasche fasst weniger als 1 Liter, also werden es mehr Flaschen."
+        },
+        {
+          "satz": "Mit Komma rechnet es sich schwer. Wir nehmen beide Zahlen mal 10: 2100 · 10 = [[21000]] und 0,7 · 10 = [[7]].",
+          "tipp": "Mal 10 hängt eine Null an bzw. schiebt das Komma eine Stelle nach rechts."
+        },
+        {
+          "satz": "Jetzt ohne Komma: 21000 : 7 = [[3000]].",
+          "tipp": "21 : 7 = 3, dann die Nullen dazu."
+        },
+        {
+          "satz": "Es werden [[3000]] Flaschen mit Apfelsaft gefüllt."
+        }
+      ],
       "ueberschlag": {
         "verlangt": true,
         "ausdruck": "2100 : 1 = 2100",
@@ -263,6 +330,26 @@
       },
       "antwort_anfang": "Es werden",
       "antwortsatz": "Es werden 2000 Flaschen mit Milch gefüllt.",
+      "gedankengang": [
+        {
+          "satz": "Es gibt [[1500]] Liter Milch. Jede Flasche fasst [[0,75]] Liter.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Überschlag mit 1 Liter: 1500 : 1 = [[1500]]. Eine Flasche fasst weniger als 1 Liter, also werden es mehr Flaschen."
+        },
+        {
+          "satz": "0,75 hat zwei Stellen nach dem Komma. Wir nehmen beide Zahlen mal 100: 1500 · 100 = [[150000]] und 0,75 · 100 = [[75]].",
+          "tipp": "Mal 100 schiebt das Komma zwei Stellen nach rechts."
+        },
+        {
+          "satz": "Jetzt ohne Komma: 150000 : 75 = [[2000]].",
+          "tipp": "75 · 2 = 150."
+        },
+        {
+          "satz": "Es werden [[2000]] Flaschen mit Milch gefüllt."
+        }
+      ],
       "ueberschlag": {
         "verlangt": true,
         "ausdruck": "1500 : 1 = 1500",
@@ -345,6 +432,28 @@
       },
       "antwort_anfang": "In 12 Minuten druckt der Drucker",
       "antwortsatz": "In 12 Minuten druckt der Drucker 600 Seiten.",
+      "gedankengang": [
+        {
+          "satz": "In 5 Minuten druckt der Drucker [[250]] Seiten.",
+          "tipp": "Die Zahl steht in der Aufgabe."
+        },
+        {
+          "satz": "Erst rechnen wir auf 1 Minute herunter: 5 min : [[5]] = [[1]] min."
+        },
+        {
+          "satz": "In 1 Minute druckt er also 250 : 5 = [[50]] Seiten."
+        },
+        {
+          "satz": "Von 1 Minute auf 12 Minuten: 1 min · [[12]] = [[12]] min."
+        },
+        {
+          "satz": "Dann druckt er auch zwölfmal so viele Seiten: 50 · 12 = [[600]].",
+          "tipp": "Rechne 50 · 10 und 50 · 2."
+        },
+        {
+          "satz": "In 12 Minuten druckt der Drucker [[600]] Seiten."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "Antwortsatz fehlt",
@@ -426,6 +535,29 @@
       },
       "antwort_anfang": "In 9 Minuten kopiert der Kopierer",
       "antwortsatz": "In 9 Minuten kopiert der Kopierer 405 Seiten.",
+      "gedankengang": [
+        {
+          "satz": "In 4 Minuten kopiert der Kopierer [[180]] Seiten.",
+          "tipp": "Die Zahl steht in der Aufgabe."
+        },
+        {
+          "satz": "Erst rechnen wir auf 1 Minute herunter: 4 min : [[4]] = [[1]] min."
+        },
+        {
+          "satz": "In 1 Minute kopiert er also 180 : 4 = [[45]] Seiten.",
+          "tipp": "Erst halbieren, dann noch mal halbieren."
+        },
+        {
+          "satz": "Von 1 Minute auf 9 Minuten: 1 min · [[9]] = [[9]] min."
+        },
+        {
+          "satz": "Dann kopiert er auch neunmal so viele Seiten: 45 · 9 = [[405]].",
+          "tipp": "Rechne 45 · 10 und zieh einmal 45 ab."
+        },
+        {
+          "satz": "In 9 Minuten kopiert der Kopierer [[405]] Seiten."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "Antwortsatz fehlt",
@@ -527,6 +659,29 @@
       },
       "antwort_anfang": "In 2,5 Stunden fliegt das Flugzeug",
       "antwortsatz": "In 2,5 Stunden fliegt das Flugzeug 2200 km.",
+      "gedankengang": [
+        {
+          "satz": "In 3 Stunden fliegt das Flugzeug [[2640]] km.",
+          "tipp": "Die Zahl steht in der Aufgabe."
+        },
+        {
+          "satz": "Wir rechnen auf eine halbe Stunde herunter: 3 h : [[6]] = [[0,5]] h.",
+          "tipp": "Wie viele halbe Stunden stecken in 3 Stunden?"
+        },
+        {
+          "satz": "In einer halben Stunde fliegt es 2640 km : 6 = [[440]] km.",
+          "tipp": "2400 : 6 und 240 : 6."
+        },
+        {
+          "satz": "2,5 Stunden sind fünf halbe Stunden: 0,5 h · [[5]] = [[2,5]] h."
+        },
+        {
+          "satz": "Also fliegt es fünfmal so weit: 440 km · 5 = [[2200]] km."
+        },
+        {
+          "satz": "In 2,5 Stunden fliegt das Flugzeug [[2200]] km."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "Begründung fehlt",
@@ -630,6 +785,30 @@
       },
       "antwort_anfang": "In 3,5 Stunden fährt der Zug",
       "antwortsatz": "In 3,5 Stunden fährt der Zug 455 km.",
+      "gedankengang": [
+        {
+          "satz": "In 2 Stunden fährt der Zug [[260]] km.",
+          "tipp": "Die Zahl steht in der Aufgabe."
+        },
+        {
+          "satz": "Wir rechnen auf eine halbe Stunde herunter: 2 h : [[4]] = [[0,5]] h.",
+          "tipp": "Wie viele halbe Stunden stecken in 2 Stunden?"
+        },
+        {
+          "satz": "In einer halben Stunde fährt er 260 km : 4 = [[65]] km.",
+          "tipp": "Erst halbieren, dann noch mal halbieren."
+        },
+        {
+          "satz": "3,5 Stunden sind sieben halbe Stunden: 0,5 h · [[7]] = [[3,5]] h."
+        },
+        {
+          "satz": "Also fährt er siebenmal so weit: 65 km · 7 = [[455]] km.",
+          "tipp": "60 · 7 und 5 · 7."
+        },
+        {
+          "satz": "In 3,5 Stunden fährt der Zug [[455]] km."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "Begründung fehlt",
@@ -711,6 +890,28 @@
       },
       "antwort_anfang": "Für 20 Liter Apfelsaft benötigt man",
       "antwortsatz": "Für 20 Liter Apfelsaft benötigt man 40 kg Äpfel.",
+      "gedankengang": [
+        {
+          "satz": "Für [[125]] Liter Apfelsaft braucht man [[250]] kg Äpfel.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Erst rechnen wir auf 5 Liter herunter: 125 l : [[25]] = [[5]] l.",
+          "tipp": "5 passt in 125 und in 20."
+        },
+        {
+          "satz": "Für 5 Liter braucht man 250 kg : 25 = [[10]] kg Äpfel."
+        },
+        {
+          "satz": "20 Liter sind viermal so viel: 5 l · [[4]] = [[20]] l."
+        },
+        {
+          "satz": "Also braucht man auch viermal so viele Äpfel: 10 kg · 4 = [[40]] kg."
+        },
+        {
+          "satz": "Für 20 Liter Apfelsaft benötigt man [[40]] kg Äpfel."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "Tabelle mit Äpfeln links begonnen, dann wird der falsche Wert gesucht",
@@ -792,6 +993,28 @@
       },
       "antwort_anfang": "Für 10 Liter Orangensaft benötigt man",
       "antwortsatz": "Für 10 Liter Orangensaft benötigt man 25 kg Orangen.",
+      "gedankengang": [
+        {
+          "satz": "Für [[24]] Liter Orangensaft braucht man [[60]] kg Orangen.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Erst rechnen wir auf 2 Liter herunter: 24 l : [[12]] = [[2]] l.",
+          "tipp": "2 passt in 24 und in 10."
+        },
+        {
+          "satz": "Für 2 Liter braucht man 60 kg : 12 = [[5]] kg Orangen."
+        },
+        {
+          "satz": "10 Liter sind fünfmal so viel: 2 l · [[5]] = [[10]] l."
+        },
+        {
+          "satz": "Also braucht man auch fünfmal so viele Orangen: 5 kg · 5 = [[25]] kg."
+        },
+        {
+          "satz": "Für 10 Liter Orangensaft benötigt man [[25]] kg Orangen."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "Tabelle mit Orangen links begonnen, dann wird der falsche Wert gesucht",
@@ -872,6 +1095,23 @@
       },
       "antwort_anfang": "Mit 3 Helfern dauert der Umzug",
       "antwortsatz": "Mit 3 Helfern dauert der Umzug 8 Stunden.",
+      "gedankengang": [
+        {
+          "satz": "Mit [[2]] Helfern dauert der Umzug [[12]] Stunden.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Mit nur 1 Helfer dauert es doppelt so lange: 12 h · 2 = [[24]] h.",
+          "tipp": "Weniger Helfer – dauert es dann länger oder kürzer?"
+        },
+        {
+          "satz": "Mit 3 Helfern geht es dreimal so schnell: 24 h : [[3]] = [[8]] h.",
+          "tipp": "Mehr Helfer – dauert es dann länger oder kürzer?"
+        },
+        {
+          "satz": "Mit 3 Helfern dauert der Umzug [[8]] Stunden."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "proportional gerechnet (18 h)",
@@ -953,6 +1193,22 @@
       },
       "antwort_anfang": "3 Maler brauchen",
       "antwortsatz": "3 Maler brauchen 8 Tage.",
+      "gedankengang": [
+        {
+          "satz": "[[4]] Maler brauchen [[6]] Tage.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "1 Maler allein braucht viermal so lange: 6 Tage · 4 = [[24]] Tage.",
+          "tipp": "Weniger Maler – dauert es dann länger oder kürzer?"
+        },
+        {
+          "satz": "3 Maler schaffen es dreimal so schnell: 24 Tage : [[3]] = [[8]] Tage."
+        },
+        {
+          "satz": "3 Maler brauchen [[8]] Tage."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "proportional gerechnet (4,5 Tage)",
@@ -1033,6 +1289,23 @@
       },
       "antwort_anfang": "Bei vier Personen müsste jeder",
       "antwortsatz": "Bei vier Personen müsste jeder 7,65 € bezahlen.",
+      "gedankengang": [
+        {
+          "satz": "Bei [[3]] Personen zahlt jeder [[10,20]] €.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Allein müsste eine Person den ganzen Preis zahlen: 10,20 € · 3 = [[30,60]] €.",
+          "tipp": "Rechne 10 € · 3 und 0,20 € · 3."
+        },
+        {
+          "satz": "Bei 4 Personen wird der Preis durch 4 geteilt: 30,60 € : [[4]] = [[7,65]] €.",
+          "tipp": "Erst halbieren, dann noch mal halbieren."
+        },
+        {
+          "satz": "Bei vier Personen müsste jeder [[7,65]] € bezahlen."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "proportional gerechnet (13,60 €)",
@@ -1115,6 +1388,22 @@
       },
       "antwort_anfang": "Wenn nur vier mitmachen, zahlt jede",
       "antwortsatz": "Wenn nur vier mitmachen, zahlt jede 8,00 €.",
+      "gedankengang": [
+        {
+          "satz": "Bei [[5]] Freundinnen zahlt jede [[6,40]] €.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Das ganze Geschenk kostet 6,40 € · 5 = [[32]] €.",
+          "tipp": "Rechne 6 € · 5 und 0,40 € · 5."
+        },
+        {
+          "satz": "Bei 4 Freundinnen wird der Preis durch 4 geteilt: 32 € : [[4]] = [[8]] €."
+        },
+        {
+          "satz": "Wenn nur vier mitmachen, zahlt jede [[8,00]] €."
+        }
+      ],
       "ueberschlag": null,
       "typische_fehler": [
         "proportional gerechnet (5,12 €)",

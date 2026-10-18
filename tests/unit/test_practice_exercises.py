@@ -52,6 +52,24 @@ def test_validate_catches_wrong_row():
     assert any("Zeile 3" in e for e in pe.validate(broken))
 
 
+@pytest.mark.parametrize("ex", all_exercises(), ids=lambda ex: ex["id"])
+def test_every_exercise_has_a_checked_reasoning_path(ex):
+    # Leichteste Stufe: Gedankengang in Sätzen, mindestens eine nachgerechnete Gleichung
+    steps = ex["gedankengang"]
+    assert len(steps) >= 3
+    assert sum(len(pe.EQUATION.findall(pe.fill_blanks(s["satz"]))) for s in steps) >= 2
+
+
+def test_reasoning_path_catches_wrong_equation_and_wrong_result():
+    ex = pe.get_exercise("sa-gummibaerchen")
+    steps = [dict(s) for s in ex["gedankengang"]]
+    steps[1] = {"satz": "Erst rechnen wir auf 50 g herunter: 150 g : [[3]] = [[60]] g."}
+    errors = pe.validate({**ex, "gedankengang": steps})
+    assert any("150 : 3 ergibt nicht 60" in e for e in errors)
+    steps = [dict(s) for s in ex["gedankengang"]][:-1] + [{"satz": "500 g Gummibärchen kosten [[11]] €."}]
+    assert "Gedankengang: letzte Lücke ist nicht das Ergebnis" in pe.validate({**ex, "gedankengang": steps})
+
+
 def test_money_formatting():
     assert pe.fmt_number(8.4, money=True) == "8,40"
     assert pe.fmt_number(10, money=True) == "10"

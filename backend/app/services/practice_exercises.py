@@ -97,11 +97,46 @@ def validate(ex: dict) -> List[str]:
         errors.append("Antwort der Schätzfrage fehlt in den Optionen")
     if _num(ex["fehlerbeispiel"]["wert"]) == result:
         errors.append("Fehlerbeispiel ist gleich dem Ergebnis")
+    errors += validate_reasoning_steps(ex)
     reasoning = ex.get("begruendung") or {}
     if reasoning.get("verlangt"):
         options = reasoning.get("optionen") or []
         if sum(o["richtig"] for o in options) != 1 or any(not o["richtig"] and not o.get("grund") for o in options):
             errors.append("Begründung braucht genau einen richtigen Vorschlag, falsche mit Grund")
+    return errors
+
+
+BLANK = re.compile(r"\[\[([^\]]+)\]\]")
+_NUM = r"(\d[\d.]*(?:,\d+)?)"
+_UNIT = r"(?:\s*[^\d\s:·=.,]+)?"
+# „84 € : 3 = 28 €“, „1,20 € · 7 = 8,40 €“ – Einheiten zwischen Zahl und Zeichen sind erlaubt
+EQUATION = re.compile(_NUM + _UNIT + r"\s*([:·])\s*" + _NUM + _UNIT + r"\s*=\s*" + _NUM)
+
+
+def fill_blanks(sentence: str) -> str:
+    """Satz mit eingesetzten Lösungen (für die Prüfung und die Lösungsanzeige)."""
+    return BLANK.sub(lambda m: m.group(1), sentence)
+
+
+def validate_reasoning_steps(ex: dict) -> List[str]:
+    """Gedankengang (leichteste Stufe): jede Gleichung im Satz stimmt, die letzte Lücke ist das Ergebnis."""
+    steps = ex.get("gedankengang") or []
+    errors: List[str] = []
+    for i, step in enumerate(steps, 1):
+        blanks = BLANK.findall(step["satz"])
+        if not blanks:
+            errors.append(f"Gedankengang Schritt {i}: keine Lücke")
+        for value in blanks:
+            if not re.fullmatch(r"\d[\d]*(?:,\d+)?", value):
+                errors.append(f"Gedankengang Schritt {i}: Lücke „{value}“ ist keine Zahl")
+        for a, op, b, c in EQUATION.findall(fill_blanks(step["satz"])):
+            left = _num(a.replace(".", "")) / _num(b) if op == ":" else _num(a.replace(".", "")) * _num(b)
+            if left != _num(c.replace(".", "")):
+                errors.append(f"Gedankengang Schritt {i}: {a} {op} {b} ergibt nicht {c}")
+    if steps:
+        last = BLANK.findall(steps[-1]["satz"])
+        if not last or _num(last[-1]) != _num(ex["ergebnis"]["wert"]):
+            errors.append("Gedankengang: letzte Lücke ist nicht das Ergebnis")
     return errors
 
 
