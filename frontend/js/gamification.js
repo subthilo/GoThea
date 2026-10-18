@@ -151,7 +151,7 @@ async function loadGamificationOverview() {
         first_step: "/static/Icons/Tests.svg",
         star_collector: "/static/Icons/Stern.svg",
         streak_flame: "/static/Icons/Flamme.svg",
-        perfect_run: "/static/Icons/Blitz.svg",
+        persistence: "/static/Icons/Daumen hoch.svg",
         knowledge_master: "/static/Icons/Level.svg"
       };
       gridEl.innerHTML = data.achievements.map((ach) => {

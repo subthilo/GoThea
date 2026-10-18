@@ -392,78 +392,59 @@ def get_subject_scores_summary(db: Session, subject_id: str) -> Dict[str, Any]:
 
 
 def get_gamification_overview(db: Session, user_id: str = "usr_thea") -> Dict[str, Any]:
-    """Liefert den Gesamt-Gamification-Stand von Thea (XP, Sterne, Streak, Level, Auszeichnungen)."""
-    records = db.query(ExerciseScore).filter(
-        ExerciseScore.user_id == user_id
-    ).order_by(desc(ExerciseScore.completed_at)).all()
+    """Gesamtstand für Thea: XP nur für Einsatz (services/effort_xp.py), Level, Streak, Auszeichnungen.
 
-    total_xp = 0
-    total_stars = 0
-    today_xp = 0
-    today_stars = 0
-    today_count = 0
-    today = datetime.utcnow().date()
+    Seit 18.10.2026 zählen nur noch Versuche an Übungen aus echten Aufgaben. Die Trefferquoten-XP des
+    entfallenen Lückentext-Trainers (exercise_scores) gehen nicht mehr ins Level ein. Sterne = Aufgaben,
+    die Thea zu Ende gebracht hat (egal mit wie viel Hilfe).
+    """
+    from backend.app.services import effort_xp
 
-    for r in records:
-        xp, stars = calculate_exercise_rewards(r.total_items, r.correct_items, r.accuracy_percent)
-        total_xp += xp
-        total_stars += stars
-        if r.completed_at and r.completed_at.date() == today:
-            today_xp += xp
-            today_stars += stars
-            today_count += 1
-
-    level_info = get_level_info(total_xp)
-    streak = calculate_streak_days(records)
+    effort = effort_xp.summary(db)
+    level_info = get_level_info(effort["total_xp"])
 
     achievements = [
         {
             "id": "first_step",
-            "icon": "🎯",
             "title": "Erster Schritt",
-            "description": "Deine erste Übung erfolgreich gemeistert!",
-            "unlocked": len(records) >= 1
+            "description": "Deine erste Aufgabe angepackt",
+            "unlocked": effort["attempts"] >= 1,
         },
         {
             "id": "star_collector",
-            "icon": "⭐",
             "title": "Sternensammlerin",
-            "description": "Sammle 10 oder mehr Wissens-Sterne!",
-            "unlocked": total_stars >= 10
+            "description": "10 Aufgaben zu Ende gebracht",
+            "unlocked": effort["finished"] >= 10,
         },
         {
             "id": "streak_flame",
-            "icon": "🔥",
             "title": "Fleiß-Serie",
-            "description": "Übe mindestens 2 Tage in Folge!",
-            "unlocked": streak >= 2
+            "description": "An 3 Tagen in Folge geübt",
+            "unlocked": effort["streak_days"] >= 3,
         },
         {
-            "id": "perfect_run",
-            "icon": "🌟",
-            "title": "Volltreffer",
-            "description": "Meistere eine Übung mit 100% Perfektion!",
-            "unlocked": any(r.accuracy_percent >= 99.0 for r in records)
+            "id": "persistence",
+            "title": "Drangeblieben",
+            "description": "Nach einem „noch nicht“ weitergemacht",
+            "unlocked": effort["persisted"] >= 1,
         },
         {
             "id": "knowledge_master",
-            "icon": "👑",
             "title": "GoThea-Meisterin",
-            "description": "Erreiche Level 3 oder höher!",
-            "unlocked": level_info["level"] >= 3
-        }
+            "description": "Level 3 erreicht",
+            "unlocked": level_info["level"] >= 3,
+        },
     ]
 
     return {
         "user_id": user_id,
-        "total_xp": total_xp,
-        "total_stars": total_stars,
-        "streak_days": streak,
-        "today_xp": today_xp,
-        "today_stars": today_stars,
-        "today_exercises": today_count,
-        "total_completed": len(records),
+        "total_xp": effort["total_xp"],
+        "total_stars": effort["finished"],
+        "streak_days": effort["streak_days"],
+        "today_xp": effort["today_xp"],
+        "today_stars": effort["today_finished"],
+        "today_exercises": effort["today_attempts"],
+        "total_completed": effort["attempts"],
         "level": level_info,
-        "achievements": achievements
+        "achievements": achievements,
     }
-
