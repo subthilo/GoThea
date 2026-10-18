@@ -577,8 +577,8 @@
     keepGuidedInput();
     const ex = run.ex, g = run.guided, steps = ex.gedankengang;
     const shown = steps.slice(0, g.done ? steps.length : g.step + 1);
-    // Fixierte Seite: links Aufgabe + Sätze (der aktuelle Satz steht immer unten am selben Platz,
-    // erledigte rutschen nach oben), rechts Schreibfeld, Tasten, Luna, Prüfen
+    // Fixierte Seite: links Aufgabe + Sätze (von oben nach unten; ist der Platz voll, rutschen
+    // erledigte oben hinaus), rechts Schreibfeld, Tasten, Luna, Prüfen
     setPracticeZen(true);
     runView.innerHTML = `
       ${topbarHtml()}

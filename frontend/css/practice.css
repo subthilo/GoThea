@@ -915,16 +915,12 @@ body.practice-zen-mode .gg-left .px-task {
   overflow: auto;
 }
 
-/* Sätze: eigener Scrollbereich; der erste Satz schiebt sich nach unten, damit der aktuelle unten steht */
+/* Sätze: eigener Scrollbereich, beginnt oben; ist er voll, rutschen die ersten Sätze oben hinaus */
 body.practice-zen-mode .gg-steps {
   flex: 1 1 0%;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-
-body.practice-zen-mode .gg-steps > :first-child {
-  margin-top: auto;
 }
 
 body.practice-zen-mode .gg-write {
