@@ -14,6 +14,7 @@
 //   open(ex, stage, core) – zeichnet die Übung in die Ansicht, liefert die tatsächlich geöffnete Stufe
 //   close() – eigenen Zustand verwerfen
 //   rowNote(ex)? – Zusatz in der Listenzeile (z. B. „antiproportional“)
+//   sheet? – Blatt für die Tafel-Stufen (whiteboard.js): { prepare?(ex) → Promise, render(ex, stage, {light, solution}, prepared) → Bild-URL }
 // core: topbarHtml(ex, stage), close(), open(id, stage), setZen(on)
 const PRACTICE_TYPES = {};
 

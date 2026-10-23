@@ -6,8 +6,9 @@ Eltern freigegeben); die Begriffe stehen wortgleich wie im Buch. Neben dem Bild 
 (``original``), damit Thea nachsehen kann.
 
 Stufen: -1 Anschauen (jede Ziffer antippen, der Begriff erscheint), 1 Wortbank mit genau den Begriffen,
-2 Wortbank mit Ablenkern. Geprüft wird im Browser: gleicher Begriff (Groß-/Kleinschreibung egal) oder einer
-aus ``auch``. Selbst schreiben auf der Tafel (Luna liest, der Code vergleicht) folgt als eigene Stufe.
+2 Wortbank mit Ablenkern – geprüft im Browser: gleicher Begriff (Groß-/Kleinschreibung egal) oder einer aus
+``auch``. 3 Tafel: Schaubild und nummerierte Schreiblinien als Blatt, Thea schreibt die Begriffe selbst; Luna
+liest, der Code vergleicht (services/practice_check_zuordnen.py).
 """
 from __future__ import annotations
 
@@ -17,8 +18,8 @@ from typing import List
 from backend.app.services.exercise_types.common import shuffled
 
 TYP = "zuordnen"
-STAGES = [-1, 1, 2]
-BOARD_STAGES: List[int] = []
+STAGES = [-1, 1, 2, 3]
+BOARD_STAGES = [3]
 
 IMAGES_DIR = Path(__file__).resolve().parent.parent.parent / "exercise_sets" / "bilder"
 IMAGE_URL = "/api/v1/practice/bilder/"

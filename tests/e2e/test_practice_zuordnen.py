@@ -91,3 +91,38 @@ def test_everything_fits_on_one_screen_in_both_orientations(app_page, parent_pin
         assert box["width"] > 450, (width, height, box)
         app_page.click('[data-action="back"]')
     assert app_page.problems.errors == []
+
+
+def _ensure_chemie(server_data_dir):
+    """Der Seeder legt Chemie nicht an (auf Staging kam es mit dem Stundenplan); die Übungstafel braucht das Fach."""
+    import sqlite3
+    with sqlite3.connect(f"{server_data_dir}/app_data.db") as db:
+        db.execute("INSERT OR IGNORE INTO subjects (id, name, color_code, icon, min_grade, max_grade, is_active, created_at) "
+                   "VALUES ('sub_chemie', 'Chemie', '#67e8f9', '', 7, 13, 1, '2026-10-23 12:00:00')")
+
+
+def test_board_stage_shows_figure_and_lines_and_ends_after_check(app_page, parent_pin, server_data_dir):
+    import json
+    _ensure_chemie(server_data_dir)
+    from tests.e2e.board_helpers import _draw_and_capture_save, _line
+    open_brenner(app_page, parent_pin, 2)
+    with app_page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
+        app_page.click('.px-stage[data-stage="3"]')
+    board = created.value.json()
+    assert created.value.status == 201, board
+    assert board["practice_stage"] == 3 and board["subject_id"] == "sub_chemie"
+    app_page.wait_for_function(f"document.getElementById('wb-viewport').dataset.boardId === '{board['id']}'")
+    app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
+    # Blatt: Schaubild + 11 Schreiblinien, breiter als hoch ist es nicht
+    size = app_page.evaluate("(() => { const i = document.getElementById('wb-doc-underlay-img'); return [i.naturalWidth, i.naturalHeight]; })()")
+    assert size[0] == 1560 and size[1] > 1200
+    _draw_and_capture_save(app_page, _line(500, 200, 650, 205))
+    app_page.route("**/api/v1/practice/*/check", lambda route: route.fulfill(
+        status=200, content_type="application/json",
+        body=json.dumps({"status": "richtig", "text": "Richtig! Alle Begriffe stimmen.", "probleme": [], "gelesen": {},
+                         "actions": [], "audio_base64": None})))
+    app_page.click("#btn-wb-request-hint")
+    app_page.wait_for_selector(".wb-practice-done", state="visible")
+    # Letzte Stufe: kein „Weiter mit Stufe …“, nur zurück zur Liste
+    assert app_page.locator('.wb-practice-done-btn[title^="Weiter mit Stufe"]').count() == 0
+    assert app_page.problems.errors == []

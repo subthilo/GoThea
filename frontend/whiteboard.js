@@ -1054,8 +1054,8 @@
     if (!practiceContext) return;
     const light = viewport.classList.contains("pattern-white");
     docUnderlayImg.classList.add("practice-sheet");
-    docUnderlayImg.src = renderPracticeSheet(practiceContext.ex, practiceContext.stage,
-      { light, solution: practiceContext.solution });
+    docUnderlayImg.src = practiceContext.sheet.render(practiceContext.ex, practiceContext.stage,
+      { light, solution: practiceContext.solution }, practiceContext.prepared);
     surface.isUnderlayVisible = true;
     if (docUnderlay) docUnderlay.style.display = "block";
     surface.updateViewportPan();
@@ -1082,11 +1082,14 @@
 
   async function loadPracticeSheet(board) {
     hidePracticeSheet();
-    if (!board.practice_exercise_id || typeof renderPracticeSheet !== "function") return;
+    if (!board.practice_exercise_id || typeof PRACTICE_TYPES === "undefined") return;
     try {
       const ex = await apiJson(`/api/v1/practice/${encodeURIComponent(board.practice_exercise_id)}`);
+      const sheet = (PRACTICE_TYPES[ex.typ] || {}).sheet;  // jeder Übungstyp zeichnet sein eigenes Blatt
+      if (!sheet) return;
+      const prepared = sheet.prepare ? await sheet.prepare(ex) : null;
       if (surface.currentSession !== board || surface.isBookPageMode) return;  // inzwischen gewechselt
-      practiceContext = { ex, stage: board.practice_stage || 1, solution: false, attempt: 1, hadError: false,
+      practiceContext = { ex, sheet, prepared, stage: board.practice_stage || 1, solution: false, attempt: 1, hadError: false,
                           record: startPracticeAttempt(ex.id, board.practice_stage || 1, board.id) };
       showPracticeSheet();
     } catch (err) {
@@ -1147,8 +1150,9 @@
     const ex = ctx.ex;
     const twinId = ex.ableitung === "A" ? (ex.zwillinge || [])[0] : ex.zwilling_von;
     const options = [];
-    if (ctx.stage < 4) options.push({ id: ex.id, ableitung: ex.ableitung, stage: ctx.stage + 1, icon: "Pfeil hoch", title: `Weiter mit Stufe ${ctx.stage + 1}`, best: !ctx.hadError });
-    if (twinId) options.push({ id: twinId, ableitung: ex.ableitung === "A" ? "B" : "A", stage: ctx.stage, icon: "Wiederholen", title: "Ähnliche Aufgabe", best: ctx.hadError || ctx.stage === 4 });
+    const nextStage = (ex.tafel_stufen || []).find((s) => s > ctx.stage);
+    if (nextStage !== undefined) options.push({ id: ex.id, ableitung: ex.ableitung, stage: nextStage, icon: "Pfeil hoch", title: `Weiter mit Stufe ${nextStage}`, best: !ctx.hadError });
+    if (twinId) options.push({ id: twinId, ableitung: ex.ableitung === "A" ? "B" : "A", stage: ctx.stage, icon: "Wiederholen", title: "Ähnliche Aufgabe", best: ctx.hadError || nextStage === undefined });
     practiceDoneBar.innerHTML = `<span class="wb-practice-done-label">${icon("Haken")}<span class="sr-only">Geschafft</span></span>`
       + (message ? `<span class="wb-practice-done-text">${escapeHtml(message)}</span>` : "");
     options.forEach((o) => {

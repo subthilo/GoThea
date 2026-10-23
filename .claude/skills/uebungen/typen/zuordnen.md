@@ -1,13 +1,16 @@
 # Typ „zuordnen“ – Begriffe an die Ziffern eines Schaubilds (alle Fächer)
 
-Code: `backend/app/services/exercise_types/zuordnen.py`, Ansicht `frontend/js/practice_zuordnen.js`.
+Code: `backend/app/services/exercise_types/zuordnen.py`, Ansicht und Tafelblatt `frontend/js/practice_zuordnen.js`,
+Tafel-Prüfung `backend/app/services/practice_check_zuordnen.py`.
 Datei: `backend/app/exercise_sets/zuordnen_<fach>.json`, Bilder in `backend/app/exercise_sets/bilder/`.
 Beispiel: `ch-brenner` in `zuordnen_chemie.json`.
 
 ## Stufen
 
 -1 Anschauen (Ziffer antippen, Begriff erscheint) · 1 Wortbank mit genau den Begriffen · 2 Wortbank mit
-Ablenkern. „Im Buch“ zeigt jederzeit den Buchausschnitt. (Selbst schreiben auf der Tafel kommt später.)
+Ablenkern · 3 Tafel: Blatt mit Schaubild und Schreiblinien „1 ___“, Thea schreibt die Begriffe selbst; Luna liest
+ab, der Code vergleicht (Groß-/Kleinschreibung egal; ab 6 Buchstaben zählt ein Buchstabe daneben noch, mit Hinweis
+auf die Schreibweise). „Im Buch“ zeigt in den Stufen im Tab jederzeit den Buchausschnitt.
 
 ## Felder nach dem Kopf
 
@@ -42,4 +45,5 @@ läuft deshalb nur am Mac. Bild-Aufrufe landen im Kostenprotokoll (`data/staging
 
 - Hat das Buch zu einem Gegenstand keine Abbildung, keine erfinden: Nutzer fragen.
 - Genormte Zeichen (z. B. GHS-Piktogramme) nicht nachzeichnen lassen – offizielle Vorlage verwenden (Merkliste).
-- Zu viele Ziffern (> 12) machen Liste und Bild eng; dann lieber zwei Übungen.
+- Zu viele Ziffern (> 12) machen Liste, Bild und Tafelblatt eng (Zeilen dort 40–56 px); dann lieber zwei Übungen.
+- `auch`: gängige gleichwertige Schreibweisen, die die Lehrkraft gelten lässt – sonst zählt nur der Buchbegriff.

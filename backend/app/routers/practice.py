@@ -1,7 +1,7 @@
 """Übungen aus echten Aufgaben – Probebetrieb (Schalter GOTHEA_EXERCISE_TRIAL, Standard nur Staging).
 
 Die Daten enthalten die Lösungen; die Stufen im Tab prüft der Browser, die Tafel-Stufen der Server („Luna
-liest, der Code rechnet“, services/practice_check.py – bisher nur für die Mathe-Sachaufgabe). Jeder Versuch wird
+liest, der Code prüft“: practice_check.py für Mathe, practice_check_zuordnen.py für Zuordnen). Jeder Versuch wird
 festgehalten (services/practice_attempts.py): der Tab meldet seine Schritte, Tafel-Prüfungen zählt der Server.
 Entwürfe (in der Session erstellt, noch nicht freigegeben) sieht nur der Eltern-Modus; Versuche daran werden
 nicht gespeichert, damit Probeklicks der Eltern nicht in Theas Lernstand landen.
@@ -22,7 +22,8 @@ from backend.app import config
 from backend.app.database import get_db
 from backend.app.models.whiteboard import TutorSession
 from backend.app.models.practice_attempt import PracticeAttempt
-from backend.app.services import llm, practice_attempts, practice_check, practice_exercises, practice_plan
+from backend.app.services import (llm, practice_attempts, practice_check, practice_check_zuordnen, practice_exercises,
+                                  practice_plan)
 from backend.app.services.exercise_types import zuordnen
 from backend.app.services.parent_auth import is_parent
 
@@ -57,6 +58,10 @@ class HandwritingUpload(BaseModel):
 class AttemptEvent(BaseModel):
     kind: Literal["guess", "hint", "solution", "check"]
     data: dict = Field(default_factory=dict)
+
+
+# Tafel-Prüfung je Übungstyp: read_board, evaluate, feedback, marks, describe_read
+BOARD_CHECKS = {"sachaufgabe": practice_check, "zuordnen": practice_check_zuordnen}
 
 
 def _exercise_or_404(exercise_id: str, include_drafts: bool = False) -> dict:
@@ -194,20 +199,21 @@ def record_event(attempt_id: str, payload: AttemptEvent, db: Session = Depends(g
 @router.post("/{exercise_id}/check")
 def check_practice(exercise_id: str, payload: CheckRequest, db: Session = Depends(get_db),
                    parent: bool = Depends(is_parent)) -> dict:
-    """Tafel prüfen: Luna liest die Handschrift, das Programm prüft die Mathematik."""
+    """Tafel prüfen: Luna liest die Handschrift, das Programm prüft (Mathe rechnet, Zuordnen vergleicht)."""
     ex = _exercise_or_404(exercise_id, include_drafts=parent)
     if payload.stage not in ex["tafel_stufen"]:
         raise HTTPException(status_code=400, detail="Diese Stufe läuft nicht auf der Tafel")
     if not llm.is_available():
         raise HTTPException(status_code=503, detail="Luna ist gerade nicht erreichbar.")
+    checker = BOARD_CHECKS[ex["typ"]]
     try:
-        read = practice_check.read_board(ex, payload.stage, payload.image_base64)
+        read = checker.read_board(ex, payload.stage, payload.image_base64)
     except llm.LLMError as e:
         logger.warning(f"Übungsprüfung fehlgeschlagen: {e}")
         raise HTTPException(status_code=503, detail="Luna konnte die Tafel gerade nicht lesen.")
 
-    outcome = practice_check.evaluate(ex, payload.stage, read)
-    text = practice_check.feedback(ex, outcome, payload.attempt)
+    outcome = checker.evaluate(ex, payload.stage, read)
+    text = checker.feedback(ex, outcome, payload.attempt)
     practice_check.log_check(exercise_id, payload.stage, payload.image_base64, read, outcome)
 
     board = db.get(TutorSession, payload.board_id) if payload.board_id else None
@@ -229,7 +235,7 @@ def check_practice(exercise_id: str, payload: CheckRequest, db: Session = Depend
         "status": outcome["status"],
         "text": text,
         "probleme": outcome["probleme"],
-        "gelesen": practice_check.describe_read(read, ex),
-        "actions": practice_check.marks(read, outcome),
+        "gelesen": checker.describe_read(read, ex),
+        "actions": checker.marks(read, outcome),
         "audio_base64": audio,
     }

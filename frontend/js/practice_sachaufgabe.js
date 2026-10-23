@@ -595,6 +595,7 @@
       4: { title: "Tafel: leeres Blatt wie im Test" },
     },
     rowNote: (ex) => (ex.schema === "dreisatz_antiproportional" ? "antiproportional" : ""),
+    sheet: { render: (ex, stage, options) => renderPracticeSheet(ex, stage, options) },  // Tafel-Stufen 1–4
     open(ex, stage, coreApi) {
       core = coreApi;
       if (stage < 0 && !(ex.gedankengang || []).length) stage = 0;

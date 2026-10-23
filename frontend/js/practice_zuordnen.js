@@ -99,7 +99,7 @@
 
   function nextButtons() {
     const ex = run.ex;
-    const next = ex.stufen.find((s) => s > run.stage && !ex.tafel_stufen.includes(s));
+    const next = ex.stufen.find((s) => s > run.stage);  // auch die Tafel-Stufe (öffnet der Kern auf der Tafel)
     const twinId = ex.ableitung === "A" ? ex.zwillinge[0] : ex.zwilling_von;
     let h = next !== undefined
       ? `<button type="button" class="px-check" data-stage="${next}" title="Weiter mit Stufe ${next}" aria-label="Weiter mit Stufe ${next}">${icon("Pfeil hoch")}<span>${next}</span></button>` : "";
@@ -231,6 +231,90 @@
     drag = null;
   });
 
+  // ---------- Tafel-Stufe: Blatt mit Schaubild und Schreiblinien ----------
+  // Wie das Mathe-Blatt (js/practice_sheet.js): feste Breite, durchsichtig, damit das Tafel-Gitter durchscheint;
+  // links das Schaubild, rechts „1 ____“, „2 ____“ … zum Schreiben. Mit solution schreibt Luna die Begriffe hinein.
+
+  function loadFigure(ex) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Schaubild nicht geladen: ${ex.bild_url}`));
+      img.src = ex.bild_url;
+    });
+  }
+
+  function renderLabelSheet(ex, stage, { light = false, solution = false } = {}, figure = null) {
+    const W = PRACTICE_SHEET_WIDTH, dpr = 2, pad = 36, right = W - pad;
+    const font = '-apple-system, "Helvetica Neue", Arial, sans-serif';
+    const ink = light ? "#1b2130" : "#e8eaf2";
+    const rule = light ? "rgba(27, 33, 48, 0.4)" : "rgba(232, 234, 242, 0.38)";
+    const luna = light ? "#b45309" : "#f2b84b";
+    // Auch im Querformat ohne Scrollen: Aufgabe und Bild links, die Linien rechts ab ganz oben; bei vielen
+    // Begriffen werden die Zeilen enger (40–56 px), damit alle über der Werkzeugleiste der Tafel liegen
+    const fields = ex.felder;
+    const figW = 340, colX = pad + figW + 28;
+    const lineH = Math.max(40, Math.min(56, Math.floor(470 / fields.length)));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.font = `400 22px ${font}`;
+    const words = ex.aufgabentext.split(/\s+/);
+    const taskLines = [];
+    let line = "";
+    words.forEach((w) => {
+      const next = line ? `${line} ${w}` : w;
+      if (ctx.measureText(next).width > figW && line) { taskLines.push(line); line = w; } else line = next;
+    });
+    if (line) taskLines.push(line);
+    const top = pad + taskLines.length * 30 + 18;
+    const figH = figure ? figW * figure.naturalHeight / figure.naturalWidth : figW;
+    const height = Math.max(top + figH, pad + fields.length * lineH) + pad + 200;  // Platz zum Schreiben darunter
+
+    canvas.width = W * dpr;
+    canvas.height = Math.ceil(height * dpr);
+    ctx.scale(dpr, dpr);
+    ctx.textBaseline = "alphabetic";
+    ctx.font = `400 22px ${font}`;
+    ctx.fillStyle = ink;
+    taskLines.forEach((t, i) => ctx.fillText(t, pad, pad + 22 + i * 30));
+
+    if (figure) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(pad, top, figW, figH, 12);
+      ctx.clip();
+      ctx.drawImage(figure, pad, top, figW, figH);
+      ctx.restore();
+    }
+
+    fields.forEach((f, i) => {
+      const base = pad + (i + 1) * lineH - 10;
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(colX + 14, base - 8, 14, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.font = `700 16px ${font}`;
+      ctx.textAlign = "center";
+      ctx.fillText(String(f.nr), colX + 14, base - 2);
+      ctx.textAlign = "left";
+      ctx.strokeStyle = rule;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(colX + 38, base + 4);
+      ctx.lineTo(right, base + 4);
+      ctx.stroke();
+      if (solution) {
+        ctx.font = `italic 600 21px ${font}`;
+        ctx.fillStyle = luna;
+        ctx.fillText(f.begriff, colX + 44, base - 2, right - colX - 48);
+        ctx.fillStyle = ink;
+      }
+    });
+    return canvas.toDataURL("image/png");
+  }
+
   // ---------- Anmeldung beim Kern ----------
 
   registerPracticeType("zuordnen", {
@@ -238,7 +322,9 @@
       "-1": { title: "Anschauen: Ziffern antippen", name: "Anschauen", icon: "Anzeigen" },
       1: { title: "Begriffe zuordnen" },
       2: { title: "Begriffe zuordnen, mit falschen dazwischen" },
+      3: { title: "Tafel: Begriffe selbst schreiben" },
     },
+    sheet: { prepare: loadFigure, render: renderLabelSheet },
     open(ex, stage, coreApi) {
       core = coreApi;
       run = { ex, stage, attempt: startPracticeAttempt(ex.id, stage), placed: {}, seen: new Set(), active: null,
