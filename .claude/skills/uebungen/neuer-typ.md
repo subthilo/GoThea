@@ -20,12 +20,14 @@ Ein Bild der geplanten Ansicht (Mockup) hilft bei der Abstimmung.
 
 - [ ] `backend/app/services/exercise_types/<typ>.py`: `TYP`, `STAGES`, `BOARD_STAGES`, `validate(ex)`,
       `prepare(ex)`, `summary(ex)`; in `exercise_types/__init__.py` eintragen. Gemeinsames in `common.py`.
-- [ ] `frontend/js/practice_<typ>.js`: `registerPracticeType("<typ>", { stages, open(ex, stage, core), close(), rowNote? })`;
+- [ ] `frontend/js/practice_<typ>.js`: `registerPracticeType("<typ>", { stages, open(ex, stage, core), close(), rowNote?, sheet? })`;
       in `index.html` nach `practice.js` laden. Feste Seite: `core.setZen(true)`.
       Versuche: `startPracticeAttempt(ex.id, stage)`, Ereignisse mit `logPracticeEvent(attempt, "check" | "hint" | "solution", data)`
       – `check` braucht `status` (`richtig` / `noch_nicht`); daraus entstehen Einsatz-XP und Wiederholen.
 - [ ] Stile als eigener Abschnitt in `frontend/css/practice.css` (Tippflächen ≥ 44 px).
-- [ ] Tafel-Stufen nur mit eigener Prüfung (heute nur die Sachaufgabe: `practice_check.py`, `practice_sheet.js`).
+- [ ] Tafel-Stufen nur mit eigener Prüfung (`services/practice_check_<typ>.py`, Vorlage `practice_check_zuordnen.py`;
+      Sachaufgabe: `practice_check.py`), in `BOARD_CHECKS` in `routers/practice.py` eintragen; das Tafelblatt
+      meldet die Ansicht als `sheet: { prepare, render }` an (Vorlage `practice_zuordnen.js`).
 - [ ] Tests: Unit (`validate` findet kaputte Daten), Browser-Test zum Durchspielen und der Ein-Bildschirm-Test
       (iPad Pro 11 und mini, quer und hoch; Vorlage `tests/e2e/test_practice_zuordnen.py`).
 - [ ] Steckbrief `typen/<typ>.md` für die Sessions; CLAUDE.md (Architektur/Stand) ergänzen.

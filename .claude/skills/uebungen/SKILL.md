@@ -13,8 +13,9 @@ auf den Nutzer warten. Deutsch, knapp, Tabellen statt Fließtext.
 ## Grundsätze (mit dem Nutzer abgestimmt, nicht verhandelbar)
 
 - **Nie frei erdacht.** Jede Übung geht auf eine echte Aufgabe zurück: A Original, B Zwilling (gleiche Struktur,
-  andere Zahlen oder anderer Kontext), C umgeformt (gleicher Inhalt, andere Übungsform). Lösungen aus der
-  Schullösung oder dem Buch; Mathe rechnet der Code nach („Luna liest, der Code rechnet“).
+  andere Zahlen oder anderer Kontext), C umgeformt (gleicher Inhalt, andere Übungsform – z. B. ein Ablauf aus einem
+  Fließtext wird zu „Ordnen“). Lösungen aus der Schullösung oder dem Buch; Mathe rechnet der Code nach („Luna liest,
+  der Code rechnet“).
 - **Wie im Buch.** Begriffe, Schreibweisen und Abbildungen genau wie in Theas Buch. Schaubilder sind die
   Originalabbildung (nachgezeichnet mit `scripts/figure_tool.py`), nie eine nachempfundene Zeichnung – ein
   KI-Brenner mit anderer Bauart und anderen Begriffen hat den Nutzer verwirrt.
@@ -40,7 +41,8 @@ ssh pi@$PI 'cd ~/GoThea-staging && .venv/bin/python scripts/exercise_sources.py 
 Das liefert Buchabschnitte mit Seiten, Seiten mit Theas Handschrift, ihre Unterlagen zum Thema und vorhandene
 Übungen, jeweils mit den IDs für den Kopf. Die Seitentexte der Quellen lesen. Wo Abbildungen oder Handschrift
 zählen, das Seitenbild ansehen:
-`curl -s -o seite.jpg "http://$PI:8001/api/v1/materials/<material_id>/preview?page=<n>"` (dann Read).
+`curl -s -o <scratchpad>/seite.png "http://$PI:8001/api/v1/materials/<material_id>/preview?page=<n>"` (dann Read;
+nicht ins Repo legen).
 Seiten sind immer Seiten **in der Datei** (bei Buchkapiteln im Kapitel-PDF); die gedruckte Buchseite steht dabei.
 Die Skripte müssen auf Staging aktuell sein (sonst erst `./deploy.sh`).
 
@@ -59,13 +61,14 @@ Tabelle zum Abstimmen, eine Zeile je geplanter Übung:
 
 ### 3. Erstellen
 
-Je Übung den Steckbrief des Typs lesen. Datei: `backend/app/exercise_sets/<typ>_<fach>.json` (anhängen; eine neue
-Datei bekommt `typ`, `version`, `stand`, `hinweis` und `uebungen`). Kopf jeder Übung:
+Je Übung den Steckbrief des Typs lesen. Datei: die vorhandene des Typs fürs Fach weiterführen (Mathe-Sachaufgaben:
+`sachaufgabe_pilot.json`, Chemie-Zuordnen: `zuordnen_chemie.json`), sonst neu `backend/app/exercise_sets/<typ>_<fach>.json`
+mit `typ`, `version`, `stand`, `hinweis` und `uebungen`. Kopf jeder Übung:
 
 ```jsonc
 {
-  "id": "ch-laborgeraete",              // <Fachkürzel>-<Stichwort>, Zwillinge -z1, -z2
-  "ableitung": "A",                     // B/C zusätzlich: "zwilling_von": "<id des Originals>"
+  "id": "ch-laborgeraete",              // <Präfix>-<Stichwort>, Zwillinge -z1, -z2 (Präfix siehe unten)
+  "ableitung": "A",                     // nur B zusätzlich: "zwilling_von": "<id des Originals>"
   "fach": "sub_chemie",
   "thema": "top_dfbb0dd9",
   "status": "entwurf",
@@ -78,7 +81,12 @@ Datei bekommt `typ`, `version`, `stand`, `hinweis` und `uebungen`). Kopf jeder �
 }
 ```
 
-`material` ist bei Buchkapiteln der **Buchtitel**, sonst der Dokumenttitel (die Prüfung vergleicht ihn).
+- `material` ist bei Buchkapiteln der **Buchtitel**, sonst der Dokumenttitel (die Prüfung vergleicht ihn).
+- **Ableitung:** A und C stehen als eigene Zeile in Theas Liste, B hängt am Original (gleicher Typ, Original muss
+  vorher oder zugleich freigegeben werden). C nennt in `quelle` die Originalaufgabe und darf einen anderen Typ haben
+  als eine A-Übung derselben Quelle; ein C kann eigene Zwillinge (B) bekommen.
+- **ID-Präfix:** wie die übrigen Übungen der Datei (Mathe-Sachaufgaben `sa-`, Chemie `ch-`); neues Fach → kurzes
+  Kürzel (`bio-`, `ph-`, `geo-` …). IDs nie umbenennen: Versuche und Übungstafeln hängen an ihnen.
 
 Bilder (Typ `zuordnen`): `scripts/figure_tool.py` (Ablauf im Steckbrief). Jedes erzeugte Bild selbst ansehen und
 mit dem Original vergleichen, auch wenn die automatische Prüfung bestanden hat.
@@ -86,7 +94,7 @@ mit dem Original vergleichen, auch wenn die automatische Prüfung bestanden hat.
 Prüfen, bevor der Nutzer etwas sieht:
 
 ```bash
-.venv/bin/pytest -q tests/unit/test_practice_exercises.py   # Kopf + Regeln des Typs, alle Übungen inkl. Entwürfe
+.venv/bin/pytest -q tests/unit/test_practice_exercises.py   # Kopf, IDs, Zwillinge, Regeln des Typs; alle Übungen inkl. Entwürfe
 .venv/bin/ruff check
 ```
 
@@ -103,7 +111,8 @@ Prüfen, bevor der Nutzer etwas sieht:
 
 ### 5. Freigeben
 
-Für jede abgesegnete Übung `"status": "freigegeben"` und `"freigegeben_am": "<JJJJ-MM-TT>"` setzen. Tests → Commit
+Für jede abgesegnete Übung `"status": "freigegeben"` und `"freigegeben_am": "<JJJJ-MM-TT>"` setzen (ohne Datum
+scheitern die Tests). Tests → Commit
 `feat(exercises): release …` → `./deploy.sh` → `check_exercises.py`. Produktion nur auf ausdrückliches OK des
 Nutzers – und erst nach der Datenübernahme Staging → Produktion (vorher fehlen dort die Materialien und IDs).
 
