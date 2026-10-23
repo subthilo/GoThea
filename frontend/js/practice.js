@@ -88,7 +88,7 @@
     if (boardId && typeof window.openBoardOnWhiteboard === "function") return window.openBoardOnWhiteboard(boardId);
     if (!(stage > 0) || typeof window.openPracticeOnWhiteboard !== "function") return openExercise(exerciseId, stage > 0 ? 0 : stage || 0);
     const ableitung = exerciseId === family.id ? "A" : "B";
-    return window.openPracticeOnWhiteboard({ exerciseId, stage, title: practiceBoardTitle(family.quelle, ableitung, stage) });
+    return window.openPracticeOnWhiteboard({ exerciseId, stage, subjectId: family.fach, title: practiceBoardTitle(family.quelle, ableitung, stage) });
   }
 
   const SUGGESTION_ICONS = { weiter: "Pfeil rechts", wiederholen: "Wiederholen", neu: "Rakete" };
@@ -98,7 +98,7 @@
     card.type = "button";
     card.className = "practice-suggest";
     card.title = sug.art === "wiederholen" ? "Wiederholen" : sug.art === "neu" ? "Neue Aufgabe" : "Weiter";
-    card.style.setProperty("--subject-color", subjectColor("sub_math"));
+    card.style.setProperty("--subject-color", subjectColor(family.fach));
     card.innerHTML = `
       ${icon("Luna", "practice-suggest-luna")}
       <span class="practice-row-text">
@@ -124,12 +124,12 @@
     const row = document.createElement("div");
     row.className = "practice-row";
     row.dataset.id = ex.id;
-    row.style.setProperty("--subject-color", subjectColor("sub_math"));
+    row.style.setProperty("--subject-color", subjectColor(ex.fach));
     const anti = ex.schema === "dreisatz_antiproportional";
     const next = !stand ? -1 : stand.naechste_stufe ?? 0;
     row.innerHTML = `
       <button type="button" class="practice-row-main" title="Üben">
-        ${subjectIcon("Mathematik", "practice-row-icon")}
+        ${subjectIcon(ex.fach, "practice-row-icon")}
         <span class="practice-row-text">
           <span class="practice-row-task">${esc(ex.aufgabentext)}</span>
           <span class="practice-row-src">${esc(sourceLine(ex.quelle))}${anti ? " · antiproportional" : ""}</span>
@@ -155,10 +155,10 @@
   function buildRepeatRow(r, family) {
     const row = document.createElement("div");
     row.className = "practice-row practice-repeat";
-    row.style.setProperty("--subject-color", subjectColor("sub_math"));
+    row.style.setProperty("--subject-color", subjectColor(family.fach));
     row.innerHTML = `
       <button type="button" class="practice-row-main" title="Wiederholen">
-        ${subjectIcon("Mathematik", "practice-row-icon")}
+        ${subjectIcon(family.fach, "practice-row-icon")}
         <span class="practice-row-text">
           <span class="practice-row-task">${esc(family.aufgabentext)}</span>
           <span class="practice-row-src">${esc(sourceLine(family.quelle))}${r.exercise_id !== family.id ? " · ähnliche Aufgabe" : ""}</span>
@@ -683,7 +683,7 @@
       const stage = Number(t.dataset.stage);
       if (stage <= 0) return stage === run.stage ? undefined : openExercise(run.ex.id, stage);
       if (typeof window.openPracticeOnWhiteboard !== "function") return;
-      return window.openPracticeOnWhiteboard({ exerciseId: run.ex.id, stage, title: practiceBoardTitle(run.ex.quelle, run.ex.ableitung, stage) });
+      return window.openPracticeOnWhiteboard({ exerciseId: run.ex.id, stage, subjectId: run.ex.fach, title: practiceBoardTitle(run.ex.quelle, run.ex.ableitung, stage) });
     }
     if (t.dataset.action === "open") return openExercise(t.dataset.id, Number(t.dataset.at || 0));
     if (t.dataset.action === "gg-check") return guidedCheck();

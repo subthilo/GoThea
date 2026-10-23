@@ -1159,7 +1159,7 @@
       btn.setAttribute("aria-label", o.title);
       btn.innerHTML = icon(o.icon) + (o.stage !== ctx.stage ? `<span>${o.stage}</span>` : "");
       btn.addEventListener("click", () => window.openPracticeOnWhiteboard({
-        exerciseId: o.id, stage: o.stage, title: practiceBoardTitle(ex.quelle, o.ableitung, o.stage) }));
+        exerciseId: o.id, stage: o.stage, subjectId: ex.fach, title: practiceBoardTitle(ex.quelle, o.ableitung, o.stage) }));
       practiceDoneBar.appendChild(btn);
     });
     const back = document.createElement("button");
@@ -1558,7 +1558,7 @@
   };
 
   // Übung aus dem Tab „Üben“ auf einer neuen Tafel (Stufe 1–4)
-  window.openPracticeOnWhiteboard = function({ exerciseId, stage, title, subjectId = "sub_math" }) {
+  window.openPracticeOnWhiteboard = function({ exerciseId, stage, title, subjectId }) {
     showBoardTab();
     return queued(async () => {
       await leaveCurrent();
