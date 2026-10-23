@@ -13,7 +13,7 @@ from backend.app.models.whiteboard import TutorSession
 from backend.app.schemas.boards import BoardCloseResult, BoardCreate, BoardDetail, BoardRename, BoardSummary
 from backend.app.services import boards as svc
 from backend.app.services import practice_exercises
-from backend.app.services.parent_auth import require_parent
+from backend.app.services.parent_auth import is_parent, require_parent
 
 router = APIRouter(prefix="/api/v1/boards", tags=["Tafeln"])
 
@@ -70,11 +70,13 @@ def last_board(subject_id: Optional[str] = None, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=BoardDetail, status_code=201)
-def create_board(payload: BoardCreate, db: Session = Depends(get_db)):
+def create_board(payload: BoardCreate, db: Session = Depends(get_db), parent: bool = Depends(is_parent)):
     subject = db.get(Subject, payload.subject_id)
     if subject is None:
         raise HTTPException(status_code=404, detail=f"Fach '{payload.subject_id}' existiert nicht.")
-    if payload.practice_exercise_id and practice_exercises.get_exercise(payload.practice_exercise_id) is None:
+    # Entwürfe probieren die Eltern auch auf der Tafel aus (wie im Tab „Üben“)
+    if payload.practice_exercise_id and practice_exercises.get_exercise(payload.practice_exercise_id,
+                                                                          include_drafts=parent) is None:
         raise HTTPException(status_code=404, detail=f"Übung '{payload.practice_exercise_id}' nicht gefunden.")
     return _detail(svc.create_board(db, subject, title=payload.title,
                                     practice_exercise_id=payload.practice_exercise_id,

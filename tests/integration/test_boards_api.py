@@ -152,3 +152,15 @@ def test_practice_board_needs_known_exercise_and_valid_stage(client):
     assert client.post("/api/v1/boards", json=unknown).status_code == 404
     bad_stage = {"subject_id": "sub_math", "practice_exercise_id": "sa-gummibaerchen", "practice_stage": 7}
     assert client.post("/api/v1/boards", json=bad_stage).status_code == 422
+
+
+def test_practice_board_for_a_draft_only_in_parent_mode(client, monkeypatch):
+    # Entwürfe probieren die Eltern auch auf der Tafel aus; ohne Eltern-Modus gibt es sie nicht
+    from backend.app.services import practice_exercises as pe
+    from backend.app.services.parent_auth import issue_token
+    exercises = dict(pe._load_all())
+    monkeypatch.setattr(pe, "_load_all", lambda: {**exercises, "sa-drucker": {**exercises["sa-drucker"], "status": "entwurf"}})
+    draft = {"subject_id": "sub_math", "practice_exercise_id": "sa-drucker", "practice_stage": 1}
+    assert client.post("/api/v1/boards", json=draft).status_code == 404
+    headers = {"X-Parent-Token": issue_token()[0]}
+    assert client.post("/api/v1/boards", json=draft, headers=headers).status_code == 201

@@ -147,3 +147,16 @@ def test_board_stage_shows_figure_and_lines_and_ends_after_check(app_page, paren
     # Letzte Stufe: kein „Weiter mit Stufe …“, nur zurück zur Liste
     assert app_page.locator('.wb-practice-done-btn[title^="Weiter mit Stufe"]').count() == 0
     assert app_page.problems.errors == []
+
+
+def test_parents_try_a_draft_on_the_board(app_page, parent_pin, server_data_dir):
+    # Entwurf: die Übungstafel geht im Eltern-Modus mit Blatt auf (anfangs 404 – Tafel ohne Übung)
+    _ensure_chemie(server_data_dir)
+    open_brenner(app_page, parent_pin, 2, "ch-laborgeraete-1")
+    with app_page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
+        app_page.click('.px-stage[data-stage="3"]')
+    app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
+    assert app_page.problems.errors == []
+    # Aufräumen: sonst öffnen spätere Tests (ohne Eltern-Modus) diese Tafel als letzte
+    board_id = created.value.json()["id"]
+    app_page.evaluate(f"apiFetch('/api/v1/boards/{board_id}', {{ method: 'DELETE' }})")
