@@ -2,7 +2,7 @@
   "typ": "zuordnen",
   "version": 1,
   "stand": "2026-10-23",
-  "hinweis": "Chemie, Kapitel 1 „Was ist Chemie?“. Erstellt in einer Claude-Code-Session; Schaubilder mit scripts/figure_tool.py aus der Buchabbildung nachgezeichnet und geprüft, Begriffe wortgleich aus dem Buch.",
+  "hinweis": "Chemie, Kapitel 1 „Was ist Chemie?“. Erstellt in einer Claude-Code-Session; Schaubilder mit scripts/figure_tool.py aus der Buchabbildung nachgezeichnet und geprüft bzw. – wo die Abbildung keine Beschriftung hat – der Original-Ausschnitt mit Ziffern, Begriffe wortgleich aus dem Buch.",
   "uebungen": [
     {
       "id": "ch-brenner",
@@ -110,6 +110,263 @@
       ],
       "hilfen": {
         "denkanstoss": "Fang mit dem an, was du sicher weißt: Wo strömt das Gas hinein, wo die Luft?"
+      }
+    },
+    {
+      "id": "ch-grundregeln",
+      "ableitung": "A",
+      "fach": "sub_chemie",
+      "thema": "top_dfbb0dd9",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 1,
+        "seite": 1,
+        "nummer": "2"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 16,
+        "seite": 21,
+        "stelle": "Wichtige Grundregeln"
+      },
+      "abschnitt": "Regeln beim Experimentieren",
+      "aufgabentext": "Notiere zu den Bildern die jeweilige Grundregel.",
+      "stufen": [
+        -1,
+        1,
+        2
+      ],
+      "bild": {
+        "datei": "ch-grundregeln.jpg",
+        "original": "ch-grundregeln_original.jpg",
+        "breite": 1536,
+        "hoehe": 666
+      },
+      "felder": [
+        {
+          "nr": 1,
+          "x": 0.0285,
+          "y": 0.0553,
+          "begriff": "Versuchsanleitung lesen"
+        },
+        {
+          "nr": 2,
+          "x": 0.3542,
+          "y": 0.0553,
+          "begriff": "Schutzbrille aufsetzen"
+        },
+        {
+          "nr": 3,
+          "x": 0.6894,
+          "y": 0.0553,
+          "begriff": "Langes Haar zusammenbinden"
+        },
+        {
+          "nr": 4,
+          "x": 0.0285,
+          "y": 0.5951,
+          "begriff": "Reagenzglas beim Erhitzen schräg halten"
+        },
+        {
+          "nr": 5,
+          "x": 0.3542,
+          "y": 0.5951,
+          "begriff": "Gase mit der Hand zur Nase fächeln"
+        },
+        {
+          "nr": 6,
+          "x": 0.6894,
+          "y": 0.5951,
+          "begriff": "Chemikalienreste in gekennzeichnete Behälter"
+        }
+      ],
+      "ablenker": [
+        "Arbeitsplatz frei räumen",
+        "Nie den Platz verlassen",
+        "Gas- und Wasserhähne schließen",
+        "Beschädigungen melden"
+      ],
+      "hilfen": {
+        "denkanstoss": "Schau genau hin: Worauf zeigt der rote Pfeil, was hält die Person in der Hand?"
+      }
+    },
+    {
+      "id": "ch-laborgeraete-1",
+      "ableitung": "A",
+      "fach": "sub_chemie",
+      "thema": "top_dfbb0dd9",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 1,
+        "seite": 1,
+        "nummer": "1"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch09",
+        "material_seite": 19,
+        "seite": 196,
+        "stelle": "Einfache Laborgeräte"
+      },
+      "abschnitt": "Einfache Laborgeräte",
+      "aufgabentext": "Beschrifte die Laborgeräte.",
+      "bild": {
+        "datei": "ch-laborgeraete-1.jpg",
+        "original": "ch-laborgeraete-1_original.jpg",
+        "breite": 1536,
+        "hoehe": 529
+      },
+      "felder": [
+        {
+          "nr": 1,
+          "x": 0.0316,
+          "y": 0.2533,
+          "begriff": "Becherglas"
+        },
+        {
+          "nr": 2,
+          "x": 0.2404,
+          "y": 0.2533,
+          "begriff": "Spatellöffel"
+        },
+        {
+          "nr": 3,
+          "x": 0.4428,
+          "y": 0.2533,
+          "begriff": "Standzylinder"
+        },
+        {
+          "nr": 4,
+          "x": 0.6388,
+          "y": 0.2533,
+          "begriff": "Tiegelzange"
+        },
+        {
+          "nr": 5,
+          "x": 0.8159,
+          "y": 0.2533,
+          "begriff": "Dreifuß"
+        },
+        {
+          "nr": 6,
+          "x": 0.0285,
+          "y": 0.6629,
+          "begriff": "U-Rohr"
+        },
+        {
+          "nr": 7,
+          "x": 0.1898,
+          "y": 0.6629,
+          "begriff": "Drahtnetz"
+        },
+        {
+          "nr": 8,
+          "x": 0.4491,
+          "y": 0.6629,
+          "begriff": "Erlenmeyerkolben"
+        },
+        {
+          "nr": 9,
+          "x": 0.6262,
+          "y": 0.6629,
+          "begriff": "Tondreieck"
+        },
+        {
+          "nr": 10,
+          "x": 0.8665,
+          "y": 0.6629,
+          "begriff": "Reagenzglas"
+        }
+      ],
+      "ablenker": [
+        "Messzylinder",
+        "Reagenzglashalter",
+        "Stehkolben",
+        "Uhrglas"
+      ],
+      "hilfen": {
+        "denkanstoss": "Achte auf Kleinigkeiten: Hat das Gerät eine Skala? Einen Fuß? Einen Griff?"
+      }
+    },
+    {
+      "id": "ch-laborgeraete-2",
+      "ableitung": "A",
+      "fach": "sub_chemie",
+      "thema": "top_dfbb0dd9",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 1,
+        "seite": 1,
+        "nummer": "1"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch09",
+        "material_seite": 19,
+        "seite": 196,
+        "stelle": "Einfache Laborgeräte"
+      },
+      "abschnitt": "Einfache Laborgeräte",
+      "aufgabentext": "Beschrifte die Laborgeräte.",
+      "bild": {
+        "datei": "ch-laborgeraete-2.jpg",
+        "original": "ch-laborgeraete-2_original.jpg",
+        "breite": 880,
+        "hoehe": 580
+      },
+      "felder": [
+        {
+          "nr": 1,
+          "x": 0.1705,
+          "y": 0.4483,
+          "begriff": "Reagenzglas mit Ansatz"
+        },
+        {
+          "nr": 2,
+          "x": 0.483,
+          "y": 0.4483,
+          "begriff": "Stehkolben"
+        },
+        {
+          "nr": 3,
+          "x": 0.8125,
+          "y": 0.4483,
+          "begriff": "Trichter"
+        },
+        {
+          "nr": 4,
+          "x": 0.3693,
+          "y": 0.9483,
+          "begriff": "Pneumatische Wanne"
+        },
+        {
+          "nr": 5,
+          "x": 0.7216,
+          "y": 0.9483,
+          "begriff": "Mörser mit Pistill",
+          "auch": [
+            "Mörser und Pistill"
+          ]
+        }
+      ],
+      "ablenker": [
+        "Reagenzglas",
+        "Erlenmeyerkolben",
+        "Abdampfschale",
+        "Gaswaschflasche"
+      ],
+      "hilfen": {
+        "denkanstoss": "Achte auf die Form: rund oder kegelförmig? Mit Ansatz oder ohne?"
       }
     }
   ]

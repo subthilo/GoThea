@@ -3,16 +3,23 @@
 BRENNER = "ch-brenner"
 
 
-def open_brenner(page, pin, stage):
+# Weitere Schaubilder fürs Ein-Bildschirm-Maß: lange Regeln als Karten, flaches Bild, zehn Ziffern (Entwürfe)
+OTHERS = ["ch-grundregeln", "ch-laborgeraete-1", "ch-laborgeraete-2"]
+
+
+def open_brenner(page, pin, stage, exercise=BRENNER):
+    if exercise in OTHERS and not page.evaluate("document.body.classList.contains('parent-mode-active')"):
+        from tests.e2e.test_dialogs import _unlock_parent_mode
+        _unlock_parent_mode(page, pin)  # Entwürfe sieht nur der Eltern-Modus
     page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
     page.click('.nav-tab[data-tab="practice"]')
-    page.wait_for_selector(f'.practice-row[data-id="{BRENNER}"]')
-    page.evaluate(f"window.openPracticeExercise('{BRENNER}', {stage})")
+    page.wait_for_selector(f'.practice-row[data-id="{exercise}"]')
+    page.evaluate(f"window.openPracticeExercise('{exercise}', {stage})")
     page.wait_for_selector(".zo-figure img")
 
 
-def terms(page):
-    return page.evaluate(f"apiJson('/api/v1/practice/{BRENNER}')")["felder"]
+def terms(page, exercise=BRENNER):
+    return page.evaluate(f"apiJson('/api/v1/practice/{exercise}')")["felder"]
 
 
 def test_look_stage_reveals_each_term(app_page, parent_pin):
@@ -81,15 +88,29 @@ def _overflow(page):
 
 def test_everything_fits_on_one_screen_in_both_orientations(app_page, parent_pin):
     # Quer und hoch, auch auf dem kleinsten iPad (mini): kein Scrollen, weder Seite noch Liste noch Wortbank
-    for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
-        app_page.set_viewport_size({"width": width, "height": height})
-        open_brenner(app_page, parent_pin, 2)
-        app_page.click(f'.zo-token[data-token="{terms(app_page)[0]["begriff"]}"]')
-        app_page.click('.zo-slot[data-row="2"]')
-        assert _overflow(app_page) == {"page": 0, "rows": 0, "bank": 0}, (width, height)
-        box = app_page.locator(".zo-figure").bounding_box()
-        assert box["width"] > 450, (width, height, box)
-        app_page.click('[data-action="back"]')
+    for exercise in [BRENNER, *OTHERS]:
+        for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
+            app_page.set_viewport_size({"width": width, "height": height})
+            open_brenner(app_page, parent_pin, 2, exercise)
+            app_page.click(f'.zo-token[data-token="{terms(app_page, exercise)[0]["begriff"]}"]')
+            app_page.click('.zo-slot[data-row="2"]')
+            assert _overflow(app_page) == {"page": 0, "rows": 0, "bank": 0}, (exercise, width, height)
+            box = app_page.locator(".zo-figure").bounding_box()
+            assert box["width"] > 450, (exercise, width, height, box)
+            app_page.click('[data-action="back"]')
+    assert app_page.problems.errors == []
+
+
+def test_exercise_without_board_stage_ends_after_stage_two(app_page, parent_pin):
+    open_brenner(app_page, parent_pin, 2, "ch-grundregeln")
+    assert app_page.locator('.px-stage[data-stage="3"]').count() == 0
+    fields = terms(app_page, "ch-grundregeln")
+    for f in fields:
+        app_page.click(f'.zo-token[data-token="{f["begriff"]}"]')
+        app_page.click(f'.zo-slot[data-row="{f["nr"]}"]')
+    app_page.click('[data-action="zo-check"]')
+    assert app_page.locator(".zo-slot.ok").count() == 6
+    assert app_page.locator('.px-check[title^="Weiter mit Stufe"]').count() == 0
     assert app_page.problems.errors == []
 
 
