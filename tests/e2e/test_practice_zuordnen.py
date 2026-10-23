@@ -3,14 +3,11 @@
 BRENNER = "ch-brenner"
 
 
-# Weitere Schaubilder fürs Ein-Bildschirm-Maß: lange Regeln als Karten, flaches Bild, zehn Ziffern (Entwürfe)
+# Weitere Schaubilder fürs Ein-Bildschirm-Maß: lange Regeln als Karten, zehn Ziffern, zwei Reihen
 OTHERS = ["ch-grundregeln", "ch-laborgeraete-1", "ch-laborgeraete-2"]
 
 
 def open_brenner(page, pin, stage, exercise=BRENNER):
-    if exercise in OTHERS and not page.evaluate("document.body.classList.contains('parent-mode-active')"):
-        from tests.e2e.test_dialogs import _unlock_parent_mode
-        _unlock_parent_mode(page, pin)  # Entwürfe sieht nur der Eltern-Modus
     page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
     page.click('.nav-tab[data-tab="practice"]')
     page.wait_for_selector(f'.practice-row[data-id="{exercise}"]')
@@ -149,14 +146,14 @@ def test_board_stage_shows_figure_and_lines_and_ends_after_check(app_page, paren
     assert app_page.problems.errors == []
 
 
-def test_parents_try_a_draft_on_the_board(app_page, parent_pin, server_data_dir):
-    # Entwurf: die Übungstafel geht im Eltern-Modus mit Blatt auf (anfangs 404 – Tafel ohne Übung)
+def test_board_stage_of_another_figure_shows_the_sheet(app_page, parent_pin, server_data_dir):
+    # Entwürfe auf der Tafel (Eltern-Modus): tests/integration/test_boards_api.py
     _ensure_chemie(server_data_dir)
     open_brenner(app_page, parent_pin, 2, "ch-laborgeraete-1")
     with app_page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
         app_page.click('.px-stage[data-stage="3"]')
     app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
     assert app_page.problems.errors == []
-    # Aufräumen: sonst öffnen spätere Tests (ohne Eltern-Modus) diese Tafel als letzte
+    # Aufräumen: sonst öffnen spätere Tests diese Tafel als letzte
     board_id = created.value.json()["id"]
     app_page.evaluate(f"apiFetch('/api/v1/boards/{board_id}', {{ method: 'DELETE' }})")
