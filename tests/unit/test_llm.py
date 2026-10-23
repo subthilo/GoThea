@@ -286,3 +286,25 @@ def test_stream_drops_rejected_output_limit_once(fake_key):
         events = list(llm.chat_stream([], purpose="Test", max_tokens=100))
     assert events[-1].reply.text == "ok"
     assert "max_output_tokens" not in client.responses.create.call_args_list[1].kwargs
+
+
+def test_image_edit_returns_png_and_logs_tokens(fake_key):
+    import base64
+    client = MagicMock()
+    client.images.edit.return_value = SimpleNamespace(
+        data=[SimpleNamespace(b64_json=base64.b64encode(b"PNG").decode())],
+        usage=SimpleNamespace(input_tokens=1257, output_tokens=1756))
+    with patch("openai.OpenAI", return_value=client):
+        assert llm.image_edit(b"vorlage", "Zeichne nach", purpose="Schaubild") == b"PNG"
+    kwargs = client.images.edit.call_args.kwargs
+    assert kwargs["model"] == config.OPENAI_IMAGE_MODEL and kwargs["image"][1] == b"vorlage"
+    entry = _usage_lines()[-1]
+    assert entry["purpose"] == "Schaubild" and entry["prompt_tokens"] == 1257 and entry["ok"]
+
+
+def test_image_edit_without_data_is_an_error(fake_key):
+    client = MagicMock()
+    client.images.edit.return_value = SimpleNamespace(data=[SimpleNamespace(b64_json=None)], usage=None)
+    with patch("openai.OpenAI", return_value=client), pytest.raises(llm.LLMError):
+        llm.image_edit(b"vorlage", "Zeichne nach", purpose="Schaubild")
+    assert _usage_lines()[-1]["ok"] is False

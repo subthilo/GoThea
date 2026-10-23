@@ -23,6 +23,10 @@ OPENAI_ANALYSIS_MODEL = os.getenv("OPENAI_ANALYSIS_MODEL", OPENAI_MODEL)
 # Sprachausgabe (bisher fest im Code: tts-1 mit Stimme nova)
 OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "tts-1")
 OPENAI_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "nova")
+# Schaubilder für Übungen nachzeichnen (nur in Sessions am Mac, scripts/figure_tool.py) und das Ergebnis
+# gegen das Original prüfen lassen (im Machbarkeitsversuch fand gpt-6.1-sol feinste Fachfehler in Grafiken)
+OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-2.5-sunburst")
+OPENAI_REVIEW_MODEL = os.getenv("OPENAI_REVIEW_MODEL", "gpt-6.1-sol")
 # Zeitlimit pro Versuch und Wiederholungen bei Netz-/Serverfehlern; Standard = bisheriges Verhalten
 # der OpenAI-Bibliothek. Erst anhand von logs/llm_usage.jsonl (Dauer pro Zweck) verschärfen.
 OPENAI_TIMEOUT_SECONDS = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "600"))

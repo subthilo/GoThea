@@ -9,6 +9,7 @@ Einziger Zugang zu OpenAI.
 - chat_stream() liefert die Antwort stückweise und führt Werkzeug-Aufrufe (function calling) selbst aus.
   Es nutzt die Responses API: GPT-6 erlaubt Werkzeuge in Chat Completions nur ohne Nachdenken (Reasoning).
 """
+import base64
 import json
 import logging
 import threading
@@ -285,6 +286,31 @@ def speech(text: str, *, purpose: str, voice: Optional[str] = None, model: Optio
         raise LLMError(f"Sprachausgabe '{purpose}' fehlgeschlagen: {e}") from e
     _record(purpose, model, time.monotonic() - start, characters=len(text))
     return audio
+
+
+def image_edit(image: bytes, prompt: str, *, purpose: str, model: Optional[str] = None,
+               size: str = "1024x1024") -> bytes:
+    """Bild nach einer Vorlage neu zeichnen lassen (z. B. Schulbuch-Abbildung ohne Beschriftung).
+    Liefert PNG-Bytes."""
+    model = model or config.OPENAI_IMAGE_MODEL
+    start = time.monotonic()
+    try:
+        response = client().images.edit(model=model, image=("vorlage.png", image, "image/png"),
+                                        prompt=prompt, size=size)
+        data = response.data[0].b64_json
+        if not data:
+            raise LLMError("Keine Bilddaten erhalten")
+        result = base64.b64decode(data)
+    except Exception as e:
+        _record(purpose, model, time.monotonic() - start, error=e)
+        if isinstance(e, LLMError):
+            raise
+        raise LLMError(f"Bild '{purpose}' fehlgeschlagen: {e}") from e
+    usage = getattr(response, "usage", None)
+    _record(purpose, model, time.monotonic() - start,
+            prompt_tokens=_int_or_none(getattr(usage, "input_tokens", None)),
+            completion_tokens=_int_or_none(getattr(usage, "output_tokens", None)))
+    return result
 
 
 def _create_with_fallback(params: Dict[str, Any], purpose: str, create: Optional[Callable[..., Any]] = None):
