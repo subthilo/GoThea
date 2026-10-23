@@ -1,8 +1,10 @@
 """Übungen aus echten Aufgaben – Probebetrieb (Schalter GOTHEA_EXERCISE_TRIAL, Standard nur Staging).
 
-Noch ohne Freigabe-Ablauf: Die Daten enthalten die Lösungen; Stufe 0 prüft im Browser, die Tafel-Stufen
-prüft der Server („Luna liest, der Code rechnet“, services/practice_check.py). Jeder Versuch wird
-festgehalten (services/practice_attempts.py): Stufe 0 meldet ihre Schritte, Tafel-Prüfungen zählt der Server.
+Die Daten enthalten die Lösungen; die Stufen im Tab prüft der Browser, die Tafel-Stufen der Server („Luna
+liest, der Code rechnet“, services/practice_check.py – bisher nur für die Mathe-Sachaufgabe). Jeder Versuch wird
+festgehalten (services/practice_attempts.py): der Tab meldet seine Schritte, Tafel-Prüfungen zählt der Server.
+Entwürfe (in der Session erstellt, noch nicht freigegeben) sieht nur der Eltern-Modus; Versuche daran werden
+nicht gespeichert, damit Probeklicks der Eltern nicht in Theas Lernstand landen.
 """
 import base64
 import json
@@ -19,6 +21,7 @@ from backend.app.database import get_db
 from backend.app.models.whiteboard import TutorSession
 from backend.app.models.practice_attempt import PracticeAttempt
 from backend.app.services import llm, practice_attempts, practice_check, practice_exercises, practice_plan
+from backend.app.services.parent_auth import is_parent
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +30,14 @@ router = APIRouter(prefix="/api/v1/practice", tags=["Übungen"])
 
 class CheckRequest(BaseModel):
     image_base64: str
-    stage: int = Field(ge=1, le=4)
+    stage: int  # eine Tafel-Stufe des Übungstyps
     board_id: Optional[str] = None
     attempt: int = Field(default=1, ge=1)
     audio_enabled: bool = False
 
 
 class AttemptStart(BaseModel):
-    stage: int = Field(ge=-1, le=4)  # -1 = Gedankengang, 0 = Bausteine, 1–4 = Tafel
+    stage: int  # eine Stufe des Übungstyps (Mathe-Sachaufgabe: -1 Gedankengang, 0 Bausteine, 1–4 Tafel)
     board_id: Optional[str] = None  # Tafel-Stufen: der Versuch gehört zur Übungstafel
 
 
@@ -53,20 +56,20 @@ class AttemptEvent(BaseModel):
     data: dict = Field(default_factory=dict)
 
 
-def _exercise_or_404(exercise_id: str) -> dict:
-    ex = practice_exercises.get_exercise(exercise_id) if config.EXERCISE_TRIAL_ENABLED else None
+def _exercise_or_404(exercise_id: str, include_drafts: bool = False) -> dict:
+    ex = practice_exercises.get_exercise(exercise_id, include_drafts) if config.EXERCISE_TRIAL_ENABLED else None
     if ex is None:
         raise HTTPException(status_code=404, detail="Übung nicht gefunden")
     return ex
 
 
 @router.get("")
-def list_practice(db: Session = Depends(get_db)) -> dict:
+def list_practice(db: Session = Depends(get_db), parent: bool = Depends(is_parent)) -> dict:
     """Aufgaben mit Stand pro Stufe, Wiederholen und Lunas Vorschlag (services/practice_plan.py)."""
     # Ausgeschaltet: leere Liste statt Fehler, das Frontend blendet den Bereich dann aus
     if not config.EXERCISE_TRIAL_ENABLED:
         return {"enabled": False, "exercises": []}
-    families = practice_exercises.list_exercises()
+    families = practice_exercises.list_exercises(include_drafts=parent)
     attempts = db.query(PracticeAttempt).all()
     board_ids = {a.board_id for a in attempts if a.board_id}
     open_boards = {b.id for b in db.query(TutorSession.id).filter(TutorSession.id.in_(board_ids),
@@ -131,8 +134,8 @@ def add_handwriting(payload: HandwritingUpload) -> dict:
 
 
 @router.get("/{exercise_id}")
-def get_practice(exercise_id: str) -> dict:
-    return _exercise_or_404(exercise_id)
+def get_practice(exercise_id: str, parent: bool = Depends(is_parent)) -> dict:
+    return _exercise_or_404(exercise_id, include_drafts=parent)
 
 
 def _practice_board(db: Session, board_id: str, exercise_id: str) -> TutorSession:
@@ -143,9 +146,15 @@ def _practice_board(db: Session, board_id: str, exercise_id: str) -> TutorSessio
 
 
 @router.post("/{exercise_id}/attempts", status_code=201)
-def start_attempt(exercise_id: str, payload: AttemptStart, db: Session = Depends(get_db)) -> dict:
-    """Stufe 0: neuer Versuch beim Öffnen. Übungstafel: deren Versuch (beim Wiederöffnen derselbe)."""
-    ex = _exercise_or_404(exercise_id)
+def start_attempt(exercise_id: str, payload: AttemptStart, db: Session = Depends(get_db),
+                  parent: bool = Depends(is_parent)) -> dict:
+    """Stufe im Tab: neuer Versuch beim Öffnen. Übungstafel: deren Versuch (beim Wiederöffnen derselbe).
+    Entwurf: kein Versuch (id None), die Ansicht läuft trotzdem."""
+    ex = _exercise_or_404(exercise_id, include_drafts=parent)
+    if payload.stage not in ex["stufen"]:
+        raise HTTPException(status_code=422, detail=f"Stufe {payload.stage} gibt es bei dieser Übung nicht")
+    if practice_exercises.is_draft(ex):
+        return {"id": None, "exercise_id": exercise_id, "stage": payload.stage, "entwurf": True}
     if payload.board_id:
         attempt = practice_attempts.for_board(db, ex, _practice_board(db, payload.board_id, exercise_id))
     else:
@@ -171,9 +180,12 @@ def record_event(attempt_id: str, payload: AttemptEvent, db: Session = Depends(g
 
 
 @router.post("/{exercise_id}/check")
-def check_practice(exercise_id: str, payload: CheckRequest, db: Session = Depends(get_db)) -> dict:
+def check_practice(exercise_id: str, payload: CheckRequest, db: Session = Depends(get_db),
+                   parent: bool = Depends(is_parent)) -> dict:
     """Tafel prüfen: Luna liest die Handschrift, das Programm prüft die Mathematik."""
-    ex = _exercise_or_404(exercise_id)
+    ex = _exercise_or_404(exercise_id, include_drafts=parent)
+    if payload.stage not in ex["tafel_stufen"]:
+        raise HTTPException(status_code=400, detail="Diese Stufe läuft nicht auf der Tafel")
     if not llm.is_available():
         raise HTTPException(status_code=503, detail="Luna ist gerade nicht erreichbar.")
     try:
@@ -187,7 +199,7 @@ def check_practice(exercise_id: str, payload: CheckRequest, db: Session = Depend
     practice_check.log_check(exercise_id, payload.stage, payload.image_base64, read, outcome)
 
     board = db.get(TutorSession, payload.board_id) if payload.board_id else None
-    if board is not None and board.practice_exercise_id == exercise_id:
+    if board is not None and board.practice_exercise_id == exercise_id and not practice_exercises.is_draft(ex):
         attempt = practice_attempts.for_board(db, ex, board)
         practice_attempts.record(db, attempt, "check", {"status": outcome["status"], "probleme": outcome["probleme"]})
         if outcome["status"] == practice_check.RICHTIG:

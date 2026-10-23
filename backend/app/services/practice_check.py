@@ -21,7 +21,7 @@ from typing import Dict, List, Optional
 from backend.app import config
 from backend.app.prompts.practice import PRACTICE_READING_SYSTEM_PROMPT
 from backend.app.services import llm
-from backend.app.services.practice_exercises import fmt_number
+from backend.app.services.exercise_types.sachaufgabe import fmt_number
 
 logger = logging.getLogger(__name__)
 

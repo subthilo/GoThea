@@ -146,3 +146,36 @@ def test_handwriting_rejects_bad_samples(client):
     assert client.post("/api/v1/practice/handwriting", json={"samples": [empty]}).status_code == 422
     far = {"label": "3", "strokes": [[[9, 0], [0, 0]]]}
     assert client.post("/api/v1/practice/handwriting", json={"samples": [far]}).status_code == 422
+
+
+@pytest.fixture
+def drucker_draft(monkeypatch):
+    from backend.app.services import practice_exercises as pe
+    exercises = dict(pe._load_all())
+    monkeypatch.setattr(pe, "_load_all", lambda: {**exercises, "sa-drucker": {**exercises["sa-drucker"], "status": "entwurf"}})
+
+
+def _parent_headers():
+    from backend.app.services.parent_auth import issue_token
+    return {"X-Parent-Token": issue_token()[0]}
+
+
+def test_draft_is_visible_only_in_parent_mode(client, drucker_draft):
+    ids = lambda res: {e["id"] for e in res.json()["exercises"]}  # noqa: E731
+    assert "sa-drucker" not in ids(client.get("/api/v1/practice"))
+    assert client.get("/api/v1/practice/sa-drucker").status_code == 404
+    assert "sa-drucker" in ids(client.get("/api/v1/practice", headers=_parent_headers()))
+    assert client.get("/api/v1/practice/sa-drucker", headers=_parent_headers()).json()["status"] == "entwurf"
+
+
+def test_trying_a_draft_leaves_no_attempt(client, drucker_draft):
+    res = client.post("/api/v1/practice/sa-drucker/attempts", json={"stage": 0}, headers=_parent_headers())
+    assert res.status_code == 201 and res.json()["id"] is None
+    assert "sa-drucker" not in client.get("/api/v1/practice/progress").json()["progress"]
+
+
+def test_stage_must_belong_to_the_exercise_type(client):
+    assert client.post("/api/v1/practice/sa-gummibaerchen/attempts", json={"stage": 7}).status_code == 422
+    res = client.post("/api/v1/practice/sa-gummibaerchen/check",
+                      json={"image_base64": "data:image/jpeg;base64,AAAA", "stage": 0})
+    assert res.status_code == 400

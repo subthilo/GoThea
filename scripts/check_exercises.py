@@ -1,6 +1,7 @@
 """
-Prüft alle Übungen (backend/app/exercise_sets/*.json) gegen die Datenbank: Gibt es Fach, Thema und die
-Materialien in Quelle und Nachschlagen, liegt die Seite im Material, passt die Buchseite?
+Prüft alle Übungen (backend/app/exercise_sets/*.json), auch Entwürfe: Kopf und Daten nach den Regeln ihres
+Typs, dann gegen die Datenbank – gibt es Fach, Thema und die Materialien in Quelle und Nachschlagen, liegt die
+Seite im Material, passt die Buchseite?
 Vor dem Einspielen neuer Übungen ausführen; Exit-Code 1, sobald eine Übung nicht passt.
 
 Auf dem Pi (Staging):
@@ -19,15 +20,16 @@ from backend.app.services import practice_exercises as pe  # noqa: E402
 
 def main() -> int:
     print(f"Datenverzeichnis: {DATA_DIR}")
-    exercises = [pe.get_exercise(i) for e in pe.list_exercises() for i in [e["id"], *e["zwillinge"]]]
+    exercises = [pe.get_exercise(i, include_drafts=True)
+                 for e in pe.list_exercises(include_drafts=True) for i in [e["id"], *e["zwillinge"]]]
     db = SessionLocal()
     failed = 0
     try:
         for ex in exercises:
-            errors = pe.validate_header(ex) or pe.check_references(db, ex)
+            errors = pe.validate(ex) or pe.check_references(db, ex)
             if errors:
                 failed += 1
-                print(f"\n{ex['id']}")
+                print(f"\n{ex['id']} ({ex['status']})")
                 for e in errors:
                     print(f"   {e}")
     finally:

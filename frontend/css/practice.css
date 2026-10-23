@@ -959,3 +959,11 @@ body.practice-zen-mode .gg-right .px-actions {
     height: 170px;
   }
 }
+
+/* Entwurf (in der Session erstellt, noch nicht freigegeben): nur im Eltern-Modus sichtbar */
+.practice-row.practice-draft,
+.practice-suggest.practice-draft,
+.px-topbar.practice-draft {
+  border-style: dashed;
+  border-color: var(--subject-color, var(--accent));
+}

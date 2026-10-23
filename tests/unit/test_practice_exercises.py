@@ -3,6 +3,7 @@ import pytest
 
 from backend.app import config
 from backend.app.services import practice_exercises as pe
+from backend.app.services.exercise_types import sachaufgabe as sa
 
 
 def all_exercises():
@@ -57,7 +58,7 @@ def test_every_exercise_has_a_checked_reasoning_path(ex):
     # Leichteste Stufe: Gedankengang in Sätzen, mindestens eine nachgerechnete Gleichung
     steps = ex["gedankengang"]
     assert len(steps) >= 3
-    assert sum(len(pe.EQUATION.findall(pe.fill_blanks(s["satz"]))) for s in steps) >= 2
+    assert sum(len(sa.EQUATION.findall(sa.fill_blanks(s["satz"]))) for s in steps) >= 2
 
 
 def test_reasoning_path_catches_wrong_equation_and_wrong_result():
@@ -106,14 +107,31 @@ def test_references_are_checked_against_the_database(db_session):
 
 
 def test_header_without_subject_or_page_is_rejected():
-    errors = pe.validate_header({"quelle": {"material_id": "mat_a"}})
-    assert errors == ["Fach fehlt (fach: sub_…)", "Thema fehlt (thema: top_…)", "quelle: material_seite fehlt"]
+    errors = pe.validate_header({"quelle": {"material_id": "mat_a"}, "typ": "gibt-es-nicht"})
+    assert errors == ["Fach fehlt (fach: sub_…)", "Thema fehlt (thema: top_…)", "Aufgabentext fehlt",
+                      "Status fehlt (entwurf oder freigegeben)", "Übungstyp „gibt-es-nicht“ gibt es nicht",
+                      "quelle: material_seite fehlt"]
+
+
+def test_every_exercise_lists_the_stages_of_its_type():
+    for fam in pe.list_exercises():
+        assert fam["stufen"] == sa.STAGES and fam["tafel_stufen"] == sa.BOARD_STAGES
+
+
+def test_drafts_are_only_visible_when_asked_for(monkeypatch):
+    exercises = dict(pe._load_all())
+    draft = {**exercises["sa-drucker"], "status": "entwurf"}
+    monkeypatch.setattr(pe, "_load_all", lambda: {**exercises, "sa-drucker": draft})
+    assert "sa-drucker" not in {e["id"] for e in pe.list_exercises()}
+    assert pe.get_exercise("sa-drucker") is None
+    assert "sa-drucker" in {e["id"] for e in pe.list_exercises(include_drafts=True)}
+    assert pe.get_exercise("sa-drucker", include_drafts=True)["status"] == "entwurf"
 
 
 def test_money_formatting():
-    assert pe.fmt_number(8.4, money=True) == "8,40"
-    assert pe.fmt_number(10, money=True) == "10"
-    assert pe.fmt_number(0.5) == "0,5"
+    assert sa.fmt_number(8.4, money=True) == "8,40"
+    assert sa.fmt_number(10, money=True) == "10"
+    assert sa.fmt_number(0.5) == "0,5"
 
 
 def test_api_lists_and_returns_exercises(client, monkeypatch):

@@ -5,10 +5,11 @@ from backend.app.models.practice_attempt import PracticeAttempt
 from backend.app.services.practice_plan import plan
 
 NOW = datetime(2026, 10, 17, 16, 0)
+STAGES = [-1, 0, 1, 2, 3, 4]  # wie die Mathe-Sachaufgabe
 FAMILIES = [
-    {"id": "a", "zwillinge": ["a2"]},
-    {"id": "b", "zwillinge": ["b2"]},
-    {"id": "c", "zwillinge": []},
+    {"id": "a", "zwillinge": ["a2"], "stufen": STAGES},
+    {"id": "b", "zwillinge": ["b2"], "stufen": STAGES},
+    {"id": "c", "zwillinge": [], "stufen": STAGES},
 ]
 
 
@@ -75,7 +76,7 @@ def test_only_opened_attempts_are_ignored():
 
 
 def test_all_done_offers_repeat_even_if_fresh():
-    families = [{"id": "c", "zwillinge": []}]
+    families = [{"id": "c", "zwillinge": [], "stufen": STAGES}]
     attempts = [att("c", s, 5 - s, solved=True) for s in range(4)] + [att("c", 4, 0.5, solved=True, failed=1)]
     out = plan(families, attempts, NOW)
     assert out["stand"]["c"]["naechste_stufe"] is None
@@ -86,3 +87,11 @@ def test_reasoning_stage_counts_like_any_other():
     out = plan(FAMILIES, [att("a", -1, 2, solved=True)], NOW)
     assert out["stand"]["a"]["geschafft"] == [-1] and out["stand"]["a"]["naechste_stufe"] == 0
     assert out["vorschlag"] == {"art": "weiter", "familie": "a", "exercise_id": "a", "stufe": 0, "board_id": None}
+
+
+def test_stages_come_from_the_exercise_type():
+    # Ein Typ ohne Gedankengang und Tafel (z. B. Zuordnen mit Stufen 1–3) beginnt bei seiner ersten Stufe
+    families = [{"id": "z", "zwillinge": [], "stufen": [1, 2, 3]}]
+    assert plan(families, [], NOW)["vorschlag"]["stufe"] == 1
+    out = plan(families, [att("z", 1, 3, solved=True), att("z", 3, 2, solved=True)], NOW)
+    assert out["stand"]["z"]["naechste_stufe"] is None

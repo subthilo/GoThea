@@ -8,6 +8,7 @@
       "id": "sa-gummibaerchen",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "A",
       "quelle": {
         "art": "Test",
@@ -119,6 +120,7 @@
       "id": "sa-gummibaerchen-z1",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "B",
       "zwilling_von": "sa-gummibaerchen",
       "quelle": {
@@ -232,6 +234,7 @@
       "id": "sa-apfelsaft-flaschen",
       "fach": "sub_math",
       "thema": "top_8009d623",
+      "status": "freigegeben",
       "ableitung": "A",
       "quelle": {
         "art": "Test",
@@ -322,6 +325,7 @@
       "id": "sa-apfelsaft-flaschen-z1",
       "fach": "sub_math",
       "thema": "top_8009d623",
+      "status": "freigegeben",
       "ableitung": "B",
       "zwilling_von": "sa-apfelsaft-flaschen",
       "quelle": {
@@ -410,6 +414,7 @@
       "id": "sa-drucker",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
@@ -518,6 +523,7 @@
       "id": "sa-drucker-z1",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "B",
       "zwilling_von": "sa-drucker",
       "quelle": {
@@ -628,6 +634,7 @@
       "id": "sa-flugzeug",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
@@ -759,6 +766,7 @@
       "id": "sa-flugzeug-z1",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "B",
       "zwilling_von": "sa-flugzeug",
       "quelle": {
@@ -892,6 +900,7 @@
       "id": "sa-apfelmosterei",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
@@ -1000,6 +1009,7 @@
       "id": "sa-apfelmosterei-z1",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "B",
       "zwilling_von": "sa-apfelmosterei",
       "quelle": {
@@ -1109,6 +1119,7 @@
       "id": "sa-umzug",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
@@ -1212,6 +1223,7 @@
       "id": "sa-umzug-z1",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "B",
       "zwilling_von": "sa-umzug",
       "quelle": {
@@ -1315,6 +1327,7 @@
       "id": "sa-taxi",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
@@ -1419,6 +1432,7 @@
       "id": "sa-taxi-z1",
       "fach": "sub_math",
       "thema": "top_d1a30e2f",
+      "status": "freigegeben",
       "ableitung": "B",
       "zwilling_von": "sa-taxi",
       "quelle": {

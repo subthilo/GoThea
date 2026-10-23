@@ -1,0 +1,251 @@
+"""Übungstyp „Sachaufgabe mit Lösungsweg“ (Mathe, Typ 1; Konzept-Doc, Tab „Mathe – Aufgabentypen“).
+
+Grundsatz „Luna liest, der Code rechnet“: ``validate`` rechnet jede Lösung exakt nach,
+``building_blocks`` erzeugt die Bausteine für Stufe 0 (Tabelle per Antippen/Ziehen füllen).
+Stufen: -1 Gedankengang (Rechenweg in Sätzen, nur Zahlen ergänzen), 0 Bausteine, 1–4 Tafel
+(Blatt als Unterlage, geprüft von services/practice_check.py).
+"""
+from __future__ import annotations
+
+import hashlib
+import random
+import re
+from fractions import Fraction
+from typing import List
+
+TYP = "sachaufgabe"
+STAGES = [-1, 0, 1, 2, 3, 4]
+BOARD_STAGES = [1, 2, 3, 4]
+
+
+def prepare(ex: dict) -> dict:
+    """Zusätzliche Felder für die Ansicht einer Übung."""
+    return {"bausteine": building_blocks(ex)}
+
+
+def summary(ex: dict) -> dict:
+    """Zusätzliche Felder für die Liste."""
+    return {"schema": ex["schema"]}
+
+
+def _num(x) -> Fraction:
+    return Fraction(str(x).replace(",", "."))
+
+
+def fmt_number(x, money: bool = False) -> str:
+    """Zahl in deutscher Schreibweise; Geldbeträge mit zwei Nachkommastellen, wenn nicht ganz."""
+    value = _num(x)
+    if value.denominator == 1:
+        return str(value.numerator)
+    if money:
+        return f"{float(value):.2f}".replace(".", ",")
+    return f"{float(value):g}".replace(".", ",")
+
+
+def _apply(op: str, value: Fraction) -> Fraction:
+    factor = _num(op[1:])
+    return value / factor if op[0] == ":" else value * factor
+
+
+def _inverse(op: str) -> str:
+    return ("·" if op[0] == ":" else ":") + op[1:]
+
+
+def right_ops(ex: dict) -> List[str]:
+    """Rechenschritte der rechten Spalte: beim antiproportionalen Dreisatz jeweils umgekehrt."""
+    anti = ex["schema"] == "dreisatz_antiproportional"
+    return [_inverse(op) if anti else op for op in ex["schritte"]]
+
+
+def is_money_column(ex: dict) -> bool:
+    return ex["schema"].startswith("dreisatz") and ex["groessen"][1]["einheit"] == "€"
+
+
+# --- Prüfung der Daten -------------------------------------------------------------------------
+
+
+def validate(ex: dict) -> List[str]:
+    """Fehlerliste einer Übung (leer = alles nachgerechnet und stimmig)."""
+    errors: List[str] = []
+    result = _num(ex["ergebnis"]["wert"])
+    if ex["schema"] == "rechnung":
+        a, b = (_num(z) for z in ex["rechnung"]["zahlen"])
+        if a / b != result:
+            errors.append(f"{a} : {b} ergibt {a / b}, nicht {result}")
+        left, right = (_num(t) for t in ex["rechnung"]["umformung"].split(":"))
+        if left / right != a / b or right.denominator != 1:
+            errors.append("Umformung (Komma verschieben) stimmt nicht")
+    else:
+        rows = [(_num(x), _num(y)) for x, y in ex["zeilen"]]
+        for i, (op_l, op_r) in enumerate(zip(ex["schritte"], right_ops(ex))):
+            (x0, y0), (x1, y1) = rows[i], rows[i + 1]
+            if _apply(op_l, x0) != x1:
+                errors.append(f"Zeile {i + 2} links: {x0} {op_l} ergibt nicht {x1}")
+            if _apply(op_r, y0) != y1:
+                errors.append(f"Zeile {i + 2} rechts: {y0} {op_r} ergibt nicht {y1}")
+        anti = ex["schema"] == "dreisatz_antiproportional"
+        if len({x * y if anti else y / x for x, y in rows}) != 1:
+            errors.append("Zeilen gehören nicht zu einer Zuordnung")
+        if rows[-1][1] != result:
+            errors.append("letzte Zeile ist nicht das Ergebnis")
+
+    numbers = re.findall(r"\d[\d.]*(?:,\d+)?", ex["antwortsatz"])
+    if not numbers or _num(numbers[-1].replace(".", "")) != result:
+        errors.append("Zahl im Antwortsatz ist nicht das Ergebnis")
+    unit = ex["ergebnis"]["einheit"]
+    if unit and unit not in ex["antwortsatz"]:
+        errors.append(f"Einheit „{unit}“ fehlt im Antwortsatz")
+    if not ex["antwortsatz"].startswith(ex["antwort_anfang"]):
+        errors.append("Antwortsatz beginnt nicht mit antwort_anfang")
+
+    guess = ex["schaetzfrage"]
+    ref = _num(guess["vergleichswert"])
+    if result == ref or (result > ref) != (guess["ergebnis_ist"] == "groesser"):
+        errors.append("Schätzfrage passt nicht zum Ergebnis")
+    if guess["antwort"] not in guess["optionen"]:
+        errors.append("Antwort der Schätzfrage fehlt in den Optionen")
+    if _num(ex["fehlerbeispiel"]["wert"]) == result:
+        errors.append("Fehlerbeispiel ist gleich dem Ergebnis")
+    errors += validate_reasoning_steps(ex)
+    reasoning = ex.get("begruendung") or {}
+    if reasoning.get("verlangt"):
+        options = reasoning.get("optionen") or []
+        if sum(o["richtig"] for o in options) != 1 or any(not o["richtig"] and not o.get("grund") for o in options):
+            errors.append("Begründung braucht genau einen richtigen Vorschlag, falsche mit Grund")
+    return errors
+
+
+BLANK = re.compile(r"\[\[([^\]]+)\]\]")
+_NUM = r"(\d[\d.]*(?:,\d+)?)"
+_UNIT = r"(?:\s*[^\d\s:·=.,]+)?"
+# „84 € : 3 = 28 €“, „1,20 € · 7 = 8,40 €“ – Einheiten zwischen Zahl und Zeichen sind erlaubt
+EQUATION = re.compile(_NUM + _UNIT + r"\s*([:·])\s*" + _NUM + _UNIT + r"\s*=\s*" + _NUM)
+
+
+def fill_blanks(sentence: str) -> str:
+    """Satz mit eingesetzten Lösungen (für die Prüfung und die Lösungsanzeige)."""
+    return BLANK.sub(lambda m: m.group(1), sentence)
+
+
+def validate_reasoning_steps(ex: dict) -> List[str]:
+    """Gedankengang (leichteste Stufe): jede Gleichung im Satz stimmt, die letzte Lücke ist das Ergebnis."""
+    steps = ex.get("gedankengang") or []
+    errors: List[str] = []
+    for i, step in enumerate(steps, 1):
+        blanks = BLANK.findall(step["satz"])
+        if not blanks:
+            errors.append(f"Gedankengang Schritt {i}: keine Lücke")
+        for value in blanks:
+            if not re.fullmatch(r"\d[\d]*(?:,\d+)?", value):
+                errors.append(f"Gedankengang Schritt {i}: Lücke „{value}“ ist keine Zahl")
+        for a, op, b, c in EQUATION.findall(fill_blanks(step["satz"])):
+            left = _num(a.replace(".", "")) / _num(b) if op == ":" else _num(a.replace(".", "")) * _num(b)
+            if left != _num(c.replace(".", "")):
+                errors.append(f"Gedankengang Schritt {i}: {a} {op} {b} ergibt nicht {c}")
+    if steps:
+        last = BLANK.findall(steps[-1]["satz"])
+        if not last or _num(last[-1]) != _num(ex["ergebnis"]["wert"]):
+            errors.append("Gedankengang: letzte Lücke ist nicht das Ergebnis")
+    return errors
+
+
+
+# --- Stufe 0: Bausteine --------------------------------------------------------------------------
+
+
+def _shuffled(items: list, seed: str) -> list:
+    rng = random.Random(int(hashlib.sha256(seed.encode()).hexdigest(), 16))
+    out = list(items)
+    rng.shuffle(out)
+    return out
+
+
+def _value_tokens(correct: List[tuple], distractors: List[tuple]) -> List[str]:
+    """Richtige Werte plus bis zu drei Ablenker, ohne Doppelte. Einträge: (Wert, Geldbetrag?)."""
+    seen, tokens = set(), []
+    for i, (v, money) in enumerate(correct + distractors):
+        if v <= 0 or v in seen or (i >= len(correct) and len(tokens) >= len(correct) + 3):
+            continue
+        if (v * (100 if money else 1000)).denominator != 1:  # krumme Beträge verraten den Ablenker
+            continue
+        seen.add(v)
+        tokens.append(fmt_number(v, money))
+    return tokens
+
+
+def _answer_options(ex: dict) -> List[dict]:
+    """Drei Antwortsätze: richtig, ohne Einheit, mit der Zahl aus dem typischen Fehler."""
+    correct = ex["antwortsatz"]
+    unit = ex["ergebnis"]["einheit"]
+    numbers = re.findall(r"\d[\d.]*(?:,\d+)?", correct)
+    number = numbers[-1]
+    money = unit == "€"
+    without_unit = re.sub(r"\s+" + re.escape(unit) + r"(?=\W|$)", "", correct, count=1) if unit else correct
+    wrong_value = fmt_number(ex["fehlerbeispiel"]["wert"], money)
+    head, _, tail = correct.rpartition(number)
+    wrong_number = head + wrong_value + tail
+    options = [
+        {"text": correct, "richtig": True},
+        {"text": without_unit, "richtig": False, "grund": "Einheit fehlt"},
+        {"text": wrong_number, "richtig": False, "grund": "Zahl passt nicht zur Rechnung"},
+    ]
+    unique = {o["text"]: o for o in options}
+    return _shuffled(list(unique.values()), ex["id"] + "-antwort")
+
+
+def building_blocks(ex: dict) -> dict:
+    """Felder und Bausteine für Stufe 0. Jedes Feld nennt den richtigen Baustein."""
+    blocks = _building_blocks(ex)
+    reasoning = ex.get("begruendung") or {}
+    blocks["begruendungen"] = (_shuffled(reasoning["optionen"], ex["id"] + "-begruendung")
+                               if reasoning.get("verlangt") else [])
+    return blocks
+
+
+def _building_blocks(ex: dict) -> dict:
+    result = _num(ex["ergebnis"]["wert"])
+    if ex["schema"] == "rechnung":
+        a, b = (_num(z) for z in ex["rechnung"]["zahlen"])
+        left, right = (_num(t) for t in ex["rechnung"]["umformung"].split(":"))
+        slots = {
+            "ueberschlag": fmt_number(a),
+            "umformung_links": fmt_number(left),
+            "umformung_rechts": fmt_number(right),
+            "ergebnis": fmt_number(result),
+        }
+        values = _value_tokens([(a, False), (left, False), (right, False), (result, False)],
+                               [(v, False) for v in (result / 10, result * 10, right * 10, a / 10)])
+        return {
+            "felder": slots,
+            "werte": _shuffled(values, ex["id"] + "-werte"),
+            "rechenschritte": [],
+            "antworten": _answer_options(ex),
+        }
+
+    rows = ex["zeilen"]
+    money = is_money_column(ex)
+    ops_l, ops_r = ex["schritte"], right_ops(ex)
+    slots = {
+        "op_links_1": ops_l[0], "op_links_2": ops_l[1],
+        "op_rechts_1": ops_r[0], "op_rechts_2": ops_r[1],
+        "mitte_links": fmt_number(rows[1][0]),
+        "mitte_rechts": fmt_number(rows[1][1], money),
+        "ergebnis": fmt_number(rows[2][1], money),
+    }
+    op_tokens = []
+    for op in ops_l + ops_r + [_inverse(o) for o in ops_l]:
+        if op not in op_tokens:
+            op_tokens.append(op)
+    mid_x, mid_y = _num(rows[1][0]), _num(rows[1][1])
+    correct = [(mid_x, False), (mid_y, money), (result, money)]
+    # Ablenker aus typischen Fehlern: Rechenfehler, verrutschtes Komma, falscher Hilfswert
+    distractors = [(v, money) for v in (_num(ex["fehlerbeispiel"]["wert"]), result * 10, result / 10,
+                                        mid_y * 10, result * 2)]
+    distractors += [(mid_x * 10, False), (mid_x * 2, False)]
+    values = _value_tokens(correct, distractors)
+    return {
+        "felder": slots,
+        "werte": _shuffled(values, ex["id"] + "-werte"),
+        "rechenschritte": _shuffled(op_tokens, ex["id"] + "-ops"),
+        "antworten": _answer_options(ex),
+    }

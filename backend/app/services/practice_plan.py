@@ -1,6 +1,7 @@
 """Was Thea als Nächstes üben könnte: Stand pro Aufgabe, Wiederholen und Lunas Vorschlag.
 
-Stufen: -1 Gedankengang (Rechenweg in Sätzen, nur Zahlen ergänzen), 0 Bausteine, 1–4 Tafel.
+Stufen bringt jeder Übungstyp mit (``stufen`` der Aufgabe, von viel nach wenig Hilfe; bei der Mathe-
+Sachaufgabe -1 Gedankengang, 0 Bausteine, 1–4 Tafel).
 Eine Aufgabe = das Original (A) mit seinen Zwillingen (B); eine Stufe gilt als geschafft, wenn
 irgendeine davon auf dieser Stufe gelöst wurde. Was „dran“ ist, kommt vorerst aus dem Vorrat selbst
 (alle Übungen); das Markieren der Abschnitte durch die Eltern folgt mit dem Freigabe-Ablauf.
@@ -19,7 +20,6 @@ from typing import Dict, List, Optional
 
 from backend.app.models.practice_attempt import PracticeAttempt
 
-MIN_STAGE, MAX_STAGE = -1, 4
 REPEAT_AFTER = timedelta(hours=20)  # „am nächsten Tag“, auch wenn abends geübt wurde
 
 
@@ -36,7 +36,7 @@ def _troubled(a: PracticeAttempt) -> bool:
 
 def plan(families: List[dict], attempts: List[PracticeAttempt], now: Optional[datetime] = None,
          open_boards: Optional[set] = None) -> dict:
-    """families: Originale wie ``practice_exercises.list_exercises()`` (mit ``zwillinge``).
+    """families: Originale wie ``practice_exercises.list_exercises()`` (mit ``zwillinge`` und ``stufen``).
 
     open_boards: Tafeln, die es noch gibt (nur dorthin wird zum Weiterschreiben verwiesen).
     """
@@ -58,10 +58,10 @@ def plan(families: List[dict], attempts: List[PracticeAttempt], now: Optional[da
     for fam in families:
         own = by_family.get(fam["id"], [])
         solved = sorted({a.stage for a in own if a.solved_at is not None})
-        next_stage = (solved[-1] + 1 if solved else MIN_STAGE)
+        higher = [s for s in fam["stufen"] if not solved or s > solved[-1]]
         progress[fam["id"]] = {
             "geschafft": solved,
-            "naechste_stufe": next_stage if next_stage <= MAX_STAGE else None,
+            "naechste_stufe": higher[0] if higher else None,
             "zuletzt": own[-1].last_activity_at.isoformat() if own else None,
         }
         # Offen: zuletzt aktiver Versuch je Stufe, der nicht gelöst ist und nach dem nichts gelöst wurde
@@ -109,7 +109,7 @@ def plan(families: List[dict], attempts: List[PracticeAttempt], now: Optional[da
         fresh = [f for f in families if progress[f["id"]]["zuletzt"] is None]
         if fresh:
             suggestion = {"art": "neu", "familie": fresh[0]["id"], "exercise_id": fresh[0]["id"],
-                          "stufe": MIN_STAGE, "board_id": None}
+                          "stufe": fresh[0]["stufen"][0], "board_id": None}
     if suggestion is None and repeats:
         r = min(repeats, key=lambda r: r["_at"])
         suggestion = {"art": "wiederholen", "familie": r["familie"], "exercise_id": r["exercise_id"],
