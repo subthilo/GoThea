@@ -70,6 +70,7 @@ Lernplattform für Thea (7. Klasse Gymnasium, Brandenburg). Thea nutzt sie im iP
 - **Listen statt Kartenraster**, aufklappbar für Details (Dokumente, Bücher, Tafeln).
 - **Tafel-Kopfleiste** (links → rechts): bei Dokumenten Zurück-zum-Buch + ← 2 / 3 →, Tutor (`Tutor.svg`), Ton, Fach/Tafel/Unterlage-Dropdowns, rechts „+“, Vollbild, Verbindungspunkt. Nichts liegt über der Seite; Speichern läuft unsichtbar, sichtbar nur bei Fehler. Zu schmal → Leiste scrollt seitlich.
 - Kopfzeile der App muss auch auf dem iPad im Hochformat einzeilig bleiben.
+- **Übungen passen auf einen Bildschirm, quer und hoch, ohne Scrollen** (Nutzer, 23.10.): feste Seite wie Tafel/Gedankengang (`core.setZen(true)`, `body.practice-zen-mode`), Bild nimmt den Restplatz per Container-Abfrage; ein Browser-Test misst iPad Pro 11 und mini in beiden Lagen (`test_everything_fits_on_one_screen_in_both_orientations`). Stand 23.10.: „Zuordnen“ und Gedankengang passen, Mathe-Bausteine (Stufe 0) scrollen noch 54–144 px.
 
 ## Stolperfallen
 
