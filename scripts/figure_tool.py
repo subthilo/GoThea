@@ -14,6 +14,15 @@ bestätigt jeden Kreis. Freigegeben wird erst nach dem Blick der Eltern (Session
      .venv/bin/python scripts/figure_tool.py redraw brenner
 3. export: bestandenen Versuch als Bild der Übung ablegen und die Felder (Ziffer, Lage, Begriff) ausgeben.
      .venv/bin/python scripts/figure_tool.py export brenner 1 ch-brenner
+
+Abbildungen ohne Beschriftungen (z. B. Arbeitsheft-Zeichnungen mit leeren Linien): statt redraw den Ausschnitt
+selbst nehmen – mark hellt den Scan auf und setzt die Ziffernkreise an die Lagen aus key.json ("x", "y" in
+Pixeln von original.png); ein Versuch wie bei redraw, export bleibt gleich.
+     .venv/bin/python scripts/figure_tool.py mark grundregeln
+Zeigt „Im Buch“ eine andere Stelle als der Ausschnitt (Lösung steht im Buch), legt buch diesen Ausschnitt ab;
+export nimmt dann ihn als Original.
+     .venv/bin/python scripts/figure_tool.py buch grundregeln --material mat_5407a000_ch01 --seite 16 \\
+         --ausschnitt 8,14,92,52
 """
 import argparse
 import base64
@@ -90,12 +99,16 @@ def group_labels(lines: list) -> list:
     return sorted(groups, key=lambda g: (g["box"][1], g["box"][0]))
 
 
+def cut(material_id: str, page_no: int, ausschnitt: str) -> Image.Image:
+    page = render_page(material_id, page_no)
+    left, top, right, bottom = (float(v) / 100 for v in ausschnitt.split(","))
+    return page.crop((int(left * page.width), int(top * page.height), int(right * page.width), int(bottom * page.height)))
+
+
 def prepare(args) -> None:
     folder = WORK_DIR / args.name
     folder.mkdir(parents=True, exist_ok=True)
-    page = render_page(args.material, args.seite)
-    left, top, right, bottom = (float(v) / 100 for v in args.ausschnitt.split(","))
-    crop = page.crop((int(left * page.width), int(top * page.height), int(right * page.width), int(bottom * page.height)))
+    crop = cut(args.material, args.seite, args.ausschnitt)
     crop.save(folder / "original.png")
     labels = group_labels(ocr_lines(folder / "original.png"))
     (folder / "labels.json").write_text(json.dumps(labels, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -234,6 +247,54 @@ def redraw(args) -> None:
     print("Kein Versuch bestanden.")
 
 
+# --- 2b. Ohne Nachzeichnen: Ziffernkreise auf den Ausschnitt setzen -----------------------------------
+
+MARK_FONT = "/System/Library/Fonts/HelveticaNeue.ttc"
+MARK_MAX_SIDE = 1536
+
+
+def mark(args) -> None:
+    from PIL import ImageDraw, ImageFont
+
+    folder = WORK_DIR / args.name
+    key = json.loads((folder / "key.json").read_text(encoding="utf-8"))
+    original = Image.open(folder / "original.png").convert("RGB")
+    scale = min(1.0, MARK_MAX_SIDE / max(original.size))
+    image = original.resize((round(original.width * scale), round(original.height * scale)), Image.LANCZOS)
+    # Papiergrau und durchscheinende Rückseite des Scans aufhellen, die Zeichnung bleibt
+    image = image.point(lambda v: min(255, round(v * 255 / args.weiss)))
+    draw = ImageDraw.Draw(image)
+    radius = max(16, round(image.width / 46))
+    font = ImageFont.truetype(MARK_FONT, round(radius * 1.15), index=1)
+    for b in key["begriffe"]:
+        x, y = b["x"] * scale, b["y"] * scale
+        draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill="white", outline="black",
+                     width=max(3, radius // 7))
+        draw.text((x, y), str(b["nr"]), fill="black", font=font, anchor="mm")
+    n = 1 + len(list(folder.glob("versuch_*.png")))
+    image.save(folder / f"versuch_{n}.png")
+    found, problems = {}, []
+    for b in key["begriffe"]:
+        ring = ring_at(image, b["x"] * scale, b["y"] * scale)
+        if ring is None:
+            problems.append(f"Ziffer {b['nr']}: kein Kreis gefunden")
+        else:
+            found[int(b["nr"])] = {"x": ring[0], "y": ring[1], "r": ring[2]}
+    report = {"art": "markiert", "kreise": found, "probleme": problems, "bestanden": not problems}
+    (folder / f"versuch_{n}.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Versuch {n}: {'bestanden' if report['bestanden'] else 'durchgefallen'} ({image.width}×{image.height})")
+    for p in problems:
+        print(f"   {p}")
+
+
+def book(args) -> None:
+    folder = WORK_DIR / args.name
+    folder.mkdir(parents=True, exist_ok=True)
+    crop = cut(args.material, args.seite, args.ausschnitt)
+    crop.save(folder / "buch.png")
+    print(f"{folder}: buch.png {crop.size[0]}×{crop.size[1]}")
+
+
 # --- 3. Für die Übung ablegen ---------------------------------------------------------------------------
 
 
@@ -242,7 +303,7 @@ def export(args) -> None:
     key = json.loads((folder / "key.json").read_text(encoding="utf-8"))
     report = json.loads((folder / f"versuch_{args.versuch}.json").read_text(encoding="utf-8"))
     drawn = Image.open(folder / f"versuch_{args.versuch}.png").convert("RGB")
-    original = Image.open(folder / "original.png").convert("RGB")
+    original = Image.open(folder / ("buch.png" if (folder / "buch.png").exists() else "original.png")).convert("RGB")
     original.thumbnail((1400, 1400))
     IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     drawn.save(IMAGES_DIR / f"{args.uebung}.jpg", quality=85, optimize=True)
@@ -270,6 +331,16 @@ def main() -> None:
     p.add_argument("name")
     p.add_argument("--versuche", type=int, default=3)
     p.set_defaults(run=redraw)
+    p = sub.add_parser("mark")
+    p.add_argument("name")
+    p.add_argument("--weiss", type=int, default=225, help="Helligkeit, die zu Weiß wird (Papier des Scans)")
+    p.set_defaults(run=mark)
+    p = sub.add_parser("buch")
+    p.add_argument("name")
+    p.add_argument("--material", required=True)
+    p.add_argument("--seite", type=int, required=True)
+    p.add_argument("--ausschnitt", required=True)
+    p.set_defaults(run=book)
     p = sub.add_parser("export")
     p.add_argument("name")
     p.add_argument("versuch", type=int)

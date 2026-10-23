@@ -46,8 +46,11 @@ def validate_header(ex: dict) -> List[str]:
         errors.append("Aufgabentext fehlt")
     if ex.get("status") not in STATUSES:
         errors.append(f"Status fehlt ({' oder '.join(STATUSES)})")
-    if exercise_types.get(ex.get("typ")) is None:
+    exercise_type = exercise_types.get(ex.get("typ"))
+    if exercise_type is None:
         errors.append(f"Übungstyp „{ex.get('typ')}“ gibt es nicht")
+    elif "stufen" in ex and not (ex["stufen"] and set(ex["stufen"]) <= set(exercise_type.STAGES)):
+        errors.append(f"stufen: nur Stufen des Typs ({', '.join(map(str, exercise_type.STAGES))})")
     if ex.get("ableitung") not in ABLEITUNGEN:
         errors.append(f"Ableitung fehlt ({', '.join(ABLEITUNGEN)})")
     elif (ex["ableitung"] == "B") != bool(ex.get("zwilling_von")):
@@ -164,8 +167,10 @@ def _visible(include_drafts: bool) -> Dict[str, dict]:
 
 
 def _stages(ex: dict) -> dict:
+    """Stufen des Typs; eine Übung kann einzelne weglassen (``stufen``), z. B. das freie Schreiben ganzer Sätze."""
     exercise_type = exercise_types.get(ex["typ"])
-    return {"stufen": list(exercise_type.STAGES), "tafel_stufen": list(exercise_type.BOARD_STAGES)}
+    stages = [s for s in exercise_type.STAGES if s in ex.get("stufen", exercise_type.STAGES)]
+    return {"stufen": stages, "tafel_stufen": [s for s in exercise_type.BOARD_STAGES if s in stages]}
 
 
 def list_exercises(include_drafts: bool = False) -> List[dict]:
