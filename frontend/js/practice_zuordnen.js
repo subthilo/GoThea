@@ -32,7 +32,7 @@
   function figureHtml() {
     const ex = run.ex;
     if (run.book) {
-      return `<div class="zo-figure zo-book"><img src="${esc(ex.original_url)}" alt="Abbildung im Buch" draggable="false"></div>`;
+      return `<div class="zo-book"><img src="${esc(ex.original_url)}" alt="Abbildung im Buch" draggable="false"></div>`;
     }
     const spots = fields().map((f) => {
       let state = "";
@@ -66,7 +66,7 @@
     // Gesetzte Begriffe bleiben wählbar (blasser): erneut gesetzt, wandern sie aus ihrer alten Zeile mit
     const used = new Set(Object.values(run.placed).map(norm));
     const locked = done();
-    return `<div class="px-palette zo-bank">${bank.map((t) => {
+    return `<div class="zo-bank">${bank.map((t) => {
       const isUsed = used.has(norm(t));
       return `<button type="button" class="px-token zo-token${run.selected === t ? " selected" : ""}${isUsed ? " used" : ""}"
         data-token="${esc(t)}"${locked ? " disabled" : ""}>${esc(t)}</button>`;
@@ -107,20 +107,22 @@
     return h + `<button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;
   }
 
+  // Feste Seite in Bildschirmhöhe (wie der Gedankengang), quer und hoch ohne Scrollen: das Bild nimmt den
+  // Platz, der übrig bleibt (css: .zo-figure-area), Liste und Wortbank scrollen notfalls in sich
   function render() {
-    core.setZen(false);
+    core.setZen(true);
     runView.innerHTML = `
       ${core.topbarHtml(run.ex, run.stage)}
-      <p class="px-task zo-task">${esc(run.ex.aufgabentext)}</p>
-      <div class="zo">
-        ${figureHtml()}
-        <aside class="zo-side">
-          <ol class="zo-rows">${rowsHtml()}</ol>
-        </aside>
-      </div>
-      ${bankHtml()}
-      <div class="px-luna" aria-live="polite">${lunaHtml()}</div>
-      <div class="px-actions zo-actions">${actionsHtml()}</div>`;
+      <div class="zo${run.stage < 0 ? " zo-look" : ""}">
+        <p class="px-task zo-task">${esc(run.ex.aufgabentext)}</p>
+        <div class="zo-figure-area">${figureHtml()}</div>
+        <ol class="zo-rows">${rowsHtml()}</ol>
+        ${bankHtml()}
+        <div class="zo-foot">
+          <div class="px-luna" aria-live="polite">${lunaHtml()}</div>
+          <div class="px-actions zo-actions">${actionsHtml()}</div>
+        </div>
+      </div>`;
   }
 
   // ---------- Bedienung ----------

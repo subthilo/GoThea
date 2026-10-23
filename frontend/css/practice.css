@@ -969,27 +969,55 @@ body.practice-zen-mode .gg-right .px-actions {
 }
 
 /* ==========================================================================
-   Übungstyp „Zuordnen“ (js/practice_zuordnen.js): Schaubild mit Ziffern links,
-   Antwortliste „1 ___“ rechts, Wortbank darunter. Tippflächen ≥ 44 px.
+   Übungstyp „Zuordnen“ (js/practice_zuordnen.js): feste Seite in Bildschirmhöhe
+   (body.practice-zen-mode), quer und hoch ohne Scrollen.
+   Quer: Bild links über die volle Höhe, daneben Antwortliste und Wortbank.
+   Hoch: Bild oben (nimmt den Rest), darunter Liste (3 Spalten), Wortbank, Knöpfe.
    ========================================================================== */
 
-.zo-task {
-  margin-bottom: 12px;
-}
-
 .zo {
+  flex: 1 1 0%;
+  min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 250px) minmax(220px, 290px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "task task task"
+    "fig  rows bank"
+    "fig  foot foot";
+  gap: 10px 14px;
 }
 
-/* Das Bild passt in die Bildschirmhöhe; die Ziffern liegen in Prozent darüber */
+/* Anschauen: keine Wortbank, die Liste bekommt deren Platz */
+.zo.zo-look {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 380px);
+  grid-template-areas:
+    "task task"
+    "fig  rows"
+    "fig  foot";
+}
+
+.zo-task {
+  grid-area: task;
+  margin: 0;
+}
+
+/* Das Bild passt sich der freien Fläche an (Container-Abfrage), Seitenverhältnis bleibt;
+   die Ziffern liegen in Prozent des Bilds darüber */
+.zo-figure-area {
+  grid-area: fig;
+  min-width: 0;
+  min-height: 0;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .zo-figure {
   position: relative;
-  justify-self: center;
-  width: 100%;
-  max-width: calc(66vh * var(--zo-ratio, 1));
+  width: min(100cqw, calc(100cqh * var(--zo-ratio, 1)));
+  aspect-ratio: var(--zo-ratio, 1);
   background: #fff;
   border-radius: 14px;
   overflow: hidden;
@@ -1001,12 +1029,23 @@ body.practice-zen-mode .gg-right .px-actions {
 .zo-figure img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
 }
 
 .zo-book {
-  max-width: none;
-  padding: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  background: #fff;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.zo-book img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .zo-spot {
@@ -1035,29 +1074,34 @@ body.practice-zen-mode .gg-right .px-actions {
 }
 
 .zo-rows {
+  grid-area: rows;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .zo-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .zo-nr {
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 2px solid var(--text-secondary);
   border-radius: 50%;
+  font-size: 0.85rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -1070,13 +1114,15 @@ body.practice-zen-mode .gg-right .px-actions {
 .zo-slot {
   flex: 1;
   min-width: 0;
-  min-height: 44px;
-  padding: 4px 10px;
+  min-height: clamp(34px, 5.2vh, 44px);
+  padding: 2px 8px;
   border: 2px dashed var(--border-active);
-  border-radius: 10px;
+  border-radius: 9px;
   background: transparent;
   color: var(--text-primary);
   font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.15;
   text-align: left;
   cursor: pointer;
   touch-action: manipulation;
@@ -1103,38 +1149,74 @@ body.practice-zen-mode .gg-right .px-actions {
 }
 
 .zo-bank {
-  flex-direction: row;
+  grid-area: bank;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+  align-content: flex-start;
+  gap: 6px;
+  padding: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
 }
 
 .zo-token {
-  font-size: 1rem;
-}
-
-.zo ~ .px-luna,
-.zo-actions {
-  margin-top: 12px;
+  min-width: 0;
+  min-height: clamp(36px, 5.2vh, 44px);
+  padding: 0 10px;
+  font-size: 0.95rem;
 }
 
 .zo-token.used:not(.selected) {
   opacity: 0.45;
 }
 
-/* Hochformat: Bild kleiner, Antwortliste zweispaltig, damit die Wortbank ohne langes Scrollen erreichbar ist */
-@media (max-width: 900px) {
-  .zo {
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* Luna und Knöpfe in einer Zeile */
+.zo-foot {
+  grid-area: foot;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
 
-  .zo-figure {
-    max-width: calc(44vh * var(--zo-ratio, 1));
+.zo-foot .px-luna {
+  flex: 1;
+  min-width: 0;
+  max-height: 4.6em;
+  overflow-y: auto;
+  gap: 4px;
+  font-size: 0.95rem;
+}
+
+.zo-foot .px-actions {
+  flex: none;
+}
+
+.zo-foot .px-check {
+  flex: none;
+  min-width: 64px;
+}
+
+@media (orientation: portrait), (max-width: 820px) {
+  .zo,
+  .zo.zo-look {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "task" "fig" "rows" "bank" "foot";
   }
 
   .zo-rows {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px 10px;
+    overflow: visible;
+  }
+
+  .zo-bank {
+    overflow: visible;
   }
 }

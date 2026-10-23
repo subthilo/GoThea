@@ -84,3 +84,25 @@ def test_book_view_shows_the_original_figure(app_page, parent_pin):
     app_page.click('[data-action="zo-book"]')
     app_page.wait_for_selector(".zo-spot")
     assert app_page.problems.errors == []
+
+
+def _overflow(page):
+    return page.evaluate("""() => {
+        const over = (el) => el ? el.scrollHeight - el.clientHeight : 0;
+        return { page: document.scrollingElement.scrollHeight - innerHeight,
+                 rows: over(document.querySelector('.zo-rows')), bank: over(document.querySelector('.zo-bank')) };
+    }""")
+
+
+def test_everything_fits_on_one_screen_in_both_orientations(app_page, parent_pin):
+    # Quer und hoch, auch auf dem kleinsten iPad (mini): kein Scrollen, weder Seite noch Liste noch Wortbank
+    for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
+        app_page.set_viewport_size({"width": width, "height": height})
+        open_brenner(app_page, parent_pin, 2)
+        app_page.click(f'.zo-token[data-token="{terms(app_page)[0]["begriff"]}"]')
+        app_page.click('.zo-slot[data-row="2"]')
+        assert _overflow(app_page) == {"page": 0, "rows": 0, "bank": 0}, (width, height)
+        box = app_page.locator(".zo-figure").bounding_box()
+        assert box["width"] > 450, (width, height, box)
+        app_page.click('[data-action="back"]')
+    assert app_page.problems.errors == []
