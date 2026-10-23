@@ -967,3 +967,174 @@ body.practice-zen-mode .gg-right .px-actions {
   border-style: dashed;
   border-color: var(--subject-color, var(--accent));
 }
+
+/* ==========================================================================
+   Übungstyp „Zuordnen“ (js/practice_zuordnen.js): Schaubild mit Ziffern links,
+   Antwortliste „1 ___“ rechts, Wortbank darunter. Tippflächen ≥ 44 px.
+   ========================================================================== */
+
+.zo-task {
+  margin-bottom: 12px;
+}
+
+.zo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
+  gap: 16px;
+  align-items: start;
+}
+
+/* Das Bild passt in die Bildschirmhöhe; die Ziffern liegen in Prozent darüber */
+.zo-figure {
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  max-width: calc(66vh * var(--zo-ratio, 1));
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.zo-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.zo-book {
+  max-width: none;
+  padding: 10px;
+}
+
+.zo-spot {
+  position: absolute;
+  width: 7%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.zo-spot.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.35);
+}
+
+.zo-spot.ok {
+  border-color: var(--success);
+}
+
+.zo-spot.wrong {
+  border-color: var(--warning);
+}
+
+.zo-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.zo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zo-nr {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--text-secondary);
+  border-radius: 50%;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.zo-row.active .zo-nr {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.zo-slot {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 10px;
+  border: 2px dashed var(--border-active);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.zo-row.active .zo-slot {
+  border-color: var(--accent);
+}
+
+.zo-slot.filled {
+  border-style: solid;
+  border-color: rgba(129, 140, 248, 0.8);
+  background: rgba(99, 102, 241, 0.14);
+}
+
+.zo-slot.ok {
+  border-color: var(--success);
+  background: rgba(16, 185, 129, 0.16);
+}
+
+.zo-slot.wrong {
+  border-color: var(--warning);
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.zo-bank {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.zo-token {
+  font-size: 1rem;
+}
+
+.zo ~ .px-luna,
+.zo-actions {
+  margin-top: 12px;
+}
+
+.zo-token.used:not(.selected) {
+  opacity: 0.45;
+}
+
+/* Hochformat: Bild kleiner, Antwortliste zweispaltig, damit die Wortbank ohne langes Scrollen erreichbar ist */
+@media (max-width: 900px) {
+  .zo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .zo-figure {
+    max-width: calc(44vh * var(--zo-ratio, 1));
+  }
+
+  .zo-rows {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 12px;
+  }
+}

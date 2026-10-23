@@ -6,8 +6,10 @@ from backend.app.services import practice_exercises as pe
 from backend.app.services.exercise_types import sachaufgabe as sa
 
 
-def all_exercises():
-    return [pe.get_exercise(i) for e in pe.list_exercises() for i in [e["id"], *e["zwillinge"]]]
+def all_exercises(typ=None):
+    """Alle Übungen samt Entwürfen; mit typ nur die eines Übungstyps."""
+    return [ex for ex in (pe.get_exercise(i, include_drafts=True) for e in pe.list_exercises(include_drafts=True)
+                          for i in [e["id"], *e["zwillinge"]]) if typ is None or ex["typ"] == typ]
 
 
 def test_pilot_data_is_loaded():
@@ -17,12 +19,13 @@ def test_pilot_data_is_loaded():
 
 
 @pytest.mark.parametrize("ex", all_exercises(), ids=lambda ex: ex["id"])
-def test_every_solution_is_recalculated_exactly(ex):
+def test_every_exercise_is_valid_for_its_type(ex):
+    # Mathe: „Luna liest, der Code rechnet“ – jede Zeile, Ergebnis, Antwortsatz, Schätzfrage nachgerechnet
     # „Luna liest, der Code rechnet“: jede Zeile, Ergebnis, Antwortsatz, Schätzfrage
     assert pe.validate(ex) == []
 
 
-@pytest.mark.parametrize("ex", all_exercises(), ids=lambda ex: ex["id"])
+@pytest.mark.parametrize("ex", all_exercises("sachaufgabe"), ids=lambda ex: ex["id"])
 def test_building_blocks_can_fill_every_field(ex):
     blocks = ex["bausteine"]
     tokens = blocks["werte"] + blocks["rechenschritte"]
@@ -53,7 +56,7 @@ def test_validate_catches_wrong_row():
     assert any("Zeile 3" in e for e in pe.validate(broken))
 
 
-@pytest.mark.parametrize("ex", all_exercises(), ids=lambda ex: ex["id"])
+@pytest.mark.parametrize("ex", all_exercises("sachaufgabe"), ids=lambda ex: ex["id"])
 def test_every_exercise_has_a_checked_reasoning_path(ex):
     # Leichteste Stufe: Gedankengang in Sätzen, mindestens eine nachgerechnete Gleichung
     steps = ex["gedankengang"]
@@ -114,8 +117,10 @@ def test_header_without_subject_or_page_is_rejected():
 
 
 def test_every_exercise_lists_the_stages_of_its_type():
-    for fam in pe.list_exercises():
-        assert fam["stufen"] == sa.STAGES and fam["tafel_stufen"] == sa.BOARD_STAGES
+    from backend.app.services import exercise_types
+    for fam in pe.list_exercises(include_drafts=True):
+        exercise_type = exercise_types.get(fam["typ"])
+        assert fam["stufen"] == exercise_type.STAGES and fam["tafel_stufen"] == exercise_type.BOARD_STAGES
 
 
 def test_drafts_are_only_visible_when_asked_for(monkeypatch):

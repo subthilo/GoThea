@@ -1,0 +1,115 @@
+{
+  "typ": "zuordnen",
+  "version": 1,
+  "stand": "2026-10-23",
+  "hinweis": "Chemie, Kapitel 1 „Was ist Chemie?“. Erstellt in einer Claude-Code-Session; Schaubilder mit scripts/figure_tool.py aus der Buchabbildung nachgezeichnet und geprüft, Begriffe wortgleich aus dem Buch.",
+  "uebungen": [
+    {
+      "id": "ch-brenner",
+      "ableitung": "A",
+      "fach": "sub_chemie",
+      "thema": "top_dfbb0dd9",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 2,
+        "seite": 2,
+        "nummer": "3a"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 17,
+        "seite": 22,
+        "stelle": "Abb. 1"
+      },
+      "abschnitt": "Umgang mit dem Brenner",
+      "aufgabentext": "Beschrifte die Teile des Brenners und der Flamme.",
+      "bild": {
+        "datei": "ch-brenner.jpg",
+        "original": "ch-brenner_original.jpg",
+        "breite": 1024,
+        "hoehe": 1024
+      },
+      "felder": [
+        {
+          "nr": 1,
+          "x": 0.6104,
+          "y": 0.125,
+          "begriff": "heißeste Zone"
+        },
+        {
+          "nr": 2,
+          "x": 0.8232,
+          "y": 0.0684,
+          "begriff": "Außenkegel"
+        },
+        {
+          "nr": 3,
+          "x": 0.8242,
+          "y": 0.2324,
+          "begriff": "Innenkegel"
+        },
+        {
+          "nr": 4,
+          "x": 0.0635,
+          "y": 0.4297,
+          "begriff": "Brennerrohr"
+        },
+        {
+          "nr": 5,
+          "x": 0.0635,
+          "y": 0.5391,
+          "begriff": "Düse"
+        },
+        {
+          "nr": 6,
+          "x": 0.0615,
+          "y": 0.6553,
+          "begriff": "Luft"
+        },
+        {
+          "nr": 7,
+          "x": 0.4834,
+          "y": 0.6553,
+          "begriff": "brennbares Gas"
+        },
+        {
+          "nr": 8,
+          "x": 0.0459,
+          "y": 0.8867,
+          "begriff": "Brennerfuß"
+        },
+        {
+          "nr": 9,
+          "x": 0.4834,
+          "y": 0.7861,
+          "begriff": "Gaszufuhr"
+        },
+        {
+          "nr": 10,
+          "x": 0.5771,
+          "y": 0.751,
+          "begriff": "Stellschraube für Gaszufuhr"
+        },
+        {
+          "nr": 11,
+          "x": 0.8486,
+          "y": 0.5557,
+          "begriff": "Stellschraube für Luftzufuhr"
+        }
+      ],
+      "ablenker": [
+        "Gashahn",
+        "Leuchtflamme",
+        "Drahtnetz",
+        "Dreifuß"
+      ],
+      "hilfen": {
+        "denkanstoss": "Fang mit dem an, was du sicher weißt: Wo strömt das Gas hinein, wo die Luft?"
+      }
+    }
+  ]
+}

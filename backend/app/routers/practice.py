@@ -9,10 +9,12 @@ nicht gespeichert, damit Probeklicks der Eltern nicht in Theas Lernstand landen.
 import base64
 import json
 import logging
+import re
 from datetime import datetime
 from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -21,6 +23,7 @@ from backend.app.database import get_db
 from backend.app.models.whiteboard import TutorSession
 from backend.app.models.practice_attempt import PracticeAttempt
 from backend.app.services import llm, practice_attempts, practice_check, practice_exercises, practice_plan
+from backend.app.services.exercise_types import zuordnen
 from backend.app.services.parent_auth import is_parent
 
 logger = logging.getLogger(__name__)
@@ -131,6 +134,15 @@ def add_handwriting(payload: HandwritingUpload) -> dict:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"samples": kept}), encoding="utf-8")
     return {"samples": kept}
+
+
+@router.get("/bilder/{name}")
+def practice_image(name: str) -> FileResponse:
+    """Schaubild einer Übung (exercise_sets/bilder, vom Übungstyp „Zuordnen“ genutzt)."""
+    path = zuordnen.IMAGES_DIR / name
+    if not config.EXERCISE_TRIAL_ENABLED or not re.fullmatch(r"[a-z0-9_-]+\.(jpg|png)", name) or not path.is_file():
+        raise HTTPException(status_code=404, detail="Bild nicht gefunden")
+    return FileResponse(path, headers={"Cache-Control": "public, max-age=3600"})
 
 
 @router.get("/{exercise_id}")

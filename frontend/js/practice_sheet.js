@@ -27,11 +27,12 @@ function startPracticeAttempt(exerciseId, stage, boardId = null) {
   });
 }
 
-// Ereignis zum Versuch melden: 'guess' {value}, 'hint', 'solution', 'check' {status, …} (nur Stufe 0)
+// Ereignis zum Versuch melden: 'guess' {value}, 'hint', 'solution', 'check' {status, …} (Stufen im Tab).
+// Entwürfe haben keinen Versuch (id null): dann wird nichts gemeldet.
 function logPracticeEvent(attemptPromise, kind, data = {}) {
   if (!attemptPromise) return;
   attemptPromise
-    .then((attempt) => attempt && apiJson(`/api/v1/practice/attempts/${encodeURIComponent(attempt.id)}/events`, {
+    .then((attempt) => attempt && attempt.id && apiJson(`/api/v1/practice/attempts/${encodeURIComponent(attempt.id)}/events`, {
       method: "POST",
       json: { kind, data },
     }))

@@ -7,11 +7,11 @@ Stufen: -1 Gedankengang (Rechenweg in Sätzen, nur Zahlen ergänzen), 0 Baustein
 """
 from __future__ import annotations
 
-import hashlib
-import random
 import re
 from fractions import Fraction
 from typing import List
+
+from backend.app.services.exercise_types.common import shuffled as _shuffled
 
 TYP = "sachaufgabe"
 STAGES = [-1, 0, 1, 2, 3, 4]
@@ -151,13 +151,6 @@ def validate_reasoning_steps(ex: dict) -> List[str]:
 
 
 # --- Stufe 0: Bausteine --------------------------------------------------------------------------
-
-
-def _shuffled(items: list, seed: str) -> list:
-    rng = random.Random(int(hashlib.sha256(seed.encode()).hexdigest(), 16))
-    out = list(items)
-    rng.shuffle(out)
-    return out
 
 
 def _value_tokens(correct: List[tuple], distractors: List[tuple]) -> List[str]:
