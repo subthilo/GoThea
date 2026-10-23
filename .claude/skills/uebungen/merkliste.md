@@ -10,3 +10,6 @@ Aus den Sessions gesammelt; neue Typen entstehen nach `neuer-typ.md`. Erledigtes
 | 23.10.2026 | Chemie | Arbeitsheft S. 3 Nr. 4 | Gefahrenpiktogramme: Code und Bedeutung | „Zuordnen“ mit mehreren Bildern; offizielle GHS-Piktogramme statt Nachzeichnen |
 | 23.10.2026 | Chemie | Arbeitsheft S. 6–7 | Dichte berechnen (ρ = m/V), Erdöl, Goldkette | „Sachaufgabe“ erweitern: Schema „Formel“ |
 | 23.10.2026 | Chemie | Arbeitsheft S. 9 Nr. 2, S. 10 Nr. 2 | Teilchenmodell zeichnen | später: Zeichnen auf der Tafel, Luna beurteilt nach Maßstab |
+| 23.10.2026 | Chemie | Arbeitsheft S. 1 Nr. 2 (`ch-grundregeln`, bisher nur Stufen −1–2) | Grundregel zum Bild frei aufschreiben | „Zuordnen“ Stufe 3 für Sätze: Luna beurteilt den Sinn statt Buchstabenvergleich |
+| 23.10.2026 | Chemie | Buch S. 21 „Während des Experimentierens“ (10 Schritte) | Ablauf eines Experiments in die richtige Reihenfolge | „Ordnen“ (siehe oben) |
+| 23.10.2026 | Chemie | Buch S. 21 Kasten Sicherheitseinrichtungen | Löschsand, Augendusche … zu Feuerlöschmittel / Erste Hilfe | „Zuordnen“ mit Gruppen (siehe oben) |
