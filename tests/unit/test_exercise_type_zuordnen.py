@@ -12,7 +12,7 @@ def brenner():
 
 def test_burner_uses_the_terms_of_the_book():
     ex = brenner()
-    assert ex["typ"] == "zuordnen" and ex["fach"] == "sub_chemie" and ex["status"] == "entwurf"
+    assert ex["typ"] == "zuordnen" and ex["fach"] == "sub_chemie" and ex["status"] == "freigegeben"
     terms = [f["begriff"] for f in ex["felder"]]
     assert "Stellschraube für Luftzufuhr" in terms and "Brennerfuß" in terms
     assert sorted(ex["wortbank"]) == sorted(terms)

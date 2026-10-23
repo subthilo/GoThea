@@ -1,33 +1,18 @@
-"""Üben, Übungstyp „Zuordnen“: Brenner aus dem Chemiebuch (Entwurf, nur im Eltern-Modus) durchspielen."""
+"""Üben, Übungstyp „Zuordnen“: Brenner aus dem Chemiebuch durchspielen (Entwürfe: tests/integration)."""
 
 BRENNER = "ch-brenner"
 
 
-def unlock_parent(page, pin):
-    page.evaluate("""async (pin) => {
-        const r = await apiJson('/api/v1/auth/parent/unlock', { method: 'POST', json: { pin } });
-        setParentToken(r.token, r.expires_at);
-    }""", pin)
-
-
 def open_brenner(page, pin, stage):
-    unlock_parent(page, pin)
     page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
     page.click('.nav-tab[data-tab="practice"]')
-    page.wait_for_selector(f'.practice-row[data-id="{BRENNER}"].practice-draft')
+    page.wait_for_selector(f'.practice-row[data-id="{BRENNER}"]')
     page.evaluate(f"window.openPracticeExercise('{BRENNER}', {stage})")
     page.wait_for_selector(".zo-figure img")
 
 
 def terms(page):
     return page.evaluate(f"apiJson('/api/v1/practice/{BRENNER}')")["felder"]
-
-
-def test_draft_is_hidden_without_parent_mode(app_page):
-    app_page.click('.nav-tab[data-tab="practice"]')
-    app_page.wait_for_selector(".practice-row")
-    assert app_page.locator(f'.practice-row[data-id="{BRENNER}"]').count() == 0
-    assert app_page.problems.errors == []
 
 
 def test_look_stage_reveals_each_term(app_page, parent_pin):
