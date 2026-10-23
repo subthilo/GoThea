@@ -1,0 +1,40 @@
+"""
+Prüft alle Übungen (backend/app/exercise_sets/*.json) gegen die Datenbank: Gibt es Fach, Thema und die
+Materialien in Quelle und Nachschlagen, liegt die Seite im Material, passt die Buchseite?
+Vor dem Einspielen neuer Übungen ausführen; Exit-Code 1, sobald eine Übung nicht passt.
+
+Auf dem Pi (Staging):
+    cd ~/GoThea-staging && .venv/bin/python scripts/check_exercises.py
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import backend.main  # noqa: E402,F401  (registriert alle Modelle)
+from backend.app.config import DATA_DIR  # noqa: E402
+from backend.app.database import SessionLocal  # noqa: E402
+from backend.app.services import practice_exercises as pe  # noqa: E402
+
+
+def main() -> int:
+    print(f"Datenverzeichnis: {DATA_DIR}")
+    exercises = [pe.get_exercise(i) for e in pe.list_exercises() for i in [e["id"], *e["zwillinge"]]]
+    db = SessionLocal()
+    failed = 0
+    try:
+        for ex in exercises:
+            errors = pe.validate_header(ex) or pe.check_references(db, ex)
+            if errors:
+                failed += 1
+                print(f"\n{ex['id']}")
+                for e in errors:
+                    print(f"   {e}")
+    finally:
+        db.close()
+    print(f"\n{len(exercises)} Übungen geprüft, {failed} mit Fehlern.")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

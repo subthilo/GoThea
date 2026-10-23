@@ -6,10 +6,14 @@
   "uebungen": [
     {
       "id": "sa-gummibaerchen",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "A",
       "quelle": {
         "art": "Test",
         "material": "1. Test Zuordnungen",
+        "material_id": "mat_49b92667",
+        "material_seite": 1,
         "datum": "2026-10-05",
         "seite": 1,
         "nummer": "4"
@@ -86,6 +90,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "stelle": "Beispiel 1"
       },
@@ -111,11 +117,15 @@
     },
     {
       "id": "sa-gummibaerchen-z1",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "B",
       "zwilling_von": "sa-gummibaerchen",
       "quelle": {
         "art": "Test",
         "material": "1. Test Zuordnungen",
+        "material_id": "mat_49b92667",
+        "material_seite": 1,
         "datum": "2026-10-05",
         "seite": 1,
         "nummer": "4"
@@ -193,6 +203,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "stelle": "Beispiel 1"
       },
@@ -218,10 +230,14 @@
     },
     {
       "id": "sa-apfelsaft-flaschen",
+      "fach": "sub_math",
+      "thema": "top_8009d623",
       "ableitung": "A",
       "quelle": {
         "art": "Test",
         "material": "Matheprobe zur Division mit Dezimalzahlen",
+        "material_id": "mat_39d6db34",
+        "material_seite": 1,
         "datum": "2026-05-18",
         "seite": 1,
         "nummer": "3",
@@ -304,11 +320,15 @@
     },
     {
       "id": "sa-apfelsaft-flaschen-z1",
+      "fach": "sub_math",
+      "thema": "top_8009d623",
       "ableitung": "B",
       "zwilling_von": "sa-apfelsaft-flaschen",
       "quelle": {
         "art": "Test",
         "material": "Matheprobe zur Division mit Dezimalzahlen",
+        "material_id": "mat_39d6db34",
+        "material_seite": 1,
         "datum": "2026-05-18",
         "seite": 1,
         "nummer": "3"
@@ -388,10 +408,14 @@
     },
     {
       "id": "sa-drucker",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "nummer": "1"
       },
@@ -465,6 +489,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "stelle": "Beispiel 1"
       },
@@ -490,11 +516,15 @@
     },
     {
       "id": "sa-drucker-z1",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "B",
       "zwilling_von": "sa-drucker",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "nummer": "1"
       },
@@ -569,6 +599,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "stelle": "Beispiel 1"
       },
@@ -594,10 +626,14 @@
     },
     {
       "id": "sa-flugzeug",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 17,
         "seite": 27,
         "nummer": "3c"
       },
@@ -694,6 +730,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "stelle": "Beispiel 1, Teil b (Hilfswert)"
       },
@@ -719,11 +757,15 @@
     },
     {
       "id": "sa-flugzeug-z1",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "B",
       "zwilling_von": "sa-flugzeug",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 17,
         "seite": 27,
         "nummer": "3c"
       },
@@ -821,6 +863,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "stelle": "Beispiel 1, Teil b (Hilfswert)"
       },
@@ -846,10 +890,14 @@
     },
     {
       "id": "sa-apfelmosterei",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 17,
         "seite": 27,
         "nummer": "4b"
       },
@@ -923,6 +971,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "stelle": "Beispiel 1"
       },
@@ -948,11 +998,15 @@
     },
     {
       "id": "sa-apfelmosterei-z1",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "B",
       "zwilling_von": "sa-apfelmosterei",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 17,
         "seite": 27,
         "nummer": "4b"
       },
@@ -1026,6 +1080,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
         "seite": 26,
         "stelle": "Beispiel 1"
       },
@@ -1051,10 +1107,14 @@
     },
     {
       "id": "sa-umzug",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
         "seite": 34,
         "nummer": "1"
       },
@@ -1123,6 +1183,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
         "seite": 34,
         "stelle": "Beispiel 1"
       },
@@ -1148,11 +1210,15 @@
     },
     {
       "id": "sa-umzug-z1",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "B",
       "zwilling_von": "sa-umzug",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
         "seite": 34,
         "nummer": "1"
       },
@@ -1220,6 +1286,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
         "seite": 34,
         "stelle": "Beispiel 1"
       },
@@ -1245,10 +1313,14 @@
     },
     {
       "id": "sa-taxi",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "A",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
         "seite": 34,
         "nummer": "2"
       },
@@ -1318,6 +1390,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
         "seite": 34,
         "stelle": "Beispiel 1"
       },
@@ -1343,11 +1417,15 @@
     },
     {
       "id": "sa-taxi-z1",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
       "ableitung": "B",
       "zwilling_von": "sa-taxi",
       "quelle": {
         "art": "Buch",
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
         "seite": 34,
         "nummer": "2"
       },
@@ -1415,6 +1493,8 @@
       },
       "nachschlagen": {
         "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
         "seite": 34,
         "stelle": "Beispiel 1"
       },

@@ -106,6 +106,68 @@ def validate(ex: dict) -> List[str]:
     return errors
 
 
+# --- Kopf jeder Übung (alle Fächer und Typen): Fach, Thema, Quelle und Fundstelle ---------------------------
+# quelle/nachschlagen: material_id + material_seite = Seite in der Datei (bei Buchkapiteln im Kapitel-PDF),
+# seite = Seite, wie Thea sie sieht (gedruckte Buchseite), material = Titel (beim Kapitel der Buchtitel).
+REFERENCE_KEYS = ("quelle", "nachschlagen")
+
+
+def validate_header(ex: dict) -> List[str]:
+    """Fehlerliste des Kopfs ohne Datenbank (leer = vollständig)."""
+    errors: List[str] = []
+    if not str(ex.get("fach") or "").startswith("sub_"):
+        errors.append("Fach fehlt (fach: sub_…)")
+    if not str(ex.get("thema") or "").startswith("top_"):
+        errors.append("Thema fehlt (thema: top_…)")
+    if not ex.get("quelle"):
+        errors.append("Quelle fehlt")
+    for key in REFERENCE_KEYS:
+        ref = ex.get(key)
+        if not ref:
+            continue
+        if not str(ref.get("material_id") or "").startswith("mat_"):
+            errors.append(f"{key}: material_id fehlt")
+        page = ref.get("material_seite")
+        if not isinstance(page, int) or page < 1:
+            errors.append(f"{key}: material_seite fehlt")
+    return errors
+
+
+def check_references(db, ex: dict) -> List[str]:
+    """Stimmen Fach, Thema und Fundstellen mit der Datenbank überein? Für scripts/check_exercises.py."""
+    from backend.app.models.material import Material
+    from backend.app.models.taxonomy import Subject, Topic
+
+    errors: List[str] = []
+    if db.get(Subject, ex.get("fach")) is None:
+        errors.append(f"Fach {ex.get('fach')} gibt es nicht")
+    topic = db.get(Topic, ex.get("thema"))
+    if topic is None:
+        errors.append(f"Thema {ex.get('thema')} gibt es nicht")
+    elif topic.subject_id != ex.get("fach"):
+        errors.append(f"Thema „{topic.name}“ gehört nicht zum Fach {ex.get('fach')}")
+    for key in REFERENCE_KEYS:
+        ref = ex.get(key)
+        if not ref:
+            continue
+        material = db.get(Material, ref.get("material_id"))
+        if material is None:
+            errors.append(f"{key}: Material {ref.get('material_id')} gibt es nicht")
+            continue
+        if material.subject_id != ex.get("fach"):
+            errors.append(f"{key}: „{material.title}“ gehört nicht zum Fach {ex.get('fach')}")
+        page = ref.get("material_seite")
+        if not 1 <= page <= (material.page_count or 1):
+            errors.append(f"{key}: „{material.title}“ hat keine Seite {page}")
+        if material.start_page and ref.get("seite") and material.start_page + page - 1 != ref["seite"]:
+            errors.append(f"{key}: Seite {page} von „{material.title}“ ist Buchseite "
+                          f"{material.start_page + page - 1}, nicht {ref['seite']}")
+        title = material.parent.title if material.parent else material.title
+        if ref.get("material") and ref["material"] != title:
+            errors.append(f"{key}: Material heißt „{title}“, nicht „{ref['material']}“")
+    return errors
+
+
 BLANK = re.compile(r"\[\[([^\]]+)\]\]")
 _NUM = r"(\d[\d.]*(?:,\d+)?)"
 _UNIT = r"(?:\s*[^\d\s:·=.,]+)?"
@@ -164,6 +226,8 @@ def list_exercises() -> List[dict]:
         {
             "id": ex["id"],
             "typ": ex["typ"],
+            "fach": ex["fach"],
+            "thema": ex["thema"],
             "aufgabentext": ex["aufgabentext"],
             "abschnitt": ex["abschnitt"],
             "quelle": ex["quelle"],

@@ -70,6 +70,46 @@ def test_reasoning_path_catches_wrong_equation_and_wrong_result():
     assert "Gedankengang: letzte Lücke ist nicht das Ergebnis" in pe.validate({**ex, "gedankengang": steps})
 
 
+@pytest.mark.parametrize("ex", all_exercises(), ids=lambda ex: ex["id"])
+def test_every_exercise_names_subject_topic_and_material_page(ex):
+    assert pe.validate_header(ex) == []
+
+
+def _book_with_topic(db):
+    """Buch „Fundamente“ mit Kapitel ab Buchseite 11 (32 Seiten) und einem Mathe-Thema."""
+    from backend.app.models.material import Material
+    from backend.app.models.taxonomy import Topic
+    db.add(Topic(id="top_zuord", subject_id="sub_math", name="Zuordnungen"))
+    db.add(Material(id="mat_book", subject_id="sub_math", title="Fundamente der Mathematik 7", kind="Buch",
+                    filename="b.pdf", file_path="/x/b.pdf", page_count=304))
+    db.add(Material(id="mat_book_ch01", parent_id="mat_book", subject_id="sub_math", title="Kapitel 1",
+                    kind="Buchauszug", filename="c.pdf", file_path="/x/c.pdf", page_count=32, start_page=11))
+    db.commit()
+    return {"id": "x", "fach": "sub_math", "thema": "top_zuord",
+            "quelle": {"art": "Buch", "material": "Fundamente der Mathematik 7", "material_id": "mat_book_ch01",
+                       "material_seite": 16, "seite": 26, "nummer": "1"}}
+
+
+def test_references_are_checked_against_the_database(db_session):
+    ex = _book_with_topic(db_session)
+    assert pe.check_references(db_session, ex) == []
+
+    def errors(**changes):
+        return pe.check_references(db_session, {**ex, **changes})
+
+    assert errors(thema="top_fehlt") == ["Thema top_fehlt gibt es nicht"]
+    assert errors(fach="sub_bio") and any("gehört nicht zum Fach" in e for e in errors(fach="sub_bio"))
+    assert any("ist Buchseite 27, nicht 26" in e for e in errors(quelle={**ex["quelle"], "material_seite": 17}))
+    assert any("keine Seite 40" in e for e in errors(quelle={**ex["quelle"], "material_seite": 40, "seite": None}))
+    assert any("gibt es nicht" in e for e in errors(nachschlagen={"material_id": "mat_weg", "material_seite": 1}))
+    assert any("heißt „Fundamente" in e for e in errors(quelle={**ex["quelle"], "material": "Mathebuch"}))
+
+
+def test_header_without_subject_or_page_is_rejected():
+    errors = pe.validate_header({"quelle": {"material_id": "mat_a"}})
+    assert errors == ["Fach fehlt (fach: sub_…)", "Thema fehlt (thema: top_…)", "quelle: material_seite fehlt"]
+
+
 def test_money_formatting():
     assert pe.fmt_number(8.4, money=True) == "8,40"
     assert pe.fmt_number(10, money=True) == "10"
