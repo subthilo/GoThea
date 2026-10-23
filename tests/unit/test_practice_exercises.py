@@ -7,15 +7,15 @@ from backend.app.services.exercise_types import sachaufgabe as sa
 
 
 def all_exercises(typ=None):
-    """Alle Übungen samt Entwürfen; mit typ nur die eines Übungstyps."""
-    return [ex for ex in (pe.get_exercise(i, include_drafts=True) for e in pe.list_exercises(include_drafts=True)
-                          for i in [e["id"], *e["zwillinge"]]) if typ is None or ex["typ"] == typ]
+    """Alle Übungen samt Entwürfen (auch solche, die in keiner Liste auftauchen); mit typ nur die eines Übungstyps."""
+    return [ex for ex in (pe.get_exercise(i, include_drafts=True) for i in pe.all_ids())
+            if typ is None or ex["typ"] == typ]
 
 
 def test_pilot_data_is_loaded():
     exercises = all_exercises()
     assert len(exercises) >= 14
-    assert all(ex["ableitung"] in ("A", "B") for ex in exercises)
+    assert all(ex["ableitung"] in pe.ABLEITUNGEN for ex in exercises)
 
 
 @pytest.mark.parametrize("ex", all_exercises(), ids=lambda ex: ex["id"])
@@ -44,10 +44,37 @@ def test_reasoning_task_offers_reasoning_choices():
     assert pe.get_exercise("sa-gummibaerchen")["bausteine"]["begruendungen"] == []
 
 
-def test_twin_reference_points_to_original():
-    for ex in all_exercises():
-        if ex["ableitung"] == "B":
-            assert pe.get_exercise(ex["zwilling_von"])["ableitung"] == "A"
+def test_collection_has_unique_ids_and_matching_twins():
+    assert pe.check_collection() == []
+
+
+def test_collection_check_catches_duplicates_and_broken_twins(monkeypatch):
+    def check(*exercises):
+        monkeypatch.setattr(pe, "_read_sets", lambda: [{"typ": "zuordnen", "datei": "x.json", "status": "entwurf", **e}
+                                                       for e in exercises])
+        pe._load_all.cache_clear()
+        return pe.check_collection()
+
+    try:
+        assert check({"id": "a"}, {"id": "a"}) == ["a: doppelt (x.json und x.json)"]
+        assert check({"id": "b", "zwilling_von": "weg"}) == ["b: zwilling_von weg gibt es nicht"]
+        assert check({"id": "a"}, {"id": "b", "zwilling_von": "a", "typ": "sachaufgabe"}) == \
+            ["b: Zwilling muss den Typ des Originals haben (zuordnen)"]
+        assert check({"id": "a"}, {"id": "b", "zwilling_von": "a", "status": "freigegeben"}) == \
+            ["b: freigegeben, das Original a noch nicht"]
+        assert check({"id": "a"}, {"id": "b", "zwilling_von": "a"}) == []
+    finally:
+        monkeypatch.undo()
+        pe._load_all.cache_clear()
+
+
+def test_reshaped_exercise_gets_its_own_row(monkeypatch):
+    base = {"typ": "zuordnen", "status": "freigegeben", "fach": "sub_chemie", "thema": "top_x", "aufgabentext": "…",
+            "quelle": {}, "felder": []}
+    monkeypatch.setattr(pe, "_load_all", lambda: {
+        "c": {**base, "id": "c", "ableitung": "C"},
+        "c-z1": {**base, "id": "c-z1", "ableitung": "B", "zwilling_von": "c"}})
+    assert [(f["id"], f["zwillinge"]) for f in pe.list_exercises()] == [("c", ["c-z1"])]
 
 
 def test_validate_catches_wrong_row():
@@ -113,7 +140,16 @@ def test_header_without_subject_or_page_is_rejected():
     errors = pe.validate_header({"quelle": {"material_id": "mat_a"}, "typ": "gibt-es-nicht"})
     assert errors == ["Fach fehlt (fach: sub_…)", "Thema fehlt (thema: top_…)", "Aufgabentext fehlt",
                       "Status fehlt (entwurf oder freigegeben)", "Übungstyp „gibt-es-nicht“ gibt es nicht",
-                      "quelle: material_seite fehlt"]
+                      "Ableitung fehlt (A, B, C)", "quelle: material_seite fehlt"]
+
+
+def test_header_checks_twin_link_and_release_date():
+    ex = {**pe.get_exercise("ch-brenner"), "zwillinge": []}
+    assert pe.validate_header(ex) == []
+    assert pe.validate_header({**ex, "freigegeben_am": None}) == ["freigegeben_am fehlt (JJJJ-MM-TT)"]
+    assert pe.validate_header({**ex, "ableitung": "B"}) == ["zwilling_von gehört genau zu Zwillingen (B)"]
+    assert pe.validate_header({**ex, "ableitung": "C", "zwilling_von": "x"}) == \
+        ["zwilling_von gehört genau zu Zwillingen (B)"]
 
 
 def test_every_exercise_lists_the_stages_of_its_type():

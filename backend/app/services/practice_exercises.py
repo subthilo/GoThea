@@ -1,6 +1,6 @@
 """Übungen aus echten Aufgaben – der Kern für alle Fächer und Übungstypen (Konzept-Doc).
 
-Jede Übung geht auf eine Aufgabe aus Theas Materialien zurück (A Original, B Zwilling). Die Daten
+Jede Übung geht auf eine Aufgabe aus Theas Materialien zurück (A Original, B Zwilling, C umgeformt). Die Daten
 entstehen in Claude-Code-Sessions, werden dort von den Eltern begutachtet und liegen als JSON in
 ``backend/app/exercise_sets/`` (eine Datei je Typ und Sammlung, ``"typ"`` nennt den Übungstyp).
 Der Kern kennt den Kopf jeder Übung (Fach, Thema, Fundstelle, Status) und die Liste; was die
@@ -10,6 +10,7 @@ Entwürfe sieht nur der Eltern-Modus.
 from __future__ import annotations
 
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -20,6 +21,10 @@ EXERCISE_SETS_DIR = Path(__file__).resolve().parent.parent / "exercise_sets"
 
 ENTWURF, FREIGEGEBEN = "entwurf", "freigegeben"
 STATUSES = (ENTWURF, FREIGEGEBEN)
+
+# A Original, C umgeformt (gleicher Inhalt in anderer Übungsform, Quelle = Originalaufgabe): eigene Zeile in der
+# Liste. B Zwilling: hängt per zwilling_von an einer A- oder C-Übung desselben Typs.
+ABLEITUNGEN = ("A", "B", "C")
 
 
 # --- Kopf jeder Übung (alle Fächer und Typen): Fach, Thema, Quelle und Fundstelle ---------------------------
@@ -43,6 +48,12 @@ def validate_header(ex: dict) -> List[str]:
         errors.append(f"Status fehlt ({' oder '.join(STATUSES)})")
     if exercise_types.get(ex.get("typ")) is None:
         errors.append(f"Übungstyp „{ex.get('typ')}“ gibt es nicht")
+    if ex.get("ableitung") not in ABLEITUNGEN:
+        errors.append(f"Ableitung fehlt ({', '.join(ABLEITUNGEN)})")
+    elif (ex["ableitung"] == "B") != bool(ex.get("zwilling_von")):
+        errors.append("zwilling_von gehört genau zu Zwillingen (B)")
+    if ex.get("status") == FREIGEGEBEN and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(ex.get("freigegeben_am") or "")):
+        errors.append("freigegeben_am fehlt (JJJJ-MM-TT)")
     for key in REFERENCE_KEYS:
         ref = ex.get(key)
         if not ref:
@@ -105,14 +116,47 @@ def is_draft(ex: dict) -> bool:
 # --- Laden ---------------------------------------------------------------------------------------
 
 
-@lru_cache(maxsize=1)
-def _load_all() -> Dict[str, dict]:
-    exercises: Dict[str, dict] = {}
+def _read_sets() -> List[dict]:
+    """Alle Übungen aller Dateien, auch doppelte IDs (für check_collection)."""
+    exercises: List[dict] = []
     for path in sorted(EXERCISE_SETS_DIR.glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
-        for ex in data["uebungen"]:
-            exercises[ex["id"]] = {**ex, "typ": data["typ"]}
+        exercises += [{**ex, "typ": data["typ"], "datei": path.name} for ex in data["uebungen"]]
     return exercises
+
+
+@lru_cache(maxsize=1)
+def _load_all() -> Dict[str, dict]:
+    return {ex["id"]: {k: v for k, v in ex.items() if k != "datei"} for ex in _read_sets()}
+
+
+def all_ids() -> List[str]:
+    """IDs aller Übungen samt Entwürfen – auch solcher, die in keiner Liste auftauchen."""
+    return list(_load_all())
+
+
+def check_collection() -> List[str]:
+    """Fehler, die erst im Zusammenspiel der Übungen auffallen: doppelte IDs, Zwilling ohne passendes Original."""
+    errors: List[str] = []
+    seen: Dict[str, str] = {}
+    for ex in _read_sets():
+        if ex["id"] in seen:
+            errors.append(f"{ex['id']}: doppelt ({seen[ex['id']]} und {ex['datei']})")
+        seen.setdefault(ex["id"], ex["datei"])
+    exercises = _load_all()
+    for ex in exercises.values():
+        if not ex.get("zwilling_von"):
+            continue
+        head = exercises.get(ex["zwilling_von"])
+        if head is None:
+            errors.append(f"{ex['id']}: zwilling_von {ex['zwilling_von']} gibt es nicht")
+        elif head.get("zwilling_von"):
+            errors.append(f"{ex['id']}: {head['id']} ist selbst ein Zwilling")
+        elif head["typ"] != ex["typ"]:
+            errors.append(f"{ex['id']}: Zwilling muss den Typ des Originals haben ({head['typ']})")
+        elif is_draft(head) and not is_draft(ex):
+            errors.append(f"{ex['id']}: freigegeben, das Original {head['id']} noch nicht")
+    return errors
 
 
 def _visible(include_drafts: bool) -> Dict[str, dict]:
@@ -125,7 +169,7 @@ def _stages(ex: dict) -> dict:
 
 
 def list_exercises(include_drafts: bool = False) -> List[dict]:
-    """Kurzfassung für die Liste: Originale mit ihren Zwillingen (Entwürfe nur für die Eltern)."""
+    """Kurzfassung für die Liste: Übungen ohne Zwillingsbezug (A, C) mit ihren Zwillingen (Entwürfe nur für die Eltern)."""
     visible = _visible(include_drafts)
     twins: Dict[str, List[str]] = {}
     for ex in visible.values():
@@ -145,7 +189,7 @@ def list_exercises(include_drafts: bool = False) -> List[dict]:
             **_stages(ex),
             **exercise_types.get(ex["typ"]).summary(ex),
         }
-        for ex in visible.values() if ex["ableitung"] == "A"
+        for ex in visible.values() if not ex.get("zwilling_von")
     ]
 
 

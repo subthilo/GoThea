@@ -100,7 +100,7 @@
   function nextButtons() {
     const ex = run.ex;
     const next = ex.stufen.find((s) => s > run.stage);  // auch die Tafel-Stufe (öffnet der Kern auf der Tafel)
-    const twinId = ex.ableitung === "A" ? ex.zwillinge[0] : ex.zwilling_von;
+    const twinId = ex.zwilling_von || ex.zwillinge[0];
     let h = next !== undefined
       ? `<button type="button" class="px-check" data-stage="${next}" title="Weiter mit Stufe ${next}" aria-label="Weiter mit Stufe ${next}">${icon("Pfeil hoch")}<span>${next}</span></button>` : "";
     if (twinId) h += `<button type="button" class="px-check secondary" data-action="open" data-id="${esc(twinId)}" data-at="${run.stage}" title="Ähnliche Aufgabe">${icon("Wiederholen")}</button>`;

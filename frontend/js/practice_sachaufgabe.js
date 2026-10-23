@@ -126,7 +126,7 @@
     if (!sf.aktiv) {
       if (!run.checked) h += say("Fang mit dem Überschlag an: Wie viele Flaschen wären es ungefähr?");
     } else if (!run.guess) {
-      if (ex.einstieg && ex.ableitung === "A") h += say(ex.einstieg);
+      if (ex.einstieg && !ex.zwilling_von) h += say(ex.einstieg);
       h += say(`Bevor du rechnest: ${sf.frage}`);
       h += `<div class="px-guess">${sf.optionen.map((o) => `<button type="button" class="px-guess-btn" data-guess="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
       return h;
@@ -194,10 +194,10 @@
 
   function nextButtons() {
     const ex = run.ex;
-    const twinId = ex.ableitung === "A" ? ex.zwillinge[0] : ex.zwilling_von;
+    const twinId = ex.zwilling_von || ex.zwillinge[0];
     if (!twinId) return `<button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;
     return `
-      <button type="button" class="px-check" data-action="open" data-id="${esc(twinId)}" title="${ex.ableitung === "A" ? "Ähnliche Aufgabe" : "Original"}">${icon("Wiederholen")}</button>
+      <button type="button" class="px-check" data-action="open" data-id="${esc(twinId)}" title="${ex.zwilling_von ? "Original" : "Ähnliche Aufgabe"}">${icon("Wiederholen")}</button>
       <button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;
   }
 
@@ -252,7 +252,7 @@
 
   function guidedNextButtons() {
     const ex = run.ex;
-    const twinId = ex.ableitung === "A" ? ex.zwillinge[0] : ex.zwilling_von;
+    const twinId = ex.zwilling_von || ex.zwillinge[0];
     let h = `<button type="button" class="px-check" data-stage="0" title="Weiter mit den Bausteinen" aria-label="Weiter mit den Bausteinen">${icon("Pfeil hoch")}<span>0</span></button>`;
     if (twinId) h += `<button type="button" class="px-check secondary" data-action="open" data-id="${esc(twinId)}" data-at="-1" title="Ähnliche Aufgabe">${icon("Wiederholen")}</button>`;
     return h + `<button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;

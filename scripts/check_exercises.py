@@ -1,6 +1,6 @@
 """
-Prüft alle Übungen (backend/app/exercise_sets/*.json), auch Entwürfe: Kopf und Daten nach den Regeln ihres
-Typs, dann gegen die Datenbank – gibt es Fach, Thema und die Materialien in Quelle und Nachschlagen, liegt die
+Prüft alle Übungen (backend/app/exercise_sets/*.json), auch Entwürfe: eindeutige IDs und Zwillingsbezüge, Kopf
+und Daten nach den Regeln ihres Typs, dann gegen die Datenbank – gibt es Fach, Thema und die Materialien in Quelle und Nachschlagen, liegt die
 Seite im Material, passt die Buchseite?
 Vor dem Einspielen neuer Übungen ausführen; Exit-Code 1, sobald eine Übung nicht passt.
 
@@ -20,10 +20,12 @@ from backend.app.services import practice_exercises as pe  # noqa: E402
 
 def main() -> int:
     print(f"Datenverzeichnis: {DATA_DIR}")
-    exercises = [pe.get_exercise(i, include_drafts=True)
-                 for e in pe.list_exercises(include_drafts=True) for i in [e["id"], *e["zwillinge"]]]
+    exercises = [pe.get_exercise(i, include_drafts=True) for i in pe.all_ids()]
+    collection = pe.check_collection()
+    for e in collection:
+        print(f"   {e}")
     db = SessionLocal()
-    failed = 0
+    failed = len(collection)
     try:
         for ex in exercises:
             errors = pe.validate(ex) or pe.check_references(db, ex)
