@@ -827,6 +827,31 @@
   min-width: 56px;
 }
 
+/* Nebenrechnung (Gedankengang): Kästchen wie im Heft. Die Kästchengröße setzt der Zeichenkern
+   (background-size 24 px), die vorgeschriebene Rechnung steht ein Zeichen pro Kästchen darauf. */
+.gg-scratch .gg-write-area {
+  background:
+    linear-gradient(to right, rgba(148, 163, 184, 0.28) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.28) 1px, transparent 1px),
+    var(--bg-card);
+}
+
+.gg-write-print {
+  position: absolute;
+  top: 24px;
+  left: 48px;
+  display: flex;
+  pointer-events: none;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.gg-write-print span {
+  width: 24px;
+  text-align: center;
+}
+
 /* Gedankengang als fixierte Seite (body.practice-zen-mode, gesetzt von js/practice.js): nichts scrollt mit,
    Aufgabe und Eingabefelder bleiben an ihrem Platz. Aufbau wie timetable-zen-mode. */
 html:has(body.practice-zen-mode),
@@ -957,6 +982,10 @@ body.practice-zen-mode .gg-right .px-actions {
   body.practice-zen-mode .gg-write {
     flex: 0 0 auto;
     height: 170px;
+  }
+  /* Nebenrechnung braucht Zeilen für eine schriftliche Rechnung (10 Kästchen hoch) */
+  body.practice-zen-mode .gg-scratch {
+    height: 244px;
   }
 }
 

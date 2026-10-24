@@ -300,20 +300,38 @@ WRITE_DIGITS_JS = """
 """
 
 
-def test_writing_pad_reads_digits_into_the_gap(app_page):
+def test_scratch_pad_for_written_side_calculations(app_page):
+    """Nebenrechnung: Stift-Striche bleiben Striche (keine Erkennung), vorgeschriebene Rechnung je Satz."""
     practice_list(app_page)
-    app_page.evaluate("window.openPracticeExercise('sa-gummibaerchen', -1)")
-    app_page.wait_for_selector(".gg-write-ink")
-    _guided_answer(app_page, "3")
-    # Zweiter Satz: erstes Kästchen tippen, zweites mit dem Stift schreiben
-    app_page.click('.gg-key[data-key="3"]')
-    app_page.click('.gg-step.current .gg-blank >> nth=1')
-    app_page.evaluate(WRITE_DIGITS_JS, "50")
-    app_page.wait_for_function("document.querySelectorAll('.gg-step.current .gg-blank')[1].value === '50'")
-    with app_page.expect_response(lambda r: r.url.endswith("/handwriting") and r.request.method == "POST") as learned:
-        app_page.click('[data-action="gg-check"]')
-    assert {s["label"] for s in learned.value.json()["samples"]} >= {"5", "0"}
-    assert app_page.locator(".gg-step").count() == 3
-    # Schreibfeld ist für den nächsten Satz wieder leer
-    assert app_page.evaluate("document.querySelector('.gg-write-ink').getContext('2d').getImageData(0,0,50,50).data.some(v => v)") is False
+    app_page.evaluate("window.openPracticeExercise('sa-muenzrolle', -1)")
+    app_page.wait_for_selector(".gg-scratch .gg-write-ink")
+    assert app_page.inner_text(".gg-write-print") == ""
+    app_page.click('.gg-step.current .gg-blank')
+    app_page.evaluate(WRITE_DIGITS_JS, "37")
+    app_page.wait_for_timeout(700)  # früher las hier die Erkennung
+    assert app_page.input_value(".gg-step.current .gg-blank") == ""
+    ink = "document.querySelector('.gg-write-ink').getContext('2d').getImageData(0,0,300,150).data.some(v => v)"
+    assert app_page.evaluate(ink) is True
+    for values in [("375",), ("10", "5"), ("37,5",), ("3",)]:
+        _guided_answer(app_page, *values)
+    # Satz mit Nebenrechnung: steht vorgeschrieben in den Kästchen, das Feld ist leer
+    assert app_page.locator(".gg-write-print span").count() == len("37,5 · 3")
+    assert app_page.evaluate(ink) is False
+    _guided_answer(app_page, "112,5")
+    assert app_page.inner_text(".gg-write-print") == ""
+    assert app_page.problems.errors == []
+
+
+def test_reasoning_path_with_side_calculation_fits_on_one_screen(app_page):
+    for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
+        app_page.set_viewport_size({"width": width, "height": height})
+        practice_list(app_page)
+        app_page.evaluate("window.openPracticeExercise('sa-muenzrolle', -1)")
+        app_page.wait_for_selector(".gg-scratch")
+        for values in [("375",), ("10", "5"), ("37,5",), ("3",)]:
+            _guided_answer(app_page, *values)
+        over = app_page.evaluate("document.scrollingElement.scrollHeight - innerHeight")
+        assert over == 0, (width, height)
+        assert app_page.locator(".gg-scratch .gg-write-area").bounding_box()["height"] >= 220
+        app_page.click('[data-action="back"]')
     assert app_page.problems.errors == []

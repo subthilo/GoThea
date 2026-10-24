@@ -101,6 +101,17 @@ def test_reasoning_path_catches_wrong_equation_and_wrong_result():
     assert "Gedankengang: letzte Lücke ist nicht das Ergebnis" in pe.validate({**ex, "gedankengang": steps})
 
 
+def test_side_calculation_must_lead_to_a_gap():
+    ex = pe.get_exercise("sa-gummibaerchen")
+    steps = [dict(s) for s in ex["gedankengang"]]
+    steps[4] = {**steps[4], "nebenrechnung": "1 · 10"}  # „1 € · 10 = [[10]] €“
+    assert pe.validate({**ex, "gedankengang": steps}) == []
+    steps[4]["nebenrechnung"] = "1 · 11"
+    assert any("Ergebnis der Nebenrechnung" in e for e in pe.validate({**ex, "gedankengang": steps}))
+    steps[4]["nebenrechnung"] = "rechne 1 mal 10"
+    assert any("keine Rechnung" in e for e in pe.validate({**ex, "gedankengang": steps}))
+
+
 @pytest.mark.parametrize("ex", all_exercises(), ids=lambda ex: ex["id"])
 def test_every_exercise_names_subject_topic_and_material_page(ex):
     assert pe.validate_header(ex) == []

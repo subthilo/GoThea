@@ -142,6 +142,17 @@ def validate_reasoning_steps(ex: dict) -> List[str]:
             left = _num(a.replace(".", "")) / _num(b) if op == ":" else _num(a.replace(".", "")) * _num(b)
             if left != _num(c.replace(".", "")):
                 errors.append(f"Gedankengang Schritt {i}: {a} {op} {b} ergibt nicht {c}")
+        # Vorgeschriebene Nebenrechnung („37,5 · 3“): ihr Ergebnis muss eine Lücke des Satzes sein
+        side = step.get("nebenrechnung")
+        if side:
+            m = re.fullmatch(_NUM + r"\s*([:·])\s*" + _NUM, side.strip())
+            if not m:
+                errors.append(f"Gedankengang Schritt {i}: Nebenrechnung „{side}“ ist keine Rechnung a · b oder a : b")
+            else:
+                a, op, b = _num(m.group(1).replace(".", "")), m.group(2), _num(m.group(3).replace(".", ""))
+                value = a / b if op == ":" else a * b
+                if all(_num(v) != value for v in blanks):
+                    errors.append(f"Gedankengang Schritt {i}: Ergebnis der Nebenrechnung „{side}“ ist keine Lücke")
     if steps:
         last = BLANK.findall(steps[-1]["satz"])
         if not last or _num(last[-1]) != _num(ex["ergebnis"]["wert"]):

@@ -1,6 +1,9 @@
 // ==========================================================================
-// Ziffern-Schreibfeld für Übungen (Gedankengang der Sachaufgabe, „Ordnen“ Stufe 4 …)
+// Ziffern-Schreibfeld für Übungen („Ordnen“ Stufe 4 …) und Nebenrechnung (Gedankengang)
 // --------------------------------------------------------------------------
+// Nebenrechnung (recognize: false): Kästchen wie im Heft, nichts wird gelesen – Thea rechnet dort
+// schriftlich, das Ergebnis tippt sie ein (die Erkennung war für ganze Zahlen zu unsicher, 24.10.).
+// print("37,5 · 3") schreibt eine Rechnung vor, ein Zeichen pro Kästchen.
 // Derselbe Zeichenkern wie die Tafel (createInkSurface, unverändert; kein Stocken wie
 // bei Scribble), die Ziffern erkennt ein kleines Netz im Browser (js/digit_ink.js).
 // Nach einer kurzen Schreibpause wird gelesen; die Ansicht entscheidet, wohin die
@@ -15,12 +18,12 @@ const DIGIT_PAD_PAUSE_MS = 450;
 
 // beforeRead(): Ziel der Zahl (z. B. Kästchen-ID) oder null = nichts lesen
 // onRead(result, target): result = { text, chars, unsure } aus DigitInk.recognize
-function createDigitPad({ beforeRead, onRead }) {
-  if (typeof createInkSurface !== "function" || typeof DigitInk === "undefined") return null;
+function createDigitPad({ beforeRead, onRead, recognize = true }) {
+  if (typeof createInkSurface !== "function" || (recognize && typeof DigitInk === "undefined")) return null;
   const el = document.createElement("div");
-  el.className = "gg-write";
+  el.className = recognize ? "gg-write" : "gg-write gg-scratch";
   el.innerHTML = `
-    <div class="gg-write-area" title="Hier schreiben"><canvas class="gg-write-ink"></canvas><canvas class="gg-write-overlay"></canvas></div>
+    <div class="gg-write-area" title="${recognize ? "Hier schreiben" : "Nebenrechnung"}"><div class="gg-write-print" aria-hidden="true"></div><canvas class="gg-write-ink"></canvas><canvas class="gg-write-overlay"></canvas></div>
     <button type="button" class="gg-key gg-write-clear" data-pad="clear" title="Neu schreiben" aria-label="Neu schreiben">${icon("Radierer")}</button>`;
   const area = el.querySelector(".gg-write-area");
   const ink = el.querySelector(".gg-write-ink"), overlay = el.querySelector(".gg-write-overlay");
@@ -35,6 +38,7 @@ function createDigitPad({ beforeRead, onRead }) {
     inkCtx: ink.getContext("2d", { desynchronized: true }), overlayCtx: overlay.getContext("2d"),
     stopTutorSpeech: () => {},
     scheduleAutoSave: () => {  // „Strich fertig“ (oder radiert)
+      if (!recognize) return;
       clearTimeout(pad.timer);
       pad.timer = setTimeout(read, DIGIT_PAD_PAUSE_MS);
     },
@@ -76,6 +80,12 @@ function createDigitPad({ beforeRead, onRead }) {
     pad.surface.redrawAllStrokes();
   };
 
+  // Vorgeschriebene Rechnung (oder "" = keine); jedes Zeichen in einem Kästchen
+  pad.print = (text) => {
+    el.querySelector(".gg-write-print").innerHTML = [...(text || "")]
+      .map((ch) => `<span>${ch === " " ? "" : escapeHtml(ch)}</span>`).join("");
+  };
+
   // Gelesene Ziffern als Muster speichern (nur aufrufen, wenn die gelesene Zahl die richtige war)
   pad.learn = (chars = pad.chars) => {
     const samples = (chars || []).filter((c) => /^[0-9]$/.test(c.label)).map((c) => DigitInk.toStored(c.label, c.strokes));
@@ -84,6 +94,6 @@ function createDigitPad({ beforeRead, onRead }) {
       .catch((err) => console.warn("Handschrift-Muster nicht gespeichert:", err));
   };
 
-  DigitInk.load();
+  if (recognize) DigitInk.load();
   return pad;
 }

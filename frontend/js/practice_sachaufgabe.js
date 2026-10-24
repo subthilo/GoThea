@@ -203,11 +203,11 @@
   }
 
   // ---------- Stufe -1: Gedankengang ----------
-  // Ein Satz nach dem anderen; Lücken sind Felder. Zwei Wege hinein: Zahlentasten (Finger wählt das
-  // Kästchen) oder das Schreibfeld daneben: derselbe Zeichenkern wie die Tafel (kein Stocken wie bei
-  // Scribble), die Ziffern erkennt ein kleines Netz im Browser (js/digit_ink.js). Die gelesene Zahl steht
-  // sofort im Kästchen. Bestätigte Ziffern (richtiger Schritt, gelesene Zahl unverändert) werden mit ihren
-  // Strichen gespeichert – zum Messen und späteren Nachtrainieren auf Theas Schrift.
+  // Ein Satz nach dem anderen; Lücken sind Felder, gefüllt mit den Zahlentasten (Finger wählt das
+  // Kästchen). Daneben die Nebenrechnung: Kästchen wie im Heft, derselbe Zeichenkern wie die Tafel, ohne
+  // Erkennung – Thea rechnet dort schriftlich (die Ziffernerkennung war zu unsicher, Nutzer 24.10.).
+  // Bringt ein Satz eine `nebenrechnung` mit, steht sie schon in den Kästchen; beim nächsten Satz ist
+  // das Feld wieder leer.
   // Ein Fehler markiert nur das Kästchen, ab dem zweiten gibt es den Tipp, ab dem dritten die Zahlen.
 
   // „2,40“, „2.4“, „1.500“, „10 €“ → Zahl; leer oder unlesbar → NaN
@@ -240,8 +240,7 @@
     if (g.done) return say("Geschafft! Du hast den ganzen Rechenweg aufgeschrieben.");
     const step = steps[g.step];
     let h = "";
-    if (g.unreadable) h += say("Eine Ziffer konnte ich nicht lesen. Schreib sie noch mal oder tipp sie ein.");
-    else if (g.empty) h += say("Da fehlt noch eine Zahl.");
+    if (g.empty) h += say("Da fehlt noch eine Zahl.");
     else if (g.wrong.size) h += say(g.wrong.size === 1 ? "Fast! Schau noch mal auf das markierte Kästchen." : "Schau noch mal auf die markierten Kästchen.");
     else if (g.step === 0 && !g.fails) h += say("Ergänze die fehlenden Zahlen.");
     if (g.tip && step.tipp) h += say(step.tipp);
@@ -265,53 +264,19 @@
   }
 
   const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "⌫"];
-  // Auf dem iPad sind die Felder nur auswählbar: geschrieben wird im Schreibfeld, getippt mit den Tasten
+  // Auf dem iPad sind die Felder nur auswählbar (keine Bildschirmtastatur), getippt wird mit den Tasten
   const COARSE = window.matchMedia("(pointer: coarse)").matches;
 
-  // ---------- Schreibfeld (js/digit_pad.js; ein Exemplar, wird bei jedem Zeichnen nur umgehängt) ----------
+  // ---------- Nebenrechnung (js/digit_pad.js ohne Erkennung; ein Exemplar, wird nur umgehängt) ----------
   let pad = null;
-
-  function writingPad() {
-    if (!pad) {
-      pad = createDigitPad({
-        // Ziel: das aktive Kästchen des Gedankengangs (nur dort wird gelesen)
-        beforeRead: () => {
-          if (!run || run.stage >= 0) return null;
-          ensureActive();
-          return run.guided.active ? { guided: run.guided, gap: run.guided.active } : null;
-        },
-        onRead: (result, target) => {
-          const g = target.guided;
-          if (!run || run.guided !== g || g.active !== target.gap) return;  // inzwischen weiter
-          const inp = runView.querySelector(`.gg-blank[data-blank="${target.gap}"]`);
-          if (!inp) return;
-          inp.value = result.text;
-          inp.classList.remove("wrong");
-          g.values[target.gap] = result.text;
-          g.unreadable = result.unsure;
-          const luna = runView.querySelector(".gg .px-luna");
-          if (luna) luna.innerHTML = guidedLuna();
-        },
-      });
-    }
-    return pad;
-  }
-
-  const padGap = () => (pad && pad.target ? pad.target.gap : null);
   const clearPad = () => { if (pad) pad.clear(); };
 
-  // Richtiger Schritt: Ziffern, deren gelesene Zahl unverändert die Lösung war, werden Muster für Theas Schrift
-  function learnFromPad(expectedById) {
-    const gap = padGap();
-    if (!pad || !pad.chars || !gap) return;
-    const value = run.guided.values[gap];
-    if (value !== pad.text || pad.text.includes("?") || !sameNumber(value, expectedById[gap])) return;
-    pad.learn();
-  }
-
   function mountPad() {
-    const p = writingPad();
-    if (p) p.mount(runView.querySelector(".gg-write-slot"), getComputedStyle(runView).color);
+    if (!pad) pad = createDigitPad({ recognize: false });
+    if (!pad) return;
+    pad.mount(runView.querySelector(".gg-write-slot"), getComputedStyle(runView).color);
+    const step = run.ex.gedankengang[run.guided.step];
+    pad.print(step && step.nebenrechnung);
   }
 
   function padHtml() {
@@ -325,7 +290,6 @@
     const g = run.guided;
     const ids = [...runView.querySelectorAll(".gg-blank")].map((inp) => inp.dataset.blank);
     if (!ids.includes(g.active)) g.active = ids.find((id) => !g.values[id]) || ids[0] || null;
-    if (padGap() && padGap() !== g.active) clearPad();  // neues Kästchen, neues Schreibfeld
     runView.querySelectorAll(".gg-blank").forEach((inp) => inp.classList.toggle("active", inp.dataset.blank === g.active));
   }
 
@@ -344,7 +308,7 @@
     const ex = run.ex, g = run.guided, steps = ex.gedankengang;
     const shown = steps.slice(0, g.done ? steps.length : g.step + 1);
     // Fixierte Seite: links Aufgabe + Sätze (von oben nach unten; ist der Platz voll, rutschen
-    // erledigte oben hinaus), rechts Schreibfeld, Tasten, Luna, Prüfen
+    // erledigte oben hinaus), rechts Nebenrechnung, Tasten, Luna, Prüfen
     core.setZen(true);
     runView.innerHTML = `
       ${core.topbarHtml(run.ex, run.stage)}
@@ -387,12 +351,10 @@
         gelesen: inputs.filter((inp) => g.wrong.has(inp.dataset.blank)).map((inp) => inp.value) });
       return renderGuided();
     }
-    learnFromPad(Object.fromEntries(inputs.map((inp) => [inp.dataset.blank, inp.dataset.expect])));
     clearPad();
     g.step += 1;
     g.fails = 0;
     g.tip = false;
-    g.unreadable = false;
     if (g.step >= steps.length) {
       g.done = true;
       logPracticeEvent(run.attempt, "check", { status: "richtig", schritte: steps.length });
@@ -447,14 +409,7 @@
     // Zurück, Stufenwechsel und „ähnliche Aufgabe“ (data-action back/open, data-stage) übernimmt der Kern
     if (t.dataset.action === "gg-check") return guidedCheck();
     if (t.dataset.key !== undefined) return guidedKey(t.dataset.key);
-    if (t.dataset.pad === "clear") {
-      const gap = padGap() || run.guided.active;
-      clearPad();
-      const inp = gap && runView.querySelector(`.gg-blank[data-blank="${gap}"]`);
-      if (inp) { inp.value = ""; run.guided.values[gap] = ""; }
-      run.guided.unreadable = false;
-      return;
-    }
+    if (t.dataset.pad === "clear") return clearPad();
     if (t.dataset.action === "gg-tip") { run.guided.tip = true; logPracticeEvent(run.attempt, "hint", { schritt: run.guided.step + 1 }); return renderGuided(); }
     if (t.dataset.action === "gg-show") return guidedReveal();
     if (t.dataset.action === "check") {
