@@ -16,6 +16,8 @@ auf den Nutzer warten. Deutsch, knapp, Tabellen statt Fließtext.
   andere Zahlen oder anderer Kontext), C umgeformt (gleicher Inhalt, andere Übungsform – z. B. ein Ablauf aus einem
   Fließtext wird zu „Ordnen“). Lösungen aus der Schullösung oder dem Buch; Mathe rechnet der Code nach („Luna liest,
   der Code rechnet“).
+  Einzige Ausnahme **„Grundwissen“** (Nutzer, 24.10.): Einmaleins, Mal/Geteilt mit 10/100/1000 und
+  Umrechnungszahlen der Einheiten darf der Code erzeugen – geschlossene Menge, vom Code geprüft, keine KI.
 - **Wie im Buch.** Begriffe, Schreibweisen und Abbildungen genau wie in Theas Buch. Schaubilder sind die
   Originalabbildung (nachgezeichnet mit `scripts/figure_tool.py`), nie eine nachempfundene Zeichnung – ein
   KI-Brenner mit anderer Bauart und anderen Begriffen hat den Nutzer verwirrt.
