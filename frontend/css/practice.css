@@ -1221,6 +1221,159 @@ body.practice-zen-mode .gg-right .px-actions {
   }
 }
 
+/* ==========================================================================
+   Übungstyp „Ordnen“ (js/practice_ordnen.js): feste Seite in Bildschirmhöhe.
+   Quer: Plätze links, Kärtchen (oder „Im Buch“) rechts. Hoch: untereinander.
+   Nummernkreise und Fuß wie bei „Zuordnen“ (.zo-nr, .zo-foot).
+   ========================================================================== */
+
+.or {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "task  task"
+    "slots pool"
+    "foot  foot";
+  gap: 10px 18px;
+}
+
+.or.or-look {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "task" "slots" "foot";
+}
+
+.or-task {
+  grid-area: task;
+  margin: 0;
+}
+
+.or-slots {
+  grid-area: slots;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.or-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.or-row.active .zo-nr {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.or-slot {
+  flex: 1;
+  min-width: 0;
+  min-height: clamp(40px, 6vh, 52px);
+  padding: 4px 10px;
+  border: 2px dashed var(--border-active);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.or-row.active .or-slot {
+  border-color: var(--accent);
+}
+
+.or-slot.filled {
+  border-style: solid;
+  border-color: rgba(129, 140, 248, 0.8);
+  background: rgba(99, 102, 241, 0.14);
+}
+
+.or-slot.filled:not(.fixed) {
+  touch-action: none;  /* gesetztes Kärtchen lässt sich auf einen anderen Platz ziehen */
+}
+
+.or-slot.fixed {
+  border-style: solid;
+  border-color: var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+.or-slot.ok {
+  border-color: var(--success);
+  background: rgba(16, 185, 129, 0.16);
+}
+
+.or-slot.wrong {
+  border-color: var(--warning);
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.or-pool {
+  grid-area: pool;
+  align-self: start;  /* so hoch wie die Kärtchen, höchstens die Zeile */
+  max-height: 100%;
+  box-sizing: border-box;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.or-card {
+  min-height: clamp(40px, 6vh, 52px);
+  padding: 4px 12px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  text-align: left;
+  justify-content: flex-start;
+  touch-action: none;
+}
+
+.or-book {
+  grid-area: pool;
+  min-height: 0;
+}
+
+.or-foot {
+  grid-area: foot;
+}
+
+@media (orientation: portrait), (max-width: 820px) {
+  .or {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-areas: "task" "slots" "pool" "foot";
+  }
+
+  .or.or-look {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+}
+
 /* ---------- Runde für Thea (js/practice.js): Akku-Frage, Pause, Geschafft ---------- */
 .practice-round {
   display: flex;
