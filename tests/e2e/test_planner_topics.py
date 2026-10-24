@@ -94,3 +94,20 @@ def test_parents_mark_book_sections_as_current(app_page, parent_pin, bio_chapter
     app_page.click("#btn-submit-current-topics")
     app_page.locator('#planner-current-topics .topic-chip:has-text("Mikroskopieren")').wait_for(state="detached")
     assert app_page.problems.errors == []
+
+
+def test_long_dialog_stays_on_screen_and_closes(app_page, parent_pin):
+    # iPad mit geteiltem Bildschirm o. Ä.: der Dialog scrollt in sich, Schließen bleibt erreichbar
+    app_page.set_viewport_size({"width": 744, "height": 520})
+    _planner(app_page, parent_pin)
+    app_page.click("#btn-open-test-modal")
+    app_page.wait_for_selector("#input-test-topics .topic-check")
+    box = app_page.locator("#modal-test .modal-box").bounding_box()
+    assert box["y"] >= 0 and box["y"] + box["height"] <= 520, box
+    app_page.locator("#btn-submit-test").scroll_into_view_if_needed()
+    assert app_page.locator("#btn-submit-test").is_visible()
+    close = app_page.locator("#btn-close-test-modal").bounding_box()
+    assert 0 <= close["y"] and close["y"] + close["height"] <= 520, close
+    app_page.click("#btn-close-test-modal")
+    app_page.wait_for_selector("#modal-test", state="hidden")
+    assert app_page.problems.errors == []
