@@ -1545,6 +1545,665 @@
         "wert": 5.12,
         "fehler": "proportional statt antiproportional gerechnet"
       }
+    },
+    {
+      "id": "sa-muenzrolle",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
+      "status": "entwurf",
+      "ableitung": "A",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Trainingsblatt: Dreisatz bei proportionalen Zusammenhängen",
+        "material_id": "mat_ab06df58",
+        "material_seite": 1,
+        "seite": 1,
+        "nummer": "4a"
+      },
+      "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen",
+      "aufgabentext": "Sarah hat für 50 € eine Rolle 1-Euro-Münzen als Wechselgeld für das Geschäft ihrer Mutter abgeholt. Diese Rolle wiegt 375 g. Wie viel wiegen 15 € in 1-Euro-Münzen?",
+      "schema": "dreisatz_proportional",
+      "groessen": [
+        {
+          "name": "Betrag",
+          "einheit": "€"
+        },
+        {
+          "name": "Gewicht",
+          "einheit": "g"
+        }
+      ],
+      "zeilen": [
+        [
+          50,
+          375
+        ],
+        [
+          5,
+          37.5
+        ],
+        [
+          15,
+          112.5
+        ]
+      ],
+      "schritte": [
+        ":10",
+        "·3"
+      ],
+      "ergebnis": {
+        "wert": 112.5,
+        "einheit": "g"
+      },
+      "antwort_anfang": "15 € in 1-Euro-Münzen wiegen",
+      "antwortsatz": "15 € in 1-Euro-Münzen wiegen 112,5 g.",
+      "gedankengang": [
+        {
+          "satz": "50 € in 1-Euro-Münzen wiegen [[375]] g.",
+          "tipp": "Die Zahl steht in der Aufgabe."
+        },
+        {
+          "satz": "Wir rechnen auf 5 € herunter: 50 € : [[10]] = [[5]] €.",
+          "tipp": "Wie oft passt 5 in 50?"
+        },
+        {
+          "satz": "Das Gewicht wird genauso geteilt: 375 g : 10 = [[37,5]] g.",
+          "tipp": "Durch 10 teilen: Das Komma rückt eine Stelle nach links."
+        },
+        {
+          "satz": "Von 5 € auf 15 €: 15 : 5 = [[3]]. Das ist dreimal so viel."
+        },
+        {
+          "satz": "Also auch dreimal so schwer: 37,5 g · 3 = [[112,5]] g.",
+          "tipp": "37 · 3 = 111, dazu 0,5 · 3 = 1,5."
+        },
+        {
+          "satz": "15 € in 1-Euro-Münzen wiegen [[112,5]] g."
+        }
+      ],
+      "ueberschlag": null,
+      "typische_fehler": [
+        "Komma vergessen (1125 g)",
+        "Antwortsatz fehlt"
+      ],
+      "hilfen": {
+        "denkanstoss": "Was wiegen 5 € in Münzen? Von dort kommst du leicht zu 15 €.",
+        "hinweis": "Teile beide Seiten durch 10, dann nimm beide mal 3."
+      },
+      "nachschlagen": {
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
+        "seite": 26,
+        "stelle": "Beispiel 1"
+      },
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung vom Code nachgerechnet (keine Lösung in der Quelle)"
+      },
+      "schaetzfrage": {
+        "frage": "Wiegen 15 € in Münzen mehr oder weniger als 375 g?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "weniger",
+        "vergleichswert": 375,
+        "ergebnis_ist": "kleiner",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 1125,
+        "fehler": "Komma vergessen: 375 · 3 statt 37,5 · 3"
+      }
+    },
+    {
+      "id": "sa-stahl",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
+      "status": "entwurf",
+      "ableitung": "A",
+      "quelle": {
+        "art": "Buch",
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 31,
+        "seite": 41,
+        "nummer": "8a"
+      },
+      "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen",
+      "aufgabentext": "Löse die Aufgabe. Notiere deinen Lösungsweg ausführlich. 50 cm³ Stahl wiegen 390 g. Berechne das Gewicht von 30 cm³ Stahl.",
+      "schema": "dreisatz_proportional",
+      "groessen": [
+        {
+          "name": "Volumen",
+          "einheit": "cm³"
+        },
+        {
+          "name": "Gewicht",
+          "einheit": "g"
+        }
+      ],
+      "zeilen": [
+        [
+          50,
+          390
+        ],
+        [
+          1,
+          7.8
+        ],
+        [
+          30,
+          234
+        ]
+      ],
+      "schritte": [
+        ":50",
+        "·30"
+      ],
+      "ergebnis": {
+        "wert": 234,
+        "einheit": "g"
+      },
+      "antwort_anfang": "30 cm³ Stahl wiegen",
+      "antwortsatz": "30 cm³ Stahl wiegen 234 g.",
+      "gedankengang": [
+        {
+          "satz": "[[50]] cm³ Stahl wiegen [[390]] g.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Wir rechnen auf 1 cm³ herunter: 50 cm³ : [[50]] = [[1]] cm³."
+        },
+        {
+          "satz": "Das Gewicht wird genauso geteilt: 390 g : 50 = [[7,8]] g.",
+          "tipp": "390 : 50 ist dasselbe wie 39 : 5."
+        },
+        {
+          "satz": "Von 1 cm³ auf 30 cm³: 1 cm³ · [[30]] = [[30]] cm³."
+        },
+        {
+          "satz": "Das Gewicht wird genauso malgenommen: 7,8 g · 30 = [[234]] g.",
+          "tipp": "7,8 · 3 = 23,4, dann mal 10."
+        },
+        {
+          "satz": "30 cm³ Stahl wiegen [[234]] g."
+        }
+      ],
+      "ueberschlag": null,
+      "typische_fehler": [
+        "umgekehrt gerechnet (650 g)",
+        "Antwortsatz fehlt"
+      ],
+      "hilfen": {
+        "denkanstoss": "Was wiegt 1 cm³ Stahl?",
+        "hinweis": "Teile beide Seiten durch 50, dann nimm beide mal 30."
+      },
+      "nachschlagen": {
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
+        "seite": 26,
+        "stelle": "Beispiel 1"
+      },
+      "freigabe": {
+        "noetig": false,
+        "grund": "Lösung im Anhang des Buchs (S. 281)"
+      },
+      "schaetzfrage": {
+        "frage": "Wiegen 30 cm³ Stahl mehr oder weniger als 390 g?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "weniger",
+        "vergleichswert": 390,
+        "ergebnis_ist": "kleiner",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 650,
+        "fehler": "umgekehrt gerechnet: 390 : 30 · 50"
+      }
+    },
+    {
+      "id": "sa-sammelbilder",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
+      "status": "entwurf",
+      "ableitung": "A",
+      "quelle": {
+        "art": "Buch",
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 31,
+        "seite": 41,
+        "nummer": "9"
+      },
+      "abschnitt": "1.4 Dreisatz für proportionale Zuordnungen",
+      "aufgabentext": "Mustafa hat für 16 Sammelbilder 3,20 € bezahlt. In jeder Packung sind 4 Sammelbilder. Berechne den Preis für 12 Sammelbilder.",
+      "schema": "dreisatz_proportional",
+      "groessen": [
+        {
+          "name": "Sammelbilder",
+          "einheit": ""
+        },
+        {
+          "name": "Preis",
+          "einheit": "€"
+        }
+      ],
+      "zeilen": [
+        [
+          16,
+          3.2
+        ],
+        [
+          4,
+          0.8
+        ],
+        [
+          12,
+          2.4
+        ]
+      ],
+      "schritte": [
+        ":4",
+        "·3"
+      ],
+      "ergebnis": {
+        "wert": 2.4,
+        "einheit": "€"
+      },
+      "antwort_anfang": "12 Sammelbilder kosten",
+      "antwortsatz": "12 Sammelbilder kosten 2,40 €.",
+      "gedankengang": [
+        {
+          "satz": "[[16]] Sammelbilder kosten [[3,20]] €.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "In einer Packung sind 4 Bilder. 16 Bilder sind 16 : 4 = [[4]] Packungen.",
+          "tipp": "In der Aufgabe steht: 4 Sammelbilder pro Packung."
+        },
+        {
+          "satz": "Eine Packung kostet also 3,20 € : 4 = [[0,80]] €.",
+          "tipp": "320 Cent : 4"
+        },
+        {
+          "satz": "12 Bilder sind 12 : 4 = [[3]] Packungen."
+        },
+        {
+          "satz": "3 Packungen kosten 0,80 € · 3 = [[2,40]] €."
+        },
+        {
+          "satz": "12 Sammelbilder kosten [[2,40]] €."
+        }
+      ],
+      "ueberschlag": null,
+      "typische_fehler": [
+        "nur bis zu einer Packung gerechnet (0,80 €)",
+        "Antwortsatz fehlt"
+      ],
+      "hilfen": {
+        "denkanstoss": "Du musst nicht auf 1 Bild herunterrechnen. Was kostet eine Packung?",
+        "hinweis": "Teile beide Seiten durch 4 (eine Packung), dann nimm beide mal 3."
+      },
+      "nachschlagen": {
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 16,
+        "seite": 26,
+        "stelle": "Beispiel 1"
+      },
+      "freigabe": {
+        "noetig": false,
+        "grund": "Lösung im Anhang des Buchs (S. 281)"
+      },
+      "schaetzfrage": {
+        "frage": "Kosten 12 Sammelbilder mehr oder weniger als 3,20 €?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "weniger",
+        "vergleichswert": 3.2,
+        "ergebnis_ist": "kleiner",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 0.8,
+        "fehler": "nur bis zu einer Packung gerechnet"
+      }
+    },
+    {
+      "id": "sa-treppe",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
+      "status": "entwurf",
+      "ableitung": "A",
+      "quelle": {
+        "art": "Buch",
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 31,
+        "seite": 41,
+        "nummer": "8b"
+      },
+      "abschnitt": "1.6 Dreisatz für antiproportionale Zuordnungen",
+      "aufgabentext": "Die alte Treppe in einem Haus hatte 18 Stufen. Jede Stufe war 20 cm hoch. Bei der neuen Treppe soll die Stufenhöhe 5 cm niedriger sein. Berechne die Anzahl der Stufen der neuen Treppe.",
+      "schema": "dreisatz_antiproportional",
+      "groessen": [
+        {
+          "name": "Stufenhöhe",
+          "einheit": "cm"
+        },
+        {
+          "name": "Stufen",
+          "einheit": ""
+        }
+      ],
+      "zeilen": [
+        [
+          20,
+          18
+        ],
+        [
+          1,
+          360
+        ],
+        [
+          15,
+          24
+        ]
+      ],
+      "schritte": [
+        ":20",
+        "·15"
+      ],
+      "ergebnis": {
+        "wert": 24,
+        "einheit": "Stufen"
+      },
+      "antwort_anfang": "Die neue Treppe hat",
+      "antwortsatz": "Die neue Treppe hat 24 Stufen.",
+      "gedankengang": [
+        {
+          "satz": "Die alte Treppe hat [[18]] Stufen. Jede ist [[20]] cm hoch.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Die neuen Stufen sind 5 cm niedriger, also [[15]] cm hoch.",
+          "tipp": "„5 cm niedriger“ heißt: 20 cm minus 5 cm."
+        },
+        {
+          "satz": "Wären die Stufen nur 1 cm hoch, bräuchte man 20-mal so viele: 18 · 20 = [[360]] Stufen.",
+          "tipp": "Niedrigere Stufen – braucht man dann mehr oder weniger?"
+        },
+        {
+          "satz": "Mit 15 cm hohen Stufen braucht man 15-mal weniger: 360 : 15 = [[24]] Stufen.",
+          "tipp": "36 : 15 geht nicht glatt – versuch 360 : 15 = 120 : 5."
+        },
+        {
+          "satz": "Die neue Treppe hat [[24]] Stufen."
+        }
+      ],
+      "ueberschlag": null,
+      "typische_fehler": [
+        "mit 5 cm statt 15 cm gerechnet (72 Stufen)",
+        "proportional gerechnet (13,5 Stufen)",
+        "Antwortsatz fehlt"
+      ],
+      "hilfen": {
+        "denkanstoss": "Wie hoch sind die neuen Stufen? Und braucht man bei niedrigeren Stufen mehr oder weniger?",
+        "hinweis": "Die ganze Treppe bleibt gleich hoch: 18 · 20 cm = 360 cm. Wie viele 15-cm-Stufen passen da hinein?"
+      },
+      "nachschlagen": {
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
+        "seite": 34,
+        "stelle": "Beispiel 1"
+      },
+      "freigabe": {
+        "noetig": false,
+        "grund": "Lösung im Anhang des Buchs (S. 281)"
+      },
+      "schaetzfrage": {
+        "frage": "Hat die neue Treppe mehr oder weniger als 18 Stufen?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "mehr",
+        "vergleichswert": 18,
+        "ergebnis_ist": "groesser",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 72,
+        "fehler": "mit 5 cm statt 15 cm Stufenhöhe gerechnet"
+      }
+    },
+    {
+      "id": "sa-pumpen",
+      "fach": "sub_math",
+      "thema": "top_d1a30e2f",
+      "status": "entwurf",
+      "ableitung": "A",
+      "quelle": {
+        "art": "Buch",
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 29,
+        "seite": 39,
+        "nummer": "17"
+      },
+      "abschnitt": "1.6 Dreisatz für antiproportionale Zuordnungen",
+      "aufgabentext": "Untersuche, ob Proportionalität oder Antiproportionalität vorliegt. Löse mithilfe einer Rechnung die Aufgabe: Fünf Pumpen benötigen neun Stunden, um ein Schwimmbecken auszupumpen. Ermittle, wie lange drei Pumpen benötigen, um das Becken auszupumpen.",
+      "schema": "dreisatz_antiproportional",
+      "groessen": [
+        {
+          "name": "Pumpen",
+          "einheit": ""
+        },
+        {
+          "name": "Zeit",
+          "einheit": "h"
+        }
+      ],
+      "zeilen": [
+        [
+          5,
+          9
+        ],
+        [
+          1,
+          45
+        ],
+        [
+          3,
+          15
+        ]
+      ],
+      "schritte": [
+        ":5",
+        "·3"
+      ],
+      "ergebnis": {
+        "wert": 15,
+        "einheit": "Stunden"
+      },
+      "antwort_anfang": "Drei Pumpen benötigen",
+      "antwortsatz": "Drei Pumpen benötigen 15 Stunden.",
+      "begruendung": {
+        "verlangt": true,
+        "erwartung": "Die Zuordnung Anzahl der Pumpen → Zeit ist antiproportional: Doppelt so viele Pumpen brauchen halb so lange.",
+        "quelle": "Fundamente der Mathematik 7, S. 30, Wissen",
+        "optionen": [
+          {
+            "text": "Antiproportional: Doppelt so viele Pumpen brauchen nur halb so lange.",
+            "richtig": true
+          },
+          {
+            "text": "Proportional: Mehr Pumpen, mehr Stunden.",
+            "richtig": false,
+            "grund": "Mehr Pumpen schaffen das Wasser schneller weg – die Zeit wird kürzer, nicht länger."
+          },
+          {
+            "text": "Antiproportional: Je mehr Pumpen, desto weniger Zeit.",
+            "richtig": false,
+            "grund": "„Je mehr, desto weniger“ reicht nicht. Antiproportional heißt: doppelt so viele Pumpen, genau halb so lange."
+          }
+        ]
+      },
+      "gedankengang": [
+        {
+          "satz": "[[5]] Pumpen brauchen [[9]] Stunden.",
+          "tipp": "Die Zahlen stehen in der Aufgabe – als Wörter."
+        },
+        {
+          "satz": "Weniger Pumpen brauchen länger. 1 Pumpe allein braucht fünfmal so lange: 9 h · 5 = [[45]] h.",
+          "tipp": "Eine Pumpe statt fünf – dauert es länger oder kürzer?"
+        },
+        {
+          "satz": "3 Pumpen schaffen es dreimal so schnell: 45 h : [[3]] = [[15]] h."
+        },
+        {
+          "satz": "Drei Pumpen benötigen [[15]] Stunden."
+        }
+      ],
+      "ueberschlag": null,
+      "typische_fehler": [
+        "proportional gerechnet (5,4 h)",
+        "Antwortsatz fehlt"
+      ],
+      "hilfen": {
+        "denkanstoss": "Wenn nur 1 Pumpe arbeitet: dauert es länger oder kürzer als mit 5?",
+        "hinweis": "Links teilst du durch 5, rechts musst du dann mal 5 rechnen."
+      },
+      "nachschlagen": {
+        "material": "Fundamente der Mathematik 7",
+        "material_id": "mat_6a0dc1f1_ch01",
+        "material_seite": 24,
+        "seite": 34,
+        "stelle": "Beispiel 1"
+      },
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung vom Code nachgerechnet (keine Lösung in der Quelle)"
+      },
+      "schaetzfrage": {
+        "frage": "Brauchen drei Pumpen länger oder kürzer als 9 Stunden?",
+        "optionen": [
+          "länger",
+          "kürzer"
+        ],
+        "antwort": "länger",
+        "vergleichswert": 9,
+        "ergebnis_ist": "groesser",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 5.4,
+        "fehler": "proportional statt antiproportional gerechnet"
+      }
+    },
+    {
+      "id": "sa-emil-schritte",
+      "fach": "sub_math",
+      "thema": "top_8009d623",
+      "status": "entwurf",
+      "ableitung": "A",
+      "quelle": {
+        "art": "Test",
+        "material": "Matheprobe zur Division mit Dezimalzahlen",
+        "material_id": "mat_39d6db34",
+        "material_seite": 1,
+        "datum": "2026-05-18",
+        "seite": 1,
+        "nummer": "4",
+        "wortlaut_aus": "Arbeitsblatt „Division mit Dezimalzahlen und Sachaufgaben“, Nr. 4"
+      },
+      "abschnitt": "Klasse 6: Division mit Dezimalzahlen",
+      "aufgabentext": "Emils Schrittlänge ist ungefähr 0,8 m. Wie viele Schritte macht Emil bei einer 8 km langen Wanderung?",
+      "schema": "rechnung",
+      "rechnung": {
+        "ausdruck": "8000 : 0,8",
+        "umformung": "80000 : 8",
+        "zahlen": [
+          8000,
+          0.8
+        ]
+      },
+      "ergebnis": {
+        "wert": 10000,
+        "einheit": "Schritte"
+      },
+      "antwort_anfang": "Emil macht ungefähr",
+      "antwortsatz": "Emil macht ungefähr 10000 Schritte.",
+      "gedankengang": [
+        {
+          "satz": "Die Wanderung ist [[8]] km lang. Ein Schritt ist [[0,8]] m lang.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Erst rechnen wir die Strecke in Meter um: 8 km = [[8000]] m.",
+          "tipp": "1 km = 1000 m"
+        },
+        {
+          "satz": "Überschlag mit 1 m pro Schritt: 8000 : 1 = [[8000]]. Emils Schritte sind kürzer als 1 m, also braucht er mehr Schritte."
+        },
+        {
+          "satz": "Mit Komma rechnet es sich schwer. Wir nehmen beide Zahlen mal 10: 8000 · 10 = [[80000]] und 0,8 · 10 = [[8]].",
+          "tipp": "Mal 10 hängt eine Null an bzw. schiebt das Komma eine Stelle nach rechts."
+        },
+        {
+          "satz": "Jetzt ohne Komma: 80000 : 8 = [[10000]].",
+          "tipp": "8 : 8 = 1, dann die Nullen dazu."
+        },
+        {
+          "satz": "Emil macht ungefähr [[10000]] Schritte."
+        }
+      ],
+      "ueberschlag": {
+        "verlangt": true,
+        "ausdruck": "8000 : 1 = 8000",
+        "folgerung": "mehr als 8000 Schritte"
+      },
+      "theas_loesung": "Notiert „8000 m : 0,8 = 100“, geantwortet „1000 Schritte“ (1 von 3 Punkten). Meter richtig umgerechnet, Komma beim Teilen nicht verschoben, Antwort passt nicht zur Rechnung.",
+      "typische_fehler": [
+        "km nicht in m umgerechnet (10 Schritte)",
+        "Komma beim Teilen durch eine Dezimalzahl nur auf einer Seite verschoben",
+        "Antwortsatz passt nicht zur Rechnung"
+      ],
+      "hilfen": {
+        "denkanstoss": "Braucht Emil für 8000 m mehr oder weniger als 8000 Schritte, wenn jeder Schritt kürzer als 1 m ist?",
+        "hinweis": "Erst 8 km in Meter umrechnen, dann das Komma bei beiden Zahlen eine Stelle nach rechts: 8000 : 0,8 = 80000 : 8."
+      },
+      "nachschlagen": null,
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung vom Code nachgerechnet (keine Lösung in der Quelle)"
+      },
+      "schaetzfrage": {
+        "frage": "Macht Emil mehr oder weniger als 8000 Schritte?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "mehr",
+        "vergleichswert": 8000,
+        "ergebnis_ist": "groesser",
+        "aktiv": false,
+        "grund": "Die Aufgabe verlangt einen Überschlag auf der Tafel, der dieselbe Prüfung leistet."
+      },
+      "fehlerbeispiel": {
+        "wert": 1000,
+        "fehler": "Komma nur bei einer Zahl verschoben (Theas Antwort in der Matheprobe)"
+      },
+      "einstieg": "In der Matheprobe hattest du „1000 Schritte“ geschrieben. Reichen 1000 Schritte für 8 km? Lass uns das noch mal anschauen."
     }
   ]
 }

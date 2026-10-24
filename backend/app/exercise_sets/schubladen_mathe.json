@@ -1,0 +1,62 @@
+{
+ "typ": "schubladen",
+ "version": 1,
+ "stand": "2026-10-24",
+ "hinweis": "Mathematik. Erstellt in einer Claude-Code-Session; Situationen wortgleich (höchstens gekürzt) aus Theas Test und dem Buch Fundamente der Mathematik 7.",
+ "uebungen": [
+  {
+   "id": "ma-art-der-zuordnung",
+   "ableitung": "C",
+   "fach": "sub_math",
+   "thema": "top_d1a30e2f",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Test",
+    "material": "1. Test Zuordnungen",
+    "material_id": "mat_49b92667",
+    "material_seite": 1,
+    "datum": "2026-10-05",
+    "seite": 1,
+    "nummer": "5"
+   },
+   "nachschlagen": {
+    "material": "Fundamente der Mathematik 7",
+    "material_id": "mat_6a0dc1f1_ch01",
+    "material_seite": 20,
+    "seite": 30,
+    "stelle": "Antiproportionale Zuordnungen, Wissen und Beispiel 1"
+   },
+   "abschnitt": "Zuordnungen erkennen",
+   "aufgabentext": "Entscheide bei den folgenden Zuordnungen, ob es sich um eine proportionale Zuordnung, eine antiproportionale Zuordnung oder keines von beiden handelt.",
+   "gruppen": [
+    {
+     "name": "proportional",
+     "begriffe": [
+      "Betrag in Euro → Betrag in Dollar",
+      "Zahl x → ein Viertel von x",
+      "Anzahl von Kuchenstücken → Preis (in €)"
+     ]
+    },
+    {
+     "name": "antiproportional",
+     "begriffe": [
+      "120 Murmeln: Anzahl der Spieler → Murmeln pro Spieler",
+      "60 Spielkarten aufteilen: Anzahl der Spieler → Karten pro Spieler",
+      "Jahreskarte für den Zoo: Anzahl der Besuche → Kosten pro Besuch"
+     ]
+    },
+    {
+     "name": "keines von beiden",
+     "begriffe": [
+      "Zeit seit Beginn der Unterrichtsstunde → Zeit bis zum Ende der Stunde",
+      "Anzahl der Musiker → Dauer des Musikstücks",
+      "Anzahl gebackener Muffins → Temperatur im Ofen (in °C)"
+     ]
+    }
+   ],
+   "hilfen": {
+    "denkanstoss": "Verdopple den ersten Wert. Verdoppelt sich der zweite, halbiert er sich – oder passiert keins von beidem?"
+   }
+  }
+ ]
+}
