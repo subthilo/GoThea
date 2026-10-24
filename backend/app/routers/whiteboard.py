@@ -119,15 +119,6 @@ def close_session(session_id: str, payload: Optional[TutorSessionClose] = None, 
     db.refresh(session)
     return _session_to_response(session)
 
-@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_session(session_id: str, db: Session = Depends(get_db)):
-    session = db.query(TutorSession).filter(TutorSession.id == session_id).first()
-    if not session:
-        raise HTTPException(status_code=404, detail=f"Sitzung '{session_id}' nicht gefunden.")
-    db.delete(session)
-    db.commit()
-    return None
-
 @router.post("/sessions/{session_id}/mock-tutor-hint")
 def generate_mock_tutor_hint(session_id: str, db: Session = Depends(get_db)):
     session = db.query(TutorSession).filter(TutorSession.id == session_id).first()

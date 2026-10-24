@@ -83,15 +83,13 @@ def test_mock_tutor_hint(client):
     assert len(data["actions"]) >= 1
     assert data["actions"][0]["action"] == "highlight_box"
 
-def test_delete_session(client):
-    res = client.post("/api/v1/whiteboard/sessions", json={"subject_id": "sub_physics"})
+def test_old_session_route_cannot_delete(strict_client):
+    # Löschen nur über DELETE /api/v1/boards/{id} (Eltern-Modus, räumt Vorschaubild und Verlauf mit auf)
+    res = strict_client.post("/api/v1/whiteboard/sessions", json={"subject_id": "sub_physics"})
     session_id = res.json()["id"]
 
-    del_res = client.delete(f"/api/v1/whiteboard/sessions/{session_id}")
-    assert del_res.status_code == 204
-
-    get_res = client.get(f"/api/v1/whiteboard/sessions/{session_id}")
-    assert get_res.status_code == 404
+    assert strict_client.delete(f"/api/v1/whiteboard/sessions/{session_id}").status_code == 405
+    assert strict_client.get(f"/api/v1/whiteboard/sessions/{session_id}").status_code == 200
 
 def test_whiteboard_websocket_communication(client):
     res = client.post("/api/v1/whiteboard/sessions", json={"subject_id": "sub_math"})
