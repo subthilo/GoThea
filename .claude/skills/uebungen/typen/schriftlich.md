@@ -7,12 +7,19 @@ Addition (Übertrag zwischen Aufgabe und Strich), Subtraktion im **Ergänzungsve
 größten Stelle beginnend (Komma erst am Ende: Nachkommastellen zählen), Division von links nach rechts (Komma im
 Ergebnis beim Überschreiten; durch Kommazahl: erst verschieben).
 
+Schreibregeln der Eltern (25.10.): jede Ziffer in einem Kästchen; das Komma verschiebt keine Ziffer, es sitzt auf
+der senkrechten Linie rechts neben der Einerziffer, unten; der Strich liegt auf der Linie direkt unter der
+Zahlenzeile; ein Übertrag steht klein unten rechts im Kästchen der Zahl, zu der er gehört. Kästchen 48 px, das Blatt
+scrollt, zoomt nicht. Keine Nebenrechnung – die schriftliche Rechnung ist selbst das, was geübt wird.
+
 ## Stufen
 
 -2 Zuschauen · -1 Antippen (Frage mit drei Antworten je Schritt) · 1 Ergebnis eintragen · 2 Zwischenzeilen,
-Überträge, Ergebnis · 3 Aufgabe selbst stellengerecht aufschreiben und rechnen (verschoben erlaubt) · 4 Fehler
-finden und verbessern. Ziffern über Zahlentasten, daneben Nebenrechnung mit Stift. Geplant: Stufe 5 komplett
-handschriftlich auf der Tafel, Luna liest, der Code rechnet (erst Lesegenauigkeit messen).
+Überträge, Ergebnis · 3 Aufgabe selbst stellengerecht aufschreiben und rechnen (verschoben erlaubt, ohne Striche) ·
+4 Fehler finden und verbessern · 5 Tafel: alles frei mit dem Stift auf einem Kästchenblatt, Luna liest, der Code
+rechnet (`services/practice_check_schriftlich.py`; Lesegenauigkeit noch ungemessen). Stufen 1–4: Ziffern über
+Zahlentasten, Komma-Taste setzt das Komma am gewählten Kästchen, gleiches Kästchen gleich noch einmal antippen =
+Übertrag.
 
 ## Felder nach dem Kopf
 
