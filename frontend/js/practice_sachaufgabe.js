@@ -268,95 +268,50 @@
   // Auf dem iPad sind die Felder nur auswählbar: geschrieben wird im Schreibfeld, getippt mit den Tasten
   const COARSE = window.matchMedia("(pointer: coarse)").matches;
 
-  // ---------- Schreibfeld (ein Exemplar, wird bei jedem Zeichnen der Ansicht nur umgehängt) ----------
+  // ---------- Schreibfeld (js/digit_pad.js; ein Exemplar, wird bei jedem Zeichnen nur umgehängt) ----------
   let pad = null;
 
   function writingPad() {
-    if (pad || typeof createInkSurface !== "function" || typeof DigitInk === "undefined") return pad;
-    const el = document.createElement("div");
-    el.className = "gg-write";
-    el.innerHTML = `
-      <div class="gg-write-area" title="Hier schreiben"><canvas class="gg-write-ink"></canvas><canvas class="gg-write-overlay"></canvas></div>
-      <button type="button" class="gg-key gg-write-clear" data-pad="clear" title="Neu schreiben" aria-label="Neu schreiben">${icon("Radierer")}</button>`;
-    const area = el.querySelector(".gg-write-area");
-    const ink = el.querySelector(".gg-write-ink"), overlay = el.querySelector(".gg-write-overlay");
-    const surface = createInkSurface({
-      viewport: area, inkCanvas: ink, overlayCanvas: overlay,
-      btnScrollTop: null, scrollTrack: null, scrollThumb: null,
-      btnWbZoomIn: null, btnWbZoomOut: null, btnWbZoomReset: null, wbZoomLevelText: null,
-      docUnderlay: null, docUnderlayImg: null, tasksLayer: null,
-      inkCtx: ink.getContext("2d", { desynchronized: true }), overlayCtx: overlay.getContext("2d"),
-      stopTutorSpeech: () => {},
-      scheduleAutoSave: () => padStrokeDone(),  // „Strich fertig“ (oder radiert)
-      sendCanvasUpdate: () => {},
-    });
-    pad = { el, surface, timer: null, gap: null, chars: null, text: null, reading: 0 };
-    DigitInk.load();
+    if (!pad) {
+      pad = createDigitPad({
+        // Ziel: das aktive Kästchen des Gedankengangs (nur dort wird gelesen)
+        beforeRead: () => {
+          if (!run || run.stage >= 0) return null;
+          ensureActive();
+          return run.guided.active ? { guided: run.guided, gap: run.guided.active } : null;
+        },
+        onRead: (result, target) => {
+          const g = target.guided;
+          if (!run || run.guided !== g || g.active !== target.gap) return;  // inzwischen weiter
+          const inp = runView.querySelector(`.gg-blank[data-blank="${target.gap}"]`);
+          if (!inp) return;
+          inp.value = result.text;
+          inp.classList.remove("wrong");
+          g.values[target.gap] = result.text;
+          g.unreadable = result.unsure;
+          const luna = runView.querySelector(".gg .px-luna");
+          if (luna) luna.innerHTML = guidedLuna();
+        },
+      });
+    }
     return pad;
   }
 
-  function clearPad() {
-    if (!pad) return;
-    clearTimeout(pad.timer);
-    pad.reading++;  // eine noch laufende Erkennung verwerfen
-    pad.surface.strokes = [];
-    pad.surface.undoStack = [];
-    pad.surface.redoStack = [];
-    pad.surface.redrawAllStrokes();
-    pad.gap = null;
-    pad.chars = null;
-    pad.text = null;
-  }
-
-  function padStrokeDone() {
-    clearTimeout(pad.timer);
-    pad.timer = setTimeout(readPad, 450);
-  }
-
-  // Striche lesen und die Zahl ins aktive Kästchen schreiben
-  async function readPad() {
-    if (!run || run.stage >= 0 || !pad) return;
-    const g = run.guided;
-    ensureActive();
-    const gap = g.active;
-    const strokes = pad.surface.strokes.filter((st) => st.tool === "pen" && st.points && st.points.length);
-    if (!gap || !strokes.length) return;
-    const reading = ++pad.reading;
-    const result = await DigitInk.recognize(strokes);
-    if (reading !== pad.reading || !run || run.guided !== g || g.active !== gap) return;  // inzwischen weiter
-    const inp = runView.querySelector(`.gg-blank[data-blank="${gap}"]`);
-    if (!inp) return;
-    pad.gap = g.active;
-    pad.chars = result.chars;
-    pad.text = result.text;
-    inp.value = result.text;
-    inp.classList.remove("wrong");
-    g.values[g.active] = result.text;
-    g.unreadable = result.unsure;
-    const luna = runView.querySelector(".gg .px-luna");
-    if (luna) luna.innerHTML = guidedLuna();
-  }
+  const padGap = () => (pad && pad.target ? pad.target.gap : null);
+  const clearPad = () => { if (pad) pad.clear(); };
 
   // Richtiger Schritt: Ziffern, deren gelesene Zahl unverändert die Lösung war, werden Muster für Theas Schrift
   function learnFromPad(expectedById) {
-    if (!pad || !pad.chars || !pad.gap) return;
-    const value = run.guided.values[pad.gap];
-    if (value !== pad.text || pad.text.includes("?") || !sameNumber(value, expectedById[pad.gap])) return;
-    const samples = pad.chars.filter((c) => /^[0-9]$/.test(c.label)).map((c) => DigitInk.toStored(c.label, c.strokes));
-    if (!samples.length) return;
-    apiJson("/api/v1/practice/handwriting", { method: "POST", json: { samples } })
-      .catch((err) => console.warn("Handschrift-Muster nicht gespeichert:", err));
+    const gap = padGap();
+    if (!pad || !pad.chars || !gap) return;
+    const value = run.guided.values[gap];
+    if (value !== pad.text || pad.text.includes("?") || !sameNumber(value, expectedById[gap])) return;
+    pad.learn();
   }
 
   function mountPad() {
-    const slot = runView.querySelector(".gg-write-slot");
     const p = writingPad();
-    if (!slot || !p) return;
-    slot.replaceWith(p.el);
-    p.surface.currentColor = getComputedStyle(runView).color || "#f8fafc";
-    p.surface.currentTool = "pen";
-    p.surface.resizeCanvases();
-    p.surface.redrawAllStrokes();
+    if (p) p.mount(runView.querySelector(".gg-write-slot"), getComputedStyle(runView).color);
   }
 
   function padHtml() {
@@ -370,7 +325,7 @@
     const g = run.guided;
     const ids = [...runView.querySelectorAll(".gg-blank")].map((inp) => inp.dataset.blank);
     if (!ids.includes(g.active)) g.active = ids.find((id) => !g.values[id]) || ids[0] || null;
-    if (pad && pad.gap && pad.gap !== g.active) clearPad();  // neues Kästchen, neues Schreibfeld
+    if (padGap() && padGap() !== g.active) clearPad();  // neues Kästchen, neues Schreibfeld
     runView.querySelectorAll(".gg-blank").forEach((inp) => inp.classList.toggle("active", inp.dataset.blank === g.active));
   }
 
@@ -493,7 +448,7 @@
     if (t.dataset.action === "gg-check") return guidedCheck();
     if (t.dataset.key !== undefined) return guidedKey(t.dataset.key);
     if (t.dataset.pad === "clear") {
-      const gap = pad && (pad.gap || run.guided.active);
+      const gap = padGap() || run.guided.active;
       clearPad();
       const inp = gap && runView.querySelector(`.gg-blank[data-blank="${gap}"]`);
       if (inp) { inp.value = ""; run.guided.values[gap] = ""; }
