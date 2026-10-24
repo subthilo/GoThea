@@ -836,7 +836,7 @@ body {
 }
 
 .topic-checklist {
-  max-height: 40vh;
+  max-height: 28vh;
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: 10px;
@@ -859,6 +859,36 @@ body {
   font-size: 0.9rem;
   color: var(--text-primary);
   cursor: pointer;
+}
+
+.topic-check.level-3 {
+  padding-left: 24px;
+}
+
+.topic-chapter {
+  display: flex;
+  align-items: center;
+}
+
+.topic-chapter .topic-check {
+  flex: 1;
+  font-weight: 600;
+}
+
+.topic-chapter-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px 8px;
+}
+
+.topic-chapter-sections {
+  padding-left: 30px;
+}
+
+.topic-chapter-sections[hidden] {
+  display: none;
 }
 
 .topic-check input {

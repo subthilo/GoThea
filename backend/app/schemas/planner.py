@@ -10,14 +10,32 @@ class TestBase(BaseModel):
     date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")  # YYYY-MM-DD
     note: Optional[str] = None
 
+class ScopeSection(BaseModel):
+    """Kapitel oder Abschnitt aus einem Buch/Arbeitsheft: Kapitel-Material + Seiten im Kapitel-PDF."""
+    material_id: str
+    start_page: int = Field(ge=1)
+    end_page: int = Field(ge=1)
+    title: str
+    book_page: Optional[int] = None
+
+class ScopeSectionRead(ScopeSection):
+    book_title: Optional[str] = None
+    subject_id: Optional[str] = None
+
+class CurrentSections(BaseModel):
+    subject_id: str
+    sections: List[ScopeSection]
+
 class TestCreate(TestBase):
     topic_ids: List[str] = []
+    sections: List[ScopeSection] = []
 
 class TestUpdate(BaseModel):
     kind: Optional[str] = Field(default=None, pattern="^(Test|Klassenarbeit|Klausur)$")
     date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     note: Optional[str] = None
     topic_ids: Optional[List[str]] = None
+    sections: Optional[List[ScopeSection]] = None
 
 class TestTopic(BaseModel):
     id: str
@@ -36,6 +54,7 @@ class TestRead(TestBase):
     subject_icon: Optional[str] = None
     subject_color: Optional[str] = None
     topics: List[TestTopic] = []
+    sections: List[ScopeSectionRead] = []
 
 
 # --- StudyBlock / Sperrtag Schemas ---

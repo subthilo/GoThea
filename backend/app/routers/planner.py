@@ -13,12 +13,16 @@ from backend.app.schemas.planner import (
     TestCreate,
     TestRead,
     TestUpdate,
+    CurrentSections,
+    ScopeSectionRead,
     StudyBlockCreate,
     StudyBlockRead,
     TaskToggleRequest,
     PlanOverviewResponse
 )
-from backend.app.services.planner import compute_plan_overview, test_read, topics_for_test
+from backend.app.models.material import Material
+from backend.app.models.study_scope import StudyScope
+from backend.app.services.planner import compute_plan_overview, scopes_for, section_read, test_read, topics_for_test
 from backend.app.services.parent_auth import require_parent
 
 router = APIRouter(prefix="/api/v1", tags=["Planner & Tests"])
@@ -36,11 +40,13 @@ def create_test(test_in: TestCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Fach mit ID '{test_in.subject_id}' nicht gefunden.")
     try:
         topics = topics_for_test(db, subject.id, test_in.topic_ids)
+        sections = scopes_for(db, subject.id, test_in.sections)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-    test = Test(**test_in.model_dump(exclude={"topic_ids"}))
+    test = Test(**test_in.model_dump(exclude={"topic_ids", "sections"}))
     test.topics = topics
+    test.sections = sections
     db.add(test)
     db.commit()
     db.refresh(test)
@@ -52,17 +58,42 @@ def update_test(test_id: str, test_in: TestUpdate, db: Session = Depends(get_db)
     if not test:
         raise HTTPException(status_code=404, detail="Prüfungstermin nicht gefunden.")
     changes = test_in.model_dump(exclude_unset=True)
-    if "topic_ids" in changes:
-        try:
+    try:
+        if "topic_ids" in changes:
             test.topics = topics_for_test(db, test.subject_id, changes.pop("topic_ids") or [])
-        except ValueError as e:
-            raise HTTPException(status_code=422, detail=str(e))
+        if "sections" in changes:
+            changes.pop("sections")
+            test.sections = scopes_for(db, test.subject_id, test_in.sections or [])
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     for key, value in changes.items():
         if value is not None or key == "note":
             setattr(test, key, value)
     db.commit()
     db.refresh(test)
     return test_read(test)
+
+# Buchabschnitte, die gerade dran sind (ohne Test), pro Fach ersetzt
+@router.get("/plan/current-sections", response_model=List[ScopeSectionRead])
+def list_current_sections(subject_id: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(StudyScope).filter(StudyScope.test_id.is_(None))
+    if subject_id:
+        query = query.join(Material, StudyScope.material_id == Material.id).filter(Material.subject_id == subject_id)
+    return [section_read(sc) for sc in query.order_by(StudyScope.created_at).all()]
+
+@router.put("/plan/current-sections", response_model=List[ScopeSectionRead], dependencies=[Depends(require_parent)])
+def set_current_sections(payload: CurrentSections, db: Session = Depends(get_db)):
+    try:
+        scopes = scopes_for(db, payload.subject_id, payload.sections)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    old = (db.query(StudyScope).filter(StudyScope.test_id.is_(None))
+           .join(Material, StudyScope.material_id == Material.id).filter(Material.subject_id == payload.subject_id).all())
+    for sc in old:
+        db.delete(sc)
+    db.add_all(scopes)
+    db.commit()
+    return list_current_sections(payload.subject_id, db)
 
 @router.delete("/tests/{test_id}", dependencies=[Depends(require_parent)])
 def delete_test(test_id: str, db: Session = Depends(get_db)):

@@ -116,7 +116,7 @@ async function loadPlan() {
             <div class="test-card-title">${subjectLabel(t.subject_name)} – ${t.kind}</div>
             <span class="countdown-badge">${badgeText}</span>
           </div>
-          ${topicChipsHtml(t.topics, t.subject_name)}
+          ${topicChipsHtml(t.topics, t.subject_name, t.sections)}
           ${t.note ? `<div class="test-note">${escapeHtml(t.note)}</div>` : ""}
           <div class="test-card-footer">
             <span>${icon("Kalender")} ${t.date}</span>
@@ -190,15 +190,22 @@ async function openTestModal(test = null) {
   document.getElementById("input-test-date").value = test ? test.date : d.toISOString().split("T")[0];
   document.getElementById("input-test-note").value = test ? (test.note || "") : "";
   modalTest.style.display = "flex";
-  await fillTestTopics(test ? test.topics.map((tp) => tp.id) : []);
+  await fillTestTopics(test ? test.topics.map((tp) => tp.id) : [], test ? test.sections : []);
 }
 
-async function fillTestTopics(checkedIds) {
-  const box = document.getElementById("input-test-topics");
-  renderTopicChecklist(box, await fetchTopics(document.getElementById("input-test-subject").value), checkedIds);
+// Nur die Antwort zum zuletzt gewählten Fach zählt (beim schnellen Umschalten kommen ältere später an)
+let testTopicsFill = 0;
+
+async function fillTestTopics(checkedIds, checkedSections) {
+  const subjectId = document.getElementById("input-test-subject").value;
+  const fill = ++testTopicsFill;
+  const [topics, books] = await Promise.all([fetchTopics(subjectId), fetchBookSections(subjectId)]);
+  if (fill !== testTopicsFill) return;
+  renderTopicChecklist(document.getElementById("input-test-topics"), topics, checkedIds);
+  renderSectionChecklist(document.getElementById("input-test-sections"), books, checkedSections);
 }
 
-document.getElementById("input-test-subject").addEventListener("change", () => fillTestTopics([]));
+document.getElementById("input-test-subject").addEventListener("change", () => fillTestTopics([], []));
 
 document.getElementById("btn-close-test-modal").addEventListener("click", () => {
   modalTest.style.display = "none";
@@ -226,16 +233,17 @@ document.getElementById("btn-submit-test").addEventListener("click", async () =>
   }
 
   const topic_ids = checkedTopicIds(document.getElementById("input-test-topics"));
+  const sections = checkedSections(document.getElementById("input-test-sections"));
   const res = editingTestId
     ? await apiFetch(`/api/v1/tests/${editingTestId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, date: dateVal, note, topic_ids })
+        body: JSON.stringify({ kind, date: dateVal, note, topic_ids, sections })
       })
     : await apiFetch("/api/v1/tests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject_id, kind, date: dateVal, note, topic_ids })
+        body: JSON.stringify({ subject_id, kind, date: dateVal, note, topic_ids, sections })
       });
 
   if (res.ok) {
@@ -271,10 +279,77 @@ function checkedTopicIds(box) {
   return [...box.querySelectorAll("input:checked")].map((el) => el.value);
 }
 
-function topicChipsHtml(topics, subjectName) {
-  if (!topics || !topics.length) return "";
-  return `<div class="topic-chips">${topics.map((tp) =>
-    `<span class="topic-chip" style="--chip-color: ${subjectColor(subjectName)}" title="${escapeHtml(tp.area || "")}">${escapeHtml(tp.name)}</span>`).join("")}</div>`;
+function topicChipsHtml(topics, subjectName, sections = []) {
+  const color = subjectColor(subjectName);
+  const chips = (topics || []).map((tp) =>
+    `<span class="topic-chip" style="--chip-color: ${color}" title="${escapeHtml(tp.area || "")}">${escapeHtml(tp.name)}</span>`)
+    .concat((sections || []).map((sc) => sectionChipHtml(sc, color)));
+  return chips.length ? `<div class="topic-chips">${chips.join("")}</div>` : "";
+}
+
+function sectionChipHtml(sc, color) {
+  const where = `${sc.book_title || ""}${sc.book_page ? `, S. ${sc.book_page}` : ""}`;
+  return `<span class="topic-chip" style="--chip-color: ${color}" title="${escapeHtml(where)}">${icon("Bücher")} ${escapeHtml(sc.title)}</span>`;
+}
+
+// ---------- Kapitel und Abschnitte aus Büchern und Arbeitsheften des Fachs ----------
+
+// Bücher des Fachs mit Kapiteln; jeder Abschnitt reicht bis vor den nächsten derselben oder höheren Ebene
+async function fetchBookSections(subjectId) {
+  const res = await apiFetch("/api/v1/books");
+  if (!res.ok) return [];
+  const books = (await res.json()).filter((b) => b.subject_id === subjectId && b.chapters_count > 0);
+  const details = await Promise.all(books.map((b) => apiJson(`/api/v1/books/${encodeURIComponent(b.id)}`).catch(() => null)));
+  return details.filter(Boolean).map((b) => ({
+    title: b.title,
+    chapters: b.chapters.map((ch) => {
+      const secs = (ch.sections || []).filter((x) => x.relative_page >= 1 && x.relative_page <= ch.page_count);
+      return {
+        id: ch.id, title: ch.title, pageCount: ch.page_count,
+        sections: secs.map((x, i) => {
+          const next = secs.slice(i + 1).find((y) => (y.level || 2) <= (x.level || 2));
+          return { title: x.title, level: x.level || 2, start: x.relative_page, bookPage: x.book_page,
+                   end: next ? Math.max(x.relative_page, next.relative_page - 1) : ch.page_count };
+        }),
+      };
+    }),
+  }));
+}
+
+const sectionKey = (mat, start, end) => `${mat}|${start}|${end}`;
+
+function sectionInput(mat, start, end, title, bookPage, checked) {
+  return `<input type="checkbox" data-mat="${escapeHtml(mat)}" data-start="${start}" data-end="${end}"
+    data-title="${escapeHtml(title)}" data-book-page="${bookPage ?? ""}"${checked.has(sectionKey(mat, start, end)) ? " checked" : ""}>`;
+}
+
+function renderSectionChecklist(box, books, checkedList) {
+  const checked = new Set((checkedList || []).map((sc) => sectionKey(sc.material_id, sc.start_page, sc.end_page)));
+  box.innerHTML = books.length ? books.map((b) => `
+    <div class="topic-area">${escapeHtml(b.title)}</div>
+    ${b.chapters.map((ch) => {
+      const open = ch.sections.some((x) => checked.has(sectionKey(ch.id, x.start, x.end)));
+      return `
+      <div class="topic-chapter">
+        <label class="topic-check">${sectionInput(ch.id, 1, ch.pageCount, ch.title, null, checked)}<span>${escapeHtml(ch.title)}</span></label>
+        ${ch.sections.length ? `<button type="button" class="topic-chapter-toggle" title="Abschnitte" aria-label="Abschnitte">${icon("Aufklappen")}</button>` : ""}
+      </div>
+      <div class="topic-chapter-sections"${open ? "" : " hidden"}>
+        ${ch.sections.map((x) => `
+          <label class="topic-check level-${x.level}">${sectionInput(ch.id, x.start, x.end, x.title, x.bookPage, checked)}<span>${escapeHtml(x.title)}</span></label>`).join("")}
+      </div>`;
+    }).join("")}`).join("") : `<div class="topic-area">–</div>`;
+  box.querySelectorAll(".topic-chapter-toggle").forEach((btn) => btn.addEventListener("click", () => {
+    const list = btn.parentElement.nextElementSibling;
+    list.hidden = !list.hidden;
+  }));
+}
+
+function checkedSections(box) {
+  return [...box.querySelectorAll("input:checked")].map((el) => ({
+    material_id: el.dataset.mat, start_page: Number(el.dataset.start), end_page: Number(el.dataset.end),
+    title: el.dataset.title, book_page: el.dataset.bookPage ? Number(el.dataset.bookPage) : null,
+  }));
 }
 
 function subjectNameOf(subjectId) {
@@ -285,18 +360,27 @@ function subjectNameOf(subjectId) {
 async function loadCurrentTopics() {
   const box = document.getElementById("planner-current-topics");
   if (!box) return;
-  const current = (await fetchTopics()).filter((tp) => tp.current_since);
-  box.innerHTML = current.map((tp) =>
-    `<span class="topic-chip" style="--chip-color: ${subjectColor(subjectNameOf(tp.subject_id))}" title="${escapeHtml(subjectNameOf(tp.subject_id))}">${escapeHtml(tp.name)}</span>`).join("");
+  const [topics, sections] = await Promise.all([fetchTopics(), apiJson("/api/v1/plan/current-sections").catch(() => [])]);
+  box.innerHTML = topics.filter((tp) => tp.current_since).map((tp) =>
+    `<span class="topic-chip" style="--chip-color: ${subjectColor(subjectNameOf(tp.subject_id))}" title="${escapeHtml(subjectNameOf(tp.subject_id))}">${escapeHtml(tp.name)}</span>`)
+    .concat(sections.map((sc) => sectionChipHtml(sc, subjectColor(subjectNameOf(sc.subject_id))))).join("");
 }
 
 const modalCurrentTopics = document.getElementById("modal-current-topics");
 let currentTopicsShown = [];
 
+let currentTopicsFill = 0;
+
 async function fillCurrentTopics() {
-  currentTopicsShown = await fetchTopics(document.getElementById("input-current-subject").value);
-  renderTopicChecklist(document.getElementById("input-current-topics"), currentTopicsShown,
-    currentTopicsShown.filter((tp) => tp.current_since).map((tp) => tp.id));
+  const subjectId = document.getElementById("input-current-subject").value;
+  const fill = ++currentTopicsFill;
+  const [topics, books, sections] = await Promise.all([fetchTopics(subjectId), fetchBookSections(subjectId),
+    apiJson(`/api/v1/plan/current-sections?subject_id=${encodeURIComponent(subjectId)}`).catch(() => [])]);
+  if (fill !== currentTopicsFill) return;
+  currentTopicsShown = topics;
+  renderTopicChecklist(document.getElementById("input-current-topics"), topics,
+    topics.filter((tp) => tp.current_since).map((tp) => tp.id));
+  renderSectionChecklist(document.getElementById("input-current-sections"), books, sections);
 }
 
 document.getElementById("btn-open-current-topics").addEventListener("click", async () => {
@@ -317,6 +401,11 @@ document.getElementById("btn-submit-current-topics").addEventListener("click", a
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ current: checked.has(tp.id) })
+  })).concat(apiFetch("/api/v1/plan/current-sections", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subject_id: document.getElementById("input-current-subject").value,
+                           sections: checkedSections(document.getElementById("input-current-sections")) })
   })));
   if (results.every((r) => r.ok)) {
     modalCurrentTopics.style.display = "none";

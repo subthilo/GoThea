@@ -29,6 +29,7 @@ class Test(Base):
 
     subject = relationship("Subject")
     topics = relationship("Topic", secondary=test_topics, order_by="Topic.name")
+    sections = relationship("StudyScope", cascade="all, delete-orphan", order_by="StudyScope.created_at")
     completed_tasks = relationship("CompletedTask", back_populates="test", cascade="all, delete-orphan")
 
     __table_args__ = (

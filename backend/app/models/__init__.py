@@ -8,6 +8,7 @@ from backend.app.models.material_page import MaterialPage
 from backend.app.models.annotation import PageAnnotation
 from backend.app.models.study_block import StudyBlock
 from backend.app.models.test import Test
+from backend.app.models.study_scope import StudyScope
 from backend.app.models.completed_task import CompletedTask
 from backend.app.models.timetable import TimetableSlot
 from backend.app.models.whiteboard import TutorSession, TutorMessage, TutorExercise
@@ -26,6 +27,7 @@ __all__ = [
     "PageAnnotation",
     "StudyBlock",
     "Test",
+    "StudyScope",
     "CompletedTask",
     "TimetableSlot",
     "TutorSession",

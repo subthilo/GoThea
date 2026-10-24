@@ -12,9 +12,13 @@ from backend.app.schemas.planner import (
     PlanTaskItem,
     DayPlan,
     PlanOverviewResponse,
+    ScopeSection,
+    ScopeSectionRead,
     TestRead,
     TestTopic,
 )
+from backend.app.models.material import Material
+from backend.app.models.study_scope import StudyScope
 
 
 def test_read(t: Test) -> TestRead:
@@ -33,7 +37,32 @@ def test_read(t: Test) -> TestRead:
         subject_icon=t.subject.icon if t.subject else "📚",
         subject_color=t.subject.color_code if t.subject else "#2563eb",
         topics=[TestTopic(id=tp.id, name=tp.name, area=tp.area) for tp in t.topics],
+        sections=[section_read(sc) for sc in t.sections],
     )
+
+
+def section_read(sc: StudyScope) -> ScopeSectionRead:
+    book = sc.material.parent if sc.material and sc.material.parent else sc.material
+    return ScopeSectionRead(material_id=sc.material_id, start_page=sc.start_page, end_page=sc.end_page,
+                            title=sc.title, book_page=sc.book_page, book_title=book.title if book else None,
+                            subject_id=sc.material.subject_id if sc.material else None)
+
+
+def scopes_for(db: Session, subject_id: str, sections: List[ScopeSection]) -> List[StudyScope]:
+    """Gewählte Buchabschnitte prüfen (Material des Fachs, Seiten im Kapitel) und als StudyScope anlegen.
+    ValueError, wenn etwas nicht passt."""
+    scopes = []
+    for s in sections:
+        material = db.get(Material, s.material_id)
+        if material is None:
+            raise ValueError("Buchkapitel nicht gefunden")
+        if material.subject_id != subject_id:
+            raise ValueError("Buchkapitel gehört zu einem anderen Fach")
+        if not s.start_page <= s.end_page <= material.page_count:
+            raise ValueError(f"Seiten {s.start_page}–{s.end_page} liegen nicht im Kapitel")
+        scopes.append(StudyScope(material_id=s.material_id, start_page=s.start_page, end_page=s.end_page,
+                                 title=s.title, book_page=s.book_page))
+    return scopes
 
 
 def topics_for_test(db: Session, subject_id: str, topic_ids: List[str]) -> List[Topic]:

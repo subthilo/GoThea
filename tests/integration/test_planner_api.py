@@ -153,3 +153,49 @@ def test_changing_tests_and_topics_needs_parent_mode(strict_client):
     assert strict_client.post("/api/v1/tests", json={"subject_id": "sub_math", "date": exam}).status_code == 403
     assert strict_client.patch("/api/v1/tests/tst_x", json={"note": "x"}).status_code == 403
     assert strict_client.put("/api/v1/taxonomy/topics/top_x/current", json={"current": True}).status_code == 403
+
+
+def _chapter(db_session):
+    """Arbeitsheft mit einem Kapitel (10 Seiten) – nur die Datensätze, ohne Datei."""
+    from backend.app.models.material import Material
+    common = dict(user_id="usr_thea", subject_id="sub_math", filename="x.pdf", file_path="/tmp/x.pdf",
+                  mime_type="application/pdf")
+    db_session.add(Material(id="mat_heft", title="Mathe Arbeitsheft 7", kind="Buch", page_count=40, **common))
+    db_session.add(Material(id="mat_heft_ch01", title="Kapitel 1", kind="Buchauszug", page_count=10,
+                            parent_id="mat_heft", start_page=1, end_page=10, **common))
+    db_session.commit()
+    return "mat_heft_ch01"
+
+
+def test_test_carries_book_sections(client, db_session):
+    chapter = _chapter(db_session)
+    exam = (date.today() + timedelta(days=7)).isoformat()
+    section = {"material_id": chapter, "start_page": 3, "end_page": 5, "title": "Brüche", "book_page": 3}
+    created = client.post("/api/v1/tests", json={"subject_id": "sub_math", "date": exam, "sections": [section]}).json()
+    assert created["sections"] == [{**section, "book_title": "Mathe Arbeitsheft 7", "subject_id": "sub_math"}]
+    # Ändern ersetzt die Abschnitte; Themen bleiben unberührt
+    whole = {"material_id": chapter, "start_page": 1, "end_page": 10, "title": "Kapitel 1"}
+    changed = client.patch(f"/api/v1/tests/{created['id']}", json={"sections": [whole]}).json()
+    assert [s["title"] for s in changed["sections"]] == ["Kapitel 1"]
+    # Seiten außerhalb des Kapitels oder falsches Fach werden abgelehnt
+    bad = {**section, "end_page": 11}
+    assert client.patch(f"/api/v1/tests/{created['id']}", json={"sections": [bad]}).status_code == 422
+    assert client.post("/api/v1/tests", json={"subject_id": "sub_bio", "date": exam,
+                                              "sections": [section]}).status_code == 422
+
+
+def test_current_sections_are_replaced_per_subject(client, db_session):
+    chapter = _chapter(db_session)
+    first = {"material_id": chapter, "start_page": 1, "end_page": 2, "title": "Zahlen"}
+    second = {"material_id": chapter, "start_page": 3, "end_page": 5, "title": "Brüche"}
+    res = client.put("/api/v1/plan/current-sections", json={"subject_id": "sub_math", "sections": [first, second]})
+    assert [s["title"] for s in res.json()] == ["Zahlen", "Brüche"]
+    res = client.put("/api/v1/plan/current-sections", json={"subject_id": "sub_math", "sections": [second]})
+    assert [s["title"] for s in res.json()] == ["Brüche"]
+    assert [s["title"] for s in client.get("/api/v1/plan/current-sections").json()] == ["Brüche"]
+    assert client.get("/api/v1/plan/current-sections?subject_id=sub_bio").json() == []
+
+
+def test_current_sections_need_parent_mode(strict_client):
+    assert strict_client.put("/api/v1/plan/current-sections",
+                             json={"subject_id": "sub_math", "sections": []}).status_code == 403
