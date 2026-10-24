@@ -98,6 +98,7 @@
   }
 
   function nextButtons() {
+    if (core.inRound()) return core.roundNextHtml();
     const ex = run.ex;
     const next = ex.stufen.find((s) => s > run.stage);  // auch die Tafel-Stufe (öffnet der Kern auf der Tafel)
     const twinId = ex.zwilling_von || ex.zwillinge[0];

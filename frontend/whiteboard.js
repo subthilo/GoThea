@@ -1150,9 +1150,10 @@
     const ex = ctx.ex;
     const twinId = ex.ableitung === "A" ? (ex.zwillinge || [])[0] : ex.zwilling_von;
     const options = [];
-    const nextStage = (ex.tafel_stufen || []).find((s) => s > ctx.stage);
+    const inRound = typeof window.practiceRoundActive === "function" && window.practiceRoundActive();
+    const nextStage = inRound ? undefined : (ex.tafel_stufen || []).find((s) => s > ctx.stage);
     if (nextStage !== undefined) options.push({ id: ex.id, ableitung: ex.ableitung, stage: nextStage, icon: "Pfeil hoch", title: `Weiter mit Stufe ${nextStage}`, best: !ctx.hadError });
-    if (twinId) options.push({ id: twinId, ableitung: ex.ableitung === "A" ? "B" : "A", stage: ctx.stage, icon: "Wiederholen", title: "Ähnliche Aufgabe", best: ctx.hadError || nextStage === undefined });
+    if (twinId && !inRound) options.push({ id: twinId, ableitung: ex.ableitung === "A" ? "B" : "A", stage: ctx.stage, icon: "Wiederholen", title: "Ähnliche Aufgabe", best: ctx.hadError || nextStage === undefined });
     practiceDoneBar.innerHTML = `<span class="wb-practice-done-label">${icon("Haken")}<span class="sr-only">Geschafft</span></span>`
       + (message ? `<span class="wb-practice-done-text">${escapeHtml(message)}</span>` : "");
     options.forEach((o) => {
@@ -1169,9 +1170,9 @@
     const back = document.createElement("button");
     back.type = "button";
     back.className = "wb-practice-done-btn";
-    back.title = "Zur Übungsliste";
-    back.setAttribute("aria-label", "Zur Übungsliste");
-    back.innerHTML = icon("Übungen");
+    back.title = inRound ? "Weiter" : "Zur Übungsliste";  // in einer Runde: zurück, weiter mit der nächsten Aufgabe
+    back.setAttribute("aria-label", back.title);
+    back.innerHTML = icon(inRound ? "Pfeil rechts" : "Übungen");
     back.addEventListener("click", () => switchToTab("practice"));
     practiceDoneBar.appendChild(back);
     practiceDoneBar.style.display = "flex";

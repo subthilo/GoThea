@@ -193,6 +193,7 @@
 
 
   function nextButtons() {
+    if (core.inRound()) return core.roundNextHtml();
     const ex = run.ex;
     const twinId = ex.zwilling_von || ex.zwillinge[0];
     if (!twinId) return `<button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;
@@ -251,6 +252,7 @@
   }
 
   function guidedNextButtons() {
+    if (core.inRound()) return core.roundNextHtml();
     const ex = run.ex;
     const twinId = ex.zwilling_von || ex.zwillinge[0];
     let h = `<button type="button" class="px-check" data-stage="0" title="Weiter mit den Bausteinen" aria-label="Weiter mit den Bausteinen">${icon("Pfeil hoch")}<span>0</span></button>`;

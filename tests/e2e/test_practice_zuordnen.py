@@ -8,8 +8,8 @@ OTHERS = ["ch-grundregeln", "ch-laborgeraete-1", "ch-laborgeraete-2"]
 
 
 def open_brenner(page, pin, stage, exercise=BRENNER):
-    page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
-    page.click('.nav-tab[data-tab="practice"]')
+    from tests.e2e.test_practice import practice_list
+    practice_list(page)
     page.wait_for_selector(f'.practice-row[data-id="{exercise}"]')
     page.evaluate(f"window.openPracticeExercise('{exercise}', {stage})")
     page.wait_for_selector(".zo-figure img")

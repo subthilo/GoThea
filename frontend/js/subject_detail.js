@@ -105,7 +105,7 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
     btnExercise.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      switchToTab("practice");
+      window.startPracticeRound(s.id);  // Runde nur für dieses Fach
     };
   }
 

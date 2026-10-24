@@ -1,10 +1,19 @@
 """Üben, Stufe 0 „Bausteine“: Übung im Browser durchspielen (Antippen, Ziehen, Prüfen)."""
 
 
-def open_practice(page, exercise_id="sa-gummibaerchen"):
+def practice_list(page):
+    """Die Liste aller Übungen gibt es nur im Eltern-Modus (Thea bekommt eine Runde: test_practice_round.py)."""
+    from tests.e2e.conftest import PARENT_PIN
+    from tests.e2e.test_dialogs import _unlock_parent_mode
     page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
+    if not page.evaluate("document.body.classList.contains('parent-mode-active')"):
+        _unlock_parent_mode(page, PARENT_PIN)
     page.click('.nav-tab[data-tab="practice"]')
     page.wait_for_selector(".practice-row")
+
+
+def open_practice(page, exercise_id="sa-gummibaerchen"):
+    practice_list(page)
     page.evaluate(f"window.openPracticeExercise('{exercise_id}')")
     page.wait_for_selector(".px-sheet")
 
@@ -21,9 +30,7 @@ SOLUTION = {
 
 
 def test_practice_tab_lists_exercises(app_page):
-    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
-    app_page.click('.nav-tab[data-tab="practice"]')
-    app_page.wait_for_selector(".practice-row")
+    practice_list(app_page)
     assert app_page.locator(".practice-row").count() >= 7
     assert app_page.problems.errors == []
 
@@ -197,8 +204,7 @@ def test_correct_check_offers_next_stage_and_twin(app_page):
 
 
 def test_list_shows_suggestion_and_marks_solved_stage(app_page):
-    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
-    app_page.click('.nav-tab[data-tab="practice"]')
+    practice_list(app_page)
     app_page.wait_for_selector(".practice-suggest")
     assert app_page.locator(".practice-group-title").count() >= 2  # nach Abschnitt gruppiert
     # Stufe 0 lösen, zurück zur Liste: Punkt 0 ist gefüllt
@@ -215,8 +221,7 @@ def test_list_shows_suggestion_and_marks_solved_stage(app_page):
 
 
 def test_stage_dot_opens_practice_board(app_page):
-    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
-    app_page.click('.nav-tab[data-tab="practice"]')
+    practice_list(app_page)
     app_page.wait_for_selector('.practice-row[data-id="sa-flugzeug"]')
     with app_page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
         app_page.click('.practice-row[data-id="sa-flugzeug"] .practice-dot[data-stage="3"]')
@@ -240,8 +245,7 @@ def _guided_answer(page, *values):
 
 
 def test_reasoning_path_step_by_step(app_page):
-    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
-    app_page.click('.nav-tab[data-tab="practice"]')
+    practice_list(app_page)
     app_page.wait_for_selector('.practice-row[data-id="sa-gummibaerchen"] .practice-dot[data-stage="-1"]')
     app_page.click('.practice-row[data-id="sa-gummibaerchen"] .practice-dot[data-stage="-1"]')
     app_page.wait_for_selector(".gg-step.current")
@@ -297,9 +301,7 @@ WRITE_DIGITS_JS = """
 
 
 def test_writing_pad_reads_digits_into_the_gap(app_page):
-    app_page.wait_for_selector('.nav-tab[data-tab="practice"]', state="visible")
-    app_page.click('.nav-tab[data-tab="practice"]')
-    app_page.wait_for_selector(".practice-row")
+    practice_list(app_page)
     app_page.evaluate("window.openPracticeExercise('sa-gummibaerchen', -1)")
     app_page.wait_for_selector(".gg-write-ink")
     _guided_answer(app_page, "3")

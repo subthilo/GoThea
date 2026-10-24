@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Akku leer: Gehäuse, Pol rechts, 1 von 4 Balken -->
+  <rect x="14" y="32" width="66" height="36" rx="7" />
+  <line x1="86" y1="44" x2="86" y2="56" />
+  <rect x="22" y="40" width="9" height="20" rx="2" fill="#1E293B" stroke="none" />
+</svg>

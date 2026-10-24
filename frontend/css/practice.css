@@ -1220,3 +1220,125 @@ body.practice-zen-mode .gg-right .px-actions {
     overflow: visible;
   }
 }
+
+/* ---------- Runde für Thea (js/practice.js): Akku-Frage, Pause, Geschafft ---------- */
+.practice-round {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 40px 16px;
+  text-align: center;
+}
+
+.pr-luna {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pr-luna .pr-luna-icon {
+  width: 72px;
+  height: 72px;
+  color: var(--accent-light);
+}
+
+.pr-luna p {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pr-battery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+}
+
+.pr-battery-btn {
+  width: 132px;
+  height: 104px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.pr-battery-btn .ui-icon {
+  width: 80px;
+  height: 80px;
+}
+
+.pr-battery-btn[data-akku="fast_leer"] { color: #f87171; }
+.pr-battery-btn[data-akku="geht_so"] { color: #fbbf24; }
+.pr-battery-btn[data-akku="voll"] { color: #4ade80; }
+
+.pr-actions .px-check {
+  min-width: 120px;
+  min-height: 64px;
+  font-size: 1.4rem;
+}
+
+.pr-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #fbbf24;
+}
+
+.pr-done .pr-done-feier {
+  width: 96px;
+  height: 96px;
+}
+
+.pr-done-count .ui-icon {
+  width: 36px;
+  height: 36px;
+}
+
+/* Fortschritt der Runde (Kopfzeile der Übung und Pause) */
+.pr-dots {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pr-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--text-secondary);
+}
+
+.pr-dot.done {
+  background: var(--accent-light);
+  border-color: var(--accent-light);
+}
+
+.pr-dot.now {
+  border-color: var(--accent-light);
+}
+
+.practice-try-round {
+  margin-bottom: 12px;
+}
+
+/* Punkt am Üben-Symbol: etwas ist dran */
+.nav-tab.has-due {
+  position: relative;
+}
+
+.nav-tab.has-due::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f59e0b;
+}

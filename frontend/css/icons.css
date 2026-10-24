@@ -14,6 +14,9 @@
   mask: no-repeat center / contain;
 }
 
+.i-akku-halb { -webkit-mask-image: url("/static/Icons/Akku%20halb.svg"); mask-image: url("/static/Icons/Akku%20halb.svg"); }
+.i-akku-leer { -webkit-mask-image: url("/static/Icons/Akku%20leer.svg"); mask-image: url("/static/Icons/Akku%20leer.svg"); }
+.i-akku-voll { -webkit-mask-image: url("/static/Icons/Akku%20voll.svg"); mask-image: url("/static/Icons/Akku%20voll.svg"); }
 .i-aktualisieren { -webkit-mask-image: url("/static/Icons/Aktualisieren.svg"); mask-image: url("/static/Icons/Aktualisieren.svg"); }
 .i-anhalten { -webkit-mask-image: url("/static/Icons/Anhalten.svg"); mask-image: url("/static/Icons/Anhalten.svg"); }
 .i-anzeigen { -webkit-mask-image: url("/static/Icons/Anzeigen.svg"); mask-image: url("/static/Icons/Anzeigen.svg"); }
