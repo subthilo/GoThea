@@ -2,6 +2,10 @@
 
 Willkommen in der modularen technischen Dokumentation von **GoThea (Multimodale Lernzentrale & KI-Tutor)**.
 
+> **Stand: 15.10.2026, teils überholt.** Maßgeblich sind `CLAUDE.md` (Arbeitsgrundlage, aktueller Stand) und
+> `README.md`. Nicht mehr aktuell sind u. a. Übungs-Arena/Vorräte, Lückentext-Trainer und Tutor-Overlay;
+> Übungen, Tafeln (`/api/v1/boards`), Suche und Lernplan-Abschnitte fehlen hier.
+
 ---
 
 ## 📚 Inhaltsverzeichnis
