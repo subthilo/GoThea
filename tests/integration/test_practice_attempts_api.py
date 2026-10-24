@@ -179,3 +179,29 @@ def test_stage_must_belong_to_the_exercise_type(client):
     res = client.post("/api/v1/practice/sa-gummibaerchen/check",
                       json={"image_base64": "data:image/jpeg;base64,AAAA", "stage": 0})
     assert res.status_code == 400
+
+
+def _chemie_current(db_session):
+    """Sicherheit im Chemieraum (Thema der Chemie-Übungen) auf „gerade dran“."""
+    from datetime import datetime
+    from backend.app.models.taxonomy import Subject, Topic
+    db_session.add(Subject(id="sub_chemie", name="Chemie", color_code="#67e8f9", icon="", min_grade=7, max_grade=13))
+    db_session.add(Topic(id="top_dfbb0dd9", subject_id="sub_chemie", name="Sicherheit im Chemieraum",
+                         current_since=datetime.utcnow()))
+    db_session.commit()
+
+
+def test_round_contains_what_is_due(client, db_session):
+    assert client.get("/api/v1/practice/round").json()["runde"] == []  # nichts dran
+    _chemie_current(db_session)
+    out = client.get("/api/v1/practice/round").json()
+    # Erster Knoten (Arbeitsheft S. 1 Nr. 1, beide Teile); Einstieg = 2 Aufgaben, Grundregeln/Brenner gesperrt
+    assert out["einstieg"] and [i["exercise_id"] for i in out["runde"]] == ["ch-laborgeraete-1", "ch-laborgeraete-2"]
+    assert out["runde"][0]["grund"] == {"art": "aktuell"} and out["runde"][0]["stufe"] == -1
+    assert out["dran"]["ch-brenner"]["gesperrt"]
+    # Fachseite eines anderen Fachs: nichts dran, nichts geschafft → leer
+    assert client.get("/api/v1/practice/round?fach=sub_math").json()["runde"] == []
+    # Die Eltern-Liste kennt, was dran und gesperrt ist
+    listed = client.get("/api/v1/practice").json()
+    assert listed["anzahl_dran"] == out["anzahl_dran"] and "ch-grundregeln" in listed["dran"]
+    assert client.get("/api/v1/practice/round?akku=kaputt").status_code == 422

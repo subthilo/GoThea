@@ -22,8 +22,8 @@ from backend.app import config
 from backend.app.database import get_db
 from backend.app.models.whiteboard import TutorSession
 from backend.app.models.practice_attempt import PracticeAttempt
-from backend.app.services import (llm, practice_attempts, practice_check, practice_check_zuordnen, practice_exercises,
-                                  practice_plan)
+from backend.app.services import (llm, practice_attempts, practice_check, practice_check_zuordnen, practice_due,
+                                  practice_exercises, practice_plan)
 from backend.app.services.exercise_types import zuordnen
 from backend.app.services.parent_auth import is_parent
 
@@ -78,12 +78,32 @@ def list_practice(db: Session = Depends(get_db), parent: bool = Depends(is_paren
     if not config.EXERCISE_TRIAL_ENABLED:
         return {"enabled": False, "exercises": []}
     families = practice_exercises.list_exercises(include_drafts=parent)
+    plan = _plan(db, families)
+    scope, solved_days = practice_due.collect(db)
+    due = practice_due.build_round(families, scope, plan, solved_days=solved_days)
+    return {"enabled": True, "exercises": families, **plan, "dran": due["dran"], "anzahl_dran": due["anzahl_dran"]}
+
+
+def _plan(db: Session, families: List[dict]) -> dict:
     attempts = db.query(PracticeAttempt).all()
     board_ids = {a.board_id for a in attempts if a.board_id}
     open_boards = {b.id for b in db.query(TutorSession.id).filter(TutorSession.id.in_(board_ids),
                                                                      TutorSession.archived_at.is_(None))}
-    return {"enabled": True, "exercises": families,
-            **practice_plan.plan(families, attempts, open_boards=open_boards)}
+    return practice_plan.plan(families, attempts, open_boards=open_boards)
+
+
+@router.get("/round")
+def practice_round(fach: Optional[str] = None, akku: str = "geht_so", db: Session = Depends(get_db),
+                   parent: bool = Depends(is_parent)) -> dict:
+    """Die Runde für Thea: was dran ist (Lernplan), in der Reihenfolge von services/practice_due.py."""
+    if not config.EXERCISE_TRIAL_ENABLED:
+        return {"enabled": False, "runde": [], "anzahl_dran": 0}
+    if akku not in practice_due.AKKU:
+        raise HTTPException(status_code=422, detail=f"akku: {', '.join(practice_due.AKKU)}")
+    families = practice_exercises.list_exercises(include_drafts=parent)
+    scope, solved_days = practice_due.collect(db)
+    out = practice_due.build_round(families, scope, _plan(db, families), akku=akku, fach=fach, solved_days=solved_days)
+    return {"enabled": True, **out}
 
 
 @router.get("/progress")

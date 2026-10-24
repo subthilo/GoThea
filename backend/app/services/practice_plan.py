@@ -116,6 +116,9 @@ def plan(families: List[dict], attempts: List[PracticeAttempt], now: Optional[da
                       "stufe": r["stufe"], "board_id": None}
 
     return {
+        "offen": [{"familie": family_of[a.exercise_id], "exercise_id": a.exercise_id, "stufe": a.stage,
+                   "board_id": a.board_id if a.board_id in open_boards else None}
+                  for a in sorted(open_attempts, key=lambda a: a.last_activity_at, reverse=True)],
         "stand": progress,
         "wiederholen": [{k: v for k, v in r.items() if k != "_at"} for r in sorted(repeats, key=lambda r: r["_at"])],
         "vorschlag": suggestion,

@@ -190,6 +190,7 @@ def list_exercises(include_drafts: bool = False) -> List[dict]:
             "aufgabentext": ex["aufgabentext"],
             "abschnitt": ex.get("abschnitt"),
             "quelle": ex["quelle"],
+            "nachschlagen": ex.get("nachschlagen"),
             "zwillinge": twins.get(ex["id"], []),
             **_stages(ex),
             **exercise_types.get(ex["typ"]).summary(ex),
