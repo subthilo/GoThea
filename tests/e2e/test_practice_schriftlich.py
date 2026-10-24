@@ -1,4 +1,4 @@
-"""Üben, Übungstyp „Schriftlich rechnen“: jede Stufe einmal durchspielen; alle Verfahren auf einen Bildschirm."""
+"""Üben, Übungstyp „Schriftlich rechnen“: jede Stufe einmal durchspielen; Schreibregeln; Seite ohne Scrollen."""
 from tests.e2e.test_practice import practice_list
 
 
@@ -9,43 +9,69 @@ def open_sr(page, ex_id, stage):
     return page.evaluate(f"apiJson('/api/v1/practice/{ex_id}')")
 
 
-def cell(r, c):
-    return f'[data-cell="{r},{c}"]'
+def box(r, c):
+    return f'[data-box="{r},{c}"]'
 
 
-def type_into(page, r, c, z):
-    page.click(cell(r, c))
-    if z:
-        page.click(f'.gg-key[data-key="{z}"]')
-    else:
-        page.click('.gg-key[data-key="back"]')
+def enter(page, cell, shift=0):
+    """Wie auf dem iPad: Kästchen antippen und tippen; Komma = Komma-Taste, Übertrag = Kästchen zweimal antippen."""
+    r, c = cell["r"], cell["c"] + shift
+    page.click(box(r, c))
+    if cell["platz"] == "uebertrag":
+        page.click(box(r, c))
+    page.click(f'.gg-key[data-key="{cell["z"]}"]')
 
 
-def grid_text(page):
-    return page.evaluate("""() => {
-      const rows = {};
-      document.querySelectorAll('.sr-cell').forEach((el) => {
-        const [r, c] = [parseInt(el.style.gridRow) - 1, parseInt(el.style.gridColumn) - 1];
-        if (el.textContent) (rows[r] = rows[r] || {})[c] = el.textContent;
-      });
-      return rows;
-    }""")
+def sheet(page):
+    """Was auf dem Blatt steht: {(r, c, platz): Zeichen}."""
+    found = page.evaluate("""() => [...document.querySelectorAll('.sr-cell')].map((el) => ({
+      r: parseInt(el.style.gridRow) - 1, c: parseInt(el.style.gridColumn) - 1,
+      ziffer: [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(''),
+      uebertrag: el.querySelector('.sr-carry') ? el.querySelector('.sr-carry').textContent : '',
+      komma: el.querySelector('.sr-comma') ? ',' : '' }))""")
+    out = {}
+    for f in found:
+        for platz in ("ziffer", "uebertrag", "komma"):
+            if f[platz]:
+                out[(f["r"], f["c"], platz)] = f[platz]
+    return out
 
 
 def test_watch_stage_shows_every_step(app_page):
-    data = open_sr(app_page, "sr-div-852-3", -2)
-    assert "8 : 3 = 2" in app_page.inner_text(".px-luna")
+    data = open_sr(app_page, "sr-sub-lk-3b-1", -2)
     for _ in data["schritte"]:
         app_page.click('[data-action="sr-next"]')
-    shown = grid_text(app_page)
+    shown = sheet(app_page)
     for c in data["gitter"]["zellen"]:
-        assert shown[str(c["r"])][str(c["c"])] == c["z"]
+        assert shown.get((c["r"], c["c"], c["platz"])) == c["z"], c
+    # Übertrag steht klein im Kästchen der unteren Zahl, nicht in einer eigenen Zeile
+    assert app_page.locator(".sr-carry").count() == sum(c["platz"] == "uebertrag" for c in data["gitter"]["zellen"])
     assert app_page.locator('.px-actions [data-action="back"]').count() == 1
+    assert app_page.problems.errors == []
+
+
+def test_comma_sits_on_the_grid_line_and_moves_no_digit(app_page):
+    open_sr(app_page, "sr-sub-lk-3b-1", -2)
+    for _ in range(20):
+        if app_page.locator('[data-action="sr-next"]').count() == 0:
+            break
+        app_page.click('[data-action="sr-next"]')
+    geo = app_page.evaluate("""() => {
+      const comma = document.querySelector('.sr-comma').getBoundingClientRect();
+      const cell = document.querySelector('.sr-comma').parentElement.getBoundingClientRect();
+      const cols = [...document.querySelectorAll('.sr-cell')].map((el) => el.getBoundingClientRect().width);
+      return { centre: comma.left + comma.width / 2, line: cell.right, bottom: comma.bottom, cellBottom: cell.bottom,
+               widths: [...new Set(cols.map(Math.round))] };
+    }""")
+    assert abs(geo["centre"] - geo["line"]) < 6           # auf der senkrechten Linie
+    assert geo["bottom"] <= geo["cellBottom"] + 4          # unten, nicht darunter
+    assert geo["widths"] == [48]                           # alle Kästchen gleich breit
     assert app_page.problems.errors == []
 
 
 def test_tap_stage_asks_each_step(app_page):
     data = open_sr(app_page, "sr-sub-734-281", -1)
+    assert app_page.locator(".gg-scratch").count() == 0  # keine Nebenrechnung
     for st in data["schritte"]:
         wrong = next(o for o in st["optionen"] if o != st["antwort"])
         app_page.click(f'.sr-option[data-option="{wrong}"]')
@@ -59,26 +85,27 @@ def test_tap_stage_asks_each_step(app_page):
 
 def test_result_stage_runs_in_writing_direction(app_page):
     open_sr(app_page, "sr-add-348-275", 1)
+    assert app_page.locator(".gg-scratch").count() == 0
     for z in "326":  # 623 von rechts nach links, der Cursor läuft selbst weiter
         app_page.click(f'.gg-key[data-key="{z}"]')
     app_page.click('[data-action="sr-check"]')
     assert app_page.locator(".sr-cell.ok").count() == 3
-    assert app_page.locator(".gg-scratch").count() == 0  # fertig: keine Tasten, keine Nebenrechnung mehr
     assert app_page.problems.errors == []
 
 
-def test_all_lines_stage_marks_mistakes_and_offers_tip(app_page):
+def test_all_lines_stage_with_carries_in_the_box(app_page):
     data = open_sr(app_page, "sr-mul-243-12", 2)
-    todo = [c for c in data["gitter"]["zellen"] if c["art"] not in ("aufgabe", "op", "uebertrag")]
+    assert app_page.locator(".sr-carry.hint").count() == 1  # Platz für den Übertrag ist angedeutet
+    todo = [c for c in data["gitter"]["zellen"] if c["art"] not in ("aufgabe", "op")]
     for c in todo:
-        type_into(app_page, c["r"], c["c"], c["z"])
+        enter(app_page, c)
     first = todo[0]
-    type_into(app_page, first["r"], first["c"], str((int(first["z"]) + 1) % 10))
+    enter(app_page, {**first, "z": str((int(first["z"]) + 1) % 10)})
     app_page.click('[data-action="sr-check"]')
     assert app_page.locator(".sr-cell.wrong").count() == 1
     app_page.click('[data-action="sr-tip"]')
     assert "Mit der 1" in app_page.inner_text(".px-luna")
-    type_into(app_page, first["r"], first["c"], first["z"])
+    enter(app_page, first)
     app_page.click('[data-action="sr-check"]')
     assert app_page.locator(".sr-cell.wrong").count() == 0
     assert app_page.locator('.px-actions [data-stage="3"]').count() == 1
@@ -87,9 +114,10 @@ def test_all_lines_stage_marks_mistakes_and_offers_tip(app_page):
 
 def test_own_layout_may_stand_shifted(app_page):
     data = open_sr(app_page, "sr-add-lk-2a", 3)
+    assert app_page.locator(".sr-cell.strich").count() == 0  # Striche verrieten den Aufbau
     for c in data["gitter"]["zellen"]:
         if c["art"] not in ("op", "uebertrag"):
-            type_into(app_page, c["r"], c["c"] + 1, c["z"])  # alles eine Spalte weiter rechts
+            enter(app_page, c, shift=1)  # alles eine Spalte weiter rechts
     app_page.click('[data-action="sr-check"]')
     assert app_page.locator(".sr-cell.wrong").count() == 0
     assert "Richtig" in app_page.inner_text(".px-luna")
@@ -97,24 +125,24 @@ def test_own_layout_may_stand_shifted(app_page):
 
 
 def test_find_the_mistake_then_fix_it(app_page):
-    data = open_sr(app_page, "sr-sub-lk-3b-2", 4)  # Theas 490,21
-    plain = {(c["r"], c["c"]): c["z"] for c in data["gitter"]["zellen"]}
-    wrong = {(c["r"], c["c"]): c["z"] for c in data["fehlerbild"]["zellen"]}
-    diff = sorted(p for p in set(plain) | set(wrong) if plain.get(p) != wrong.get(p))
-    assert len(diff) == 2
-    app_page.click(cell(0, 1))  # richtige Stelle: Luna sagt „Such weiter“
+    data = open_sr(app_page, "sr-sub-lk-3b-2", 4)  # Theas 490,21: nur das Komma steht falsch
+    plain = {(c["r"], c["c"], c["platz"]): c["z"] for c in data["gitter"]["zellen"]}
+    wrong = {(c["r"], c["c"], c["platz"]): c["z"] for c in data["fehlerbild"]["zellen"]}
+    diff = sorted(k for k in set(plain) | set(wrong) if plain.get(k) != wrong.get(k))
+    assert [k[2] for k in diff] == ["komma", "komma"]
+    app_page.click(box(0, 1))  # richtige Stelle: Luna sagt „Such weiter“
     assert "Such weiter" in app_page.inner_text(".px-luna")
-    app_page.click(cell(*diff[0]))
+    app_page.click(box(*diff[0][:2]))
     assert "Komma" in app_page.inner_text(".px-luna")
-    for r, c in diff:
-        type_into(app_page, r, c, plain.get((r, c), ""))
+    for r, c, _ in diff:  # Komma-Taste schaltet das Komma am gewählten Kästchen um
+        app_page.click(box(r, c))
+        app_page.click('.gg-key[data-key=","]')
     app_page.click('[data-action="sr-check"]')
     assert "Richtig verbessert" in app_page.inner_text(".px-luna")
     assert app_page.problems.errors == []
 
 
-def test_every_procedure_fits_on_one_screen(app_page):
-    # die höchste (Division mit 11 Zeilen) und die breiteste Rechnung jeder Art
+def test_page_stays_put_and_the_sheet_scrolls(app_page):
     tasks = ["sr-add-lk-2a", "sr-sub-lk-3b-1", "sr-mul-243-12", "sr-div-mp-2b", "sr-div-ab-5"]
     for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
         app_page.set_viewport_size({"width": width, "height": height})
@@ -122,13 +150,13 @@ def test_every_procedure_fits_on_one_screen(app_page):
             for stage in (-1, 2):
                 open_sr(app_page, ex_id, stage)
                 fit = app_page.evaluate("""() => {
-                  const wrap = document.querySelector('.sr-wrap').getBoundingClientRect();
-                  const grid = document.querySelector('.sr-grid').getBoundingClientRect();
+                  const wrap = document.querySelector('.sr-wrap');
                   return { page: document.scrollingElement.scrollHeight - innerHeight,
-                           inside: grid.right <= wrap.right + 1 && grid.bottom <= wrap.bottom + 1,
-                           cell: parseFloat(getComputedStyle(document.querySelector('.sr-wrap')).getPropertyValue('--cell')) };
-                }""")
-                assert fit["page"] == 0 and fit["inside"], (ex_id, stage, width, height, fit)
-                assert fit["cell"] >= 24, (ex_id, stage, width, height, fit)
+                           cell: parseFloat(getComputedStyle(wrap).getPropertyValue('--cell')),
+                           touch: getComputedStyle(wrap).touchAction, overflow: getComputedStyle(wrap).overflowY,
+                           keys: !!document.querySelector('.sr-keys') === %s };
+                }""" % ("true" if stage == 2 else "false"))
+                assert fit["page"] == 0 and fit["keys"], (ex_id, stage, width, height, fit)
+                assert fit["cell"] == 48 and fit["touch"] == "pan-x pan-y" and fit["overflow"] == "auto", fit
                 app_page.click('[data-action="back"]')
     assert app_page.problems.errors == []
