@@ -13,9 +13,9 @@ Die Ansicht für Thea liegt im Frontend: frontend/js/practice_<typ>.js meldet si
 from types import ModuleType
 from typing import Dict, Optional
 
-from backend.app.services.exercise_types import ordnen, sachaufgabe, zuordnen
+from backend.app.services.exercise_types import ordnen, sachaufgabe, schubladen, zuordnen
 
-TYPES: Dict[str, ModuleType] = {m.TYP: m for m in (sachaufgabe, zuordnen, ordnen)}
+TYPES: Dict[str, ModuleType] = {m.TYP: m for m in (sachaufgabe, zuordnen, ordnen, schubladen)}
 
 
 def get(typ: str) -> Optional[ModuleType]:
