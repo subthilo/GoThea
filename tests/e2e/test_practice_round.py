@@ -74,3 +74,12 @@ def test_subject_page_starts_a_round_for_that_subject(app_page, chemie_current):
     app_page.click('.pr-battery-btn[data-akku="geht_so"]')
     app_page.wait_for_selector(".zo-figure img")
     assert app_page.problems.errors == []
+
+
+def test_subject_page_replaces_an_open_exercise_of_another_subject(app_page, chemie_current):
+    from tests.e2e.test_practice import open_practice
+    open_practice(app_page)  # Mathe-Übung offen (Eltern-Liste)
+    app_page.evaluate("window.startPracticeRound('sub_chemie')")
+    app_page.wait_for_selector('.pr-luna:has-text("Chemie")')
+    assert app_page.locator(".px-sheet").count() == 0
+    assert app_page.problems.errors == []

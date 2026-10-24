@@ -402,9 +402,22 @@ function registerPracticeType(typ, view) {
   // ---------- Einstieg ----------
   // Thea: Runde (läuft schon eine, geht es dort weiter); Eltern: die Liste
 
+  function leaveExercise() {
+    setPracticeZen(false);
+    if (current) current.view.close();
+    current = null;
+    show(runView, false);
+    runView.innerHTML = "";
+  }
+
   navBtn.addEventListener("click", () => {
     const fach = pendingFach;
     pendingFach = undefined;
+    // Von der Fachseite: läuft nichts für dieses Fach, neue Runde (eine offene Übung wird verlassen)
+    if (fach !== undefined && !(round && round.fach === fach)) {
+      leaveExercise();
+      return askBattery(fach);
+    }
     if (current) return;
     if (document.body.classList.contains("parent-mode-active") && fach === undefined && !round) {
       show(roundView, false);
