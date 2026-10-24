@@ -26,7 +26,8 @@ from backend.app.services.material_ingestion import (
     merge_materials,
     reorder_material_pages,
 )
-from backend.app.services.parent_auth import require_parent
+from backend.app.services.parent_auth import PARENT_REQUIRED_DETAIL, is_parent_viewer, require_parent
+from backend.app.services import solution_pages
 
 router = APIRouter(prefix="/api/v1/materials", tags=["materials"])
 
@@ -205,10 +206,11 @@ def list_materials(
 @router.get("/{material_id}", response_model=MaterialDetailRead)
 def get_material_detail(
     material_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    parent: bool = Depends(is_parent_viewer)
 ):
     """
-    Liefert ein Material mit Volltext und semantischen Chunks.
+    Liefert ein Material mit Volltext und semantischen Chunks (nur Eltern: der Volltext enthält auch Lösungsseiten).
     """
     mat = db.query(Material).filter_by(id=material_id).first()
     if not mat:
@@ -216,8 +218,8 @@ def get_material_detail(
 
     return MaterialDetailRead(
         **_to_material_read(mat, db).model_dump(),
-        extracted_text=mat.extracted_text,
-        chunks=mat.chunks
+        extracted_text=mat.extracted_text if parent else None,
+        chunks=mat.chunks if parent else []
     )
 
 @router.get("/{material_id}/pages/{page}/content", dependencies=[Depends(require_parent)])
@@ -261,11 +263,15 @@ def get_page_content(
 @router.get("/{material_id}/file")
 def get_material_file(
     material_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    parent: bool = Depends(is_parent_viewer)
 ):
     """
-    Liefert die Binärdatei des Materials zur Anzeige oder zum Download.
+    Liefert die Binärdatei des Materials zum Download – nur Eltern (die Datei enthält auch Lösungsseiten;
+    Thea liest im Leser). Per Cookie, weil ein Download-Link keinen Header mitschicken kann.
     """
+    if not parent:
+        raise HTTPException(status_code=403, detail=PARENT_REQUIRED_DETAIL)
     mat = db.query(Material).filter_by(id=material_id).first()
     if not mat:
         raise HTTPException(status_code=404, detail="Material nicht gefunden.")
@@ -284,15 +290,23 @@ def get_material_file(
 def get_material_preview_image(
     material_id: str,
     page: int = 1,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    parent: bool = Depends(is_parent_viewer)
 ):
     """
     Rendert eine Seite des Materials (PDF oder Bild) als hochauflösendes PNG-Bild,
     perfekt für Whiteboard-Hintergründe und In-App Vorschau.
+    Lösungsseiten (services/solution_pages.py) sieht Thea als Schloss; sie werden nie im Browser
+    zwischengespeichert, damit nach einem Moduswechsel nichts Falsches aus dem Cache kommt.
     """
     mat = db.query(Material).filter_by(id=material_id).first()
     if not mat:
         raise HTTPException(status_code=404, detail="Material nicht gefunden.")
+
+    solution = solution_pages.is_solution_page(mat, page)
+    if solution and not parent:
+        return Response(content=solution_pages.LOCKED_PAGE_SVG, media_type="image/svg+xml", headers={"Cache-Control": "no-store"})
+    cache_control = "no-store" if solution else "public, max-age=86400, stale-while-revalidate=3600"
 
     try:
         image_bytes, out_mime = render_material_page_as_image(
@@ -304,9 +318,7 @@ def get_material_preview_image(
         return Response(
             content=image_bytes,
             media_type=out_mime,
-            headers={
-                "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600"
-            }
+            headers={"Cache-Control": cache_control}
         )
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Datei auf dem Speichermedium nicht gefunden.")

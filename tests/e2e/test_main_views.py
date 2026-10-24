@@ -52,3 +52,17 @@ def test_upload_and_inbox_only_in_parent_mode(app_page, parent_pin):
     assert app_page.locator("#page-upload-dropzone").is_visible()
     assert app_page.locator("#inbox-card").is_visible()
     assert app_page.problems.errors == []
+
+
+def test_parent_cookie_for_images_follows_parent_mode(app_page, parent_pin):
+    # Bilder/Downloads schicken das Token per Cookie mit (Lösungsseiten); es lebt und stirbt mit dem Eltern-Modus
+    has_cookie = "() => document.cookie.includes('gothea_parent=')"
+    assert app_page.evaluate(has_cookie) is False
+    app_page.click("#btn-parent-toggle")
+    app_page.fill("#input-parent-pin", parent_pin)
+    app_page.click("#btn-submit-parent-pin")
+    app_page.wait_for_function("document.body.classList.contains('parent-mode-active')", timeout=5000)
+    assert app_page.evaluate(has_cookie) is True
+    app_page.evaluate("() => clearParentToken()")
+    assert app_page.evaluate(has_cookie) is False
+    assert app_page.problems.errors == []

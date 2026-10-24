@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Optional, Tuple
 
-from fastapi import Header, HTTPException
+from fastapi import Cookie, Header, HTTPException
 
 from backend.app.config import DATA_DIR
 
@@ -156,6 +156,18 @@ def reset_lockout_state() -> None:
 def is_parent(x_parent_token: Optional[str] = Header(None)) -> bool:
     """FastAPI-Dependency für Endpunkte, die Thea und Eltern verschieden antworten (z. B. Lösungen)."""
     return validate_token(x_parent_token)
+
+
+# Bilder (<img>) und Downloads (<a>) können keinen Header mitschicken; dafür setzt api.js das Token zusätzlich als
+# Cookie. Es gilt nur zum Ansehen (is_parent_viewer), nie für Änderungen: die laufen per Header (require_parent),
+# damit keine fremde Seite mit dem Cookie etwas auslösen kann.
+PARENT_COOKIE = "gothea_parent"
+
+
+def is_parent_viewer(x_parent_token: Optional[str] = Header(None),
+                     gothea_parent: Optional[str] = Cookie(None)) -> bool:
+    """FastAPI-Dependency nur für lesende Endpunkte, die Bilder oder Dateien liefern (z. B. Lösungsseiten)."""
+    return validate_token(x_parent_token) or validate_token(gothea_parent)
 
 
 def require_parent(x_parent_token: Optional[str] = Header(None)) -> bool:

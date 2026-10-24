@@ -55,7 +55,7 @@ def db_session(engine):
 @pytest.fixture(scope="function")
 def client(db_session):
     """Test-Client im Eltern-Modus (Rechteprüfung wird überbrückt)."""
-    from backend.app.services.parent_auth import require_parent
+    from backend.app.services.parent_auth import is_parent_viewer, require_parent
 
     def override_get_db():
         try:
@@ -65,6 +65,7 @@ def client(db_session):
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[require_parent] = lambda: True
+    app.dependency_overrides[is_parent_viewer] = lambda: True
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()

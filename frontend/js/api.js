@@ -19,12 +19,22 @@ function getParentToken() {
   return token;
 }
 
+// Bilder und Downloads können keinen Header mitschicken: dafür dasselbe Token als Cookie (der Server nimmt es
+// nur zum Ansehen an, z. B. Lösungsseiten – nie für Änderungen)
+const PARENT_COOKIE = "gothea_parent";
+
+function setParentCookie(token, expiresAt) {
+  const maxAge = expiresAt ? Math.max(0, expiresAt - Math.floor(Date.now() / 1000)) : 3600;
+  document.cookie = `${PARENT_COOKIE}=${encodeURIComponent(token)}; Max-Age=${maxAge}; Path=/; SameSite=Strict`;
+}
+
 function setParentToken(token, expiresAt) {
   if (token) {
     sessionStorage.setItem(PARENT_TOKEN_STORAGE_KEY, token);
     if (expiresAt) {
       sessionStorage.setItem(PARENT_EXPIRES_STORAGE_KEY, String(expiresAt));
     }
+    setParentCookie(token, expiresAt);
   } else {
     clearParentToken();
   }
@@ -33,7 +43,15 @@ function setParentToken(token, expiresAt) {
 function clearParentToken() {
   sessionStorage.removeItem(PARENT_TOKEN_STORAGE_KEY);
   sessionStorage.removeItem(PARENT_EXPIRES_STORAGE_KEY);
+  document.cookie = `${PARENT_COOKIE}=; Max-Age=0; Path=/; SameSite=Strict`;
 }
+
+// Cookie gilt für alle Tabs, das Token nur für diesen: ein neuer Tab startet im Thea-Modus, also auch ohne Cookie
+(() => {
+  const token = getParentToken();
+  if (token) setParentCookie(token, parseInt(sessionStorage.getItem(PARENT_EXPIRES_STORAGE_KEY) || "0", 10));
+  else clearParentToken();
+})();
 
 // ============================================================================
 // Anfragen
