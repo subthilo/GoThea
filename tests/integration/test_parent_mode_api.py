@@ -50,6 +50,9 @@ def test_thea_mode_blocks_destructive_actions(strict_client):
         ("post", "/api/v1/timetable/reset"),
         ("delete", "/api/v1/timetable/slot/s1"),
         ("patch", "/api/v1/profile"),
+        ("post", "/api/v1/materials/pre-analyze"),
+        ("post", "/api/v1/materials/confirm"),
+        ("post", "/api/v1/inbox/process"),
     ]
     for method, url in blocked:
         kwargs = {"json": {}} if method in ("post", "put", "patch") else {}

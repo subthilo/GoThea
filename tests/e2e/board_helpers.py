@@ -63,10 +63,15 @@ def upload_document(page, title, subject_id, pages=2, kind="Mitschrift"):
     buf = io.BytesIO()
     writer.write(buf)
     base = page.url
-    pre = page.request.post(urljoin(base, "/api/v1/materials/pre-analyze"), multipart={
+    # Hochladen nur im Eltern-Modus: Token direkt holen, die Seite selbst bleibt im Thea-Modus
+    from tests.e2e.conftest import PARENT_PIN
+    unlock = page.request.post(urljoin(base, "/api/v1/auth/parent/unlock"), data={"pin": PARENT_PIN})
+    assert unlock.ok
+    headers = {"X-Parent-Token": unlock.json()["token"]}
+    pre = page.request.post(urljoin(base, "/api/v1/materials/pre-analyze"), headers=headers, multipart={
         "file": {"name": "mitschrift.pdf", "mimeType": "application/pdf", "buffer": buf.getvalue()}})
     assert pre.ok
-    conf = page.request.post(urljoin(base, "/api/v1/materials/confirm"), data={
+    conf = page.request.post(urljoin(base, "/api/v1/materials/confirm"), headers=headers, data={
         "upload_token": pre.json()["upload_token"], "subject_id": subject_id, "title": title, "kind": kind})
     assert conf.ok
     return conf.json()["id"]

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from backend.app.database import get_db
 from backend.app.schemas.inbox import InboxStatusResponse, InboxProcessResult
 from backend.app.services.inbox_service import get_inbox_status, process_all_inbox_files
+from backend.app.services.parent_auth import require_parent
 
 router = APIRouter(prefix="/api/v1/inbox", tags=["Inbox / Dropzone"])
 
@@ -14,9 +15,10 @@ def get_status():
     """
     return get_inbox_status()
 
-@router.post("/process", response_model=InboxProcessResult)
+@router.post("/process", response_model=InboxProcessResult, dependencies=[Depends(require_parent)])
 def process_inbox(db: Session = Depends(get_db)):
     """
+    Nur Eltern-Modus: die Eltern bestimmen, was in Theas Unterlagen landet (und jede Datei kostet KI-Tokens).
     Startet die automatische Verstoffwechselung aller Dateien im Inbox-Ordner.
     Erfolgreich verarbeitete Dateien werden in den regulären Materialspeicher
     verschoben und verschwinden aus dem Inbox-Ordner.

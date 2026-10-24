@@ -36,3 +36,19 @@ def test_api_helper_sends_parent_token_only_in_parent_mode(app_page, parent_pin)
     app_page.wait_for_function("document.body.classList.contains('parent-mode-active')", timeout=5000)
     assert app_page.evaluate(status_js) is True
     assert app_page.problems.errors == []
+
+
+def test_upload_and_inbox_only_in_parent_mode(app_page, parent_pin):
+    # Thea sieht im Tab nur die Dokumente; Hochladen und Einsortieren sind Sache der Eltern
+    app_page.click('.nav-tab[data-tab="uploads"]')
+    app_page.wait_for_load_state("networkidle")
+    assert app_page.locator("#tab-uploads").is_visible()
+    assert not app_page.locator("#page-upload-dropzone").is_visible()
+    assert not app_page.locator("#inbox-card").is_visible()
+    app_page.click("#btn-parent-toggle")
+    app_page.fill("#input-parent-pin", parent_pin)
+    app_page.click("#btn-submit-parent-pin")
+    app_page.wait_for_function("document.body.classList.contains('parent-mode-active')", timeout=5000)
+    assert app_page.locator("#page-upload-dropzone").is_visible()
+    assert app_page.locator("#inbox-card").is_visible()
+    assert app_page.problems.errors == []

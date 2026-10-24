@@ -61,7 +61,9 @@ def _to_material_read(mat: Material, db: Session) -> MaterialRead:
         teacher_graded=mat.teacher_graded,
     )
 
-@router.post("/pre-analyze", response_model=PreAnalysisResponse, status_code=status.HTTP_200_OK)
+# Upload nur im Eltern-Modus: die Eltern bestimmen, was in Theas Unterlagen landet (Voranalyse kostet KI-Tokens)
+@router.post("/pre-analyze", response_model=PreAnalysisResponse, status_code=status.HTTP_200_OK,
+             dependencies=[Depends(require_parent)])
 async def pre_analyze_material(
     file: UploadFile = File(...),
     subject_id: Optional[str] = Form(None),
@@ -91,7 +93,8 @@ async def pre_analyze_material(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler bei der Vorabanalyse: {str(e)}")
 
-@router.post("/confirm", response_model=MaterialRead, status_code=status.HTTP_201_CREATED)
+@router.post("/confirm", response_model=MaterialRead, status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(require_parent)])
 def confirm_material(
     request: MaterialConfirmRequest,
     db: Session = Depends(get_db)
