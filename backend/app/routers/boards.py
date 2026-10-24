@@ -75,9 +75,12 @@ def create_board(payload: BoardCreate, db: Session = Depends(get_db), parent: bo
     if subject is None:
         raise HTTPException(status_code=404, detail=f"Fach '{payload.subject_id}' existiert nicht.")
     # Entwürfe probieren die Eltern auch auf der Tafel aus (wie im Tab „Üben“)
-    if payload.practice_exercise_id and practice_exercises.get_exercise(payload.practice_exercise_id,
-                                                                          include_drafts=parent) is None:
-        raise HTTPException(status_code=404, detail=f"Übung '{payload.practice_exercise_id}' nicht gefunden.")
+    if payload.practice_exercise_id:
+        ex = practice_exercises.get_exercise(payload.practice_exercise_id, include_drafts=parent)
+        if ex is None:
+            raise HTTPException(status_code=404, detail=f"Übung '{payload.practice_exercise_id}' nicht gefunden.")
+        if payload.practice_stage is not None and payload.practice_stage not in ex["tafel_stufen"]:
+            raise HTTPException(status_code=422, detail=f"Stufe {payload.practice_stage} läuft nicht auf der Tafel.")
     return _detail(svc.create_board(db, subject, title=payload.title,
                                     practice_exercise_id=payload.practice_exercise_id,
                                     practice_stage=payload.practice_stage))

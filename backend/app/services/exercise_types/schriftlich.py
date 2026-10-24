@@ -11,9 +11,9 @@ Teilen durch eine Kommazahl: zuerst bei beiden Zahlen das Komma verschieben.
 Stufen (von voller Hilfe bis selbstständig): -2 Zuschauen (die Rechnung baut sich Schritt für Schritt mit Regelsatz
 auf), -1 Antippen (bei jedem Schritt eine Frage mit drei Antworten), 1 Ergebnis eintragen (alles andere steht),
 2 Zwischenzeilen, Überträge und Ergebnis eintragen, 3 Aufgabe selbst stellengerecht aufschreiben und rechnen,
-4 Fehler finden (fertige Rechnung mit einem typischen Fehler). Eingabe mit den Zahlentasten, Prüfung im Browser
-(js/practice_schriftlich.js). Die letzte Stufe – komplett handschriftlich auf der Tafel, Luna liest, der Code
-rechnet (Nutzer, 24.10.) – kommt, sobald Lunas Lesegenauigkeit für schriftliche Rechnungen gemessen ist.
+4 Fehler finden (fertige Rechnung mit einem typischen Fehler) – Eingabe mit den Zahlentasten, Prüfung im Browser
+(js/practice_schriftlich.js); 5 komplett handschriftlich auf einem Kästchenblatt der Tafel, Luna liest, der Code
+rechnet (Nutzer, 24.10.; services/practice_check_schriftlich.py). Lunas Lesegenauigkeit dafür ist noch ungemessen.
 
 Schreibregeln der Eltern (25.10.): Ziffern stehen immer in einem Kästchen, ein Komma verschiebt keine Ziffer – es
 sitzt auf der senkrechten Rasterlinie rechts neben der Einerziffer, unten an der waagerechten Linie. Der Strich
@@ -34,8 +34,8 @@ from typing import Dict, List, Optional, Tuple
 from backend.app.services.exercise_types.common import shuffled
 
 TYP = "schriftlich"
-STAGES = [-2, -1, 1, 2, 3, 4]
-BOARD_STAGES: List[int] = []
+STAGES = [-2, -1, 1, 2, 3, 4, 5]
+BOARD_STAGES = [5]  # alles frei mit dem Stift auf einem Kästchenblatt, Luna liest (practice_check_schriftlich.py)
 
 SIGNS = {"addition": "+", "subtraktion": "−", "multiplikation": "·", "division": ":"}
 MAX_DECIMALS = 6   # Division: höchstens so viele Nachkommastellen, dann muss sie aufgehen

@@ -443,6 +443,72 @@
     else if (e.key === "Backspace") typeKey("back");
   });
 
+  // ---------- Stufe 5 auf der Tafel: Kästchenblatt, alles frei mit dem Stift ----------
+  // Feste Breite wie die anderen Übungsblätter (PRACTICE_SHEET_WIDTH), Kästchen 48 px wie im Tab; deckend, damit
+  // das kleinere Tafel-Gitter nicht durchscheint. Oben die Aufgabe, darunter leere Kästchen. Mit solution schreibt
+  // Luna die ganze Rechnung nach den Schreibregeln hinein (Komma auf der Linie, Übertrag klein im Kästchen).
+  const SHEET_CELL = 48;
+
+  function renderFreeSheet(ex, stage, { light = false, solution = false } = {}) {
+    const W = PRACTICE_SHEET_WIDTH, dpr = 2, cell = SHEET_CELL;
+    const font = '-apple-system, "Helvetica Neue", Arial, sans-serif';
+    const ink = light ? "#1b2130" : "#e8eaf2";
+    const rule = light ? "rgba(27, 33, 48, 0.22)" : "rgba(232, 234, 242, 0.2)";
+    const luna = light ? "#b45309" : "#f2b84b";
+    const top = cell * 2;  // zwei Kästchen hoch für die Aufgabe
+    const rows = Math.max(16, ex.gitter.zeilen + 6);
+    const height = top + rows * cell;
+    const canvas = document.createElement("canvas");
+    canvas.width = W * dpr;
+    canvas.height = height * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = light ? "#ffffff" : "#12151c";
+    ctx.fillRect(0, 0, W, height);
+    ctx.fillStyle = ink;
+    ctx.font = `400 22px ${font}`;
+    ctx.fillText(ex.aufgabentext, 24, 40, W - 48);
+    ctx.strokeStyle = rule;
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= W; x += cell) { ctx.beginPath(); ctx.moveTo(x + 0.5, top); ctx.lineTo(x + 0.5, height); ctx.stroke(); }
+    for (let y = top; y <= height; y += cell) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke(); }
+    if (solution) {
+      const x0 = cell, y0 = top + cell;  // ein Kästchen Rand
+      ctx.fillStyle = luna;
+      ctx.strokeStyle = luna;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ex.gitter.zellen.forEach((c) => {
+        const x = x0 + c.c * cell, y = y0 + c.r * cell;
+        if (c.platz === "ziffer") {
+          ctx.font = `italic 600 ${Math.round(cell * 0.58)}px ${font}`;
+          ctx.fillText(c.z, x + cell / 2, y + cell / 2);
+        } else if (c.platz === "uebertrag") {
+          ctx.font = `italic 600 ${Math.round(cell * 0.3)}px ${font}`;
+          ctx.fillText(c.z, x + cell * 0.8, y + cell * 0.78);
+        } else {  // Komma auf der senkrechten Linie, unten
+          ctx.lineWidth = 4;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(x + cell + 2, y + cell - 13);
+          ctx.lineTo(x + cell - 2, y + cell - 2);
+          ctx.stroke();
+        }
+      });
+      ctx.lineWidth = 2;
+      Object.entries(ex.gitter.zeilen_info).forEach(([r, info]) => {
+        if (!info.strich) return;
+        const cs = ex.gitter.zellen.filter((c) => (c.r === Number(r) || c.r === Number(r) + 1) && c.platz === "ziffer").map((c) => c.c);
+        const y = y0 + (Number(r) + 1) * cell;
+        ctx.beginPath();
+        ctx.moveTo(x0 + Math.min(...cs) * cell, y);
+        ctx.lineTo(x0 + (Math.max(...cs) + 1) * cell, y);
+        ctx.stroke();
+      });
+    }
+    return canvas.toDataURL("image/png");
+  }
+
   // ---------- Anmeldung beim Kern ----------
 
   registerPracticeType("schriftlich", {
@@ -453,7 +519,10 @@
       2: { title: "Zwischenschritte und Ergebnis eintragen" },
       3: { title: "Aufgabe selbst aufschreiben und rechnen" },
       4: { title: "Fehler finden und verbessern", name: "Fehler finden", icon: "Suche" },
+      5: { title: "Tafel: alles selbst schreiben" },
     },
+    // Tafel-Stufe: Kästchen fester Größe, das Blatt scrollt, zoomt aber nicht (Schreibregeln der Eltern)
+    sheet: { render: renderFreeSheet, noZoom: true },
     open(ex, stage, coreApi) {
       core = coreApi;
       run = { ex, stage, attempt: startPracticeAttempt(ex.id, stage), step: 0, answered: stage === -2,

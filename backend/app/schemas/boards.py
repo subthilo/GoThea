@@ -8,7 +8,7 @@ class BoardCreate(BaseModel):
     subject_id: str
     # Übungstafel: Übung und Gerüst-Stufe (1–4), dazu ein fester Name
     practice_exercise_id: Optional[str] = None
-    practice_stage: Optional[int] = Field(default=None, ge=1, le=4)
+    practice_stage: Optional[int] = Field(default=None, ge=1)  # eine Tafel-Stufe der Übung (Router prüft)
     title: Optional[str] = Field(default=None, min_length=1, max_length=60)
 
 

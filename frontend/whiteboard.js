@@ -1052,6 +1052,7 @@
   // erscheint das Blatt wieder. Gespeichert werden wie immer nur Theas Striche.
   function showPracticeSheet() {
     if (!practiceContext) return;
+    surface.zoomEnabled = !practiceContext.sheet.noZoom;  // Kästchen fester Größe: nur verschieben
     const light = viewport.classList.contains("pattern-white");
     docUnderlayImg.classList.add("practice-sheet");
     docUnderlayImg.src = practiceContext.sheet.render(practiceContext.ex, practiceContext.stage,
@@ -1069,6 +1070,7 @@
   function hidePracticeSheet() {
     const shown = practiceContext !== null || docUnderlayImg.classList.contains("practice-sheet");
     practiceContext = null;
+    surface.zoomEnabled = true;
     hidePracticeDone();
     if (btnPracticeSolution) btnPracticeSolution.style.display = "none";
     if (!shown) return;

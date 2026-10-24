@@ -160,3 +160,38 @@ def test_page_stays_put_and_the_sheet_scrolls(app_page):
                 assert fit["cell"] == 48 and fit["touch"] == "pan-x pan-y" and fit["overflow"] == "auto", fit
                 app_page.click('[data-action="back"]')
     assert app_page.problems.errors == []
+
+
+def test_free_stage_on_the_board_is_a_squared_sheet_that_does_not_zoom(app_page):
+    # Mathe gibt es im Seeder; die Tafel braucht das Fach der Übung
+    open_sr(app_page, "sr-mul-243-12", 4)
+    with app_page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
+        app_page.click('.px-stage[data-stage="5"]')
+    board = created.value.json()
+    try:
+        assert created.value.status == 201 and board["practice_stage"] == 5, board
+        app_page.wait_for_selector("#wb-doc-underlay-img.practice-sheet", state="visible")
+        size = app_page.evaluate("(() => { const i = document.getElementById('wb-doc-underlay-img'); return [i.naturalWidth, i.naturalHeight]; })()")
+        assert size[0] == 1560 and size[1] >= 2 * (96 + 16 * 48)
+        # Zusammenziehen (hier: Trackpad mit Strg, derselbe Weg wie zwei Finger) zoomt sonst die Tafel – hier nicht
+        zoom = """() => { const vp = document.getElementById('wb-viewport'); const r = vp.getBoundingClientRect();
+          vp.dispatchEvent(new WheelEvent('wheel', { deltaY: -400, ctrlKey: true, clientX: r.left + 300,
+                                                     clientY: r.top + 300, bubbles: true, cancelable: true }));
+          return vp.style.backgroundSize; }"""
+        assert app_page.evaluate(zoom) in ("", "24px 24px")
+    finally:
+        if created.value.status == 201:  # sonst öffnen spätere Tests diese Tafel als letzte
+            app_page.evaluate(f"apiFetch('/api/v1/boards/{board['id']}', {{ method: 'DELETE' }})")
+    assert app_page.problems.errors == []
+
+
+def test_other_boards_still_zoom(app_page):
+    from tests.e2e.board_helpers import _open_board
+    _open_board(app_page)
+    size = app_page.evaluate("""() => { const vp = document.getElementById('wb-viewport'); const r = vp.getBoundingClientRect();
+      vp.dispatchEvent(new WheelEvent('wheel', { deltaY: -400, ctrlKey: true, clientX: r.left + 300, clientY: r.top + 300,
+                                                 bubbles: true, cancelable: true }));
+      return vp.style.backgroundSize; }""")
+    assert size not in ("", "24px 24px")
+    app_page.evaluate("document.getElementById('wb-viewport').dispatchEvent(new WheelEvent('wheel', { deltaY: 4000, ctrlKey: true, bubbles: true, cancelable: true }))")
+    assert app_page.problems.errors == []

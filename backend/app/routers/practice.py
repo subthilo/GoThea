@@ -22,7 +22,8 @@ from backend.app import config
 from backend.app.database import get_db
 from backend.app.models.whiteboard import TutorSession
 from backend.app.models.practice_attempt import PracticeAttempt
-from backend.app.services import (llm, practice_attempts, practice_check, practice_check_zuordnen, practice_due,
+from backend.app.services import (llm, practice_attempts, practice_check, practice_check_schriftlich,
+                                  practice_check_zuordnen, practice_due,
                                   practice_exercises, practice_plan)
 from backend.app.services.exercise_types import zuordnen
 from backend.app.services.parent_auth import is_parent
@@ -61,7 +62,8 @@ class AttemptEvent(BaseModel):
 
 
 # Tafel-Prüfung je Übungstyp: read_board, evaluate, feedback, marks, describe_read
-BOARD_CHECKS = {"sachaufgabe": practice_check, "zuordnen": practice_check_zuordnen}
+BOARD_CHECKS = {"sachaufgabe": practice_check, "zuordnen": practice_check_zuordnen,
+                "schriftlich": practice_check_schriftlich}
 
 
 def _exercise_or_404(exercise_id: str, include_drafts: bool = False) -> dict:
