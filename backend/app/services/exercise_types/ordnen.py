@@ -7,7 +7,8 @@ Optional ``buch``: Bild des Buchausschnitts für „Im Buch“ (exercise_sets/bi
 
 Stufen: -1 Anschauen (die Plätze der Reihe nach antippen, der Schritt erscheint), 1 Ordnen mit Hilfe (erster
 Schritt, ab 5 Schritten auch der letzte, steht schon), 2 alle Schritte ordnen, 3 dazu Ablenker, die liegen
-bleiben müssen. Geprüft im Browser (js/practice_ordnen.js), keine Tafel.
+bleiben müssen, 4 Nummern mit dem Stift vor die gemischten Schritte schreiben (Ziffernerkennung im Browser,
+js/digit_pad.js – Schreib-Treppe: einzelne Zeichen). Geprüft im Browser (js/practice_ordnen.js), keine Tafel.
 """
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ from backend.app.services.exercise_types.common import shuffled
 from backend.app.services.exercise_types.zuordnen import IMAGE_URL, IMAGES_DIR
 
 TYP = "ordnen"
-STAGES = [-1, 1, 2, 3]
+STAGES = [-1, 1, 2, 3, 4]
 BOARD_STAGES: List[int] = []
 MIN_STEPS = 3
 

@@ -11,8 +11,8 @@ hier (später eigener Typ).
 ## Stufen
 
 -1 Anschauen (Plätze antippen, der Schritt erscheint) · 1 ordnen, erster Schritt (ab 5 Schritten auch der letzte)
-steht schon · 2 alle Schritte · 3 dazu Ablenker, die liegen bleiben müssen. Keine Tafel; der Browser prüft.
-„Im Buch“ zeigt den Buchausschnitt (`buch`). Geplant: Stufe 4 – Nummern mit dem Stift schreiben (Ziffernerkennung).
+steht schon · 2 alle Schritte · 3 dazu Ablenker, die liegen bleiben müssen · 4 Nummern mit dem Stift vor die gemischten Schritte schreiben (Ziffernerkennung im Browser,
+`js/digit_pad.js`; Zahlentasten als Ausweg). Keine Tafel; der Browser prüft. „Im Buch“ zeigt den Buchausschnitt (`buch`).
 
 ## Felder nach dem Kopf
 

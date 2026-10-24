@@ -7,6 +7,9 @@
 // alle; Stufe 3: dazu Ablenker, die liegen bleiben müssen. Kärtchen antippen →
 // nächster freier bzw. gewählter Platz; besetzten Platz antippen → zurück;
 // ziehen geht auch (Kärtchen auf Platz, Platz auf Platz = tauschen).
+// Stufe 4: die Schritte stehen gemischt untereinander, Thea schreibt die Nummern
+// mit dem Stift ins Schreibfeld (js/digit_pad.js) oder tippt sie; danach geht es
+// zum nächsten leeren Kästchen.
 // Kreislauf (kreis): der Anfang ist egal, nur die Folge zählt.
 // Jederzeit „Im Buch“: der Buchausschnitt (zählt als Nachschlagen).
 // ==========================================================================
@@ -100,6 +103,7 @@
 
   // Feste Seite in Bildschirmhöhe, quer und hoch ohne Scrollen (Plätze und Kärtchen scrollen notfalls in sich)
   function render() {
+    if (run.stage === 4) return renderNumbers();
     core.setZen(true);
     runView.innerHTML = `
       ${core.topbarHtml(run.ex, run.stage)}
@@ -112,6 +116,125 @@
           <div class="px-actions zo-actions">${actionsHtml()}</div>
         </div>
       </div>`;
+  }
+
+  // ---------- Stufe 4: Nummern schreiben ----------
+  // run.numbers: Schritt → geschriebene Nummer; run.reads: Schritt → gelesene Striche (für Theas Schrift-Muster)
+
+  const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "⌫"];
+  let pad = null;
+
+  function numbersPad() {
+    if (!pad) {
+      pad = createDigitPad({
+        beforeRead: () => (run && run.stage === 4 && run.active !== null && !done() ? { run, card: run.active } : null),
+        onRead: (result, target) => {
+          if (run !== target.run || run.active !== target.card) return;  // inzwischen weiter
+          setNumber(target.card, result.text);
+          run.reads[target.card] = { text: result.text, chars: result.chars };
+          run.unreadable = result.unsure;
+          pad.clear();
+          if (!result.unsure) moveToNextEmpty();
+          render();
+        },
+      });
+    }
+    return pad;
+  }
+
+  function setNumber(card, value) {
+    run.numbers[card] = value;
+    run.checked = false;
+  }
+
+  function moveToNextEmpty() {
+    const cards = run.ex.karten;
+    const from = cards.indexOf(run.active);
+    const next = [...cards.slice(from + 1), ...cards.slice(0, from + 1)].find((c) => !run.numbers[c]);
+    run.active = next === undefined ? null : next;
+  }
+
+  // Aus den Nummern die Plätze: Nummer k → Platz k-1; doppelte oder unpassende Nummern bleiben ohne Platz
+  function slotsFromNumbers() {
+    const n = steps().length;
+    const slots = Array(n).fill(null);
+    run.ex.karten.forEach((c) => {
+      const k = Number(run.numbers[c]);
+      if (Number.isInteger(k) && k >= 1 && k <= n && !slots[k - 1]) slots[k - 1] = c;
+    });
+    return slots;
+  }
+
+  function cardRight(card) {
+    const i = run.slots.indexOf(card);
+    return i >= 0 && isRight(i);
+  }
+
+  function numbersLuna() {
+    if (run.unreadable) return say("Die Zahl konnte ich nicht lesen. Schreib sie noch mal oder tipp sie ein.");
+    if (!run.checked) return run.fails || Object.keys(run.numbers).length ? "" : say("Schreib vor jeden Schritt seine Nummer.");
+    if (allRight()) return say(run.fails ? "Geschafft! Die Reihenfolge stimmt." : "Richtig! Die Reihenfolge stimmt.");
+    const wrong = run.ex.karten.filter((c) => !cardRight(c)).length;
+    let h = say(wrong === 1 ? "Fast! Eine Nummer stimmt noch nicht." : `${wrong} Nummern stimmen noch nicht.`);
+    if (run.fails >= 1 && run.ex.hilfen && run.ex.hilfen.denkanstoss) h += say(run.ex.hilfen.denkanstoss);
+    return h;
+  }
+
+  function renderNumbers() {
+    core.setZen(true);
+    const filled = run.ex.karten.every((c) => run.numbers[c]);
+    const show = run.fails >= 2 && !done()
+      ? `<button type="button" class="px-check secondary" data-action="or-show" title="Lösung zeigen" aria-label="Lösung zeigen">${icon("Anzeigen")}</button>` : "";
+    const book = run.ex.buch_url && run.book
+      ? `<div class="zo-book or-book"><img src="${esc(run.ex.buch_url)}" alt="Im Buch" draggable="false"></div>` : "";
+    runView.innerHTML = `
+      ${core.topbarHtml(run.ex, run.stage)}
+      <div class="or or-numbers">
+        <p class="px-task or-task">${esc(run.ex.aufgabentext)}</p>
+        ${book || `<ul class="or-slots or-number-list">${run.ex.karten.map((c) => {
+          const state = run.checked ? (cardRight(c) ? " ok" : " wrong") : "";
+          const active = run.active === c && !done() ? " active" : "";
+          return `<li class="or-row"><button type="button" class="or-num${active}${state}" data-num="${esc(c)}"
+            aria-label="Nummer für: ${esc(c)}">${esc(run.numbers[c] || "")}</button><span class="or-step-text">${esc(c)}</span></li>`;
+        }).join("")}</ul>`}
+        <div class="or-write">
+          ${done() ? "" : `<div class="gg-write-slot"></div><div class="gg-pad or-keys" role="group" aria-label="Zahlen">${NUMBER_KEYS.map((k) => k === "⌫"
+            ? `<button type="button" class="gg-key" data-key="back" title="Löschen" aria-label="Löschen">${icon("Rückgängig")}</button>`
+            : `<button type="button" class="gg-key" data-key="${k}">${k}</button>`).join("")}</div>`}
+          <div class="px-luna" aria-live="polite">${numbersLuna()}</div>
+          <div class="px-actions zo-actions">
+            ${run.ex.buch_url ? `<button type="button" class="px-check secondary${run.book ? " active" : ""}" data-action="or-book" title="${run.book ? "Zurück" : "Im Buch"}" aria-label="${run.book ? "Zurück" : "Im Buch"}">${icon(run.book ? "Pfeil links" : "Lesen")}</button>` : ""}
+            ${done() ? nextButtons() : `${show}<button type="button" class="px-check" data-action="or-check" title="Prüfen" aria-label="Prüfen"${filled ? "" : " disabled"}>${icon("Haken")}</button>`}
+          </div>
+        </div>
+      </div>`;
+    if (!done()) {
+      const p = numbersPad();
+      if (p) p.mount(runView.querySelector(".gg-write-slot"), getComputedStyle(runView).color);
+    }
+  }
+
+  function numberKey(key) {
+    if (run.active === null || done()) return;
+    const old = run.numbers[run.active] || "";
+    setNumber(run.active, key === "back" ? old.slice(0, -1) : (old + key).slice(0, 2));
+    run.unreadable = false;
+    if (key !== "back" && Number(run.numbers[run.active]) * 10 > steps().length) moveToNextEmpty();  // keine zweite Ziffer möglich
+    render();
+  }
+
+  function checkNumbers() {
+    run.slots = slotsFromNumbers();
+    run.checked = true;
+    const wrong = run.ex.karten.filter((c) => !cardRight(c));
+    if (wrong.length) run.fails += 1;
+    logPracticeEvent(run.attempt, "check", { status: wrong.length ? "noch_nicht" : "richtig",
+      gelesen: run.ex.karten.map((c) => run.numbers[c]) });
+    if (!wrong.length && pad) {
+      // Gelesene Ziffern, die unverändert richtig waren, werden Muster für Theas Schrift
+      Object.entries(run.reads).forEach(([card, r]) => { if (run.numbers[card] === r.text) pad.learn(r.chars); });
+    }
+    render();
   }
 
   // ---------- Bedienung ----------
@@ -162,6 +285,7 @@
   }
 
   function showSolution() {
+    if (run.stage === 4) run.ex.karten.forEach((c) => { run.numbers[c] = String(steps().indexOf(c) + 1); });
     run.slots = steps().slice();
     run.checked = true;
     logPracticeEvent(run.attempt, "solution", {});
@@ -173,6 +297,20 @@
     const t = e.target.closest("button");
     if (!t || t.disabled) return;
     if (dragMoved) return;
+    if (t.dataset.num !== undefined) {
+      if (done()) return;
+      run.active = t.dataset.num;
+      if (pad) pad.clear();
+      return render();
+    }
+    if (t.dataset.key !== undefined) return numberKey(t.dataset.key);
+    if (t.dataset.pad === "clear") {
+      if (pad) pad.clear();
+      if (run.active !== null) setNumber(run.active, "");
+      run.unreadable = false;
+      return render();
+    }
+    if (t.dataset.action === "or-check" && run.stage === 4) return checkNumbers();
     if (t.dataset.slot !== undefined) return tapSlot(Number(t.dataset.slot));
     if (t.dataset.card !== undefined) return tapCard(t.dataset.card);
     if (t.dataset.action === "or-check") return check();
@@ -233,6 +371,7 @@
       1: { title: "Ordnen, der Anfang steht schon" },
       2: { title: "Alle Schritte ordnen" },
       3: { title: "Ordnen, mit falschen Schritten dazwischen" },
+      4: { title: "Nummern mit dem Stift schreiben" },
     },
     open(ex, stage, coreApi) {
       core = coreApi;
@@ -240,12 +379,15 @@
       const slots = ex.schritte.map((s, i) => (fixed.has(i) ? s : null));
       const pool = stage >= 3 ? ex.karten_ablenker : stage === 1 ? ex.karten_hilfe : ex.karten;
       run = { ex, stage, attempt: startPracticeAttempt(ex.id, stage), slots, fixed, pool, active: null,
-              checked: false, fails: 0, book: false, seen: new Set(), logged: false };
+              checked: false, fails: 0, book: false, seen: new Set(), logged: false,
+              numbers: {}, reads: {}, unreadable: false };
+      if (stage === 4) run.active = ex.karten[0];
       render();
       return stage;
     },
     close() {
       run = null;
+      if (pad) pad.clear();
     },
   });
 })();
