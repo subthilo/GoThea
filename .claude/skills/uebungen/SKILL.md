@@ -54,7 +54,7 @@ Tabelle zum Abstimmen, eine Zeile je geplanter Übung:
 
 | # | Quelle (Material, S., Nr.) | Aufgabe kurz | Typ | A/B/C | Anforderung I/II/III | Bild | Warum (z. B. Theas Fehler) |
 
-- Typen und ihre Datenformate: `typen/<typ>.md` in diesem Ordner (vorhanden: `sachaufgabe`, `zuordnen`, `ordnen`, `schubladen`).
+- Typen und ihre Datenformate: `typen/<typ>.md` in diesem Ordner (vorhanden: `sachaufgabe`, `zuordnen`, `ordnen`, `schubladen`, `schriftlich`).
   Liste der Typen: `backend/app/services/exercise_types/__init__.py`.
 - Passt kein Typ: in `merkliste.md` eintragen und dem Nutzer einen neuen Typ vorschlagen – **nicht in dieser
   Session bauen**; neue Typen entstehen in einem eigenen Schritt nach `neuer-typ.md`.
