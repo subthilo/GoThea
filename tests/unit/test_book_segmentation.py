@@ -11,7 +11,8 @@ from backend.app.services.book_segmentation import (
     get_all_book_sections,
     FUNDAMENTE_MATHE_7_CHAPTERS,
     PHYSIK_PLUS_7_CHAPTERS,
-    DEUTSCHBUCH_7_CHAPTERS
+    DEUTSCHBUCH_7_CHAPTERS,
+    DEUTSCHBUCH_AH_7_CHAPTERS
 )
 
 def test_is_candidate_book():
@@ -280,7 +281,7 @@ def _make_blank_book(db_session, tmp_path, book_id, title, subject_id, pages):
 
 
 def test_known_chapter_tables_are_consistent():
-    for chapters in (PHYSIK_PLUS_7_CHAPTERS, DEUTSCHBUCH_7_CHAPTERS):
+    for chapters in (PHYSIK_PLUS_7_CHAPTERS, DEUTSCHBUCH_7_CHAPTERS, DEUTSCHBUCH_AH_7_CHAPTERS):
         prev_end = None
         for chap in chapters:
             start_pdf, end_pdf = chap["start_pdf_page"], chap["end_pdf_page"]
@@ -318,6 +319,62 @@ def test_auto_segment_deutschbuch(db_session, tmp_path):
 
     secs = get_chapter_sections(segmented[11], parent_book=book)
     assert secs[0]["title"].startswith("12.1 ")
+
+
+def test_deutsch_workbook_gets_its_own_table_not_the_textbooks(db_session, tmp_path):
+    # Der Titel enthält „Deutschbuch“ – früher bekam das Arbeitsheft deshalb die Kapitel des Schülerbuchs
+    book = _make_blank_book(db_session, tmp_path, "mat_deutsch_ah", "Deutschbuch Gymnasium Arbeitsheft 7",
+                            "sub_math", 108)
+    segmented = auto_segment_if_known(db_session, book)
+    assert [c.title for c in segmented][1:5] == ["Schreiben", "Lesen – Umgang mit Texten und Medien",
+                                                 "Grammatik", "Rechtschreibung"]
+    assert sum(c.page_count for c in segmented) == 108
+    grammatik = segmented[3]
+    assert (grammatik.start_page, grammatik.end_page, grammatik.page_count) == (34, 66, 33)
+    assert grammatik.id == "mat_deutsch_ah_ch03"
+
+    secs = get_chapter_sections(grammatik, parent_book=book)
+    konjunktiv = next(s for s in secs if s["title"] == "Verben – Konjunktiv")
+    assert (konjunktiv["book_page"], konjunktiv["relative_page"]) == (46, 13)
+
+    # Gesamtbuch: Buchseite 4 (Schreiben) ist PDF-Seite 6
+    schreiben = next(s for s in get_all_book_sections(book) if s["title"] == "Schreiben")
+    assert (schreiben["book_page"], schreiben["relative_page"]) == (4, 6)
+
+
+def test_resegmenting_moves_extracted_pages_and_notes_with_their_book_page(db_session, tmp_path):
+    from backend.app.models.annotation import PageAnnotation
+    from backend.app.models.material_page import MaterialPage
+    from backend.app.services.book_segmentation import resegment_keeping_pages, segment_book_material
+
+    # So auf Staging: das Arbeitsheft wurde nach der Tabelle des Schülerbuchs eingeteilt
+    book = _make_blank_book(db_session, tmp_path, "mat_ah", "Deutschbuch Gymnasium Arbeitsheft 7", "sub_math", 108)
+    segment_book_material(db_session, book, DEUTSCHBUCH_7_CHAPTERS)
+    # alte „Kapitel 2“ = PDF 40–57: Seite 12 = PDF 51 = Buchseite 49 („Teste dich! Konjunktiv“)
+    db_session.add(MaterialPage(material_id="mat_ah_ch02", page_number=12, content_key="alt", text="Konjunktiv-Test"))
+    db_session.add(PageAnnotation(id="ann_mat_ah_ch02_p12", material_id="mat_ah_ch02", page_number=12,
+                                  strokes_json='[{"x": 1}]'))
+    db_session.commit()
+
+    preview = resegment_keeping_pages(db_session, book, DEUTSCHBUCH_7_CHAPTERS, DEUTSCHBUCH_AH_7_CHAPTERS,
+                                      dry_run=True)
+    assert preview["notizen_ziel"] == [(51, (5, 16))]  # Grammatik (Ordnung 5), Seite 16
+    assert db_session.query(MaterialPage).filter_by(material_id="mat_ah_ch02").count() == 1  # Vorschau ändert nichts
+
+    resegment_keeping_pages(db_session, book, DEUTSCHBUCH_7_CHAPTERS, DEUTSCHBUCH_AH_7_CHAPTERS)
+    moved = db_session.query(MaterialPage).filter_by(text="Konjunktiv-Test").one()
+    assert (moved.material_id, moved.page_number) == ("mat_ah_ch03", 16)
+    assert moved.content_key != "alt"
+    note = db_session.query(PageAnnotation).one()
+    assert (note.id, note.material_id, note.page_number) == ("ann_mat_ah_ch03_p16", "mat_ah_ch03", 16)
+    assert "--- Seite 16 ---\nKonjunktiv-Test" in db_session.get(Material, "mat_ah_ch03").extracted_text
+    assert db_session.get(Material, "mat_ah_ch02").title == "Lesen – Umgang mit Texten und Medien"
+
+
+def test_workbook_without_table_is_left_to_the_ai(db_session, tmp_path):
+    book = _make_blank_book(db_session, tmp_path, "mat_physik_ah", "Physik plus 7 Arbeitsheft", "sub_math", 40)
+    assert auto_segment_if_known(db_session, book) is None
+    assert get_all_book_sections(book) == []
 
 
 def test_force_resegments_existing_chapters(db_session, tmp_path):

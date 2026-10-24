@@ -43,6 +43,7 @@ FUNDAMENTE_MATHE_7_CHAPTERS = _load_book_table("fundamente_mathe_7.json")
 FRANZ_VORKURS_SECTIONS = _load_book_table("franz_vorkurs_sections.json")
 PHYSIK_PLUS_7_CHAPTERS = _load_book_table("physik_plus_7.json")
 DEUTSCHBUCH_7_CHAPTERS = _load_book_table("deutschbuch_7.json")
+DEUTSCHBUCH_AH_7_CHAPTERS = _load_book_table("deutschbuch_ah_7.json")
 APLUS_1_CHAPTERS = _load_book_table("aplus_1.json")
 
 
@@ -428,21 +429,137 @@ def extract_chapters_with_ai(file_path: Path, total_pages: int, title_hint: str 
         return []
 
 
-def auto_segment_if_known(db: Session, book: Material, force: bool = False) -> Optional[List[Material]]:
-    """
-    Prüft, ob für das gegebene Buch eine bekannte Kapiteltabelle vorliegt
-    (z. B. Fundamente der Mathematik, À plus! 1, Physik Plus, Deutschbuch 7), und segmentiert es automatisch.
-    """
-    title_lower = (book.title or "").lower()
-    if "fundamente" in title_lower and "mathematik" in title_lower:
-        return segment_book_material(db, book, FUNDAMENTE_MATHE_7_CHAPTERS, force=force)
-    if any(k in title_lower for k in ["aplus", "a plus", "à plus"]):
-        return segment_book_material(db, book, APLUS_1_CHAPTERS, force=force)
-    if "physik" in title_lower and "plus" in title_lower:
-        return segment_book_material(db, book, PHYSIK_PLUS_7_CHAPTERS, force=force)
+def is_workbook(title: str) -> bool:
+    """Arbeitsheft? Der Titel enthält oft den des Schülerbuchs („Deutschbuch … Arbeitsheft 7“), die Tabelle des
+    Schülerbuchs passt aber nicht (Deutsch-Arbeitsheft wurde so falsch eingeteilt, behoben 24.10.2026)."""
+    return "arbeitsheft" in (title or "").lower()
+
+
+def _workbook_table(title_lower: str) -> Optional[List[Dict[str, Any]]]:
     if "deutschbuch" in title_lower:
-        return segment_book_material(db, book, DEUTSCHBUCH_7_CHAPTERS, force=force)
+        return DEUTSCHBUCH_AH_7_CHAPTERS
     return None
+
+
+def _sections_of_book(chapters: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Kapitel einer Tabelle mit ihren Abschnitten, bezogen auf die PDF-Seiten des Gesamtbuchs."""
+    all_sections: List[Dict[str, Any]] = []
+    for chap in chapters:
+        chap_start_pdf = chap.get("start_pdf_page", chap["book_start_page"])
+        all_sections.append({
+            "title": chap["title"],
+            "book_page": chap["book_start_page"],
+            "relative_page": chap_start_pdf,
+            "level": 1
+        })
+        for sec in chap.get("sections", []):
+            rel_p = sec.get("relative_page", 1)
+            all_sections.append({
+                "title": sec.get("title", ""),
+                "book_page": sec.get("book_page", chap["book_start_page"]),
+                "relative_page": chap_start_pdf + rel_p - 1,
+                "level": sec.get("level", 2)
+            })
+    return all_sections
+
+
+def known_table(title: str) -> Optional[List[Dict[str, Any]]]:
+    """Bekannte Kapiteltabelle zum Buchtitel (z. B. Fundamente der Mathematik, À plus! 1, Physik Plus,
+    Deutschbuch 7 und sein Arbeitsheft) oder None."""
+    title_lower = (title or "").lower()
+    if is_workbook(title_lower):
+        # Arbeitshefte haben eigene Seiten und Kapitel, nie die Tabelle des Schülerbuchs
+        return _workbook_table(title_lower)
+    if "fundamente" in title_lower and "mathematik" in title_lower:
+        return FUNDAMENTE_MATHE_7_CHAPTERS
+    if any(k in title_lower for k in ["aplus", "a plus", "à plus"]):
+        return APLUS_1_CHAPTERS
+    if "physik" in title_lower and "plus" in title_lower:
+        return PHYSIK_PLUS_7_CHAPTERS
+    if "deutschbuch" in title_lower:
+        return DEUTSCHBUCH_7_CHAPTERS
+    return None
+
+
+def auto_segment_if_known(db: Session, book: Material, force: bool = False) -> Optional[List[Material]]:
+    """Segmentiert das Buch nach seiner bekannten Kapiteltabelle (known_table), sonst None."""
+    table = known_table(book.title)
+    return segment_book_material(db, book, table, force=force) if table else None
+
+
+def _pdf_start_by_order(chapters_spec: List[Dict[str, Any]]) -> Dict[int, int]:
+    """dossier_order eines Kapitels (unit_number + 2) → erste PDF-Seite im Gesamtbuch."""
+    return {spec.get("unit_number", idx) + 2: max(1, spec.get("start_pdf_page", spec.get("book_start_page", 1)))
+            for idx, spec in enumerate(chapters_spec)}
+
+
+def resegment_keeping_pages(db: Session, book: Material, old_spec: List[Dict[str, Any]],
+                            new_spec: List[Dict[str, Any]], dry_run: bool = False) -> Dict[str, Any]:
+    """Teilt ein Buch neu ein und nimmt erschlossene Seiten und Notizen mit.
+
+    Beides gehört zu einer festen PDF-Seite des Gesamtbuchs: alte Kapitelseite → (alte Tabelle) Buch-PDF-Seite
+    → (neue Tabelle) neue Kapitelseite. Eine bloße Neueinteilung ließe sie an den alten Kapitel-IDs hängen,
+    obwohl dort dann andere Seiten liegen (die Erschließung prüft nur, ob es eine Zeile gibt). Seiten, die
+    vorher in keinem Kapitel lagen, erschließt danach der Hintergrund-Worker.
+    """
+    from backend.app.models.annotation import PageAnnotation
+    from backend.app.models.material_page import MaterialPage
+    from backend.app.services.page_extraction import content_key, refresh_material_text
+
+    old_start = _pdf_start_by_order(old_spec)
+    chapters = db.query(Material).filter_by(parent_id=book.id).all()
+    unknown = [c.id for c in chapters if c.dossier_order not in old_start]
+    if unknown:
+        raise ValueError(f"Kapitel ohne Eintrag in der alten Tabelle: {', '.join(unknown)}")
+    absolute = {c.id: old_start[c.dossier_order] - 1 for c in chapters}  # + Seite im Kapitel = Buch-PDF-Seite
+
+    page_fields = ("text", "tasks_json", "has_handwriting", "has_teacher_marks", "is_solution_page", "legibility",
+                   "model", "extracted_at")
+    pages = [({f: getattr(r, f) for f in page_fields}, absolute[r.material_id] + r.page_number, r)
+             for r in db.query(MaterialPage).filter(MaterialPage.material_id.in_(absolute))]
+    notes = [({f: getattr(r, f) for f in ("user_id", "strokes_json", "created_at", "updated_at")},
+              absolute[r.material_id] + r.page_number, r)
+             for r in db.query(PageAnnotation).filter(PageAnnotation.material_id.in_(absolute))]
+
+    new_start = _pdf_start_by_order(new_spec)
+    ranges = []  # (dossier_order, erste, letzte Buch-PDF-Seite)
+    for idx, spec in enumerate(new_spec):
+        order = spec.get("unit_number", idx) + 2
+        end = min(book.page_count or 1, spec.get("end_pdf_page", spec.get("book_end_page", book.page_count or 1)))
+        ranges.append((order, new_start[order], end))
+
+    def target(abs_page: int):
+        return next(((order, abs_page - start + 1) for order, start, end in ranges if start <= abs_page <= end), None)
+
+    report = {
+        "seiten": len(pages), "notizen": len(notes),
+        "notizen_ziel": [(abs_page, target(abs_page)) for _, abs_page, _ in notes],
+        "ohne_ziel": sorted({abs_page for _, abs_page, _ in pages + notes if target(abs_page) is None}),
+    }
+    if dry_run:
+        return report
+    if report["ohne_ziel"]:
+        raise ValueError(f"Buch-PDF-Seiten ohne neues Kapitel: {report['ohne_ziel']}")
+
+    for _, _, row in pages + notes:
+        db.delete(row)
+    db.flush()
+    new_chapters = {c.dossier_order: c for c in segment_book_material(db, book, new_spec, force=True)}
+    for data, abs_page, _ in pages:
+        order, page = target(abs_page)
+        chap = new_chapters[order]
+        db.add(MaterialPage(material_id=chap.id, page_number=page,
+                            content_key=content_key(Path(chap.file_path), page), **data))
+    for data, abs_page, _ in notes:
+        order, page = target(abs_page)
+        db.add(PageAnnotation(id=f"ann_{new_chapters[order].id}_p{page}", material_id=new_chapters[order].id,
+                              page_number=page, **data))
+    db.flush()
+    for chap in new_chapters.values():
+        refresh_material_text(db, chap)
+    db.commit()
+    report["kapitel"] = [(c.title, c.page_count) for c in sorted(new_chapters.values(), key=lambda c: c.dossier_order)]
+    return report
 
 
 def auto_detect_and_segment_book(db: Session, book: Material, force: bool = False) -> Optional[List[Material]]:
@@ -556,6 +673,11 @@ def get_chapter_sections(material: Material, parent_book: Optional[Material] = N
 
     # Fallback-Ermittlung anhand Titel oder Kapitelnummer
     title_search = f"{(parent_book.title if parent_book else '')} {material.title or ''} {material.filename or ''}".lower()
+    if is_workbook(title_search):
+        for chap in _workbook_table(title_search) or []:
+            if material.dossier_order is not None and material.dossier_order == chap["unit_number"] + 2:
+                return chap.get("sections", [])
+        return []
 
     if "fundamente" in title_search or "mathematik 7" in title_search or "mathe7" in title_search or "lehrbuch" in title_search:
         # Finde unit_number aus material.title oder dossier_order oder id
@@ -604,6 +726,9 @@ def get_all_book_sections(book: Material) -> List[Dict[str, Any]]:
     title_lower = f"{(book.title or '')} {(book.filename or '')}".lower()
     all_sections: List[Dict[str, Any]] = []
 
+    if is_workbook(title_lower):
+        return _sections_of_book(_workbook_table(title_lower) or [])
+
     if "fundamente" in title_lower or "mathematik" in title_lower or "mathe7" in title_lower:
         for chap in FUNDAMENTE_MATHE_7_CHAPTERS:
             chap_title = chap.get("title", "")
@@ -631,42 +756,10 @@ def get_all_book_sections(book: Material) -> List[Dict[str, Any]]:
         return FRANZ_VORKURS_SECTIONS
 
     if "physik" in title_lower:
-        for p_chap in PHYSIK_PLUS_7_CHAPTERS:
-            chap_start_pdf = p_chap.get("start_pdf_page", p_chap["book_start_page"])
-            all_sections.append({
-                "title": p_chap["title"],
-                "book_page": p_chap["book_start_page"],
-                "relative_page": chap_start_pdf,
-                "level": 1
-            })
-            for sec in p_chap.get("sections", []):
-                rel_p = sec.get("relative_page", 1)
-                all_sections.append({
-                    "title": sec.get("title", ""),
-                    "book_page": sec.get("book_page", p_chap["book_start_page"]),
-                    "relative_page": chap_start_pdf + rel_p - 1,
-                    "level": sec.get("level", 2)
-                })
-        return all_sections
+        return _sections_of_book(PHYSIK_PLUS_7_CHAPTERS)
 
     if "deutschbuch" in title_lower:
-        for d_chap in DEUTSCHBUCH_7_CHAPTERS:
-            chap_start_pdf = d_chap.get("start_pdf_page", d_chap["book_start_page"])
-            all_sections.append({
-                "title": d_chap["title"],
-                "book_page": d_chap["book_start_page"],
-                "relative_page": chap_start_pdf,
-                "level": 1
-            })
-            for sec in d_chap.get("sections", []):
-                rel_p = sec.get("relative_page", 1)
-                all_sections.append({
-                    "title": sec.get("title", ""),
-                    "book_page": sec.get("book_page", d_chap["book_start_page"]),
-                    "relative_page": chap_start_pdf + rel_p - 1,
-                    "level": sec.get("level", 2)
-                })
-        return all_sections
+        return _sections_of_book(DEUTSCHBUCH_7_CHAPTERS)
 
     return []
 

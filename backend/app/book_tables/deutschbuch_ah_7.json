@@ -1,0 +1,657 @@
+[
+ {
+  "unit_number": 0,
+  "title": "Grammatische Grundbegriffe & Inhaltsverzeichnis",
+  "start_pdf_page": 1,
+  "end_pdf_page": 5,
+  "book_start_page": 1,
+  "book_end_page": 5,
+  "kind": "Buchauszug",
+  "topic_name": "Orientierungswissen & Nachschlagen",
+  "focus": "Umschlag, Tabelle der grammatischen Fachbegriffe mit Beispielen, Titel und Inhaltsverzeichnis.",
+  "sections": [
+   {
+    "title": "Grammatische Grundbegriffe",
+    "book_page": 2,
+    "relative_page": 2,
+    "level": 2
+   },
+   {
+    "title": "Inhaltsverzeichnis",
+    "book_page": 4,
+    "relative_page": 4,
+    "level": 2
+   }
+  ]
+ },
+ {
+  "unit_number": 1,
+  "title": "Schreiben",
+  "start_pdf_page": 6,
+  "end_pdf_page": 23,
+  "book_start_page": 4,
+  "book_end_page": 21,
+  "kind": "Buchauszug",
+  "topic_name": "Sprechen – Zuhören – Schreiben",
+  "focus": "Materialgestützt informieren und argumentieren, Personen und Bilder beschreiben, schildern.",
+  "sections": [
+   {
+    "title": "Materialgestützt informieren",
+    "book_page": 4,
+    "relative_page": 1,
+    "level": 2
+   },
+   {
+    "title": "Einen Informationstext untersuchen",
+    "book_page": 4,
+    "relative_page": 1,
+    "level": 3
+   },
+   {
+    "title": "Einen Informationstext verfassen",
+    "book_page": 6,
+    "relative_page": 3,
+    "level": 3
+   },
+   {
+    "title": "Argumentieren",
+    "book_page": 10,
+    "relative_page": 7,
+    "level": 2
+   },
+   {
+    "title": "Eine Argumentation untersuchen",
+    "book_page": 10,
+    "relative_page": 7,
+    "level": 3
+   },
+   {
+    "title": "Materialgestützt argumentieren",
+    "book_page": 12,
+    "relative_page": 9,
+    "level": 3
+   },
+   {
+    "title": "Beschreiben und erklären",
+    "book_page": 15,
+    "relative_page": 12,
+    "level": 2
+   },
+   {
+    "title": "Eine Personenbeschreibung untersuchen",
+    "book_page": 15,
+    "relative_page": 12,
+    "level": 3
+   },
+   {
+    "title": "Eine Person beschreiben",
+    "book_page": 16,
+    "relative_page": 13,
+    "level": 3
+   },
+   {
+    "title": "Ein Bild beschreiben",
+    "book_page": 18,
+    "relative_page": 15,
+    "level": 3
+   },
+   {
+    "title": "Schildern",
+    "book_page": 20,
+    "relative_page": 17,
+    "level": 2
+   },
+   {
+    "title": "Einen schildernden Text untersuchen",
+    "book_page": 20,
+    "relative_page": 17,
+    "level": 3
+   },
+   {
+    "title": "Einen schildernden Text schreiben",
+    "book_page": 21,
+    "relative_page": 18,
+    "level": 3
+   }
+  ]
+ },
+ {
+  "unit_number": 2,
+  "title": "Lesen – Umgang mit Texten und Medien",
+  "start_pdf_page": 24,
+  "end_pdf_page": 35,
+  "book_start_page": 22,
+  "book_end_page": 33,
+  "kind": "Buchauszug",
+  "topic_name": "Lesen – Umgang mit Texten und Medien",
+  "focus": "Inhaltsangabe zu einer Kalendergeschichte, Ballade vortragen, Sachtexte, Grafiken und Diagramme auswerten.",
+  "sections": [
+   {
+    "title": "Eine Inhaltsangabe zu einer Geschichte schreiben",
+    "book_page": 22,
+    "relative_page": 1,
+    "level": 2
+   },
+   {
+    "title": "Eine Kalendergeschichte verstehen",
+    "book_page": 22,
+    "relative_page": 1,
+    "level": 3
+   },
+   {
+    "title": "Eine Inhaltsangabe schreiben",
+    "book_page": 24,
+    "relative_page": 3,
+    "level": 3
+   },
+   {
+    "title": "Eine Ballade verstehen und gestaltend vortragen",
+    "book_page": 26,
+    "relative_page": 5,
+    "level": 2
+   },
+   {
+    "title": "Einen Sachtext lesen und verstehen",
+    "book_page": 28,
+    "relative_page": 7,
+    "level": 2
+   },
+   {
+    "title": "Einen Sachtext untersuchen",
+    "book_page": 28,
+    "relative_page": 7,
+    "level": 3
+   },
+   {
+    "title": "Grafiken und Diagramme auswerten",
+    "book_page": 32,
+    "relative_page": 11,
+    "level": 3
+   }
+  ]
+ },
+ {
+  "unit_number": 3,
+  "title": "Grammatik",
+  "start_pdf_page": 36,
+  "end_pdf_page": 68,
+  "book_start_page": 34,
+  "book_end_page": 66,
+  "kind": "Buchauszug",
+  "topic_name": "Nachdenken über Sprache",
+  "focus": "Wortarten, Tempora, Aktiv und Passiv, Konjunktiv, Wortbedeutungen, Satzglieder und Sätze.",
+  "sections": [
+   {
+    "title": "Was kannst du schon?",
+    "book_page": 34,
+    "relative_page": 1,
+    "level": 2
+   },
+   {
+    "title": "Wortarten wiederholen",
+    "book_page": 36,
+    "relative_page": 3,
+    "level": 2
+   },
+   {
+    "title": "Wortarten unterscheiden",
+    "book_page": 36,
+    "relative_page": 3,
+    "level": 3
+   },
+   {
+    "title": "Adverbien",
+    "book_page": 37,
+    "relative_page": 4,
+    "level": 3
+   },
+   {
+    "title": "Pronomen",
+    "book_page": 38,
+    "relative_page": 5,
+    "level": 3
+   },
+   {
+    "title": "Die Tempora (Zeitformen) der Verben",
+    "book_page": 39,
+    "relative_page": 6,
+    "level": 2
+   },
+   {
+    "title": "Das Präsens und das Futur",
+    "book_page": 39,
+    "relative_page": 6,
+    "level": 3
+   },
+   {
+    "title": "Das Perfekt",
+    "book_page": 40,
+    "relative_page": 7,
+    "level": 3
+   },
+   {
+    "title": "Das Präteritum und das Plusquamperfekt",
+    "book_page": 41,
+    "relative_page": 8,
+    "level": 3
+   },
+   {
+    "title": "Verben – Aktiv und Passiv",
+    "book_page": 42,
+    "relative_page": 9,
+    "level": 2
+   },
+   {
+    "title": "Aktiv und Passiv unterscheiden",
+    "book_page": 42,
+    "relative_page": 9,
+    "level": 3
+   },
+   {
+    "title": "Einen Vorgang mit Aktiv- und Passivsätzen beschreiben",
+    "book_page": 43,
+    "relative_page": 10,
+    "level": 3
+   },
+   {
+    "title": "Das Passiv in verschiedenen Zeitformen verwenden",
+    "book_page": 44,
+    "relative_page": 11,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Aktiv und Passiv",
+    "book_page": 45,
+    "relative_page": 12,
+    "level": 3
+   },
+   {
+    "title": "Verben – Konjunktiv",
+    "book_page": 46,
+    "relative_page": 13,
+    "level": 2
+   },
+   {
+    "title": "Mit dem Konjunktiv II Wünsche ausdrücken",
+    "book_page": 46,
+    "relative_page": 13,
+    "level": 3
+   },
+   {
+    "title": "Den Konjunktiv I in der indirekten Rede verwenden",
+    "book_page": 47,
+    "relative_page": 14,
+    "level": 3
+   },
+   {
+    "title": "Ersatzformen für den Konjunktiv I in der indirekten Rede",
+    "book_page": 48,
+    "relative_page": 15,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Konjunktiv I und Konjunktiv II",
+    "book_page": 49,
+    "relative_page": 16,
+    "level": 3
+   },
+   {
+    "title": "Wortbedeutungen untersuchen",
+    "book_page": 50,
+    "relative_page": 17,
+    "level": 2
+   },
+   {
+    "title": "Fremdwörter",
+    "book_page": 50,
+    "relative_page": 17,
+    "level": 3
+   },
+   {
+    "title": "Fachwörter",
+    "book_page": 51,
+    "relative_page": 18,
+    "level": 3
+   },
+   {
+    "title": "Satzglieder",
+    "book_page": 52,
+    "relative_page": 19,
+    "level": 2
+   },
+   {
+    "title": "Satzglieder wiederholen – Subjekt, Prädikat, Objekte",
+    "book_page": 52,
+    "relative_page": 19,
+    "level": 3
+   },
+   {
+    "title": "Satzglieder wiederholen – Adverbiale Bestimmungen",
+    "book_page": 54,
+    "relative_page": 21,
+    "level": 3
+   },
+   {
+    "title": "Attribute in Satzgliedern entdecken",
+    "book_page": 56,
+    "relative_page": 23,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Satzglieder und Satzgliedteile (Attribute)",
+    "book_page": 57,
+    "relative_page": 24,
+    "level": 3
+   },
+   {
+    "title": "Sätze unterscheiden",
+    "book_page": 58,
+    "relative_page": 25,
+    "level": 2
+   },
+   {
+    "title": "Satzreihe und Satzgefüge wiederholen",
+    "book_page": 58,
+    "relative_page": 25,
+    "level": 3
+   },
+   {
+    "title": "Nebensätze unterscheiden – Relativsätze",
+    "book_page": 60,
+    "relative_page": 27,
+    "level": 3
+   },
+   {
+    "title": "Nebensätze unterscheiden – Adverbialsätze",
+    "book_page": 61,
+    "relative_page": 28,
+    "level": 3
+   },
+   {
+    "title": "Temporalsätze – Adverbialsätze der Zeit",
+    "book_page": 64,
+    "relative_page": 31,
+    "level": 3
+   },
+   {
+    "title": "Nebensätze unterscheiden – Subjekt- und Objektsätze",
+    "book_page": 65,
+    "relative_page": 32,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Adverbialsätze",
+    "book_page": 66,
+    "relative_page": 33,
+    "level": 3
+   }
+  ]
+ },
+ {
+  "unit_number": 4,
+  "title": "Rechtschreibung",
+  "start_pdf_page": 69,
+  "end_pdf_page": 99,
+  "book_start_page": 67,
+  "book_end_page": 97,
+  "kind": "Buchauszug",
+  "topic_name": "Nachdenken über Sprache",
+  "focus": "Strategien und Regeln zum Rechtschreiben, Groß- und Kleinschreibung, Zusammen- und Getrenntschreibung, Zeichensetzung.",
+  "sections": [
+   {
+    "title": "Was kannst du schon?",
+    "book_page": 67,
+    "relative_page": 1,
+    "level": 2
+   },
+   {
+    "title": "Strategien zum Rechtschreiben",
+    "book_page": 68,
+    "relative_page": 2,
+    "level": 2
+   },
+   {
+    "title": "Schwingen – Auf die erste Silbe achten",
+    "book_page": 68,
+    "relative_page": 2,
+    "level": 3
+   },
+   {
+    "title": "Verlängern und zerlegen",
+    "book_page": 70,
+    "relative_page": 4,
+    "level": 3
+   },
+   {
+    "title": "Ableiten – Wörter mit ä und äu",
+    "book_page": 71,
+    "relative_page": 5,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Strategien zum Rechtschreiben",
+    "book_page": 72,
+    "relative_page": 6,
+    "level": 3
+   },
+   {
+    "title": "Regeln zum Rechtschreiben",
+    "book_page": 73,
+    "relative_page": 7,
+    "level": 2
+   },
+   {
+    "title": "Doppelkonsonanten",
+    "book_page": 73,
+    "relative_page": 7,
+    "level": 3
+   },
+   {
+    "title": "s-Laute",
+    "book_page": 74,
+    "relative_page": 8,
+    "level": 3
+   },
+   {
+    "title": "das oder dass?",
+    "book_page": 76,
+    "relative_page": 10,
+    "level": 3
+   },
+   {
+    "title": "Wörter mit i, ie und ih",
+    "book_page": 77,
+    "relative_page": 11,
+    "level": 3
+   },
+   {
+    "title": "Der i-Laut in Fremdwörtern",
+    "book_page": 78,
+    "relative_page": 12,
+    "level": 3
+   },
+   {
+    "title": "Wörter mit h",
+    "book_page": 79,
+    "relative_page": 13,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Regeln zum Rechtschreiben",
+    "book_page": 80,
+    "relative_page": 14,
+    "level": 3
+   },
+   {
+    "title": "Groß- und Kleinschreibung",
+    "book_page": 81,
+    "relative_page": 15,
+    "level": 2
+   },
+   {
+    "title": "Wiederholung – Nomen/Substantive erkennen",
+    "book_page": 81,
+    "relative_page": 15,
+    "level": 3
+   },
+   {
+    "title": "Nominalisierungen/Substantivierungen",
+    "book_page": 82,
+    "relative_page": 16,
+    "level": 3
+   },
+   {
+    "title": "Adjektive kleinschreiben",
+    "book_page": 83,
+    "relative_page": 17,
+    "level": 3
+   },
+   {
+    "title": "Groß- und Kleinschreibung bei Zeitangaben",
+    "book_page": 84,
+    "relative_page": 18,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Groß- und Kleinschreibung",
+    "book_page": 86,
+    "relative_page": 20,
+    "level": 3
+   },
+   {
+    "title": "Zusammen- und Getrenntschreibung",
+    "book_page": 87,
+    "relative_page": 21,
+    "level": 2
+   },
+   {
+    "title": "Getrenntschreibung – Nomen/Substantiv + Verb",
+    "book_page": 87,
+    "relative_page": 21,
+    "level": 3
+   },
+   {
+    "title": "Getrenntschreibung – Verb + Verb, Wortgruppen mit sein",
+    "book_page": 88,
+    "relative_page": 22,
+    "level": 3
+   },
+   {
+    "title": "Meist getrennt – Adjektiv + Verb",
+    "book_page": 89,
+    "relative_page": 23,
+    "level": 3
+   },
+   {
+    "title": "Meist zusammen – Präposition + Verb, Adverb + Verb",
+    "book_page": 90,
+    "relative_page": 24,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Zusammen- und Getrenntschreibung",
+    "book_page": 91,
+    "relative_page": 25,
+    "level": 3
+   },
+   {
+    "title": "Zeichensetzung",
+    "book_page": 92,
+    "relative_page": 26,
+    "level": 2
+   },
+   {
+    "title": "Das Komma in der Satzreihe",
+    "book_page": 92,
+    "relative_page": 26,
+    "level": 3
+   },
+   {
+    "title": "Das Komma im Satzgefüge",
+    "book_page": 93,
+    "relative_page": 27,
+    "level": 3
+   },
+   {
+    "title": "Das Komma bei Aufzählungen",
+    "book_page": 94,
+    "relative_page": 28,
+    "level": 3
+   },
+   {
+    "title": "Das Komma bei Erläuterungen und Appositionen",
+    "book_page": 95,
+    "relative_page": 29,
+    "level": 3
+   },
+   {
+    "title": "Zeichensetzung in der wörtlichen Rede",
+    "book_page": 96,
+    "relative_page": 30,
+    "level": 3
+   },
+   {
+    "title": "Teste dich! – Zeichensetzung",
+    "book_page": 97,
+    "relative_page": 31,
+    "level": 3
+   }
+  ]
+ },
+ {
+  "unit_number": 5,
+  "title": "Ich teste meinen Lernstand",
+  "start_pdf_page": 100,
+  "end_pdf_page": 105,
+  "book_start_page": 98,
+  "book_end_page": 103,
+  "kind": "Buchauszug",
+  "topic_name": "Orientierungswissen & Nachschlagen",
+  "focus": "Abschlusstest: Texte verstehen, Rechtschreibung, Grammatik, Informieren (Person beschreiben).",
+  "sections": [
+   {
+    "title": "A Texte verstehen",
+    "book_page": 98,
+    "relative_page": 1,
+    "level": 2
+   },
+   {
+    "title": "B Rechtschreibung",
+    "book_page": 101,
+    "relative_page": 4,
+    "level": 2
+   },
+   {
+    "title": "C Grammatik",
+    "book_page": 102,
+    "relative_page": 5,
+    "level": 2
+   },
+   {
+    "title": "D Informieren – Eine Person beschreiben",
+    "book_page": 103,
+    "relative_page": 6,
+    "level": 2
+   }
+  ]
+ },
+ {
+  "unit_number": 6,
+  "title": "Rechtschreibstrategien & Impressum",
+  "start_pdf_page": 106,
+  "end_pdf_page": 108,
+  "book_start_page": 104,
+  "book_end_page": 106,
+  "kind": "Buchauszug",
+  "topic_name": "Orientierungswissen & Nachschlagen",
+  "focus": "Autoren- und Quellenverzeichnis, Übersicht der Rechtschreibstrategien, Rückseite.",
+  "sections": [
+   {
+    "title": "Rechtschreibstrategien",
+    "book_page": 105,
+    "relative_page": 2,
+    "level": 2
+   }
+  ]
+ }
+]
