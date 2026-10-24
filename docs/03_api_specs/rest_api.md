@@ -277,9 +277,6 @@
 ### `POST /api/v1/whiteboard/sessions/{session_id}/close`
 * **Beschreibung:** Beendet die Tafelsitzung und setzt den End-Zeitstempel.
 
-### `POST /api/v1/whiteboard/sessions/{session_id}/mock-tutor-hint`
-* **Beschreibung:** Erzeugt sokratische Hinweis-Aktionen für das transparente KI-Overlay (`highlight_box`, `latex_hint`).
-
 ### `WebSocket /ws/tutor/{session_id}`
 * **Beschreibung:** Latenzarmer Echtzeit-Kanal für Apple Pencil Updates (`canvas_update`), Stift-Unterbrechungen (`user_interrupt`), Heartbeats (`ping`/`pong`) und sokratische KI-Overlay-Aktionen (`board_actions`).
 

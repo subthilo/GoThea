@@ -72,17 +72,6 @@ def test_update_session_state_and_snapshot(client):
     assert data["snapshot_data_url"] == mock_snapshot
     assert data["summary_notes"] == "Aufgabe 1 gelöst"
 
-def test_mock_tutor_hint(client):
-    res = client.post("/api/v1/whiteboard/sessions", json={"subject_id": "sub_math"})
-    session_id = res.json()["id"]
-
-    hint_res = client.post(f"/api/v1/whiteboard/sessions/{session_id}/mock-tutor-hint")
-    assert hint_res.status_code == 200
-    data = hint_res.json()
-    assert data["status"] == "success"
-    assert len(data["actions"]) >= 1
-    assert data["actions"][0]["action"] == "highlight_box"
-
 def test_old_session_route_cannot_delete(strict_client):
     # Löschen nur über DELETE /api/v1/boards/{id} (Eltern-Modus, räumt Vorschaubild und Verlauf mit auf)
     res = strict_client.post("/api/v1/whiteboard/sessions", json={"subject_id": "sub_physics"})
