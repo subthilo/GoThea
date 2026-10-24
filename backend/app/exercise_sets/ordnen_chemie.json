@@ -1,0 +1,87 @@
+{
+  "typ": "ordnen",
+  "version": 1,
+  "stand": "2026-10-24",
+  "hinweis": "Chemie, Kapitel 1 „Was ist Chemie?“. Erstellt in einer Claude-Code-Session; Schritte wortgleich aus dem Buch, Ablenker aus derselben Buchseite.",
+  "uebungen": [
+    {
+      "id": "ch-brenner-entzuenden",
+      "ableitung": "C",
+      "fach": "sub_chemie",
+      "thema": "top_dfbb0dd9",
+      "status": "entwurf",
+      "abschnitt": "Umgang mit dem Brenner",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 2,
+        "seite": 2,
+        "nummer": "3b"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 17,
+        "seite": 22,
+        "stelle": "Entzünden des Brenners"
+      },
+      "aufgabentext": "Entzünden des Brenners: Bringe die Schritte in die richtige Reihenfolge.",
+      "titel": "Entzünden des Brenners",
+      "schritte": [
+        "Setze vor dem Bedienen des Brenners die Schutzbrille auf.",
+        "Schließe die Luft- und Gaszufuhr.",
+        "Öffne den Gashahn am Tisch und dann am Brenner.",
+        "Entzünde das ausströmende Gas sofort an der Brennermündung.",
+        "Reguliere die Flammengröße.",
+        "Öffne die Luftzufuhr nach Bedarf."
+      ],
+      "ablenker": [
+        "Schließe den Gashahn am Tisch.",
+        "Drossle die Gaszufuhr."
+      ],
+      "buch": "ch-brenner-ablauf_buch.jpg",
+      "hilfen": {
+        "denkanstoss": "Was muss geschlossen sein, bevor du Gas aufdrehst – und wann darf das Gas erst ausströmen?"
+      }
+    },
+    {
+      "id": "ch-brenner-loeschen",
+      "ableitung": "C",
+      "fach": "sub_chemie",
+      "thema": "top_dfbb0dd9",
+      "status": "entwurf",
+      "abschnitt": "Umgang mit dem Brenner",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 2,
+        "seite": 2,
+        "nummer": "3c"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 17,
+        "seite": 22,
+        "stelle": "Löschen des Brenners"
+      },
+      "aufgabentext": "Löschen des Brenners: Bringe die Schritte in die richtige Reihenfolge.",
+      "titel": "Löschen des Brenners",
+      "schritte": [
+        "Schließe die Luft- und Gaszufuhr am Brenner.",
+        "Schließe den Gashahn am Tisch.",
+        "Stelle den Brenner erst nach dem Abkühlen weg."
+      ],
+      "ablenker": [
+        "Öffne den Gashahn am Tisch und dann am Brenner.",
+        "Reduziere die Luftzufuhr des Brenners."
+      ],
+      "buch": "ch-brenner-ablauf_buch.jpg",
+      "hilfen": {
+        "denkanstoss": "Zuerst am Brenner, dann am Tisch – und wann ist er kalt genug zum Wegstellen?"
+      }
+    }
+  ]
+}
