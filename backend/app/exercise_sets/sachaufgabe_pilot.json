@@ -1615,7 +1615,8 @@
         },
         {
           "satz": "Also auch dreimal so schwer: 37,5 g · 3 = [[112,5]] g.",
-          "tipp": "37 · 3 = 111, dazu 0,5 · 3 = 1,5."
+          "tipp": "Rechne erst ohne Komma: 375 · 3. Dann bekommt das Ergebnis eine Stelle nach dem Komma – wie 37,5.",
+          "nebenrechnung": "37,5 · 3"
         },
         {
           "satz": "15 € in 1-Euro-Münzen wiegen [[112,5]] g."

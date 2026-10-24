@@ -21,7 +21,7 @@ wie im Test“; Luna liest, der Code rechnet).
 | `rechnung` | Rechnung: `ausdruck` („2100 : 0,7“), `umformung` („21000 : 7“), `zahlen` |
 | `ergebnis` | `{wert, einheit}` |
 | `antwort_anfang`, `antwortsatz` | Satzanfang (Stufe 1) und ganzer Satz; die letzte Zahl im Satz muss das Ergebnis sein |
-| `gedankengang` | Sätze mit Lücken `[[Wert]]`, optional `tipp`; jede Gleichung im Satz wird nachgerechnet, die letzte Lücke ist das Ergebnis |
+| `gedankengang` | Sätze mit Lücken `[[Wert]]`, optional `tipp`; jede Gleichung im Satz wird nachgerechnet, die letzte Lücke ist das Ergebnis. Optional `nebenrechnung` („37,5 · 3“): steht vorgeschrieben im Kästchenfeld; Ergebnis muss eine Lücke des Satzes sein. Für jeden Schritt, den Thea nicht im Kopf rechnet (Komma-Multiplikation, mehrstellig) – sie rechnet dort schriftlich, getippt wird das Ergebnis |
 | `schaetzfrage` | `frage`, `optionen`, `antwort`, `vergleichswert`, `ergebnis_ist` (`groesser`/`kleiner`), `aktiv` |
 | `ueberschlag` | `null` oder `{verlangt, ausdruck, folgerung}` |
 | `begruendung` | optional `{verlangt, erwartung, quelle, optionen: [{text, richtig, grund}]}` – genau eine richtig, falsche mit Grund |
