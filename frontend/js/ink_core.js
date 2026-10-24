@@ -51,6 +51,8 @@ function createInkSurface(env) {
   let panX = 0;
   let panY = 0;
   let scale = 1.0;
+  let zoomEnabled = true; // aus: Zwei Finger verschieben nur (Übungsblätter mit Kästchen fester Größe)
+  const maxScale = () => (zoomEnabled ? 3.5 : 1.0);
   let activeTouches = new Map(); // pointerId -> { x, y }
   let isTwoFingerPanning = false;
   let scrollbarFadeTimer = null;
@@ -146,7 +148,7 @@ function createInkSurface(env) {
     const cx = centerScreenX !== null ? centerScreenX : rect.width / 2;
     const cy = centerScreenY !== null ? centerScreenY : rect.height / 2;
 
-    const clampedScale = Math.max(1.0, Math.min(3.5, Math.round(newScale * 100) / 100));
+    const clampedScale = Math.max(1.0, Math.min(maxScale(), Math.round(newScale * 100) / 100));
     if (Math.abs(clampedScale - scale) < 0.01) return;
 
     // Virtueller Punkt unter dem Zoom-Zentrum
@@ -823,7 +825,7 @@ function createInkSurface(env) {
       // Pinch Zoom
       if (touchStartDist > 15) {
         const ratio = dist / touchStartDist;
-        scale = Math.max(1.0, Math.min(3.5, touchStartScale * ratio));
+        scale = Math.max(1.0, Math.min(maxScale(), touchStartScale * ratio));
       }
 
       let newPanX = cx - pinchVirtualX * scale;
@@ -877,6 +879,8 @@ function createInkSurface(env) {
     set currentSession(value) { currentSession = value; },
     get isDrawing() { return isDrawing; },
     set isDrawing(value) { isDrawing = value; },
+    get zoomEnabled() { return zoomEnabled; },
+    set zoomEnabled(value) { zoomEnabled = value; if (!value) setZoomLevel(1.0); },
     get currentTool() { return currentTool; },
     set currentTool(value) { currentTool = value; },
     get currentColor() { return currentColor; },

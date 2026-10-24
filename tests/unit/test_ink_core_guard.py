@@ -8,7 +8,7 @@ import hashlib
 from pathlib import Path
 
 INK_CORE = Path(__file__).resolve().parents[2] / "frontend" / "js" / "ink_core.js"
-EXPECTED_SHA256 = "1ca695b73be5d77f4631bd9242c75f2b7baffcb9fdc5e047d4dfee244b46170d"
+EXPECTED_SHA256 = "a942858b3da9ec70158b4df1074b152ce2238f9cad4bc6b3ca4a8dff96dfe8f9"
 
 
 def test_ink_core_is_only_changed_deliberately():
