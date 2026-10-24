@@ -15,7 +15,7 @@ else:
 
 # OpenAI Integration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-6-luna")
 # Modell für die Dokumentanalyse jedes Uploads. Standard: Hauptmodell, weil gpt-4o-mini in
 # der Messung (scripts/eval_document_classification.py) schlechter klassifizierte und für
 # Seitenbilder ein Vielfaches an Tokens verbrauchte.
