@@ -1,0 +1,283 @@
+{
+ "typ": "schriftlich",
+ "version": 1,
+ "stand": "2026-10-24",
+ "hinweis": "Schriftliche Grundrechenarten. Rechenwege und Regelsätze nach dem Merkblatt der Eltern (mat_7cc9d80e); Gitter, Schritte und Ergebnis rechnet services/exercise_types/schriftlich.py. Erstellt in einer Claude-Code-Session.",
+ "uebungen": [
+  {
+   "id": "sr-add-348-275",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Merkblatt",
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "Beispiel Addition"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 1,
+    "seite": 1,
+    "stelle": "1. Die schriftliche Addition"
+   },
+   "abschnitt": "Schriftlich rechnen: Addition",
+   "aufgabentext": "Berechne schriftlich: 348 + 275",
+   "verfahren": "addition",
+   "aufgabe": "348 + 275",
+   "ergebnis": "623"
+  },
+  {
+   "id": "sr-sub-734-281",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Merkblatt",
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 2,
+    "seite": 2,
+    "nummer": "Beispiel Subtraktion"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 2,
+    "seite": 2,
+    "stelle": "2. Die schriftliche Subtraktion"
+   },
+   "abschnitt": "Schriftlich rechnen: Subtraktion",
+   "aufgabentext": "Berechne schriftlich: 734 − 281",
+   "verfahren": "subtraktion",
+   "aufgabe": "734 − 281",
+   "ergebnis": "453"
+  },
+  {
+   "id": "sr-mul-243-12",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Merkblatt",
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 3,
+    "seite": 3,
+    "nummer": "Beispiel Multiplikation"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 3,
+    "seite": 3,
+    "stelle": "3. Die schriftliche Multiplikation"
+   },
+   "abschnitt": "Schriftlich rechnen: Multiplikation",
+   "aufgabentext": "Berechne schriftlich: 243 · 12",
+   "verfahren": "multiplikation",
+   "aufgabe": "243 · 12",
+   "ergebnis": "2916"
+  },
+  {
+   "id": "sr-div-852-3",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Merkblatt",
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 4,
+    "seite": 4,
+    "nummer": "Beispiel Division"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 4,
+    "seite": 4,
+    "stelle": "4. Die schriftliche Division"
+   },
+   "abschnitt": "Schriftlich rechnen: Division",
+   "aufgabentext": "Berechne schriftlich: 852 : 3",
+   "verfahren": "division",
+   "aufgabe": "852 : 3",
+   "ergebnis": "284"
+  },
+  {
+   "id": "sr-add-lk-2a",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Test",
+    "material": "Addition und Subtraktion von Dezimalbrüchen",
+    "material_id": "mat_753ee65f",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "2a"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 1,
+    "seite": 1,
+    "stelle": "1. Die schriftliche Addition"
+   },
+   "abschnitt": "Schriftlich rechnen: Addition",
+   "aufgabentext": "Schreibe stellengerecht untereinander und berechne: 18,45 + 59,75",
+   "verfahren": "addition",
+   "aufgabe": "18,45 + 59,75",
+   "ergebnis": "78,20"
+  },
+  {
+   "id": "sr-sub-lk-3b-1",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Test",
+    "material": "Addition und Subtraktion von Dezimalbrüchen",
+    "material_id": "mat_753ee65f",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "3b"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 2,
+    "seite": 2,
+    "stelle": "2. Die schriftliche Subtraktion"
+   },
+   "abschnitt": "Schriftlich rechnen: Subtraktion",
+   "aufgabentext": "83,4 − 5,579 − 28,8: Rechne zuerst 83,4 − 5,579 schriftlich.",
+   "verfahren": "subtraktion",
+   "aufgabe": "83,4 − 5,579",
+   "ergebnis": "77,821"
+  },
+  {
+   "id": "sr-sub-lk-3b-2",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Test",
+    "material": "Addition und Subtraktion von Dezimalbrüchen",
+    "material_id": "mat_753ee65f",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "3b"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 2,
+    "seite": 2,
+    "stelle": "2. Die schriftliche Subtraktion"
+   },
+   "abschnitt": "Schriftlich rechnen: Subtraktion",
+   "aufgabentext": "83,4 − 5,579 − 28,8: Jetzt noch 77,821 − 28,8.",
+   "verfahren": "subtraktion",
+   "aufgabe": "77,821 − 28,8",
+   "ergebnis": "49,021",
+   "fehler": "komma",
+   "theas_loesung": "Thea schrieb 490,21: Ziffern richtig, Komma eine Stelle zu weit rechts (Berichtigung der Lernkontrolle)."
+  },
+  {
+   "id": "sr-mul-muenzrolle",
+   "ableitung": "C",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Trainingsblatt: Dreisatz bei proportionalen Zusammenhängen",
+    "material_id": "mat_ab06df58",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "4a"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 3,
+    "seite": 3,
+    "stelle": "3. Die schriftliche Multiplikation"
+   },
+   "abschnitt": "Schriftlich rechnen: Multiplikation",
+   "aufgabentext": "Münzrolle: 5 € wiegen 37,5 g, wie viel wiegen 15 €? Rechne 37,5 · 3 schriftlich.",
+   "verfahren": "multiplikation",
+   "aufgabe": "37,5 · 3",
+   "ergebnis": "112,5"
+  },
+  {
+   "id": "sr-div-ab-5",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Division eines Dezimalbruches durch eine natürliche Zahl",
+    "material_id": "mat_0e9de541",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "5"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 4,
+    "seite": 4,
+    "stelle": "4. Die schriftliche Division"
+   },
+   "abschnitt": "Schriftlich rechnen: Division",
+   "aufgabentext": "Berechne schriftlich: 5,3405 : 55",
+   "verfahren": "division",
+   "aufgabe": "5,3405 : 55",
+   "ergebnis": "0,0971",
+   "theas_loesung": "Thea schrieb 0,019 (Nullen im Ergebnis fehlen)."
+  },
+  {
+   "id": "sr-div-mp-2b",
+   "ableitung": "A",
+   "fach": "sub_math",
+   "thema": "top_8009d623",
+   "status": "entwurf",
+   "quelle": {
+    "art": "Test",
+    "material": "Matheprobe zur Division mit Dezimalzahlen",
+    "material_id": "mat_39d6db34",
+    "material_seite": 1,
+    "datum": "2026-05-18",
+    "seite": 1,
+    "nummer": "2b"
+   },
+   "nachschlagen": {
+    "material": "Die schriftlichen Grundrechenarten",
+    "material_id": "mat_7cc9d80e",
+    "material_seite": 4,
+    "seite": 4,
+    "stelle": "4. Die schriftliche Division"
+   },
+   "abschnitt": "Schriftlich rechnen: Division",
+   "aufgabentext": "Berechne schriftlich. Mache vorher einen Überschlag: 34,445 : 2,5",
+   "verfahren": "division",
+   "aufgabe": "34,445 : 2,5",
+   "ergebnis": "13,778",
+   "theas_loesung": "Thea rechnete 34445 : 25 ohne Komma-Verschiebung und kam auf ein falsches Ergebnis (0 von 3 Punkten)."
+  }
+ ]
+}
