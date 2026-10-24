@@ -1,0 +1,104 @@
+{
+  "typ": "schubladen",
+  "version": 1,
+  "stand": "2026-10-24",
+  "hinweis": "Chemie, Kapitel 1 „Was ist Chemie?“. Erstellt in einer Claude-Code-Session; Gruppen und Begriffe wortgleich aus der Aufgabe, Zuordnung nach den Erklärungen im Buch (S. 18/19).",
+  "uebungen": [
+    {
+      "id": "ch-reinstoffe-gemische",
+      "ableitung": "A",
+      "fach": "sub_chemie",
+      "thema": "top_c96908eb",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 14,
+        "seite": 19,
+        "nummer": "1"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 13,
+        "seite": 18,
+        "stelle": "Reinstoffe und Stoffgemische"
+      },
+      "abschnitt": "Reinstoffe und Stoffgemische",
+      "aufgabentext": "Ordne nach Reinstoffen und Stoffgemischen: Müll, Kupferdraht, Zahnpasta, Mineralwasser, Schwefel, Zink, Klärschlamm, Leitungswasser. Gib an, welche Stoffgemische heterogen, welche homogen sind.",
+      "gruppen": [
+        {
+          "name": "Reinstoffe",
+          "begriffe": [
+            "Kupferdraht",
+            "Schwefel",
+            "Zink"
+          ]
+        },
+        {
+          "name": "homogene Stoffgemische",
+          "begriffe": [
+            "Mineralwasser",
+            "Leitungswasser"
+          ]
+        },
+        {
+          "name": "heterogene Stoffgemische",
+          "begriffe": [
+            "Müll",
+            "Zahnpasta",
+            "Klärschlamm"
+          ]
+        }
+      ],
+      "buch": "ch-stoffgemische_buch.jpg",
+      "hilfen": {
+        "denkanstoss": "Besteht der Stoff aus nur einem Stoff? Und wenn nicht: Kannst du die Bestandteile noch erkennen?"
+      }
+    },
+    {
+      "id": "ch-loeslichkeit",
+      "ableitung": "A",
+      "fach": "sub_chemie",
+      "thema": "top_a29ed2e3",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 5,
+        "seite": 5,
+        "nummer": "2b"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 13,
+        "seite": 18,
+        "stelle": "Reinstoffe und Stoffgemische (Lösung)"
+      },
+      "abschnitt": "Stoffe und ihre Eigenschaften",
+      "aufgabentext": "Viele Stoffeigenschaften kann man nur mit Hilfsmitteln bestimmen. Speiseöl, Holzkohle, Kochsalz, Zucker: Welche lösen sich in Wasser, welche sind in Wasser unlöslich?",
+      "gruppen": [
+        {
+          "name": "lösen sich in Wasser",
+          "begriffe": [
+            "Kochsalz",
+            "Zucker"
+          ]
+        },
+        {
+          "name": "sind in Wasser unlöslich",
+          "begriffe": [
+            "Speiseöl",
+            "Holzkohle"
+          ]
+        }
+      ],
+      "hilfen": {
+        "denkanstoss": "Denk an Meerwasser und an Tee mit Zucker – und was passiert mit Öl im Wasser?"
+      }
+    }
+  ]
+}
