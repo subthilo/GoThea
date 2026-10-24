@@ -22,7 +22,7 @@ from backend.app import config
 from backend.app.database import get_db
 from backend.app.models.whiteboard import TutorSession
 from backend.app.models.practice_attempt import PracticeAttempt
-from backend.app.services import (llm, practice_attempts, practice_check, practice_check_schriftlich,
+from backend.app.services import (exercise_types, llm, practice_attempts, practice_check, practice_check_schriftlich,
                                   practice_check_zuordnen, practice_due,
                                   practice_exercises, practice_plan)
 from backend.app.services.exercise_types import zuordnen
@@ -57,7 +57,7 @@ class HandwritingUpload(BaseModel):
 
 
 class AttemptEvent(BaseModel):
-    kind: Literal["guess", "hint", "solution", "check"]
+    kind: Literal["guess", "hint", "solution", "check", "step"]
     data: dict = Field(default_factory=dict)
 
 
@@ -73,13 +73,29 @@ def _exercise_or_404(exercise_id: str, include_drafts: bool = False) -> dict:
     return ex
 
 
+# Typen mit Aufgaben aus der Datenbank (Kurzrechnung: wacklige Einmaleins-Aufgaben aus dem letzten Check):
+# personalize(ex, db) setzt sie ein, hidden(ex, db) blendet eine Übung aus, solange sie nichts zu üben hat.
+def _families(db: Session, parent: bool) -> List[dict]:
+    out = []
+    for fam in practice_exercises.list_exercises(include_drafts=parent):
+        hidden = getattr(exercise_types.get(fam["typ"]), "hidden", None)
+        if hidden is None or not hidden(practice_exercises.get_exercise(fam["id"], include_drafts=True), db):
+            out.append(fam)
+    return out
+
+
+def _personalized(ex: dict, db: Session) -> dict:
+    personalize = getattr(exercise_types.get(ex["typ"]), "personalize", None)
+    return personalize(ex, db) if personalize else ex
+
+
 @router.get("")
 def list_practice(db: Session = Depends(get_db), parent: bool = Depends(is_parent)) -> dict:
     """Aufgaben mit Stand pro Stufe, Wiederholen und Lunas Vorschlag (services/practice_plan.py)."""
     # Ausgeschaltet: leere Liste statt Fehler, das Frontend blendet den Bereich dann aus
     if not config.EXERCISE_TRIAL_ENABLED:
         return {"enabled": False, "exercises": []}
-    families = practice_exercises.list_exercises(include_drafts=parent)
+    families = _families(db, parent)
     plan = _plan(db, families)
     scope, solved_days = practice_due.collect(db)
     due = practice_due.build_round(families, scope, plan, solved_days=solved_days)
@@ -102,7 +118,7 @@ def practice_round(fach: Optional[str] = None, akku: str = "geht_so", db: Sessio
         return {"enabled": False, "runde": [], "anzahl_dran": 0}
     if akku not in practice_due.AKKU:
         raise HTTPException(status_code=422, detail=f"akku: {', '.join(practice_due.AKKU)}")
-    families = practice_exercises.list_exercises(include_drafts=parent)
+    families = _families(db, parent)
     scope, solved_days = practice_due.collect(db)
     out = practice_due.build_round(families, scope, _plan(db, families), akku=akku, fach=fach, solved_days=solved_days)
     return {"enabled": True, **out}
@@ -173,8 +189,18 @@ def practice_image(name: str) -> FileResponse:
 
 
 @router.get("/{exercise_id}")
-def get_practice(exercise_id: str, parent: bool = Depends(is_parent)) -> dict:
-    return _exercise_or_404(exercise_id, include_drafts=parent)
+def get_practice(exercise_id: str, db: Session = Depends(get_db), parent: bool = Depends(is_parent)) -> dict:
+    return _personalized(_exercise_or_404(exercise_id, include_drafts=parent), db)
+
+
+@router.get("/{exercise_id}/auswertung")
+def practice_evaluation(exercise_id: str, db: Session = Depends(get_db), parent: bool = Depends(is_parent)) -> dict:
+    """Für die Eltern: Auswertung einer Übung, die eine kennt (Einmaleins-Check: sicher / langsam / falsch)."""
+    if not parent:
+        raise HTTPException(status_code=403, detail="Nur im Eltern-Modus")
+    ex = _exercise_or_404(exercise_id, include_drafts=True)
+    evaluate = getattr(exercise_types.get(ex["typ"]), "auswertung", None)
+    return {"auswertung": evaluate(ex, db) if evaluate else None}
 
 
 def _practice_board(db: Session, board_id: str, exercise_id: str) -> TutorSession:

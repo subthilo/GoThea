@@ -1,0 +1,560 @@
+{
+ "typ": "kurzrechnung",
+ "version": 1,
+ "stand": "2026-10-25",
+ "hinweis": "Mathematik. Erstellt in einer Claude-Code-Session; Aufgaben wortgleich von Theas Arbeitsblättern (Seitenbilder geprüft, Lösungen vom Code nachgerechnet und mit den Ausmalbildern abgeglichen). Einmaleins: Grundwissen, vom Code erzeugt.",
+ "uebungen": [
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-zehnerzahlen-1",
+   "thema": "top_8009d623",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Multiplikation und Division mit Zehnerzahlen",
+    "material_id": "mat_d2550b73",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "1–8"
+   },
+   "abschnitt": "Mal und geteilt durch 10, 100, 1000",
+   "aufgabentext": "Berechne.",
+   "aufgaben": [
+    {
+     "nummer": "1",
+     "rechnung": "34,29 · 10",
+     "ergebnis": "342,9"
+    },
+    {
+     "nummer": "2",
+     "rechnung": "7,08 · 100",
+     "ergebnis": "708"
+    },
+    {
+     "nummer": "3",
+     "rechnung": "0,062 : 10",
+     "ergebnis": "0,0062"
+    },
+    {
+     "nummer": "4",
+     "rechnung": "0,71 : 100",
+     "ergebnis": "0,0071"
+    },
+    {
+     "nummer": "5",
+     "rechnung": "4,03 : 1 000",
+     "ergebnis": "0,00403"
+    },
+    {
+     "nummer": "6",
+     "rechnung": "0,05 · 1 000",
+     "ergebnis": "50"
+    },
+    {
+     "nummer": "7",
+     "rechnung": "77,5 : 100",
+     "ergebnis": "0,775"
+    },
+    {
+     "nummer": "8",
+     "rechnung": "0,971 : 10",
+     "ergebnis": "0,0971"
+    }
+   ]
+  },
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-zehnerzahlen-2",
+   "thema": "top_8009d623",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Multiplikation und Division mit Zehnerzahlen",
+    "material_id": "mat_d2550b73",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "9–15"
+   },
+   "abschnitt": "Mal und geteilt durch 10, 100, 1000",
+   "aufgabentext": "Berechne.",
+   "aufgaben": [
+    {
+     "nummer": "9",
+     "rechnung": "791,85 · 100",
+     "ergebnis": "79185",
+     "fehler": "7,9185"
+    },
+    {
+     "nummer": "10",
+     "rechnung": "977,854 : 1 000",
+     "ergebnis": "0,977854"
+    },
+    {
+     "nummer": "11",
+     "rechnung": "0,4 : 1 000",
+     "ergebnis": "0,0004"
+    },
+    {
+     "nummer": "12",
+     "rechnung": "0,05703 : 10",
+     "ergebnis": "0,005703"
+    },
+    {
+     "nummer": "13",
+     "rechnung": "54,71 : 100",
+     "ergebnis": "0,5471"
+    },
+    {
+     "nummer": "14",
+     "rechnung": "56,0761 · 10",
+     "ergebnis": "560,761"
+    },
+    {
+     "nummer": "15",
+     "rechnung": "2 103,976 · 1 000",
+     "ergebnis": "2103976"
+    }
+   ]
+  },
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-kuerzen-dividieren",
+   "thema": "top_7e57ef30",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Division von Brüchen",
+    "material_id": "mat_3831ea1e",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "1–14"
+   },
+   "nachschlagen": {
+    "material": "Division von Brüchen",
+    "material_id": "mat_3831ea1e",
+    "material_seite": 1,
+    "seite": 1,
+    "stelle": "Kasten oben: Mit 3 kürzen, Durch 3 dividieren"
+   },
+   "abschnitt": "Kürzen oder dividieren",
+   "aufgabentext": "Brüche kürzen und Brüche dividieren darfst du nicht verwechseln.",
+   "stufen": [
+    -1,
+    2
+   ],
+   "aufgaben": [
+    {
+     "nummer": "1",
+     "kuerzen": "15/24",
+     "mit": 3,
+     "ergebnis": "5/8"
+    },
+    {
+     "nummer": "2",
+     "vor": "Dividiere durch 3",
+     "zeige": "15/24",
+     "rechnung": "15/24 : 3",
+     "antwort": "bruch",
+     "gekuerzt": false,
+     "ergebnis": "5/24"
+    },
+    {
+     "nummer": "3",
+     "kuerzen": "35/60",
+     "mit": 5,
+     "ergebnis": "7/12"
+    },
+    {
+     "nummer": "4",
+     "vor": "Dividiere durch 7",
+     "zeige": "35/60",
+     "rechnung": "35/60 : 7",
+     "antwort": "bruch",
+     "gekuerzt": false,
+     "ergebnis": "5/60"
+    },
+    {
+     "nummer": "5",
+     "kuerzen": "30/45",
+     "mit": 15,
+     "ergebnis": "2/3"
+    },
+    {
+     "nummer": "6",
+     "vor": "Dividiere durch 10",
+     "zeige": "30/45",
+     "rechnung": "30/45 : 10",
+     "antwort": "bruch",
+     "gekuerzt": false,
+     "ergebnis": "3/45"
+    },
+    {
+     "nummer": "7",
+     "kuerzen": "48/96",
+     "mit": "vollständig",
+     "ergebnis": "1/2"
+    },
+    {
+     "nummer": "8",
+     "vor": "Dividiere durch 24",
+     "zeige": "48/96",
+     "rechnung": "48/96 : 24",
+     "antwort": "bruch",
+     "gekuerzt": false,
+     "ergebnis": "2/96"
+    },
+    {
+     "nummer": "9",
+     "kuerzen": "54/60",
+     "mit": 6,
+     "ergebnis": "9/10"
+    },
+    {
+     "nummer": "10",
+     "vor": "Dividiere durch 9",
+     "zeige": "54/60",
+     "rechnung": "54/60 : 9",
+     "antwort": "bruch",
+     "gekuerzt": false,
+     "ergebnis": "6/60"
+    },
+    {
+     "nummer": "11",
+     "kuerzen": "36/84",
+     "mit": 12,
+     "ergebnis": "3/7"
+    },
+    {
+     "nummer": "12",
+     "vor": "Dividiere durch 12",
+     "zeige": "36/84",
+     "rechnung": "36/84 : 12",
+     "antwort": "bruch",
+     "gekuerzt": false,
+     "ergebnis": "3/84"
+    },
+    {
+     "nummer": "13",
+     "kuerzen": "90/105",
+     "mit": "vollständig",
+     "ergebnis": "6/7"
+    },
+    {
+     "nummer": "14",
+     "vor": "Dividiere durch 6",
+     "zeige": "90/105",
+     "rechnung": "90/105 : 6",
+     "antwort": "bruch",
+     "gekuerzt": false,
+     "ergebnis": "15/105"
+    }
+   ]
+  },
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-division-als-bruch",
+   "thema": "top_7e57ef30",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Division von Brüchen",
+    "material_id": "mat_3831ea1e",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "15–20"
+   },
+   "nachschlagen": {
+    "material": "Division von Brüchen",
+    "material_id": "mat_3831ea1e",
+    "material_seite": 1,
+    "seite": 1,
+    "stelle": "Natürlich kannst du auch Ganze teilen: 1 : 4 = 1/4"
+   },
+   "abschnitt": "Kürzen oder dividieren",
+   "aufgabentext": "Gib die Divisionen als Bruch an und kürze vollständig.",
+   "stufen": [
+    -1,
+    2
+   ],
+   "aufgaben": [
+    {
+     "nummer": "15",
+     "rechnung": "2 : 12",
+     "antwort": "bruch",
+     "ergebnis": "1/6"
+    },
+    {
+     "nummer": "16",
+     "rechnung": "16 : 20",
+     "antwort": "bruch",
+     "ergebnis": "4/5"
+    },
+    {
+     "nummer": "17",
+     "rechnung": "4 : 16",
+     "antwort": "bruch",
+     "ergebnis": "1/4"
+    },
+    {
+     "nummer": "18",
+     "rechnung": "25 : 45",
+     "antwort": "bruch",
+     "ergebnis": "5/9"
+    },
+    {
+     "nummer": "19",
+     "rechnung": "18 : 32",
+     "antwort": "bruch",
+     "ergebnis": "9/16"
+    },
+    {
+     "nummer": "20",
+     "rechnung": "25 : 125",
+     "antwort": "bruch",
+     "ergebnis": "1/5"
+    }
+   ]
+  },
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-bruch-division-1",
+   "thema": "top_7e57ef30",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Division von Brüchen",
+    "material_id": "mat_3831ea1e",
+    "material_seite": 2,
+    "seite": 2,
+    "nummer": "1–7"
+   },
+   "nachschlagen": {
+    "material": "Bruchrechnung – Schritt für Schritt",
+    "material_id": "mat_13064ea1",
+    "material_seite": 2,
+    "seite": 2,
+    "stelle": "3. Division von Brüchen"
+   },
+   "abschnitt": "Brüche dividieren",
+   "aufgabentext": "Löse die Aufgaben. Kürze das Ergebnis vollständig.",
+   "stufen": [
+    -1,
+    2
+   ],
+   "aufgaben": [
+    {
+     "nummer": "1",
+     "rechnung": "11/18 : 22/6",
+     "antwort": "bruch",
+     "ergebnis": "1/6"
+    },
+    {
+     "nummer": "2",
+     "rechnung": "7/72 : 28/27",
+     "antwort": "bruch",
+     "ergebnis": "3/32"
+    },
+    {
+     "nummer": "3",
+     "rechnung": "13/12 : 91/36",
+     "antwort": "bruch",
+     "ergebnis": "3/7"
+    },
+    {
+     "nummer": "4",
+     "rechnung": "5/36 : 45/24",
+     "antwort": "bruch",
+     "ergebnis": "2/27"
+    },
+    {
+     "nummer": "5",
+     "rechnung": "28/72 : 12/16",
+     "antwort": "bruch",
+     "ergebnis": "14/27",
+     "fehler": "1/3"
+    },
+    {
+     "nummer": "6",
+     "rechnung": "16/63 : 6/7",
+     "antwort": "bruch",
+     "ergebnis": "8/27"
+    },
+    {
+     "nummer": "7",
+     "rechnung": "66/42 : 99/30",
+     "antwort": "bruch",
+     "ergebnis": "10/21"
+    }
+   ]
+  },
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-bruch-division-2",
+   "thema": "top_7e57ef30",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Division von Brüchen",
+    "material_id": "mat_3831ea1e",
+    "material_seite": 2,
+    "seite": 2,
+    "nummer": "10–18"
+   },
+   "nachschlagen": {
+    "material": "Bruchrechnung – Schritt für Schritt",
+    "material_id": "mat_13064ea1",
+    "material_seite": 2,
+    "seite": 2,
+    "stelle": "3. Division von Brüchen"
+   },
+   "abschnitt": "Brüche dividieren",
+   "aufgabentext": "Löse die Aufgaben. Kürze das Ergebnis vollständig.",
+   "stufen": [
+    -1,
+    2
+   ],
+   "aufgaben": [
+    {
+     "nummer": "10",
+     "rechnung": "54/72 : 63/56",
+     "antwort": "bruch",
+     "ergebnis": "2/3"
+    },
+    {
+     "nummer": "11",
+     "rechnung": "42/45 : 18/15",
+     "antwort": "bruch",
+     "ergebnis": "7/9"
+    },
+    {
+     "nummer": "12",
+     "rechnung": "56/63 : 49/14",
+     "antwort": "bruch",
+     "ergebnis": "16/63"
+    },
+    {
+     "nummer": "13",
+     "rechnung": "32/45 : 40/20",
+     "antwort": "bruch",
+     "ergebnis": "16/45"
+    },
+    {
+     "nummer": "14",
+     "rechnung": "24/117 : 84/39",
+     "antwort": "bruch",
+     "ergebnis": "2/21"
+    },
+    {
+     "nummer": "15",
+     "rechnung": "84/24 : 96/21",
+     "antwort": "bruch",
+     "ergebnis": "49/64"
+    },
+    {
+     "nummer": "16",
+     "rechnung": "14/90 : 21/20",
+     "antwort": "bruch",
+     "ergebnis": "4/27"
+    },
+    {
+     "nummer": "17",
+     "rechnung": "12/70 : 18/20",
+     "antwort": "bruch",
+     "ergebnis": "4/21"
+    },
+    {
+     "nummer": "18",
+     "rechnung": "54/42 : 27/6",
+     "antwort": "bruch",
+     "ergebnis": "2/7"
+    }
+   ]
+  },
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-messbecher",
+   "thema": "top_8ee3eba9",
+   "quelle": {
+    "art": "Arbeitsblatt",
+    "material": "Volumenberechnung – Liter und Hektoliter",
+    "material_id": "mat_6fc95ae0",
+    "material_seite": 1,
+    "seite": 1,
+    "nummer": "1"
+   },
+   "abschnitt": "Liter und Kubikzentimeter",
+   "aufgabentext": "Gib den Inhalt der Messbecher in Kubikzentimetern an. 1 l = 1 dm³, 1 dm³ = 1 000 cm³",
+   "stufen": [
+    -1,
+    2
+   ],
+   "aufgaben": [
+    {
+     "umrechnen": "1 l",
+     "in": "cm³",
+     "ergebnis": "1000"
+    },
+    {
+     "umrechnen": "3/4 l",
+     "in": "cm³",
+     "ergebnis": "750"
+    },
+    {
+     "umrechnen": "1/2 l",
+     "in": "cm³",
+     "ergebnis": "500"
+    },
+    {
+     "umrechnen": "1/4 l",
+     "in": "cm³",
+     "ergebnis": "250"
+    }
+   ]
+  },
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-einmaleins-check",
+   "thema": "top_a78913bc",
+   "quelle": {
+    "material": "Grundwissen",
+    "grundwissen": "Einmaleins",
+    "nummer": "1"
+   },
+   "abschnitt": "Einmaleins-Check",
+   "aufgabentext": "Einmaleins",
+   "erzeugt": "einmaleins",
+   "stufen": [
+    2
+   ]
+  },
+  {
+   "ableitung": "A",
+   "fach": "sub_math",
+   "status": "entwurf",
+   "id": "km-einmaleins-wacklig",
+   "thema": "top_a78913bc",
+   "quelle": {
+    "material": "Grundwissen",
+    "grundwissen": "Einmaleins",
+    "nummer": "2"
+   },
+   "abschnitt": "Einmaleins üben",
+   "aufgabentext": "Einmaleins",
+   "erzeugt": "einmaleins_wacklig",
+   "aus": "km-einmaleins-check",
+   "stufen": [
+    2
+   ]
+  }
+ ]
+}

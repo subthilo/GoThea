@@ -46,6 +46,7 @@ function registerPracticeType(typ, view) {
   const stageTitle = (typ, n) => stageInfo(typ, n).title || stageName(typ, n);
 
   function sourceLine(q) {
+    if (q.grundwissen) return `${q.material}: ${q.grundwissen}`;  // vom Code erzeugt (Einmaleins …)
     const page = q.seite ? `, S. ${q.seite}` : "";
     return `${q.material}${page}, Nr. ${q.nummer}`;
   }

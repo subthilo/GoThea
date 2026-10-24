@@ -30,7 +30,14 @@ ABLEITUNGEN = ("A", "B", "C")
 # --- Kopf jeder Übung (alle Fächer und Typen): Fach, Thema, Quelle und Fundstelle ---------------------------
 # quelle/nachschlagen: material_id + material_seite = Seite in der Datei (bei Buchkapiteln im Kapitel-PDF),
 # seite = Seite, wie Thea sie sieht (gedruckte Buchseite), material = Titel (beim Kapitel der Buchtitel).
+# Ausnahme Grundwissen (Einmaleins …, vom Code erzeugt, ``erzeugt`` gesetzt): quelle = {material: "Grundwissen",
+# grundwissen: "Einmaleins", nummer} ohne Material in der Datenbank.
 REFERENCE_KEYS = ("quelle", "nachschlagen")
+
+
+def is_basic_knowledge(ex: dict, key: str = "quelle") -> bool:
+    ref = ex.get(key) or {}
+    return bool(ex.get("erzeugt") and ref.get("grundwissen") and not ref.get("material_id"))
 
 
 def validate_header(ex: dict) -> List[str]:
@@ -59,7 +66,7 @@ def validate_header(ex: dict) -> List[str]:
         errors.append("freigegeben_am fehlt (JJJJ-MM-TT)")
     for key in REFERENCE_KEYS:
         ref = ex.get(key)
-        if not ref:
+        if not ref or is_basic_knowledge(ex, key):
             continue
         if not str(ref.get("material_id") or "").startswith("mat_"):
             errors.append(f"{key}: material_id fehlt")
@@ -84,7 +91,7 @@ def check_references(db, ex: dict) -> List[str]:
         errors.append(f"Thema „{topic.name}“ gehört nicht zum Fach {ex.get('fach')}")
     for key in REFERENCE_KEYS:
         ref = ex.get(key)
-        if not ref:
+        if not ref or is_basic_knowledge(ex, key):
             continue
         material = db.get(Material, ref.get("material_id"))
         if material is None:

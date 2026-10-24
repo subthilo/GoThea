@@ -17,7 +17,9 @@ from backend.app.models.practice_attempt import PracticeAttempt, PracticeEvent
 from backend.app.models.whiteboard import TutorSession
 from backend.app.services.practice_check import NOCH_NICHT, RICHTIG, UNSICHER
 
-EVENT_KINDS = ("guess", "hint", "solution", "check")
+# step: eine Antwort innerhalb einer Übung mit mehreren Aufgaben (Kurzrechnung: Aufgabe, Antwort, richtig, ms) –
+# nur festgehalten, ändert keine Zähler (Prüfungen bleiben „check“, XP zählt nur diese)
+EVENT_KINDS = ("guess", "hint", "solution", "check", "step")
 CHECK_STATUSES = (RICHTIG, NOCH_NICHT, UNSICHER)
 
 
