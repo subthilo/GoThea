@@ -312,6 +312,17 @@ def test_scratch_pad_for_written_side_calculations(app_page):
     assert app_page.input_value(".gg-step.current .gg-blank") == ""
     ink = "document.querySelector('.gg-write-ink').getContext('2d').getImageData(0,0,300,150).data.some(v => v)"
     assert app_page.evaluate(ink) is True
+    # Werkzeuge: Breite wählen (gemerkt), Radierer, „Alles löschen“ führt zurück zum Stift
+    active = "[...document.querySelectorAll('.gg-scratch-tools .active')].map(b => b.dataset.padTool || b.dataset.padSize)"
+    assert app_page.evaluate(active) == ["pen", "4"]
+    app_page.click('[data-pad-size="7"]')
+    app_page.click('[data-pad-tool="pixel_eraser"]')
+    assert app_page.evaluate(active) == ["pixel_eraser", "7"]
+    assert app_page.evaluate("localStorage.getItem('gothea.scratchWidth')") == "7"
+    app_page.click('.gg-scratch-tools [data-pad="clear"]')
+    assert app_page.evaluate(ink) is False
+    assert app_page.evaluate(active) == ["pen", "7"]
+    app_page.click('[data-pad-size="4"]')
     for values in [("375",), ("10", "5"), ("37,5",), ("3",)]:
         _guided_answer(app_page, *values)
     # Satz mit Nebenrechnung: steht vorgeschrieben in den Kästchen, das Feld ist leer
@@ -332,6 +343,6 @@ def test_reasoning_path_with_side_calculation_fits_on_one_screen(app_page):
             _guided_answer(app_page, *values)
         over = app_page.evaluate("document.scrollingElement.scrollHeight - innerHeight")
         assert over == 0, (width, height)
-        assert app_page.locator(".gg-scratch .gg-write-area").bounding_box()["height"] >= 220
+        assert app_page.locator(".gg-scratch .gg-write-area").bounding_box()["height"] >= 280
         app_page.click('[data-action="back"]')
     assert app_page.problems.errors == []

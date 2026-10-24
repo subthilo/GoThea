@@ -852,6 +852,41 @@
   text-align: center;
 }
 
+/* Werkzeuge der Nebenrechnung: Stift | Radierer, drei Strichbreiten, Alles löschen */
+.gg-scratch-tools {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: 44px;
+  gap: 4px;
+  width: 108px;
+  align-content: start;
+}
+
+.gg-tool {
+  min-height: 44px;
+  padding: 0;
+  grid-column: span 2;
+}
+
+.gg-tool[data-pad-tool],
+.gg-tool[data-pad="clear"] {
+  grid-column: span 3;
+}
+
+.gg-tool.active {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.gg-dot {
+  display: block;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: currentColor;
+  pointer-events: none;
+}
+
 /* Gedankengang als fixierte Seite (body.practice-zen-mode, gesetzt von js/practice.js): nichts scrollt mit,
    Aufgabe und Eingabefelder bleiben an ihrem Platz. Aufbau wie timetable-zen-mode. */
 html:has(body.practice-zen-mode),
@@ -954,6 +989,12 @@ body.practice-zen-mode .gg-write {
   max-height: 300px;
 }
 
+/* Nebenrechnung: nimmt im Querformat den ganzen freien Platz der rechten Spalte */
+body.practice-zen-mode .gg-scratch {
+  min-height: 200px;
+  max-height: none;
+}
+
 body.practice-zen-mode .gg-write-area {
   height: auto;
 }
@@ -985,7 +1026,7 @@ body.practice-zen-mode .gg-right .px-actions {
   }
   /* Nebenrechnung braucht Zeilen für eine schriftliche Rechnung (10 Kästchen hoch) */
   body.practice-zen-mode .gg-scratch {
-    height: 244px;
+    height: 320px;
   }
 }
 
