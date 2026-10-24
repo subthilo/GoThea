@@ -296,15 +296,15 @@ def get_material_preview_image(
     """
     Rendert eine Seite des Materials (PDF oder Bild) als hochauflösendes PNG-Bild,
     perfekt für Whiteboard-Hintergründe und In-App Vorschau.
-    Lösungsseiten (services/solution_pages.py) sieht Thea als Schloss; sie werden nie im Browser
-    zwischengespeichert, damit nach einem Moduswechsel nichts Falsches aus dem Cache kommt.
+    Lösungsseiten (services/solution_pages.py) sieht Thea als Schloss, bis sie das Dokument bearbeitet hat; sie
+    werden nie im Browser zwischengespeichert, damit nach einem Moduswechsel oder Freiwerden nichts Altes kommt.
     """
     mat = db.query(Material).filter_by(id=material_id).first()
     if not mat:
         raise HTTPException(status_code=404, detail="Material nicht gefunden.")
 
     solution = solution_pages.is_solution_page(mat, page)
-    if solution and not parent:
+    if solution and not parent and not solution_pages.unlocked(db, mat):
         return Response(content=solution_pages.LOCKED_PAGE_SVG, media_type="image/svg+xml", headers={"Cache-Control": "no-store"})
     cache_control = "no-store" if solution else "public, max-age=86400, stale-while-revalidate=3600"
 

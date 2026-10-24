@@ -87,3 +87,40 @@ def test_cookie_never_unlocks_changes(strict_client, db_session, tmp_path):
     mat = _material(db_session, tmp_path)
     strict_client.cookies.set("gothea_parent", _token(strict_client))
     assert strict_client.delete(f"/api/v1/materials/{mat.id}").status_code == 403
+
+
+def _is_locked(client, mat):
+    return client.get(f"/api/v1/materials/{mat.id}/preview?page=2").headers["content-type"].startswith("image/svg+xml")
+
+
+@pytest.mark.parametrize("flag", ["worked_on_paper", "teacher_graded"])
+def test_solutions_open_once_the_sheet_was_done_on_paper(strict_client, db_session, tmp_path, flag):
+    mat = _material(db_session, tmp_path)
+    setattr(mat, flag, True)
+    db_session.commit()
+    assert not _is_locked(strict_client, mat)
+
+
+def test_solutions_open_once_every_exercise_from_the_sheet_was_solved(strict_client, db_session, tmp_path,
+                                                                     monkeypatch):
+    from datetime import datetime
+    from backend.app.models.practice_attempt import PracticeAttempt
+    from backend.app.services import practice_exercises
+
+    mat = _material(db_session, tmp_path)
+    assert _is_locked(strict_client, mat)  # ohne Übungen: nur der Scan gibt frei
+    monkeypatch.setattr(practice_exercises, "list_exercises", lambda include_drafts=False: [
+        {"id": "bio-a", "zwillinge": ["bio-a-z1"], "quelle": {"material_id": mat.id}},
+        {"id": "bio-b", "zwillinge": [], "quelle": {"material_id": mat.id}},
+        {"id": "anderes", "zwillinge": [], "quelle": {"material_id": "mat_anderes"}},
+    ])
+
+    def attempt(exercise_id, solved):
+        db_session.add(PracticeAttempt(exercise_id=exercise_id, stage=1, solved_at=datetime.utcnow() if solved else None))
+        db_session.commit()
+
+    attempt("bio-a-z1", solved=True)   # Zwilling zählt für das Original
+    attempt("bio-b", solved=False)     # angefangen ist nicht geschafft
+    assert _is_locked(strict_client, mat)
+    attempt("bio-b", solved=True)
+    assert not _is_locked(strict_client, mat)
