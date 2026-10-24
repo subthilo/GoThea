@@ -4,9 +4,9 @@ from tests.e2e.test_practice import practice_list
 EX = "ch-reinstoffe-gemische"
 
 
-def open_sb(page, stage):
+def open_sb(page, stage, ex=EX):
     practice_list(page)
-    page.evaluate(f"window.openPracticeExercise('{EX}', {stage})")
+    page.evaluate(f"window.openPracticeExercise('{ex}', {stage})")
     page.wait_for_selector(".sb-drawers")
 
 
@@ -72,15 +72,25 @@ def test_find_the_two_mistakes(app_page):
     assert app_page.problems.errors == []
 
 
-def test_everything_fits_on_one_screen_in_both_orientations(app_page):
+def assert_fits(page, ex, stages):
     for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
-        app_page.set_viewport_size({"width": width, "height": height})
-        open_sb(app_page, 2)
-        over = app_page.evaluate("""() => {
-            const o = (el) => el ? el.scrollHeight - el.clientHeight : 0;
-            return { page: document.scrollingElement.scrollHeight - innerHeight,
-                     pool: o(document.querySelector('.sb-pool')), drawers: o(document.querySelector('.sb-drawers')) };
-        }""")
-        assert over == {"page": 0, "pool": 0, "drawers": 0}, (width, height)
-        app_page.click('[data-action="back"]')
-    assert app_page.problems.errors == []
+        page.set_viewport_size({"width": width, "height": height})
+        for stage in stages:
+            open_sb(page, stage, ex)
+            over = page.evaluate("""() => {
+                const o = (el) => el ? el.scrollHeight - el.clientHeight : 0;
+                return { page: document.scrollingElement.scrollHeight - innerHeight,
+                         pool: o(document.querySelector('.sb-pool')), drawers: o(document.querySelector('.sb-drawers')) };
+            }""")
+            assert over == {"page": 0, "pool": 0, "drawers": 0}, (ex, stage, width, height)
+            page.click('[data-action="back"]')
+    assert page.problems.errors == []
+
+
+def test_everything_fits_on_one_screen_in_both_orientations(app_page):
+    assert_fits(app_page, EX, [2])
+
+
+def test_long_cards_fit_on_one_screen(app_page):
+    # Mathe: neun Karten mit ganzen Zuordnungen statt einzelner Wörter; Stufe 3 legt alle in die Schubladen
+    assert_fits(app_page, "ma-art-der-zuordnung", [1, 2, 3])
