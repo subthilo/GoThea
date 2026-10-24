@@ -6,13 +6,44 @@ from sqlalchemy.orm import Session
 from backend.app.models.test import Test
 from backend.app.models.study_block import StudyBlock
 from backend.app.models.completed_task import CompletedTask
+from backend.app.models.taxonomy import Topic
 from backend.app.models.user import User
 from backend.app.schemas.planner import (
     PlanTaskItem,
     DayPlan,
     PlanOverviewResponse,
-    TestRead
+    TestRead,
+    TestTopic,
 )
+
+
+def test_read(t: Test) -> TestRead:
+    """Ein Test für die API, mit Fach und den gewählten Themen."""
+    return TestRead(
+        id=t.id,
+        user_id=t.user_id,
+        subject_id=t.subject_id,
+        kind=t.kind,
+        date=t.date,
+        note=t.note,
+        source_origin=t.source_origin,
+        external_uid=t.external_uid,
+        created_at=t.created_at,
+        subject_name=t.subject.name if t.subject else "Fach",
+        subject_icon=t.subject.icon if t.subject else "📚",
+        subject_color=t.subject.color_code if t.subject else "#2563eb",
+        topics=[TestTopic(id=tp.id, name=tp.name, area=tp.area) for tp in t.topics],
+    )
+
+
+def topics_for_test(db: Session, subject_id: str, topic_ids: List[str]) -> List[Topic]:
+    """Gewählte Themen laden; alle müssen zum Fach des Tests gehören. ValueError sonst."""
+    topics = db.query(Topic).filter(Topic.id.in_(topic_ids)).all() if topic_ids else []
+    if len(topics) != len(set(topic_ids)):
+        raise ValueError("Thema nicht gefunden")
+    if any(tp.subject_id != subject_id for tp in topics):
+        raise ValueError("Thema gehört zu einem anderen Fach")
+    return topics
 
 def get_preparation_window(kind: str, grade_level: int) -> int:
     """
@@ -239,20 +270,7 @@ def compute_plan_overview(db: Session, ref_date: Optional[date] = None) -> PlanO
     # Upcoming tests formatieren
     upcoming_list: List[TestRead] = []
     for t in active_tests:
-        tr = TestRead(
-            id=t.id,
-            user_id=t.user_id,
-            subject_id=t.subject_id,
-            kind=t.kind,
-            date=t.date,
-            note=t.note,
-            source_origin=t.source_origin,
-            external_uid=t.external_uid,
-            created_at=t.created_at,
-            subject_name=t.subject.name if t.subject else "Fach",
-            subject_icon=t.subject.icon if t.subject else "📚",
-            subject_color=t.subject.color_code if t.subject else "#2563eb"
-        )
+        tr = test_read(t)
         upcoming_list.append(tr)
 
     return PlanOverviewResponse(

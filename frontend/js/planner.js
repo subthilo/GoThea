@@ -116,14 +116,19 @@ async function loadPlan() {
             <div class="test-card-title">${subjectLabel(t.subject_name)} – ${t.kind}</div>
             <span class="countdown-badge">${badgeText}</span>
           </div>
-          <div class="test-note">${t.note || "Keine Notiz hinterlegt"}</div>
+          ${topicChipsHtml(t.topics, t.subject_name)}
+          ${t.note ? `<div class="test-note">${escapeHtml(t.note)}</div>` : ""}
           <div class="test-card-footer">
             <span>${icon("Kalender")} ${t.date}</span>
-            <button class="btn-del-test parent-only" data-id="${t.id}">Löschen</button>
+            <span>
+              <button class="btn-edit-test parent-only" title="Ändern" aria-label="Ändern">${icon("Schreibwerkzeuge")}</button>
+              <button class="btn-del-test parent-only" data-id="${t.id}">Löschen</button>
+            </span>
           </div>
         `;
+        card.querySelector(".btn-edit-test").addEventListener("click", () => openTestModal(t));
 
-        card.querySelector(".btn-del-test").addEventListener("click", async (e) => {
+        card.querySelector(".btn-del-test[data-id]").addEventListener("click", async (e) => {
           if (confirm(`Möchtest du diese ${t.kind} wirklich löschen?`)) {
             await deleteTest(e.currentTarget.dataset.id);
           }
@@ -132,6 +137,7 @@ async function loadPlan() {
         testsGrid.appendChild(card);
       });
     }
+    await loadCurrentTopics();
 
   } catch (err) {
     console.error("Fehler beim Laden des Plans:", err);
@@ -166,16 +172,33 @@ async function deleteTest(testId) {
 const modalTest = document.getElementById("modal-test");
 const modalBlock = document.getElementById("modal-block");
 
-document.getElementById("btn-open-test-modal").addEventListener("click", () => {
-  // Fächer Dropdown füllen
+document.getElementById("btn-open-test-modal").addEventListener("click", () => openTestModal());
+
+let editingTestId = null;
+
+// Neue Prüfung (test = null) oder eine bestehende ändern; das Fach steht beim Ändern fest
+async function openTestModal(test = null) {
+  editingTestId = test ? test.id : null;
+  document.getElementById("modal-test-title").textContent = test ? `${test.subject_name} – ${test.kind}` : "Neue Prüfung";
   const sel = document.getElementById("input-test-subject");
   sel.innerHTML = currentSubjects.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
-  // Default Datum: in 7 Tagen
+  sel.disabled = !!test;
+  if (test) sel.value = test.subject_id;
+  document.getElementById("input-test-kind").value = test ? test.kind : "Klassenarbeit";
   const d = new Date();
-  d.setDate(d.getDate() + 7);
-  document.getElementById("input-test-date").value = d.toISOString().split("T")[0];
+  d.setDate(d.getDate() + 7);  // neu: in 7 Tagen
+  document.getElementById("input-test-date").value = test ? test.date : d.toISOString().split("T")[0];
+  document.getElementById("input-test-note").value = test ? (test.note || "") : "";
   modalTest.style.display = "flex";
-});
+  await fillTestTopics(test ? test.topics.map((tp) => tp.id) : []);
+}
+
+async function fillTestTopics(checkedIds) {
+  const box = document.getElementById("input-test-topics");
+  renderTopicChecklist(box, await fetchTopics(document.getElementById("input-test-subject").value), checkedIds);
+}
+
+document.getElementById("input-test-subject").addEventListener("change", () => fillTestTopics([]));
 
 document.getElementById("btn-close-test-modal").addEventListener("click", () => {
   modalTest.style.display = "none";
@@ -202,11 +225,18 @@ document.getElementById("btn-submit-test").addEventListener("click", async () =>
     return;
   }
 
-  const res = await apiFetch("/api/v1/tests", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subject_id, kind, date: dateVal, note })
-  });
+  const topic_ids = checkedTopicIds(document.getElementById("input-test-topics"));
+  const res = editingTestId
+    ? await apiFetch(`/api/v1/tests/${editingTestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, date: dateVal, note, topic_ids })
+      })
+    : await apiFetch("/api/v1/tests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject_id, kind, date: dateVal, note, topic_ids })
+      });
 
   if (res.ok) {
     modalTest.style.display = "none";
@@ -214,6 +244,85 @@ document.getElementById("btn-submit-test").addEventListener("click", async () =>
     await loadPlan();
   } else {
     alert("Fehler beim Speichern der Prüfung.");
+  }
+});
+
+// ---------- Themen (Test-Themen und „gerade dran“): aus dem Themenkatalog gewählt ----------
+
+async function fetchTopics(subjectId = null) {
+  const res = await apiFetch(`/api/v1/taxonomy/topics${subjectId ? `?subject_id=${encodeURIComponent(subjectId)}` : ""}`);
+  return res.ok ? res.json() : [];
+}
+
+function renderTopicChecklist(box, topics, checkedIds) {
+  const byArea = {};
+  topics.forEach((tp) => (byArea[tp.area || ""] ||= []).push(tp));
+  const areas = Object.keys(byArea).sort((a, b) => (a === "") - (b === "") || a.localeCompare(b, "de"));
+  box.innerHTML = topics.length ? areas.map((area) => `
+    ${area ? `<div class="topic-area">${escapeHtml(area)}</div>` : ""}
+    ${byArea[area].map((tp) => `
+      <label class="topic-check">
+        <input type="checkbox" value="${tp.id}"${checkedIds.includes(tp.id) ? " checked" : ""}>
+        <span>${escapeHtml(tp.name)}</span>
+      </label>`).join("")}`).join("") : `<div class="topic-area">–</div>`;
+}
+
+function checkedTopicIds(box) {
+  return [...box.querySelectorAll("input:checked")].map((el) => el.value);
+}
+
+function topicChipsHtml(topics, subjectName) {
+  if (!topics || !topics.length) return "";
+  return `<div class="topic-chips">${topics.map((tp) =>
+    `<span class="topic-chip" style="--chip-color: ${subjectColor(subjectName)}" title="${escapeHtml(tp.area || "")}">${escapeHtml(tp.name)}</span>`).join("")}</div>`;
+}
+
+function subjectNameOf(subjectId) {
+  const s = currentSubjects.find((x) => x.id === subjectId);
+  return s ? s.name : "";
+}
+
+async function loadCurrentTopics() {
+  const box = document.getElementById("planner-current-topics");
+  if (!box) return;
+  const current = (await fetchTopics()).filter((tp) => tp.current_since);
+  box.innerHTML = current.map((tp) =>
+    `<span class="topic-chip" style="--chip-color: ${subjectColor(subjectNameOf(tp.subject_id))}" title="${escapeHtml(subjectNameOf(tp.subject_id))}">${escapeHtml(tp.name)}</span>`).join("");
+}
+
+const modalCurrentTopics = document.getElementById("modal-current-topics");
+let currentTopicsShown = [];
+
+async function fillCurrentTopics() {
+  currentTopicsShown = await fetchTopics(document.getElementById("input-current-subject").value);
+  renderTopicChecklist(document.getElementById("input-current-topics"), currentTopicsShown,
+    currentTopicsShown.filter((tp) => tp.current_since).map((tp) => tp.id));
+}
+
+document.getElementById("btn-open-current-topics").addEventListener("click", async () => {
+  const sel = document.getElementById("input-current-subject");
+  sel.innerHTML = currentSubjects.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+  modalCurrentTopics.style.display = "flex";
+  await fillCurrentTopics();
+});
+document.getElementById("input-current-subject").addEventListener("change", fillCurrentTopics);
+document.getElementById("btn-close-current-topics").addEventListener("click", () => {
+  modalCurrentTopics.style.display = "none";
+});
+
+document.getElementById("btn-submit-current-topics").addEventListener("click", async () => {
+  const checked = new Set(checkedTopicIds(document.getElementById("input-current-topics")));
+  const changed = currentTopicsShown.filter((tp) => checked.has(tp.id) !== !!tp.current_since);
+  const results = await Promise.all(changed.map((tp) => apiFetch(`/api/v1/taxonomy/topics/${tp.id}/current`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ current: checked.has(tp.id) })
+  })));
+  if (results.every((r) => r.ok)) {
+    modalCurrentTopics.style.display = "none";
+    await loadCurrentTopics();
+  } else {
+    alert("Fehler beim Speichern der Themen.");
   }
 });
 

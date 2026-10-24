@@ -2,7 +2,7 @@
   <div id="modal-test" class="modal-backdrop" style="display: none;">
     <div class="modal-box">
       <div class="modal-header">
-        <h3><span class="ui-icon i-plus" aria-hidden="true"></span> Neue Prüfung eintragen</h3>
+        <h3 id="modal-test-title">Neue Prüfung</h3>
         <button class="modal-close" id="btn-close-test-modal"><span class="ui-icon i-schliessen" aria-hidden="true"></span></button>
       </div>
       <div class="modal-body">
@@ -25,10 +25,14 @@
           <input type="date" id="input-test-date" class="input-field">
         </div>
         <div class="form-group">
-          <label>Themen / Notiz</label>
-          <input type="text" id="input-test-note" class="input-field" placeholder="z. B. Rationale Zahlen, Bruchrechnung">
+          <label>Themen</label>
+          <div id="input-test-topics" class="topic-checklist"></div>
         </div>
-        <button id="btn-submit-test" class="btn-primary">Prüfung speichern & Countdown starten</button>
+        <div class="form-group">
+          <label>Notiz</label>
+          <input type="text" id="input-test-note" class="input-field" placeholder="z. B. Aufgaben wie im Arbeitsheft S. 12">
+        </div>
+        <button id="btn-submit-test" class="btn-primary">Speichern</button>
       </div>
     </div>
   </div>

@@ -29,6 +29,7 @@ class Topic(Base):
     rlp_level_code = Column(String, nullable=True)  # 'A' bis 'H'
     standard_competencies = Column(String, nullable=True)
     area = Column(String, nullable=True)  # Themenbereich über dem Thema, z. B. "Mechanik"
+    current_since = Column(DateTime, nullable=True)  # von den Eltern auf „gerade dran“ gesetzt (leer = nicht)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     subject = relationship("Subject", back_populates="topics")

@@ -103,3 +103,53 @@ def test_staging_seed_dummies(client):
     # Tests abrufen
     tests_res = client.get("/api/v1/tests")
     assert len(tests_res.json()) >= 3
+
+
+def _topic(client, subject_id, name):
+    res = client.post("/api/v1/taxonomy/topics", json={"subject_id": subject_id, "name": name, "grade_level": 7})
+    assert res.status_code == 201, res.text
+    return res.json()["id"]
+
+
+def test_test_carries_topics_chosen_from_the_catalog(client):
+    terms = _topic(client, "sub_math", "Terme und Gleichungen")
+    fractions = _topic(client, "sub_math", "Bruchrechnung")
+    exam = (date.today() + timedelta(days=7)).isoformat()
+    created = client.post("/api/v1/tests", json={"subject_id": "sub_math", "kind": "Test", "date": exam,
+                                                 "topic_ids": [terms]}).json()
+    assert [t["name"] for t in created["topics"]] == ["Terme und Gleichungen"]
+    # Ändern: Themen austauschen, Rest bleibt
+    changed = client.patch(f"/api/v1/tests/{created['id']}", json={"topic_ids": [fractions, terms]}).json()
+    assert [t["name"] for t in changed["topics"]] == ["Bruchrechnung", "Terme und Gleichungen"]
+    assert changed["kind"] == "Test" and changed["date"] == exam
+    # Themen erscheinen auch im Plan
+    plan = client.get("/api/v1/plan").json()
+    listed = next(t for t in plan["upcoming_tests"] if t["id"] == created["id"])
+    assert len(listed["topics"]) == 2
+
+
+def test_test_topics_must_belong_to_its_subject(client):
+    other = _topic(client, "sub_german", "Balladen")
+    exam = (date.today() + timedelta(days=7)).isoformat()
+    res = client.post("/api/v1/tests", json={"subject_id": "sub_math", "date": exam, "topic_ids": [other]})
+    assert res.status_code == 422
+    res = client.post("/api/v1/tests", json={"subject_id": "sub_math", "date": exam, "topic_ids": ["top_gibtsnicht"]})
+    assert res.status_code == 422
+
+
+def test_topic_can_be_marked_current(client):
+    topic = _topic(client, "sub_math", "Prozentrechnung")
+    on = client.put(f"/api/v1/taxonomy/topics/{topic}/current", json={"current": True}).json()
+    assert on["current_since"] is not None
+    # Erneutes Setzen behält das Datum
+    assert client.put(f"/api/v1/taxonomy/topics/{topic}/current", json={"current": True}).json()["current_since"] == on["current_since"]
+    listed = next(t for t in client.get("/api/v1/taxonomy/topics?subject_id=sub_math").json() if t["id"] == topic)
+    assert listed["current_since"] == on["current_since"]
+    assert client.put(f"/api/v1/taxonomy/topics/{topic}/current", json={"current": False}).json()["current_since"] is None
+
+
+def test_changing_tests_and_topics_needs_parent_mode(strict_client):
+    exam = (date.today() + timedelta(days=7)).isoformat()
+    assert strict_client.post("/api/v1/tests", json={"subject_id": "sub_math", "date": exam}).status_code == 403
+    assert strict_client.patch("/api/v1/tests/tst_x", json={"note": "x"}).status_code == 403
+    assert strict_client.put("/api/v1/taxonomy/topics/top_x/current", json={"current": True}).status_code == 403

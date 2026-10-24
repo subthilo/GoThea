@@ -16,7 +16,13 @@ class TopicRead(TopicBase):
 
     id: str
     subject_id: str
+    area: Optional[str] = None
+    current_since: Optional[datetime] = None
     created_at: datetime
+
+
+class TopicCurrent(BaseModel):
+    current: bool
 
 
 class SubjectBase(BaseModel):

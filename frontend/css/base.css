@@ -818,6 +818,55 @@ body {
   color: var(--text-secondary);
 }
 
+/* Themen eines Tests bzw. „gerade dran“: Chips mit Fachfarbe; Auswahl als Liste nach Bereichen */
+.topic-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.topic-chip {
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--chip-color, var(--accent-light));
+  background: var(--bg-secondary);
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.topic-checklist {
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+}
+
+.topic-area {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 8px 0 2px;
+}
+
+.topic-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 2px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.topic-check input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 .test-card-footer {
   display: flex;
   justify-content: space-between;
@@ -836,6 +885,19 @@ body {
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+.btn-edit-test {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.btn-edit-test:hover {
+  background: var(--bg-secondary);
 }
 
 .btn-del-test:hover {

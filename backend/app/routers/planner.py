@@ -12,12 +12,13 @@ from backend.app.models.taxonomy import Subject
 from backend.app.schemas.planner import (
     TestCreate,
     TestRead,
+    TestUpdate,
     StudyBlockCreate,
     StudyBlockRead,
     TaskToggleRequest,
     PlanOverviewResponse
 )
-from backend.app.services.planner import compute_plan_overview
+from backend.app.services.planner import compute_plan_overview, test_read, topics_for_test
 from backend.app.services.parent_auth import require_parent
 
 router = APIRouter(prefix="/api/v1", tags=["Planner & Tests"])
@@ -26,50 +27,42 @@ router = APIRouter(prefix="/api/v1", tags=["Planner & Tests"])
 
 @router.get("/tests", response_model=List[TestRead])
 def list_tests(db: Session = Depends(get_db)):
-    tests = db.query(Test).order_by(Test.date.asc()).all()
-    results = []
-    for t in tests:
-        results.append(TestRead(
-            id=t.id,
-            user_id=t.user_id,
-            subject_id=t.subject_id,
-            kind=t.kind,
-            date=t.date,
-            note=t.note,
-            source_origin=t.source_origin,
-            external_uid=t.external_uid,
-            created_at=t.created_at,
-            subject_name=t.subject.name if t.subject else "Fach",
-            subject_icon=t.subject.icon if t.subject else "📚",
-            subject_color=t.subject.color_code if t.subject else "#2563eb"
-        ))
-    return results
+    return [test_read(t) for t in db.query(Test).order_by(Test.date.asc()).all()]
 
 @router.post("/tests", response_model=TestRead, status_code=201, dependencies=[Depends(require_parent)])
 def create_test(test_in: TestCreate, db: Session = Depends(get_db)):
     subject = db.query(Subject).filter(Subject.id == test_in.subject_id).first()
     if not subject:
         raise HTTPException(status_code=404, detail=f"Fach mit ID '{test_in.subject_id}' nicht gefunden.")
+    try:
+        topics = topics_for_test(db, subject.id, test_in.topic_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
-    test = Test(**test_in.model_dump())
+    test = Test(**test_in.model_dump(exclude={"topic_ids"}))
+    test.topics = topics
     db.add(test)
     db.commit()
     db.refresh(test)
+    return test_read(test)
 
-    return TestRead(
-        id=test.id,
-        user_id=test.user_id,
-        subject_id=test.subject_id,
-        kind=test.kind,
-        date=test.date,
-        note=test.note,
-        source_origin=test.source_origin,
-        external_uid=test.external_uid,
-        created_at=test.created_at,
-        subject_name=subject.name,
-        subject_icon=subject.icon,
-        subject_color=subject.color_code
-    )
+@router.patch("/tests/{test_id}", response_model=TestRead, dependencies=[Depends(require_parent)])
+def update_test(test_id: str, test_in: TestUpdate, db: Session = Depends(get_db)):
+    test = db.get(Test, test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Prüfungstermin nicht gefunden.")
+    changes = test_in.model_dump(exclude_unset=True)
+    if "topic_ids" in changes:
+        try:
+            test.topics = topics_for_test(db, test.subject_id, changes.pop("topic_ids") or [])
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+    for key, value in changes.items():
+        if value is not None or key == "note":
+            setattr(test, key, value)
+    db.commit()
+    db.refresh(test)
+    return test_read(test)
 
 @router.delete("/tests/{test_id}", dependencies=[Depends(require_parent)])
 def delete_test(test_id: str, db: Session = Depends(get_db)):

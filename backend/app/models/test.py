@@ -1,8 +1,17 @@
 from datetime import datetime
 import uuid
-from sqlalchemy import Column, String, DateTime, ForeignKey, Index
+from sqlalchemy import Column, String, DateTime, ForeignKey, Index, Table
 from sqlalchemy.orm import relationship
 from backend.app.database import Base
+
+# Welche Themen ein Test abfragt (von den Eltern aus dem Themenkatalog gewählt); daraus ergibt sich,
+# was Thea vor dem Test übt
+test_topics = Table(
+    "test_topics", Base.metadata,
+    Column("test_id", String, ForeignKey("tests.id", ondelete="CASCADE"), primary_key=True),
+    Column("topic_id", String, ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True),
+)
+
 
 class Test(Base):
     __tablename__ = "tests"
@@ -19,6 +28,7 @@ class Test(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     subject = relationship("Subject")
+    topics = relationship("Topic", secondary=test_topics, order_by="Topic.name")
     completed_tasks = relationship("CompletedTask", back_populates="test", cascade="all, delete-orphan")
 
     __table_args__ = (

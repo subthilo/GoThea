@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
@@ -6,6 +7,7 @@ from backend.app.config import TEMP_UPLOADS_DIR, MATERIALS_DIR
 from backend.app.database import get_db
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.schemas.taxonomy import (
+    TopicCurrent,
     SubjectCreate,
     SubjectRead,
     TopicCreate,
@@ -116,6 +118,20 @@ def list_topics(
     if grade_level is not None:
         query = query.filter(Topic.grade_level == grade_level)
     return query.order_by(Topic.name).all()
+
+@router.put("/topics/{topic_id}/current", response_model=TopicRead, dependencies=[Depends(require_parent)])
+def set_topic_current(topic_id: str, payload: TopicCurrent, db: Session = Depends(get_db)):
+    """Thema auf „gerade dran“ setzen (oder zurück): daraus bekommt Thea neue Übungen, auch ohne Test."""
+    topic = db.get(Topic, topic_id)
+    if topic is None:
+        raise HTTPException(status_code=404, detail="Thema nicht gefunden.")
+    if payload.current and topic.current_since is None:
+        topic.current_since = datetime.utcnow()
+    elif not payload.current:
+        topic.current_since = None
+    db.commit()
+    db.refresh(topic)
+    return topic
 
 @router.post("/topics", response_model=TopicRead, status_code=201, dependencies=[Depends(require_parent)])
 def create_topic(topic_in: TopicCreate, db: Session = Depends(get_db)):

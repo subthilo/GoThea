@@ -11,7 +11,18 @@ class TestBase(BaseModel):
     note: Optional[str] = None
 
 class TestCreate(TestBase):
-    pass
+    topic_ids: List[str] = []
+
+class TestUpdate(BaseModel):
+    kind: Optional[str] = Field(default=None, pattern="^(Test|Klassenarbeit|Klausur)$")
+    date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    note: Optional[str] = None
+    topic_ids: Optional[List[str]] = None
+
+class TestTopic(BaseModel):
+    id: str
+    name: str
+    area: Optional[str] = None
 
 class TestRead(TestBase):
     model_config = ConfigDict(from_attributes=True)
@@ -24,6 +35,7 @@ class TestRead(TestBase):
     subject_name: Optional[str] = None
     subject_icon: Optional[str] = None
     subject_color: Optional[str] = None
+    topics: List[TestTopic] = []
 
 
 # --- StudyBlock / Sperrtag Schemas ---
