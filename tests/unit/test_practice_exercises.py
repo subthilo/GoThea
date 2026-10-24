@@ -189,7 +189,7 @@ def test_api_lists_and_returns_exercises(client, monkeypatch):
     monkeypatch.setattr(config, "EXERCISE_TRIAL_ENABLED", True)
     data = client.get("/api/v1/practice").json()
     assert data["enabled"] is True
-    first = data["exercises"][0]
+    first = next(ex for ex in data["exercises"] if ex["typ"] == "sachaufgabe")
     detail = client.get(f"/api/v1/practice/{first['id']}").json()
     assert detail["bausteine"]["felder"]
     assert client.get("/api/v1/practice/gibt-es-nicht").status_code == 404
