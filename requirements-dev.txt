@@ -2,5 +2,3 @@
 -r backend/requirements.txt
 playwright>=1.45
 ruff>=0.6
-# Mandala-Generator (Felder aus Linien); auf dem Pi zusätzlich die Systembibliothek libgeos-c1v5 (apt)
-shapely==2.0.7
