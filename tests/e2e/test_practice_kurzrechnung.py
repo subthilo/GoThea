@@ -48,6 +48,7 @@ def test_estimate_first_then_comma_hint_then_right(app_page):
 
 def test_tap_stage_marks_wrong_offers(app_page):
     open_kr(app_page, "km-kuerzen-dividieren", -1)
+    assert app_page.locator(".kr-left .gg-scratch").count() == 1      # Nebenrechnung auch beim Antippen
     a = data(app_page, "km-kuerzen-dividieren")["liste"][0]["auswahl"]
     wrong = (a["richtig"] + 1) % len(a["angebote"])
     app_page.click(f'.kr-choice[data-choice="{wrong}"]')

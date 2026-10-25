@@ -333,7 +333,8 @@
       return;
     }
     const tapStage = run.stage < 0;
-    const scratch = !run.ex.check && !tapStage;
+    // Nebenrechnung überall außer im Einmaleins-Check, auch beim Antippen (Nutzer 25.10.): links, füllt den Rest
+    const scratch = !run.ex.check;
     runView.innerHTML = `
       ${core.topbarHtml(run.ex, run.stage)}
       <div class="kr${tapStage ? " kr-tap" : ""}${run.ex.check ? " kr-check" : ""}${scratch ? "" : " kr-noscratch"}" style="--subject-color:${subjectColor(run.ex.fach)}">
