@@ -78,8 +78,14 @@ function buildPaintMode() {
     <div class="paint-stage">
       <div class="paint-viewport">
         <canvas class="paint-ink"></canvas><canvas class="paint-overlay"></canvas>
+        <div class="paint-lines" aria-hidden="true"></div>
         <div class="paint-ghost" aria-hidden="true"></div>
+        <div class="paint-placing" hidden></div>
       </div>
+    </div>
+    <div class="paint-coloring-sheet" hidden>
+      <div class="paint-coloring-grid"></div>
+      <button type="button" class="paint-btn" data-paint-action="c-close" title="Schließen" aria-label="Schließen">${icon("Schließen")}</button>
     </div>
     <div class="paint-bar paint-bar-tools" role="toolbar" aria-label="Werkzeuge">
       <button type="button" class="paint-btn" data-paint-tool="pen" title="Pinsel" aria-label="Pinsel">${icon("Pinsel")}</button>
@@ -89,6 +95,12 @@ function buildPaintMode() {
       <button type="button" class="paint-btn" data-paint-action="redo" title="Wiederholen" aria-label="Wiederholen">${icon("Wiederholen")}</button>
       <button type="button" class="paint-btn" data-paint-action="ghost" title="" aria-label=""></button>
       <button type="button" class="paint-btn" data-paint-action="scope" title="" aria-label=""></button>
+      <button type="button" class="paint-btn" data-paint-action="coloring" title="Ausmalbild" aria-label="Ausmalbild">${icon("Ausmalbild")}</button>
+      <button type="button" class="paint-btn" data-paint-action="c-place" data-coloring-tool hidden title="Ausmalbild verschieben, drehen, größer/kleiner" aria-label="Ausmalbild platzieren">${icon("Hand")}</button>
+      <button type="button" class="paint-btn" data-paint-action="c-thin" data-coloring-tool hidden title="Linien dünner" aria-label="Linien dünner">${icon("Minus")}</button>
+      <button type="button" class="paint-btn" data-paint-action="c-thick" data-coloring-tool hidden title="Linien dicker" aria-label="Linien dicker">${icon("Plus")}</button>
+      <button type="button" class="paint-btn" data-paint-action="c-color" data-coloring-tool hidden title="Linien in der gewählten Farbe" aria-label="Linienfarbe">${icon("Marker")}</button>
+      <button type="button" class="paint-btn" data-paint-action="c-remove" data-coloring-tool hidden title="Ausmalbild entfernen" aria-label="Ausmalbild entfernen">${icon("Papierkorb")}</button>
       <button type="button" class="paint-btn" data-paint-action="preview" title="So sieht es aus" aria-label="So sieht es aus">${icon("Bild")}</button>
       <span class="paint-save-error" hidden title="Speichern hat nicht geklappt – es wird weiter versucht">${icon("Warnung")}</span>
       <button type="button" class="paint-btn paint-btn-done" data-paint-action="done" title="Fertig" aria-label="Fertig">${icon("Haken")}</button>
@@ -97,19 +109,26 @@ function buildPaintMode() {
   paintMode.el = el;
   paintMode.viewport = el.querySelector(".paint-viewport");
   paintMode.ghostLayer = el.querySelector(".paint-ghost");
+  paintMode.linesLayer = el.querySelector(".paint-lines");
   const ink = el.querySelector(".paint-ink"), overlay = el.querySelector(".paint-overlay");
 
   paintMode.surface = createInkSurface({
     viewport: paintMode.viewport, inkCanvas: ink, overlayCanvas: overlay,
     btnScrollTop: null, scrollTrack: null, scrollThumb: null,
     btnWbZoomIn: null, btnWbZoomOut: null, btnWbZoomReset: null, wbZoomLevelText: null,
-    // Das Geisterbild folgt Zoom und Verschieben, weil der Kern die Aufgaben-Ebene mitbewegt
-    docUnderlay: null, docUnderlayImg: null, tasksLayer: paintMode.ghostLayer,
+    // Geisterbild und Linien der Ausmalbilder folgen Zoom und Verschieben: der Kern bewegt die
+    // Aufgaben-Ebene und die Unterlage mit
+    docUnderlay: paintMode.linesLayer, docUnderlayImg: null, tasksLayer: paintMode.ghostLayer,
     inkCtx: ink.getContext("2d", { desynchronized: true }), overlayCtx: overlay.getContext("2d"),
     stopTutorSpeech: () => {},
     scheduleAutoSave: () => { paintMode.surface.redoStack = []; schedulePaintSave(); },
     sendCanvasUpdate: () => {},
+    // Schablone: der Strich bleibt im Feld des Ausmalbilds, in dem der Stift aufsetzt (js/paint_coloring.js)
+    clipForPoint: (pt) => coloringClipForPoint(pt),
+    clipPath: (key) => coloringClipPath(key),
   });
+  paintMode.surface.isUnderlayVisible = true;
+  coloringBindPlacing(el.querySelector(".paint-placing"));
 
   // Das Bild bleibt im Rahmen: nicht über seine Kanten hinaus verschieben
   const clamp = () => clampPaintPan();
@@ -149,6 +168,8 @@ function layoutPaintMode() {
   paintMode.h = h;
   paintMode.viewport.style.width = `${w}px`;
   paintMode.viewport.style.height = `${h}px`;
+  coloring.scale = w / PAINT_UNITS;
+  coloring.pxCache.clear();
   const s = paintMode.surface;
   if (old && old !== w) {
     const f = w / old;
@@ -162,6 +183,7 @@ function layoutPaintMode() {
   applyPaintTool();
   buildPaintGhost();
   s.updateViewportPan();
+  coloringRender();
 }
 
 function scaleStroke(stroke, f) {
@@ -353,6 +375,12 @@ function onPaintClick(e) {
   } else if (action === "done") {
     closePaintMode();
     return;
+  } else if (action === "c-close") {
+    paintMode.el.querySelector(".paint-coloring-sheet").hidden = true;
+    return;
+  } else if (action === "coloring" || (action && action.startsWith("c-"))) {
+    coloringAction(action);
+    return;
   } else {
     return;
   }
@@ -361,14 +389,17 @@ function onPaintClick(e) {
 }
 
 // ---- Laden und Speichern ----
-function strokesFromSaved(json) {
-  let data = null;
-  try { data = JSON.parse(json || "null"); } catch (e) { return []; }
+function parseSavedPainting(json) {
+  try { return JSON.parse(json || "null"); } catch (e) { return null; }
+}
+
+function strokesFromSaved(data) {
   const list = Array.isArray(data) ? data : (data && Array.isArray(data.strokes) ? data.strokes : []);
   const f = paintMode.w / PAINT_UNITS;
   return list.filter((st) => st && Array.isArray(st.points) && st.points.length).map((st) => {
     const stroke = { tool: st.tool || "pen", color: st.color || "#000000", width: (st.width || 8) * f,
       points: st.points.map((p) => ({ x: p.x * f, y: p.y * f, pressure: p.pressure || 0.5 })) };
+    if (st.clip != null) stroke.clip = st.clip;  // Feld eines Ausmalbilds
     stroke.bbox = paintMode.surface.computeBoundingBox(stroke.points);
     return stroke;
   });
@@ -378,7 +409,7 @@ function strokesInUnits() {
   const f = PAINT_UNITS / paintMode.w;
   const r = (v) => Math.round(v * 10) / 10;
   return paintMode.surface.strokes.map((st) => ({
-    tool: st.tool, color: st.color, width: r(st.width * f),
+    tool: st.tool, color: st.color, width: r(st.width * f), ...(st.clip != null ? { clip: st.clip } : {}),
     points: st.points.map((p) => ({ x: r(p.x * f), y: r(p.y * f), pressure: Math.round((p.pressure || 0.5) * 100) / 100 })),
   }));
 }
@@ -393,7 +424,13 @@ function renderPaintImage(strokes) {
   canvas.height = Math.round(pw / t.aspect);
   const ctx = canvas.getContext("2d");
   ctx.scale(pw / PAINT_UNITS, pw / PAINT_UNITS);
-  strokes.forEach((st) => paintMode.surface.renderStrokeToContext(ctx, st));
+  strokes.forEach((st) => {
+    ctx.save();
+    if (st.clip != null) ctx.clip(coloringClipUnits(st.clip), "evenodd");  // im Feld des Ausmalbilds
+    paintMode.surface.renderStrokeToContext(ctx, { ...st, clip: undefined });
+    ctx.restore();
+  });
+  coloringDrawLines(ctx);
   // Safari kann teils kein WebP erzeugen und liefert dann PNG – der Server nimmt beides
   return new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
 }
@@ -416,10 +453,11 @@ function flushPaintSave() {
 async function savePaintingNow() {
   const target = paintMode.target;
   const strokes = strokesInUnits();
-  if (!paintMode.paintingId && !strokes.length) return;
+  const pages = coloringSerialize();
+  if (!paintMode.paintingId && !strokes.length && !pages.length) return;
   try {
     const form = new FormData();
-    form.append("strokes_json", JSON.stringify({ v: 1, units: PAINT_UNITS, aspect: target.aspect, strokes }));
+    form.append("strokes_json", JSON.stringify({ v: 1, units: PAINT_UNITS, aspect: target.aspect, strokes, pages }));
     form.append("image", await renderPaintImage(strokes), "bild");
     if (paintMode.paintingId) {
       await apiJson(`/api/v1/paintings/${paintMode.paintingId}`, { method: "PUT", body: form });
@@ -570,6 +608,8 @@ async function openPaintMode(tile) {
   paintMode.target = target;
   paintMode.paintingId = null;
   paintMode.scrollY = window.scrollY;
+  coloringReset();
+  paintMode.el.querySelector(".paint-coloring-sheet").hidden = true;
   const s = paintMode.surface;
   s.strokes = [];
   s.undoStack = [];
@@ -599,12 +639,17 @@ async function loadPaintingFor(target) {
     if (slot.slot_key === target.generalKey) target.scope = "all";
     renderPaintScope();
     const painting = await apiJson(`/api/v1/paintings/${slot.id}`);
-    const strokes = strokesFromSaved(painting.strokes_json);
-    // Ohne Striche (von Hand eingespielt): nicht übermalen, sondern neu beginnen
-    if (strokes.length && paintMode.target === target) {
+    const data = parseSavedPainting(painting.strokes_json);
+    const strokes = strokesFromSaved(data);
+    const pages = data && Array.isArray(data.pages) ? data.pages : [];
+    // Ohne Striche und Ausmalbilder (von Hand eingespielt): nicht übermalen, sondern neu beginnen
+    if ((strokes.length || pages.length) && paintMode.target === target) {
+      await coloringLoad(pages);  // Felder müssen da sein, bevor Striche darin gezeichnet werden
+      if (paintMode.target !== target) return;
       paintMode.paintingId = painting.id;
       s.strokes = strokes.concat(s.strokes);  // schon während des Ladens Gemaltes bleibt obenauf
       s.redrawAllStrokes();
+      coloringRender();
     }
   } catch (err) {
     console.warn("Bild zum Weitermalen nicht geladen:", err);
@@ -613,6 +658,7 @@ async function loadPaintingFor(target) {
 
 async function closePaintMode() {
   if (!paintMode.el || paintMode.el.hidden) return;
+  coloring.placing = false;
   await flushPaintSave();
   paintMode.el.hidden = true;
   paintMode.target = null;

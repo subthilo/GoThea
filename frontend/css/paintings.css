@@ -488,3 +488,99 @@ body.paint-mode-open {
 .btn-mat-action.failed {
   border-color: var(--danger-text);
 }
+
+/* ==========================================================================
+   Ausmalbilder im Mal-Modus (js/paint_coloring.js)
+   ========================================================================== */
+
+/* Linien über der Farbe; der Zeichenkern verschiebt und skaliert die Ebene beim Zoomen mit */
+.paint-lines {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  transform-origin: 0 0;
+}
+
+.paint-lines svg {
+  display: block;
+  overflow: visible;
+}
+
+.paint-coloring-frame {
+  fill: none;
+  stroke: var(--accent-light);
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+}
+
+/* Platzieren: fängt Finger und Stift ab (ein Finger verschiebt, zwei drehen und skalieren) */
+.paint-placing {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  cursor: move;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.paint-placing[hidden] {
+  display: none;
+}
+
+/* Auswahl der freigegebenen Ausmalbilder */
+.paint-coloring-sheet {
+  position: absolute;
+  inset: 8%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 60px rgba(var(--shade-rgb), 0.5);
+}
+
+.paint-coloring-sheet[hidden] {
+  display: none;
+}
+
+.paint-coloring-sheet > .paint-btn {
+  align-self: flex-end;
+}
+
+.paint-coloring-grid {
+  flex: 1;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  align-content: start;
+}
+
+/* Vorschaubild auf weißem Papier (wie ein Ausmalblatt, bewusst fest) */
+.paint-coloring-choice {
+  aspect-ratio: 1;
+  border-radius: 14px;
+  border: 2px solid var(--border-color);
+  background: #fff;
+  padding: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.paint-coloring-choice img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.paint-coloring-empty {
+  color: var(--text-secondary);
+  font-size: 2rem;
+}
