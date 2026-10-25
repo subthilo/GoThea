@@ -14,6 +14,8 @@ function updateParentModeUI(active, isDefault = isDefaultParentPin) {
   document.body.classList.toggle("thea-mode-active", !isParentActive);
   // Eltern-Modus zeigt das neutrale Farbschema, Thea-Modus ihr eigenes
   if (typeof applyThemeForMode === "function") applyThemeForMode();
+  // Eltern-Modus zeigt keine gemalten Hintergründe
+  if (typeof applyPaintings === "function") applyPaintings();
 
   // Header Pill
   const pillBtn = document.getElementById("btn-parent-toggle");

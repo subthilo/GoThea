@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Theas gemalte Hintergründe (js/paint_display.js). Gespeichert wird, was Thea gemalt hat;
+   begrenzt wird erst hier bei der Anzeige – ist eine Regel zu streng oder zu locker,
+   ändert sich eine CSS-Zeile, kein Bild.
+   ========================================================================== */
+
+/* Eigene Schicht, fest am Bildschirm (background-attachment: fixed ignoriert iOS-Safari).
+   z-index -1: über dem Seitengrund von body, unter allem Inhalt. 100lvh: das Bild springt nicht,
+   wenn Safaris Adressleiste ein- und ausfährt. */
+.paint-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
+  z-index: -1;
+  pointer-events: none;
+  display: none;
+}
+
+body.paint-bg-on .paint-bg {
+  display: block;
+}
+
+/* Quadratisches Bild: quer oben/unten beschnitten, hoch links/rechts – die Mitte bleibt sichtbar */
+.paint-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Leichte Abdeckung aus der Grundfarbe: dunkelt bei dunklen Schemen ab, hellt bei hellen auf */
+.paint-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-primary) var(--paint-bg-cover, 45%), transparent);
+}
+
+/* Kopfzeile: durchscheinend statt deckend, Schrift bleibt durch die Unschärfe lesbar. Die Fläche
+   reicht über die volle Bildschirmbreite (die Kopfzeile selbst ist nur so breit wie der Inhalt). */
+body.paint-bg-on .header {
+  background-color: transparent;
+}
+
+body.paint-bg-on .header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  z-index: -1;
+  background-color: color-mix(in srgb, var(--bg-primary) 72%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Textschutz: was direkt auf dem Hintergrund steht, bekommt eine ruhige Unterlage in Kartenfarbe.
+   Wo Text steht, hängt von Lage und Gerät ab – deshalb hier und nicht als ausgesparte Fläche im Bild. */
+body.paint-bg-on .tab-pane > .section-title {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-card) 78%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}

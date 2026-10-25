@@ -16,6 +16,7 @@ function applyTabViewModes(tabName) {
     document.documentElement.classList.toggle(cls, on);
     document.body.classList.toggle(cls, on);
   });
+  if (typeof applyPaintings === "function") applyPaintings();
 }
 
 // Tab Navigation

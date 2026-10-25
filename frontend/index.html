@@ -35,8 +35,11 @@
   <link rel="stylesheet" href="/static/css/boards.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/search.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/practice.css?v={{v}}">
+  <link rel="stylesheet" href="/static/css/paintings.css?v={{v}}">
 </head>
 <body>
+  <!-- Theas gemalter Hintergrund der aktuellen Seite (js/paint_display.js) -->
+  <div class="paint-bg" id="paint-bg" aria-hidden="true"><img class="paint-bg-img" alt=""></div>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
   <div class="staging-banner" id="staging-banner" style="display: none;">
     <div class="staging-content">
@@ -128,7 +131,7 @@
     <!-- Main Views -->
     <main class="content">
       <!-- Tab 1: Dashboard -->
-      <section id="tab-dashboard" class="tab-pane active">
+      <section id="tab-dashboard" class="tab-pane active" data-paint="dashboard">
         <!-- Oberer iPadOS Dashboard-Header: Kompakte Status-Kapsel mit Vektor-Icons -->
         <div class="dash-header-bar">
           <span id="user-greeting" style="display: none;"></span>
@@ -971,6 +974,7 @@
   <script src="/static/js/theme.js?v={{v}}"></script>
   <script src="/static/js/gamification.js?v={{v}}"></script>
   <script src="/static/js/navigation.js?v={{v}}"></script>
+  <script src="/static/js/paint_display.js?v={{v}}"></script>
   <script src="/static/js/taxonomy.js?v={{v}}"></script>
   <script src="/static/js/subject_detail.js?v={{v}}"></script>
   <script src="/static/js/profile_status.js?v={{v}}"></script>
