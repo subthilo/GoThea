@@ -54,7 +54,7 @@
 }
 
 .reorder-page-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
@@ -67,7 +67,7 @@
 }
 
 .reorder-page-badge {
-  background: rgba(99, 102, 241, 0.2);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   color: var(--accent-light);
   padding: 2px 8px;
   border-radius: 6px;
@@ -207,12 +207,12 @@
 
 .merge-doc-item:hover {
   background: var(--bg-card-hover);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .merge-doc-item.selected {
   border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .merge-doc-info {

@@ -2,8 +2,8 @@
    Upload & Eingang Redesign
    ========================================================================== */
 .upload-dropzone-card {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(24, 28, 38, 0.95));
-  border: 2px dashed rgba(99, 102, 241, 0.35);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent), color-mix(in srgb, var(--bg-card) 95%, transparent));
+  border: 2px dashed color-mix(in srgb, var(--accent) 35%, transparent);
   border-radius: 18px;
   padding: 36px 28px;
   display: flex;
@@ -18,9 +18,9 @@
 
 .upload-dropzone-card:hover {
   border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(30, 36, 50, 0.95));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent), rgba(30, 36, 50, 0.95));
   transform: translateY(-2px);
-  box-shadow: 0 12px 36px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 12px 36px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .upload-dropzone-icon {
@@ -28,13 +28,13 @@
   width: 72px;
   height: 72px;
   border-radius: 20px;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 /* Dokumentliste: Suche, Kapitel-Schalter, Fach-Chips (uploads.js: renderUploadsHistory) */
@@ -95,7 +95,7 @@
 }
 
 .uploads-subject-pill.active {
-  background: var(--subject-tint, rgba(99, 102, 241, 0.18));
+  background: var(--subject-tint, color-mix(in srgb, var(--accent) 18%, transparent));
   border-color: var(--subject-color, var(--accent));
   box-shadow: none;
 }

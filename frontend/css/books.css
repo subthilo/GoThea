@@ -212,9 +212,9 @@
   flex-shrink: 0;
   gap: 6px;
   padding: 7px 12px;
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
   border-radius: 8px;
-  background: rgba(99, 102, 241, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent-light);
   font: inherit;
   font-size: 0.82rem;
@@ -226,7 +226,7 @@
 .btree-open:hover {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* Abschnitte wie im gedruckten Inhaltsverzeichnis: Titel …… Seite */
@@ -283,7 +283,7 @@
 
 .btree-page-btn:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .btree-node.open > .btree-section-row {
@@ -333,7 +333,7 @@
   font-weight: 800;
   padding: 3px 9px;
   border-radius: 6px;
-  background: rgba(99, 102, 241, 0.18);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: var(--accent-light);
   letter-spacing: 0.02em;
 }

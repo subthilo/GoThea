@@ -2,7 +2,7 @@
    Inbox & Samba Dropzone Subsystem
    ========================================================================== */
 .inbox-card {
-  background: linear-gradient(145deg, rgba(24, 28, 38, 0.95), rgba(18, 21, 28, 0.85));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--bg-card) 95%, transparent), color-mix(in srgb, var(--bg-secondary) 85%, transparent));
   border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 18px 20px;
@@ -14,8 +14,8 @@
 }
 
 .inbox-card.has-pending {
-  border-color: rgba(99, 102, 241, 0.45);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), 0 4px 16px rgba(0, 0, 0, 0.3);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent), 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .inbox-header {
@@ -37,8 +37,8 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -117,15 +117,15 @@
 }
 
 .btn-inbox-process {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  color: #fff;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, #000));
+  color: var(--on-accent);
   border: none;
   padding: 8px 18px;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent);
   transition: all 0.2s;
   display: inline-flex;
   align-items: center;
@@ -135,7 +135,7 @@
 .btn-inbox-process:hover:not(:disabled) {
   opacity: 0.95;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
 .btn-inbox-process:active:not(:disabled) {
@@ -172,7 +172,7 @@
 }
 
 .inbox-file-chip:hover {
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
 .inbox-file-size {
@@ -187,8 +187,8 @@
   margin-top: 14px;
   padding: 10px 14px;
   border-radius: 8px;
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -211,7 +211,7 @@
 .inbox-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(99, 102, 241, 0.3);
+  border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
   border-top-color: var(--accent-light);
   border-radius: 50%;
   animation: mat-spin 0.8s linear infinite;

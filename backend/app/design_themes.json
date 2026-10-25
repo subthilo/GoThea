@@ -1,0 +1,20 @@
+{
+  "_hinweis": "Farbschemen, die Thea wählen kann. Je Schema 5 Farben (Grund, Fläche, Karte, Akzent, Schrift) aus den media.io-Paletten; services/design.py leitet daraus alle CSS-Farben ab, scripts/build_theme_css.py schreibt frontend/css/theme_colors.css. 'tokens' setzt Werte direkt (Indigo = das frühere Standardschema).",
+  "themes": [
+    {"id": "indigo", "name": "Indigo", "dark": true, "tokens": {
+      "bg-primary": "#0a0c10", "bg-secondary": "#12151c", "bg-card": "#181c26", "bg-card-hover": "#1f2432",
+      "border-color": "rgba(255, 255, 255, 0.08)", "border-active": "rgba(99, 102, 241, 0.45)",
+      "text-primary": "#f1f5f9", "text-secondary": "#94a3b8", "text-muted": "#64748b",
+      "accent": "#6366f1", "accent-light": "#818cf8", "on-accent": "#ffffff",
+      "success": "#10b981", "warning": "#f59e0b", "theme-glow": "rgba(99, 102, 241, 0.2)"}},
+    {"id": "blau", "name": "Blau", "source": "Samt-Saphir", "dark": true, "palette": ["#050a12", "#0c1830", "#132a52", "#1f55a5", "#d9ecff"]},
+    {"id": "lila", "name": "Lila", "source": "Galaktische Traube", "dark": true, "palette": ["#07070f", "#1a1030", "#331a58", "#7b3ff2", "#e9ddff"]},
+    {"id": "tuerkis", "name": "Türkis", "source": "Obsidian-Türkis", "dark": true, "palette": ["#071014", "#0a1f24", "#0f3a3f", "#1c6b6a", "#b8f2e6"]},
+    {"id": "gruen", "name": "Grün", "source": "Tiefe Waldnacht", "dark": true, "palette": ["#060b07", "#132016", "#1f3725", "#2f6b44", "#d6f2dc"]},
+    {"id": "beere", "name": "Beere", "source": "Ascherose", "dark": true, "palette": ["#120b0e", "#2a141e", "#4a1f34", "#a33b6a", "#f6d2e2"]},
+    {"id": "rost", "name": "Rost", "source": "Glutrauch", "dark": true, "palette": ["#120c0a", "#2a1712", "#4a2618", "#a14b2c", "#f3cfb7"]},
+    {"id": "sand", "name": "Sand", "source": "Twilight Sandstone", "dark": true, "palette": ["#0e0b08", "#261a12", "#4a2d1f", "#b07a4c", "#f3e1cf"]},
+    {"id": "orange", "name": "Orange", "source": "Charcoal Citrus Pop", "dark": true, "palette": ["#0a0a0c", "#1e1f25", "#3b3f4a", "#ffb000", "#f2f5f8"]},
+    {"id": "pink", "name": "Pink", "source": "Dusk Neon", "dark": true, "palette": ["#0b0b12", "#1f1633", "#2d2a6d", "#ff3ea5", "#d7f7ff"]}
+  ]
+}

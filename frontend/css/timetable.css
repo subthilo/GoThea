@@ -4,8 +4,8 @@
 
 /* Dashboard Stundenplan-Card */
 .dash-timetable-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bg-card-hover) 80%, transparent) 0%, color-mix(in srgb, var(--bg-secondary) 90%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   border-radius: 16px;
   padding: 20px 24px;
   margin-bottom: 28px;
@@ -41,9 +41,9 @@
 }
 
 .dash-tt-week-pill {
-  background: rgba(99, 102, 241, 0.2);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   color: var(--accent-light);
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   font-size: 0.8rem;
   font-weight: 700;
   padding: 4px 12px;
@@ -225,8 +225,8 @@ body.timetable-zen-mode .content {
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--accent-light);
-  background: rgba(99, 102, 241, 0.14);
-  border: 1px solid rgba(99, 102, 241, 0.28);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
   padding: 1px 7px;
   border-radius: 999px;
   line-height: 1.2;
@@ -237,7 +237,7 @@ body.timetable-zen-mode .content {
 .tt-segmented-control {
   display: inline-flex;
   align-items: center;
-  background: rgba(18, 21, 28, 0.85);
+  background: color-mix(in srgb, var(--bg-secondary) 85%, transparent);
   border: 1px solid var(--border-color);
   border-radius: 9px;
   padding: 2px;
@@ -264,8 +264,8 @@ body.timetable-zen-mode .content {
 
 .tt-seg-btn.active {
   background: var(--accent);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+  color: var(--on-accent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .tt-topbar-actions {
@@ -292,7 +292,7 @@ body.timetable-zen-mode .content {
   overflow: hidden !important;
   border-radius: 10px;
   border: 1px solid var(--border-color);
-  background: rgba(18, 21, 28, 0.7);
+  background: color-mix(in srgb, var(--bg-secondary) 70%, transparent);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   box-sizing: border-box !important;
 }
@@ -314,7 +314,7 @@ body.timetable-zen-mode .content {
   font-size: clamp(0.7rem, 1.1vh, 0.78rem);
   font-weight: 700;
   text-align: center;
-  background: rgba(30, 41, 59, 0.95);
+  background: color-mix(in srgb, var(--bg-card-hover) 95%, transparent);
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
@@ -341,14 +341,14 @@ body.timetable-zen-mode .content {
 }
 
 .tt-grid-header.today {
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.28) 0%, rgba(30, 41, 59, 0.95) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 28%, transparent) 0%, color-mix(in srgb, var(--bg-card-hover) 95%, transparent) 100%);
   color: var(--accent-light);
   border-bottom-color: var(--accent);
 }
 
 /* Zeit-Spalte (links) */
 .tt-time-cell {
-  background: rgba(20, 27, 45, 0.9);
+  background: color-mix(in srgb, var(--bg-secondary) 90%, transparent);
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   padding: 1px 2px;
@@ -383,7 +383,7 @@ body.timetable-zen-mode .content {
 
 /* Unterrichts-Zellen */
 .tt-slot-cell {
-  background: rgba(15, 23, 42, 0.25);
+  background: color-mix(in srgb, var(--bg-secondary) 25%, transparent);
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   padding: 1px 2px;
@@ -402,7 +402,7 @@ body.timetable-zen-mode .content {
 }
 
 .tt-slot-cell.today-col {
-  background: rgba(99, 102, 241, 0.04);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
 }
 
 /* Slot Card (Einzelne Unterrichtsstunde - Passt sich dynamisch der Zeilenhöhe an) */
@@ -412,7 +412,7 @@ body.timetable-zen-mode .content {
   border-radius: 5px;
   padding: 1px 4px;
   /* Fachfarbe (js: subjectStyle): farbiger Rand und zarte Fläche über dem Grundton */
-  background: linear-gradient(var(--subject-tint, transparent), var(--subject-tint, transparent)), rgba(30, 41, 59, 0.75);
+  background: linear-gradient(var(--subject-tint, transparent), var(--subject-tint, transparent)), color-mix(in srgb, var(--bg-card-hover) 75%, transparent);
   border: 1px solid var(--subject-edge, rgba(255, 255, 255, 0.07));
   border-left: 3px solid var(--subject-color, var(--accent));
   cursor: pointer;
@@ -430,7 +430,7 @@ body.timetable-zen-mode .content {
 
 .tt-lesson-card:hover {
   transform: translateY(-1px);
-  background: linear-gradient(var(--subject-tint, transparent), var(--subject-tint, transparent)), rgba(40, 53, 76, 0.9);
+  background: linear-gradient(var(--subject-tint, transparent), var(--subject-tint, transparent)), color-mix(in srgb, var(--bg-card-hover) 90%, transparent);
   border-color: var(--subject-color, rgba(255, 255, 255, 0.2));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }

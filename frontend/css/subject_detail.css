@@ -21,7 +21,7 @@
 }
 
 .subject-hero-card {
-  background: linear-gradient(135deg, rgba(24, 28, 38, 0.95), rgba(15, 18, 25, 0.9));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bg-card) 95%, transparent), color-mix(in srgb, var(--bg-primary) 90%, transparent));
   border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 26px 28px;

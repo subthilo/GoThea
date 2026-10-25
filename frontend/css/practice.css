@@ -110,7 +110,7 @@
   gap: 4px;
   border-radius: 12px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -329,8 +329,8 @@
 
 .px-slot.filled {
   border-style: solid;
-  border-color: rgba(129, 140, 248, 0.8);
-  background: rgba(99, 102, 241, 0.18);
+  border-color: color-mix(in srgb, var(--accent-light) 80%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .px-slot.ok {
@@ -364,8 +364,8 @@
 }
 
 .px-answer.chosen {
-  border-color: rgba(129, 140, 248, 0.9);
-  background: rgba(99, 102, 241, 0.18);
+  border-color: color-mix(in srgb, var(--accent-light) 90%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .px-answer.ok {
@@ -423,7 +423,7 @@
 
 .px-token.selected {
   border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.25);
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .px-token:disabled {
@@ -513,7 +513,7 @@
 .px-check {
   flex: 1;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .px-check.secondary {
@@ -566,7 +566,7 @@
 .px-stage.active {
   border-color: var(--accent);
   color: var(--text-primary);
-  background: rgba(99, 102, 241, 0.2);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .px-stage.done:not(.active) {
@@ -621,7 +621,7 @@
 .wb-practice-done-btn.best {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .wb-practice-done-btn .ui-icon {
@@ -697,7 +697,7 @@
   box-sizing: border-box;
   border: 2px dashed var(--accent);
   border-radius: 10px;
-  background: rgba(99, 102, 241, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
   color: var(--text-primary);
   font-family: inherit;
   font-size: 1.2rem;
@@ -710,12 +710,12 @@
 .gg-blank:focus {
   outline: none;
   border-style: solid;
-  background: rgba(99, 102, 241, 0.18);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .gg-blank.active {
   border-style: solid;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .gg-blank.wrong {
@@ -875,7 +875,7 @@
 
 .gg-tool.active {
   border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.25);
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .gg-dot {
@@ -1132,7 +1132,7 @@ body.practice-zen-mode .gg-right .px-actions {
 
 .zo-spot.active {
   border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .zo-spot.ok {
@@ -1178,7 +1178,7 @@ body.practice-zen-mode .gg-right .px-actions {
 
 .zo-row.active .zo-nr {
   border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.25);
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .zo-slot {
@@ -1204,8 +1204,8 @@ body.practice-zen-mode .gg-right .px-actions {
 
 .zo-slot.filled {
   border-style: solid;
-  border-color: rgba(129, 140, 248, 0.8);
-  background: rgba(99, 102, 241, 0.14);
+  border-color: color-mix(in srgb, var(--accent-light) 80%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .zo-slot.ok {
@@ -1341,7 +1341,7 @@ body.practice-zen-mode .gg-right .px-actions {
 
 .or-row.active .zo-nr {
   border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.25);
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .or-slot {
@@ -1370,8 +1370,8 @@ body.practice-zen-mode .gg-right .px-actions {
 
 .or-slot.filled {
   border-style: solid;
-  border-color: rgba(129, 140, 248, 0.8);
-  background: rgba(99, 102, 241, 0.14);
+  border-color: color-mix(in srgb, var(--accent-light) 80%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .or-slot.filled:not(.fixed) {
@@ -1464,7 +1464,7 @@ body.practice-zen-mode .gg-right .px-actions {
 .or-num.active {
   border-style: solid;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .or-num.ok {
@@ -1608,7 +1608,7 @@ body.practice-zen-mode .gg-right .px-actions {
   min-height: 0;
   border: 2px solid var(--border-active);
   border-radius: 14px;
-  background: rgba(99, 102, 241, 0.06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
   cursor: pointer;
   touch-action: manipulation;
   overflow: hidden;
@@ -1616,7 +1616,7 @@ body.practice-zen-mode .gg-right .px-actions {
 
 .sb-drawer.target {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .sb-drawer-name {
@@ -1647,7 +1647,7 @@ body.practice-zen-mode .gg-right .px-actions {
 
 .sb-chip.selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .sb-chip.fixed {
@@ -1808,7 +1808,7 @@ body.practice-zen-mode .gg-right .px-actions {
 
 .sr-carry.active {
   border: 2px solid var(--accent);
-  background: rgba(99, 102, 241, 0.22);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 button.sr-cell.in {
@@ -1820,7 +1820,7 @@ button.sr-cell.in {
 
 button.sr-cell.in.active {
   outline: 2px solid var(--accent);
-  background: rgba(99, 102, 241, 0.22);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .sr-cell.wrong,
@@ -2405,7 +2405,7 @@ body.practice-zen-mode .kr .gg-scratch {
 .practice-filter-btn:last-child { border-right: 0; }
 
 .practice-filter-btn.active {
-  background: rgba(99, 102, 241, 0.22);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
   color: var(--text-primary);
 }
 

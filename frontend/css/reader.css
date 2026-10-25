@@ -100,7 +100,7 @@ body.reader-zen-mode .book-reader-view {
 }
 
 .reader-page-counter-slim {
-  background: rgba(99, 102, 241, 0.15);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
   color: var(--accent-light);
   padding: 2px 8px;
   border-radius: 6px;
@@ -139,7 +139,7 @@ body.reader-zen-mode .book-reader-view {
 .btn-reader-action-icon.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   box-shadow: 0 0 12px var(--theme-glow);
 }
 
@@ -147,9 +147,9 @@ body.reader-zen-mode .book-reader-view {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px solid rgba(99, 102, 241, 0.45);
-  color: #c7d2fe;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  color: color-mix(in srgb, var(--accent-light) 55%, var(--text-primary));
   padding: 6px 14px;
   border-radius: 9px;
   font-size: 0.84rem;
@@ -160,8 +160,8 @@ body.reader-zen-mode .book-reader-view {
 }
 
 .btn-reader-edit-wb:hover {
-  background: rgba(99, 102, 241, 0.35);
-  border-color: #818cf8;
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  border-color: var(--accent-light);
   color: #ffffff;
 }
 
@@ -273,7 +273,7 @@ body.reader-zen-mode .book-reader-view {
 }
 
 .reader-floating-nav-btn:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.75);
+  background: color-mix(in srgb, var(--accent) 75%, transparent);
   color: #fff;
   border-color: var(--accent);
   transform: translateY(-50%) scale(1.08);
@@ -411,7 +411,7 @@ body.reader-zen-mode .book-page-img.mode-fit {
 
 .reader-bottom-strip-wrap .book-page-pill.active {
   background: var(--accent);
-  color: #ffffff;
+  color: var(--on-accent);
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 0 0 14px var(--theme-glow);
   transform: scale(1.08);
@@ -451,7 +451,7 @@ body.reader-zen-mode .book-page-img.mode-fit {
   gap: 12px;
   z-index: 10;
   backdrop-filter: blur(4px);
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -600,7 +600,7 @@ body.reader-zen-mode .book-page-img.mode-fit {
 
 .drawer-header {
   padding: 20px 22px 14px 22px;
-  background: rgba(18, 21, 28, 0.95);
+  background: color-mix(in srgb, var(--bg-secondary) 95%, transparent);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -732,7 +732,7 @@ body.reader-zen-mode .book-page-img.mode-fit {
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid transparent;
-  color: #cbd5e1;
+  color: var(--text-primary);
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -754,7 +754,7 @@ body.reader-zen-mode .book-page-img.mode-fit {
 }
 
 .drawer-sec-bullet {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.75rem;
   margin-right: 2px;
 }

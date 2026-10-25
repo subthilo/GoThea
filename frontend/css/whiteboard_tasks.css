@@ -19,7 +19,7 @@
   background: rgba(18, 24, 38, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(99, 102, 241, 0.5);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 50%, transparent);
   border-radius: 14px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
   color: #f1f5f9;
@@ -30,8 +30,8 @@
 }
 
 .wb-task-card:hover {
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.25);
-  border-color: rgba(99, 102, 241, 0.75);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 20px color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
 }
 
 .pattern-white .wb-task-card {
@@ -74,8 +74,8 @@
   letter-spacing: 0.5px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(99, 102, 241, 0.25);
-  color: #a5b4fc;
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  color: color-mix(in srgb, var(--accent-light) 55%, var(--text-primary));
 }
 
 .pattern-white .wb-task-type-badge {
@@ -571,7 +571,7 @@
 .wb-luna-hint {
   max-width: 420px;
   padding: 8px 12px;
-  border: 1.5px solid #6366f1;
+  border: 1.5px solid var(--accent);
   border-radius: 8px;
   background: rgba(30, 41, 59, 0.95);
   color: #f8fafc;

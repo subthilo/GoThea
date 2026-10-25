@@ -135,7 +135,7 @@ if (timetableFileInput) {
           listToDisplay.forEach((s) => {
             const pill = document.createElement("span");
             pill.className = "mat-card-badge";
-            pill.style.background = "rgba(99, 102, 241, 0.15)";
+            pill.style.background = "color-mix(in srgb, var(--accent) 15%, transparent)";
             pill.style.color = "var(--accent-light)";
             pill.style.padding = "4px 10px";
             pill.style.fontSize = "0.85rem";

@@ -30,7 +30,7 @@
 .btn-parent-pill:hover {
   background: var(--bg-card);
   color: var(--text-primary);
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
   transform: translateY(-1px);
 }
 
@@ -79,9 +79,9 @@ body.thea-mode-active #tab-profile select {
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  background: rgba(99, 102, 241, 0.15);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
   color: var(--accent-light);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 body.parent-mode-active .parent-status-pill {
@@ -140,8 +140,8 @@ body.parent-mode-active .parent-status-pill {
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: rgba(99, 102, 241, 0.16);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -219,7 +219,7 @@ body.parent-mode-active .parent-status-pill {
 .input-pin-large:focus {
   border-color: var(--accent) !important;
   background: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent) !important;
 }
 
 .btn-pin-eye {
@@ -247,8 +247,8 @@ body.parent-mode-active .parent-status-pill {
 .parent-pin-default-pill {
   margin-top: 12px;
   padding: 7px 12px;
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
   border-radius: 10px;
   font-size: 0.78rem;
   color: var(--accent-light);
