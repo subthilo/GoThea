@@ -24,6 +24,10 @@ function createInkSurface(env) {
     stopTutorSpeech,
     scheduleAutoSave,
     sendCanvasUpdate,
+    // Optional – Schablone (Ausmalbilder): clipForPoint(pt) liefert beim Aufsetzen den Schlüssel eines Feldes
+    // (oder null), clipPath(key) dessen Path2D; der Strich bleibt in diesem Feld. Ohne beide wie bisher.
+    clipForPoint,
+    clipPath,
   } = env;
 
   // Gemeinsamer Zustand (bisher in whiteboard.js)
@@ -357,10 +361,24 @@ function createInkSurface(env) {
     }
   }
 
+  // Schablone: einen Live-Zeichenschritt auf das Feld des Strichs begrenzen. save/restore je Schritt, damit
+  // nichts auf der Zeichenfläche hängen bleibt (sonst würde auch das Löschen beim Neuzeichnen beschnitten).
+  function beginClip(ctx, stroke) {
+    const path = clipPath && stroke && stroke.clip != null ? clipPath(stroke.clip) : null;
+    if (!path) return false;
+    ctx.save();
+    ctx.clip(path, "evenodd");
+    return true;
+  }
+
   function renderStrokeToContext(ctx, stroke) {
     if (!stroke.points || stroke.points.length === 0) return;
 
     ctx.save();
+    if (clipPath && stroke.clip != null) {
+      const path = clipPath(stroke.clip);
+      if (path) ctx.clip(path, "evenodd");
+    }
     applyToolStyle(ctx, stroke.tool, stroke.color, stroke.width);
 
     const pts = stroke.points;
@@ -564,15 +582,21 @@ function createInkSurface(env) {
       width: strokeWidth,
       points: [pt]
     };
+    if (clipForPoint) {
+      const clipKey = clipForPoint(pt);
+      if (clipKey != null) currentStroke.clip = clipKey;
+    }
 
     applyToolStyle(inkCtx, currentTool, currentColor, strokeWidth);
 
+    const clippedDot = beginClip(inkCtx, currentStroke);
     inkCtx.beginPath();
     const isEraser = currentTool === "pixel_eraser" || currentTool === "eraser";
     const dotRadius = isEraser ? (strokeWidth * 2.5) : Math.max(0.5, strokeWidth / 2);
     inkCtx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
     inkCtx.fillStyle = isEraser ? "#000" : currentColor;
     inkCtx.fill();
+    if (clippedDot) inkCtx.restore();
   }
 
   function handlePointerMove(e) {
@@ -609,6 +633,7 @@ function createInkSurface(env) {
 
     if (!currentStroke || !lastPoint || !lastMidPoint) return;
 
+    const clippedMove = beginClip(inkCtx, currentStroke);
     inkCtx.beginPath();
     inkCtx.moveTo(lastMidPoint.x, lastMidPoint.y);
     for (let i = 0; i < events.length; i++) {
@@ -633,6 +658,7 @@ function createInkSurface(env) {
       lastMidPoint = { x: midX, y: midY };
     }
     inkCtx.stroke();
+    if (clippedMove) inkCtx.restore();
   }
 
   function handlePointerUp(e) {
@@ -700,10 +726,12 @@ function createInkSurface(env) {
     } catch (_) {}
 
     if (lastMidPoint && lastPoint && (lastMidPoint.x !== lastPoint.x || lastMidPoint.y !== lastPoint.y)) {
+      const clippedEnd = beginClip(inkCtx, currentStroke);
       inkCtx.beginPath();
       inkCtx.moveTo(lastMidPoint.x, lastMidPoint.y);
       inkCtx.lineTo(lastPoint.x, lastPoint.y);
       inkCtx.stroke();
+      if (clippedEnd) inkCtx.restore();
     }
 
     isDrawing = false;
