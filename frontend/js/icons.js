@@ -29,33 +29,33 @@ function iconText(name, text) {
 }
 
 // Fächer: Icon und Farbe an einer Stelle (Name oder Kürzel, erste passende Regel gilt).
-// Die Farben sind für den dunklen Hintergrund abgestimmt und paarweise gut unterscheidbar
-// (CIEDE2000 ≥ 17,9 unter Theas Fächern, Kontrast ≥ 3,6:1). Emojis und Farben, die das
+// color = für dunkle Farbschemen, light = derselbe Farbton dunkler für helle Schemen; beide Sätze
+// paarweise gut unterscheidbar (CIEDE2000 ≥ 17,9 unter Theas Fächern) und auf jeder Karte ≥ 3:1. Emojis und Farben, die das
 // Backend pro Fach mitliefert (icon, color_code), werden bewusst nicht angezeigt.
 const SUBJECTS = [
-  { match: (n) => n.includes("math"), icon: "Mathematik", color: "#3b82f6" },
-  { match: (n) => n.includes("deutsch"), icon: "Deutsch", color: "#f87171" },
-  { match: (n) => n.includes("eng"), icon: "Englisch", color: "#fde047" },
-  { match: (n) => n.includes("franz") || n.includes("franç"), icon: "Französisch", color: "#8b5cf6" },
-  { match: (n) => n.includes("bio"), icon: "Biologie", color: "#16a34a" },
-  { match: (n) => n.includes("phys"), icon: "Physik", color: "#f97316" },
-  { match: (n) => n.includes("chem"), icon: "Chemie", color: "#67e8f9" },
-  { match: (n) => n.includes("gesch"), icon: "Geschichte", color: "#d6b88a" },
-  { match: (n) => n.includes("geo"), icon: "Geografie", color: "#14b8a6" },
-  { match: (n) => n.includes("politi") || n === "pb", icon: "Politische Bildung", color: "#db2777" },
-  { match: (n) => n.includes("wat") || n.includes("wirtsch"), icon: "WAT", color: "#a1a1aa" },
-  { match: (n) => n.includes("ler") || n.includes("ethik"), icon: "LER", color: "#a5b4fc" },
-  { match: (n) => n.includes("relig"), icon: "Religion", color: "#c4b5fd" },
-  { match: (n) => n.includes("mus"), icon: "Musik", color: "#e879f9" },
-  { match: (n) => n.includes("sport") || n.includes("*sp"), icon: "Sport", color: "#a3e635" },
-  { match: (n) => n.includes("kunst"), icon: "Kunst", color: "#fecdd3" },
-  { match: (n) => n.includes("info"), icon: "Informatik", color: "#0ea5e9" },
-  { match: (n) => n.includes("orga"), icon: "Bücher", color: "#e2e8f0" },
-  { match: (n) => n.includes("mittag") || n.includes("mensa"), icon: "Mittagspause", color: "#94a3b8" },
-  { match: (n) => n.includes("pause"), icon: "Pause", color: "#94a3b8" },
-  { match: (n) => n.includes("frei"), icon: "Freistunde", color: "#94a3b8" }
+  { match: (n) => n.includes("math"), icon: "Mathematik", color: "#3b82f6", light: "#1e60d5" },
+  { match: (n) => n.includes("deutsch"), icon: "Deutsch", color: "#f87171", light: "#d42b2b" },
+  { match: (n) => n.includes("eng"), icon: "Englisch", color: "#fde047", light: "#9c6f00" },
+  { match: (n) => n.includes("franz") || n.includes("franç"), icon: "Französisch", color: "#8b5cf6", light: "#5f00ff" },
+  { match: (n) => n.includes("bio"), icon: "Biologie", color: "#16a34a", light: "#1e6c2b" },
+  { match: (n) => n.includes("phys"), icon: "Physik", color: "#f97316", light: "#d86102" },
+  { match: (n) => n.includes("chem"), icon: "Chemie", color: "#67e8f9", light: "#00839c" },
+  { match: (n) => n.includes("gesch"), icon: "Geschichte", color: "#d6b88a", light: "#874920" },
+  { match: (n) => n.includes("geo"), icon: "Geografie", color: "#14b8a6", light: "#178e79" },
+  { match: (n) => n.includes("politi") || n === "pb", icon: "Politische Bildung", color: "#db2777", light: "#9f025e" },
+  { match: (n) => n.includes("wat") || n.includes("wirtsch"), icon: "WAT", color: "#a1a1aa", light: "#60666f" },
+  { match: (n) => n.includes("ler") || n.includes("ethik"), icon: "LER", color: "#a5b4fc", light: "#2b3a67" },
+  { match: (n) => n.includes("relig"), icon: "Religion", color: "#c4b5fd", light: "#7a4f9a" },
+  { match: (n) => n.includes("mus"), icon: "Musik", color: "#e879f9", light: "#bb38c0" },
+  { match: (n) => n.includes("sport") || n.includes("*sp"), icon: "Sport", color: "#a3e635", light: "#659009" },
+  { match: (n) => n.includes("kunst"), icon: "Kunst", color: "#fecdd3", light: "#e0457a" },
+  { match: (n) => n.includes("info"), icon: "Informatik", color: "#0ea5e9", light: "#0369a1" },
+  { match: (n) => n.includes("orga"), icon: "Bücher", color: "#e2e8f0", light: "#475569" },
+  { match: (n) => n.includes("mittag") || n.includes("mensa"), icon: "Mittagspause", color: "#94a3b8", light: "#64748b" },
+  { match: (n) => n.includes("pause"), icon: "Pause", color: "#94a3b8", light: "#64748b" },
+  { match: (n) => n.includes("frei"), icon: "Freistunde", color: "#94a3b8", light: "#64748b" }
 ];
-const SUBJECT_FALLBACK = { icon: "Bücher", color: "#94a3b8" };
+const SUBJECT_FALLBACK = { icon: "Bücher", color: "#94a3b8", light: "#64748b" };
 
 function subjectInfo(subjectNameOrCode) {
   const norm = String(subjectNameOrCode || "").toLowerCase().trim();
@@ -67,8 +67,14 @@ function subjectIconName(subjectNameOrCode) {
   return subjectInfo(subjectNameOrCode).icon;
 }
 
+// Helles Farbschema aktiv? (theme.js setzt data-theme-kind auf <html>)
+function isLightTheme() {
+  return document.documentElement.getAttribute("data-theme-kind") === "light";
+}
+
 function subjectColor(subjectNameOrCode) {
-  return subjectInfo(subjectNameOrCode).color;
+  const info = subjectInfo(subjectNameOrCode);
+  return isLightTheme() ? info.light : info.color;
 }
 
 // CSS-Variablen für Elemente, die ein Fach tragen: Farbe, zarte Fläche, Rand

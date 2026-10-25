@@ -61,7 +61,7 @@ body {
 }
 
 .btn-staging-reset {
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(var(--shade-rgb), 0.35);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
   padding: 4px 12px;
@@ -193,11 +193,16 @@ body {
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.18s ease;
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .dock-icon {
+  filter: brightness(0) invert(0.3);
+}
+
 .nav-tab:hover,
 .dock-tab:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--ink-rgb), 0.08);
+  border-color: rgba(var(--ink-rgb), 0.12);
   transform: translateY(-2px);
 }
 
@@ -210,17 +215,27 @@ body {
   filter: brightness(0) invert(1);
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .dock-tab:hover .dock-icon {
+  filter: brightness(0) invert(0.15);
+}
+
 .nav-tab.active,
 .dock-tab.active {
   background: var(--bg-card);
-  color: #fff;
+  color: var(--text-primary);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 16px var(--theme-glow);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(var(--ink-rgb), 0.18);
 }
 
 .dock-tab.active .dock-icon {
   transform: scale(1.1);
   filter: brightness(0) invert(1);
+}
+
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .dock-tab.active .dock-icon {
+  filter: brightness(0) invert(0.15);
 }
 
 .dock-tab.active::after {
@@ -327,7 +342,7 @@ body {
 .subject-card:hover,
 .subject-app-tile:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: rgba(var(--ink-rgb), 0.28);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.38);
 }
 
@@ -457,9 +472,9 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink-rgb), 0.08);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--ink-rgb), 0.14);
   padding: 10px 18px;
   border-radius: 12px;
   font-weight: 600;
@@ -474,9 +489,9 @@ body {
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(var(--ink-rgb), 0.14);
+  color: var(--text-primary);
+  border-color: rgba(var(--ink-rgb), 0.24);
   transform: translateY(-1px);
 }
 
@@ -497,7 +512,7 @@ body {
 
 .btn-staging-sm {
   background: rgba(217, 119, 6, 0.2);
-  color: #fbbf24;
+  color: var(--warning-text);
   border: 1px solid rgba(217, 119, 6, 0.4);
   padding: 8px 16px;
   border-radius: 8px;
@@ -570,7 +585,7 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--ink-rgb), 0.04);
 }
 
 .task-meta {
@@ -601,12 +616,12 @@ body {
 
 .phase-p2 {
   background: rgba(16, 185, 129, 0.2);
-  color: #34d399;
+  color: var(--success-text);
 }
 
 .phase-p3 {
   background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
+  color: var(--warning-text);
 }
 
 .phase-p0 {
@@ -732,7 +747,7 @@ body {
 
 .countdown-badge {
   background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
+  color: var(--warning-text);
   border: 1px solid rgba(245, 158, 11, 0.3);
   padding: 3px 8px;
   border-radius: 6px;
@@ -837,7 +852,7 @@ body {
 .btn-del-test {
   background: transparent;
   border: none;
-  color: #ef4444;
+  color: var(--danger-text);
   font-size: 0.8rem;
   cursor: pointer;
   padding: 4px 8px;
@@ -922,7 +937,7 @@ body {
 }
 
 .modal-close:hover {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* Nur für Screenreader (sichtbar bleibt das Icon), z. B. „Tutor fragen“ */

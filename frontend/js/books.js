@@ -70,7 +70,7 @@ async function loadBooks() {
       if (topBar) topBar.style.display = "none";
       if (grid) {
         grid.innerHTML = `
-          <div class="empty-state-card" style="padding: 48px 24px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 16px; margin: 20px 0;">
+          <div class="empty-state-card" style="padding: 48px 24px; text-align: center; background: rgba(var(--ink-rgb), 0.02); border: 1px dashed var(--border-color); border-radius: 16px; margin: 20px 0;">
             <div style="font-size: 3rem; margin-bottom: 12px;">${icon("Bücher")}</div>
             <h3 style="margin-bottom: 6px;">Noch keine Schulbücher hinterlegt</h3>
             <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px; font-size: 0.9rem;">
@@ -604,7 +604,7 @@ function renderDrawerTOC(filterTerm = "") {
           <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">S. ${ch.start_page}–${ch.end_page}</span>
         </div>
         <div style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">${escapeHtml(ch.title)}</div>
-        ${ch.topic_name ? `<div style="font-size: 0.76rem; color: #94a3b8;">${icon("Thema")} ${escapeHtml(ch.topic_name)}</div>` : ""}
+        ${ch.topic_name ? `<div style="font-size: 0.76rem; color: var(--text-secondary);">${icon("Thema")} ${escapeHtml(ch.topic_name)}</div>` : ""}
       </div>
       ${sectionsHtml}
     `;

@@ -22,6 +22,11 @@
   gap: 14px;
 }
 
+.theme-dots-break {
+  flex-basis: 100%;
+  height: 0;
+}
+
 .theme-dot {
   width: 52px;
   height: 52px;

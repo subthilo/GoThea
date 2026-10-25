@@ -26,14 +26,16 @@ HEADER = """/* =================================================================
 """
 
 
-def subject_colors():
-    """Fachfarben aus der SUBJECTS-Tabelle in js/icons.js (ohne Pausen und Neutrales)."""
+def subject_colors(light: bool = False):
+    """Fachfarben aus der SUBJECTS-Tabelle in js/icons.js (ohne Pausen und Neutrales);
+    light=True: der zweite Satz für helle Schemen."""
     table = ICONS_JS.read_text(encoding="utf-8").split("const SUBJECTS = [", 1)[1].split("];", 1)[0]
-    return [c for icon, c in re.findall(r'icon: "([^"]+)", color: "(#[0-9a-f]{6})"', table) if icon not in NEUTRAL]
+    rows = re.findall(r'icon: "([^"]+)", color: "(#[0-9a-f]{6})", light: "(#[0-9a-f]{6})"', table)
+    return [lt if light else c for icon, c, lt in rows if icon not in NEUTRAL]
 
 
 def tokens_for(theme):
-    return design.derive(theme, subject_colors())
+    return design.derive(theme, subject_colors(light=not theme["dark"]))
 
 
 def build_css():
@@ -43,7 +45,8 @@ def build_css():
         if i == 0:
             selector = ":root,\n" + selector
         lines = "\n".join(f"  --{k}: {v};" for k, v in tokens_for(theme).items())
-        parts.append(f"{selector} {{\n{lines}\n}}\n")
+        scheme = "dark" if theme["dark"] else "light"
+        parts.append(f"{selector} {{\n  color-scheme: {scheme};\n{lines}\n}}\n")
     return "\n".join(parts)
 
 

@@ -102,7 +102,7 @@ body.whiteboard-zen-mode .wb-container {
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
-  background: rgba(18, 22, 32, 0.95);
+  background: color-mix(in srgb, var(--bg-secondary) 95%, transparent);
   border-bottom: 1px solid var(--border-color);
   z-index: 40; /* über der Dokument-Leiste der Tafel, damit die Tafel-Liste darüber liegt */
   flex-shrink: 0;
@@ -163,7 +163,7 @@ body.whiteboard-zen-mode .wb-container {
 }
 
 .wb-btn-subtle {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   padding: 6px 12px;
@@ -175,7 +175,7 @@ body.whiteboard-zen-mode .wb-container {
 }
 
 .wb-btn-subtle:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--ink-rgb), 0.12);
 }
 
 .wb-btn-primary {
@@ -197,7 +197,7 @@ body.whiteboard-zen-mode .wb-container {
 }
 
 .wb-btn-icon {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   padding: 6px 10px;
@@ -276,7 +276,7 @@ body.whiteboard-zen-mode .wb-container {
   right: 6px;
   bottom: 12px;
   width: 5px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--ink-rgb), 0.04);
   border-radius: 9999px;
   pointer-events: none;
   z-index: 20;
@@ -293,7 +293,7 @@ body.whiteboard-zen-mode .wb-container {
   top: 0;
   width: 100%;
   height: 40px;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(var(--ink-rgb), 0.3);
   border-radius: 9999px;
   transition: top 0.05s ease-out;
 }
@@ -303,11 +303,11 @@ body.whiteboard-zen-mode .wb-container {
   top: 16px;
   right: 18px;
   z-index: 30;
-  background: rgba(24, 28, 38, 0.85);
+  background: color-mix(in srgb, var(--bg-card) 85%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
   padding: 6px 14px;
   border-radius: 9999px;
   font-size: 0.8rem;
@@ -337,12 +337,12 @@ body.whiteboard-zen-mode .wb-container {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: rgba(18, 22, 32, 0.88);
+  background: color-mix(in srgb, var(--bg-secondary) 88%, transparent);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--ink-rgb), 0.14);
   border-radius: 9999px;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(var(--ink-rgb), 0.06);
   pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
@@ -366,7 +366,7 @@ body.whiteboard-zen-mode .wb-container {
 .wb-divider {
   width: 1px;
   height: 20px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--ink-rgb), 0.15);
   margin: 0 3px;
   flex-shrink: 0;
 }
@@ -391,8 +391,8 @@ body.whiteboard-zen-mode .wb-container {
 
 .wb-pill-btn:hover,
 .wb-tool-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(var(--ink-rgb), 0.1);
+  color: var(--text-primary);
   transform: translateY(-1px);
 }
 
@@ -404,7 +404,7 @@ body.whiteboard-zen-mode .wb-container {
 .wb-pill-btn.active,
 .wb-tool-btn.active {
   background: color-mix(in srgb, var(--accent) 28%, transparent);
-  color: #fff;
+  color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 60%, transparent);
   box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent);
 }
@@ -426,11 +426,11 @@ body.whiteboard-zen-mode .wb-container {
 }
 
 .wb-dot-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink-rgb), 0.08);
 }
 
 .wb-dot-btn.active {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(var(--ink-rgb), 0.14);
   border-color: color-mix(in srgb, var(--accent) 80%, transparent);
   box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
 }
@@ -453,7 +453,7 @@ body.whiteboard-zen-mode .wb-container {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.18);
+  border: 2px solid rgba(var(--ink-rgb), 0.18);
   background-color: var(--swatch-color);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
@@ -463,7 +463,7 @@ body.whiteboard-zen-mode .wb-container {
 
 .wb-color-swatch:hover {
   transform: scale(1.18);
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(var(--ink-rgb), 0.5);
 }
 
 .wb-color-swatch.active {
@@ -477,7 +477,7 @@ body.whiteboard-zen-mode .wb-container {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  border: 1.5px solid rgba(var(--ink-rgb), 0.22);
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   flex-shrink: 0;
@@ -486,7 +486,7 @@ body.whiteboard-zen-mode .wb-container {
 
 .wb-pattern-swatch:hover {
   transform: scale(1.15);
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(var(--ink-rgb), 0.5);
 }
 
 .wb-pattern-swatch.active {
@@ -517,7 +517,7 @@ body.whiteboard-zen-mode .wb-container {
 
 .pattern-thumb-white {
   background-color: #f8fafc;
-  border-color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(var(--ink-rgb), 0.6);
 }
 
 /* Knöpfe der Kopfleiste nur mit Icon (Neu, Aufgabe, Tutor) */
@@ -597,7 +597,7 @@ body.whiteboard-zen-mode .wb-container {
   align-items: center;
   gap: 12px;
   padding: 10px 18px;
-  background: rgba(24, 28, 38, 0.94);
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
@@ -656,7 +656,7 @@ body.whiteboard-zen-mode .wb-container {
 .wb-tutor-stop-btn {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #ef4444;
+  color: var(--danger-text);
   font-size: 0.85rem;
   padding: 4px 8px;
   border-radius: 8px;
@@ -688,8 +688,8 @@ body.whiteboard-zen-mode .wb-container {
 
 .wb-action-btn:hover,
 .wb-mode-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(var(--ink-rgb), 0.1);
+  color: var(--text-primary);
   transform: translateY(-1px);
 }
 
@@ -700,7 +700,7 @@ body.whiteboard-zen-mode .wb-container {
 
 .wb-mode-btn.active {
   background: rgba(16, 185, 129, 0.22);
-  color: #10b981;
+  color: var(--success-text);
   border-color: rgba(16, 185, 129, 0.6);
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }

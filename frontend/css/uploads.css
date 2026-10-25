@@ -53,7 +53,7 @@
   padding: 10px 14px;
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(var(--shade-rgb), 0.35);
   color: var(--text-primary);
   font: inherit;
   font-size: 0.95rem;
@@ -103,7 +103,7 @@
 .uploads-pill-count {
   padding: 1px 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink-rgb), 0.08);
   color: var(--text-secondary);
   font-size: 0.74rem;
   font-variant-numeric: tabular-nums;

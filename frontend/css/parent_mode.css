@@ -37,14 +37,14 @@
 .btn-parent-pill.is-parent-active {
   background: rgba(16, 185, 129, 0.12);
   border-color: rgba(16, 185, 129, 0.4);
-  color: #34d399;
+  color: var(--success-text);
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
 }
 
 .btn-parent-pill.is-parent-active:hover {
   background: rgba(239, 68, 68, 0.12);
   border-color: rgba(239, 68, 68, 0.4);
-  color: #f87171;
+  color: var(--danger-text);
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
 }
 
@@ -86,7 +86,7 @@ body.thea-mode-active #tab-profile select {
 
 body.parent-mode-active .parent-status-pill {
   background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
+  color: var(--success-text);
   border-color: rgba(16, 185, 129, 0.35);
 }
 
@@ -97,7 +97,7 @@ body.parent-mode-active .parent-status-pill {
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 0.88rem;
-  color: #fbbf24;
+  color: var(--warning-text);
   line-height: 1.45;
 }
 
@@ -118,7 +118,7 @@ body.parent-mode-active .parent-status-pill {
   background: rgba(22, 26, 36, 0.94);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
   animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -152,6 +152,11 @@ body.parent-mode-active .parent-status-pill {
   width: 24px;
   height: 24px;
   filter: brightness(0) invert(1);
+}
+
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .pin-svg-icon {
+  filter: brightness(0) invert(0.15);
 }
 
 .pin-title {
@@ -210,15 +215,15 @@ body.parent-mode-active .parent-status-pill {
   font-weight: 700 !important;
   padding: 12px 48px 12px 48px !important;
   border-radius: 14px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  color: #fff !important;
+  background: rgba(var(--ink-rgb), 0.05) !important;
+  border: 1px solid rgba(var(--ink-rgb), 0.14) !important;
+  color: var(--text-primary) !important;
   transition: all 0.2s ease;
 }
 
 .input-pin-large:focus {
   border-color: var(--accent) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(var(--ink-rgb), 0.08) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent) !important;
 }
 
@@ -240,8 +245,8 @@ body.parent-mode-active .parent-status-pill {
 }
 
 .btn-pin-eye:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  background: rgba(var(--ink-rgb), 0.08);
 }
 
 .parent-pin-default-pill {
@@ -258,7 +263,7 @@ body.parent-mode-active .parent-status-pill {
 .parent-pin-error {
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #f87171;
+  color: var(--danger-text);
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 0.85rem;

@@ -16,7 +16,7 @@
   background: color-mix(in srgb, var(--bg-card-hover) 65%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
   border-radius: 999px;
   padding: 6px 16px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
@@ -59,9 +59,19 @@
   transition: transform 0.15s ease;
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .capsule-svg-icon {
+  filter: brightness(0) invert(0.23);
+}
+
 .capsule-chip:hover .capsule-svg-icon {
   transform: scale(1.15);
   filter: brightness(0) invert(1);
+}
+
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .capsule-chip:hover .capsule-svg-icon {
+  filter: brightness(0) invert(0.15);
 }
 
 .capsule-level-label {
@@ -74,7 +84,7 @@
 .capsule-progress-track {
   width: 54px;
   height: 6px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--ink-rgb), 0.12);
   border-radius: 999px;
   overflow: hidden;
   position: relative;
@@ -98,7 +108,7 @@
 .capsule-divider {
   width: 1px;
   height: 16px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(var(--ink-rgb), 0.14);
   margin: 0 2px;
 }
 

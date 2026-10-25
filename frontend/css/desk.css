@@ -10,6 +10,11 @@
   vertical-align: middle;
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .pill-svg-icon {
+  filter: brightness(0) invert(0.23);
+}
+
 /* Dashboard: Stundenplan Header & Slot Cards */
 .dash-tt-icon-wrap {
   width: 44px;
@@ -29,6 +34,11 @@
   filter: brightness(0) invert(0.95);
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .dash-tt-header-svg {
+  filter: brightness(0) invert(0.2);
+}
+
 .dash-tt-slot-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -45,8 +55,8 @@
 
 .dash-tt-slot-card:hover {
   transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--ink-rgb), 0.06);
+  border-color: rgba(var(--ink-rgb), 0.2);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
@@ -106,8 +116,8 @@
 }
 
 .dash-tt-badge-room {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--ink-rgb), 0.08);
+  border: 1px solid rgba(var(--ink-rgb), 0.06);
   padding: 2px 7px;
   border-radius: 6px;
   font-weight: 600;
@@ -198,7 +208,7 @@
 
 .subject-action-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: rgba(var(--ink-rgb), 0.28);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
 }
 
@@ -243,6 +253,11 @@
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .action-card-svg {
+  filter: brightness(0) invert(0.2);
+}
+
 .subject-action-card:hover .action-card-svg {
   transform: scale(1.08);
 }
@@ -273,13 +288,28 @@
   vertical-align: middle;
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .filter-pill-svg {
+  filter: brightness(0) invert(0.3);
+}
+
 .filter-pill:hover .filter-pill-svg {
   transform: scale(1.08);
   filter: brightness(0) invert(1);
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .filter-pill:hover .filter-pill-svg {
+  filter: brightness(0) invert(0.15);
+}
+
 .filter-pill.active .filter-pill-svg {
   filter: brightness(0) invert(1);
+}
+
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .filter-pill.active .filter-pill-svg {
+  filter: brightness(0) invert(0.15);
 }
 
 /* Timetable Raster SVGs */
@@ -301,4 +331,9 @@
   filter: brightness(0) invert(0.95);
   margin-right: 6px;
   vertical-align: middle;
+}
+
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .tt-break-svg {
+  filter: brightness(0) invert(0.2);
 }

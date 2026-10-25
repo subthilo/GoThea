@@ -39,3 +39,29 @@ def test_thea_picks_a_colour_and_it_sticks(app_page, parent_pin, reset_theme):
     app_page.click("#btn-parent-toggle")
     app_page.wait_for_function(f"{THEME} === 'orange'", timeout=5000)
     assert app_page.problems.errors == []
+
+
+def test_light_scheme_switches_subject_colours(app_page, parent_pin, reset_theme):
+    """Helle Schemen: <html data-theme-kind="light">, Fachfarben aus dem zweiten Satz; Eltern-Modus zurück auf dunkel."""
+    kind = "document.documentElement.getAttribute('data-theme-kind')"
+    maths = "subjectColor('Mathematik')"
+    app_page.click('.nav-tab[data-tab="profile"]')
+    app_page.locator('#theme-dots .theme-dot[data-theme="vanille"]').wait_for()
+    assert app_page.evaluate(kind) == "dark"
+    dark_maths = app_page.evaluate(maths)
+
+    app_page.click('#theme-dots .theme-dot[data-theme="vanille"]')
+    app_page.wait_for_function(f"{kind} === 'light'")
+    assert app_page.evaluate(maths) != dark_maths
+    app_page.click('.nav-tab[data-tab="dashboard"]')
+    app_page.wait_for_load_state("networkidle")
+
+    app_page.click("#btn-parent-toggle")
+    app_page.fill("#input-parent-pin", parent_pin)
+    app_page.click("#btn-submit-parent-pin")
+    app_page.wait_for_function(f"{kind} === 'dark'", timeout=5000)
+    assert app_page.evaluate(maths) == dark_maths
+    app_page.click("#btn-parent-toggle")
+    app_page.wait_for_function(f"{kind} === 'light'", timeout=5000)
+    app_page.wait_for_load_state("networkidle")
+    assert app_page.problems.errors == []

@@ -112,7 +112,7 @@ if (timetableFileInput) {
             const pill = document.createElement("span");
             pill.className = "mat-card-badge";
             pill.style.background = "rgba(16, 185, 129, 0.2)";
-            pill.style.color = "#10b981";
+            pill.style.color = "var(--success-text)";
             pill.style.border = "1px solid rgba(16, 185, 129, 0.4)";
             pill.style.padding = "4px 10px";
             pill.style.fontSize = "0.85rem";

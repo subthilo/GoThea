@@ -452,7 +452,7 @@ function renderUploadsHistory(materials) {
     if (countBadge) countBadge.textContent = "0";
     renderUploadsSubjectPills([]);
     historyList.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 16px; background: rgba(var(--ink-rgb), 0.02); border: 1px dashed var(--border-color); border-radius: 14px; color: var(--text-secondary);">
         <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">${icon("Eingang")}</span>
         <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Noch keine Uploads vorhanden</div>
         <p style="font-size: 0.85rem; max-width: 440px; margin: 0 auto;">Ziehe Dateien in die Upload-Zone oben oder in deinen Finder-Netzwerkordner, um sie automatisch hier einzulesen.</p>

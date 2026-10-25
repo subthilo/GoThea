@@ -57,8 +57,8 @@
 }
 
 .dash-tt-slot-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink-rgb), 0.04);
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
   border-left: 4px solid var(--accent);
   border-radius: 10px;
   padding: 10px 12px;
@@ -68,7 +68,7 @@
 
 .dash-tt-slot-card:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink-rgb), 0.08);
 }
 
 .dash-tt-slot-time {
@@ -221,6 +221,11 @@ body.timetable-zen-mode .content {
   flex-shrink: 0;
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .tt-topbar-icon {
+  filter: brightness(0) invert(0.15);
+}
+
 .tt-class-badge {
   font-size: 0.7rem;
   font-weight: 600;
@@ -280,6 +285,11 @@ body.timetable-zen-mode .content {
   height: 12px;
   filter: brightness(0) invert(1);
   vertical-align: -2px;
+}
+
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .btn-sm-svg {
+  filter: brightness(0) invert(0.15);
 }
 
 /* Das vollflächige Raster (100% Höhe & Breite, absolut ohne Scrollbalken) */
@@ -413,7 +423,7 @@ body.timetable-zen-mode .content {
   padding: 1px 4px;
   /* Fachfarbe (js: subjectStyle): farbiger Rand und zarte Fläche über dem Grundton */
   background: linear-gradient(var(--subject-tint, transparent), var(--subject-tint, transparent)), color-mix(in srgb, var(--bg-card-hover) 75%, transparent);
-  border: 1px solid var(--subject-edge, rgba(255, 255, 255, 0.07));
+  border: 1px solid var(--subject-edge, rgba(var(--ink-rgb), 0.07));
   border-left: 3px solid var(--subject-color, var(--accent));
   cursor: pointer;
   display: flex;
@@ -431,7 +441,7 @@ body.timetable-zen-mode .content {
 .tt-lesson-card:hover {
   transform: translateY(-1px);
   background: linear-gradient(var(--subject-tint, transparent), var(--subject-tint, transparent)), color-mix(in srgb, var(--bg-card-hover) 90%, transparent);
-  border-color: var(--subject-color, rgba(255, 255, 255, 0.2));
+  border-color: var(--subject-color, rgba(var(--ink-rgb), 0.2));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
@@ -476,7 +486,7 @@ body.timetable-zen-mode .content {
 }
 
 .tt-lesson-room {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(var(--ink-rgb), 0.07);
   padding: 0 3px;
   border-radius: 2px;
   font-size: clamp(0.56rem, 1vh, 0.63rem);
@@ -496,9 +506,9 @@ body.timetable-zen-mode .content {
 }
 
 .tt-lesson-break {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.08);
-  border-left: 1px dashed rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink-rgb), 0.02);
+  border: 1px dashed rgba(var(--ink-rgb), 0.08);
+  border-left: 1px dashed rgba(var(--ink-rgb), 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -523,13 +533,18 @@ body.timetable-zen-mode .content {
   flex-shrink: 0;
 }
 
+/* helles Farbschema: Bild-Icons dunkel statt weiß */
+:root[data-theme-kind="light"] .tt-break-svg {
+  filter: brightness(0) invert(0.15);
+}
+
 .tt-cell-empty {
   height: 100%;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.08);
+  color: rgba(var(--ink-rgb), 0.08);
   font-size: 0.72rem;
   min-height: 0 !important;
   min-width: 0 !important;

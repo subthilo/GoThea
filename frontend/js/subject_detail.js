@@ -493,7 +493,7 @@ function renderSubjectMaterialsList(materials) {
   if (filtered.length === 0) {
     const filterName = activeSubjectKindFilter === "all" ? "" : ` in der Kategorie „${activeSubjectKindFilter}“`;
     grid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 16px; color: var(--text-secondary);">
+      <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: rgba(var(--ink-rgb), 0.02); border: 1px dashed var(--border-color); border-radius: 16px; color: var(--text-secondary);">
         <span style="font-size: 2.4rem; display: block; margin-bottom: 8px;">${icon("Eingang")}</span>
         <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 6px;">Keine Dokumente${filterName}</div>
         <p style="font-size: 0.88rem; max-width: 440px; margin: 0 auto 16px;">

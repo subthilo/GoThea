@@ -30,11 +30,11 @@
 
 .book-catalog-search input {
   width: 100%;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(var(--shade-rgb), 0.35);
   border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 8px 14px;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.88rem;
   outline: none;
   transition: all 0.2s ease;
@@ -88,7 +88,7 @@
 }
 
 .btree-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--ink-rgb), 0.04);
 }
 
 .btree-row:focus-visible {
@@ -136,7 +136,7 @@
   flex-shrink: 0;
   padding: 3px 9px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: 600;
@@ -171,7 +171,7 @@
 }
 
 .btree-chapter-row.active {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   box-shadow: inset 3px 0 0 var(--book-color);
 }
 
@@ -183,7 +183,7 @@
   width: 38px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   color: var(--book-color);
   font-size: 0.92rem;
   font-weight: 800;
@@ -257,7 +257,7 @@
   align-self: flex-end;
   min-width: 24px;
   margin-bottom: 0.45em;
-  border-bottom: 2px dotted rgba(255, 255, 255, 0.18);
+  border-bottom: 2px dotted rgba(var(--ink-rgb), 0.18);
 }
 
 .btree-section-page {

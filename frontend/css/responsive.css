@@ -50,7 +50,7 @@
 
 /* Slot Detail Modal */
 .tt-slot-info-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--ink-rgb), 0.03);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
