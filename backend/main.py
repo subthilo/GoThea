@@ -44,6 +44,10 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_database(db)
+        # Freigaben der Eltern aus der App (gelten vor dem Status der Übungsdateien); danach hält sie
+        # practice_exercises.set_release im Speicher aktuell – keine Datenbankabfrage pro Anfrage
+        from backend.app.services.practice_exercises import sync_releases
+        sync_releases(db)
     finally:
         db.close()
 

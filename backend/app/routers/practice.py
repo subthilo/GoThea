@@ -30,12 +30,9 @@ from backend.app.services.parent_auth import is_parent, require_parent
 
 logger = logging.getLogger(__name__)
 
-def _sync_releases(db: Session = Depends(get_db)) -> None:
-    """Freigaben der Eltern (Datenbank) vor jeder Anfrage laden – sie gelten vor dem Status der Übungsdatei."""
-    practice_exercises.sync_releases(db)
-
-
-router = APIRouter(prefix="/api/v1/practice", tags=["Übungen"], dependencies=[Depends(_sync_releases)])
+# Freigaben der Eltern lädt der Start (main.py) einmal, set_release hält sie aktuell – keine
+# Datenbankabfrage für jede Anfrage an die Übungen (auch Bilder und Handschrift brauchen keine).
+router = APIRouter(prefix="/api/v1/practice", tags=["Übungen"])
 
 
 class ReleaseRequest(BaseModel):

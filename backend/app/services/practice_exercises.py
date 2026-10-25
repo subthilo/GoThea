@@ -6,7 +6,8 @@ entstehen in Claude-Code-Sessions, werden dort von den Eltern begutachtet und li
 Der Kern kennt den Kopf jeder Übung (Fach, Thema, Fundstelle, Status) und die Liste; was die
 Aufgabenform ausmacht (Datenprüfung, Stufen, Bausteine), steht im Typ (services/exercise_types/).
 Entwürfe sieht nur der Eltern-Modus. Die Eltern geben Übungen in der App frei (oder ziehen sie zurück); das
-liegt in der Datenbank (``practice_releases``) und gilt vor dem Status der Datei – ``sync_releases`` lädt es.
+liegt in der Datenbank (``practice_releases``) und gilt vor dem Status der Datei – ``sync_releases`` lädt es
+beim Start, ``set_release`` hält es aktuell.
 """
 from __future__ import annotations
 
@@ -171,7 +172,8 @@ def check_collection() -> List[str]:
 
 
 # --- Freigaben aus der App (Datenbank) ----------------------------------------------------------------------
-# exercise_id → (status, Datum); gilt vor dem Status der Datei. Der Router lädt sie zu Beginn jeder Anfrage.
+# exercise_id → (status, Datum); gilt vor dem Status der Datei. Geladen beim Start (main.py), danach von
+# set_release nachgezogen (ein Prozess je Umgebung).
 _releases: Dict[str, tuple] = {}
 
 
