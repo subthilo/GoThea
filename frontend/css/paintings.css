@@ -60,13 +60,14 @@ body.paint-bg-on .header::before {
 
 /* Textschutz: was direkt auf dem Hintergrund steht, bekommt eine ruhige Unterlage in Kartenfarbe.
    Wo Text steht, hängt von Lage und Gerät ab – deshalb hier und nicht als ausgesparte Fläche im Bild. */
+/* Die Unterlage ragt als Schatten über das Element hinaus, statt Abstand einzufügen: nichts verschiebt
+   sich, sonst passte das Geisterbild im Mal-Modus (ohne Bild aufgenommen) nicht mehr zur Seite mit Bild */
 body.paint-bg-on .tab-pane > .section-title {
-  display: inline-flex;
-  padding: 6px 12px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--bg-card) 78%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  --plaque: color-mix(in srgb, var(--bg-card) 82%, transparent);
+  width: fit-content;
+  border-radius: 6px;
+  background: var(--plaque);
+  box-shadow: 0 0 0 8px var(--plaque);
 }
 
 /* Kacheln: Bild innen, Rundung/Rand/Schatten gehören der Kachel; Abdeckung in Kartenfarbe */
@@ -81,17 +82,17 @@ body.paint-bg-on .tab-pane > .section-title {
 
 /* Fachfarbe bleibt als Rand sichtbar, sonst geht das Farbsystem verloren */
 .subject-app-tile.has-paint {
-  border: 2px solid var(--tile-color, var(--border-color));
+  border-color: var(--tile-color, var(--border-color));
+  box-shadow: inset 0 0 0 1px var(--tile-color, var(--border-color));  /* kräftiger, ohne das Layout zu ändern */
 }
 
 /* Textschutz in bemalten Kacheln: ruhige Unterlage in Kartenfarbe */
 [data-paint-tile].has-paint :is(.subject-tile-name, .subject-hero-title, .dash-tt-title, .dash-tt-empty) {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--bg-card) 82%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  --plaque: color-mix(in srgb, var(--bg-card) 82%, transparent);
+  width: fit-content;
+  border-radius: 6px;
+  background: var(--plaque);
+  box-shadow: 0 0 0 6px var(--plaque);
 }
 
 [data-paint-tile].has-paint .dash-tt-slot-card {
@@ -100,11 +101,29 @@ body.paint-bg-on .tab-pane > .section-title {
   -webkit-backdrop-filter: blur(8px);
 }
 
-/* Auswahl im Mal-Modus: bemalbare Kacheln umrandet, alles andere ruht */
-body.paint-choosing .tab-pane.active [data-paint-tile] {
-  outline: 3px dashed var(--accent-light);
-  outline-offset: 3px;
+/* Auswahl im Mal-Modus: eigene Felder über den bemalbaren Kacheln, darunter ruht die Seite */
+.paint-pick-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(var(--shade-rgb), 0.25);
+}
+
+.paint-pick {
+  position: absolute;
+  z-index: 75;
+  padding: 0;
+  margin: 0;
+  border: 3px dashed var(--accent-light);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   cursor: crosshair;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.paint-pick:active {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 body.paint-choosing .paint-fab {

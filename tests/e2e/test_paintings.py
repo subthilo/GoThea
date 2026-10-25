@@ -113,11 +113,27 @@ def _open_background(page):
     page.locator("#paint-mode").wait_for(state="visible")
 
 
-def _open_tile(page, selector):
-    page.click("#btn-paint")
+def _open_tile(page, key):
+    """Wie auf dem iPad: Pinsel antippen, dann das Feld über der Kachel antippen."""
+    page.tap("#btn-paint")
     page.locator(".paint-chooser").wait_for(state="visible")
-    page.click(selector)
+    page.tap(f'.paint-pick[data-paint-pick="{key}"]')
     page.locator("#paint-mode").wait_for(state="visible")
+
+
+GHOST_FIT = """(sel) => {
+  const v = document.querySelector('.paint-viewport').getBoundingClientRect();
+  const g = document.querySelector(sel).getBoundingClientRect();
+  return {left: g.left - v.left, right: v.right - g.right, top: g.top - v.top, bottom: v.bottom - g.bottom};
+}"""
+
+
+def _assert_ghost_fits(page, sel):
+    # Das Bild bedeckt Bildschirm bzw. Kachel: die liegen ganz im Bild, mittig, an zwei Seiten bündig
+    f = page.evaluate(GHOST_FIT, sel)
+    assert min(f.values()) > -1, f
+    assert abs(f["left"] - f["right"]) < 2 and abs(f["top"] - f["bottom"]) < 2, f
+    assert min(f["left"] + f["right"], f["top"] + f["bottom"]) < 2, f
 
 
 def test_brush_button_only_on_paintable_pages_for_thea(app_page, parent_pin):
@@ -209,19 +225,26 @@ def test_paint_mode_fits_the_screen_in_both_orientations(app_page, clean_dashboa
 
 # ---- Kacheln ----
 TILE = '#dashboard-subjects-grid [data-paint-tile="{}"]'
+KEY = "dashboard/tile/{}"
 
 
 def test_choosing_marks_tiles_and_a_tap_does_not_open_the_subject(app_page, clean_dashboard):
     app_page.click("#btn-paint")
     app_page.locator(".paint-chooser").wait_for(state="visible")
     assert app_page.evaluate("document.body.classList.contains('paint-choosing')")
+    assert app_page.locator(".paint-pick").count() == app_page.locator("#tab-dashboard [data-paint-tile]").count()
     # Abbrechen: nichts passiert, die Seite bleibt
-    app_page.click('[data-paint-choose="cancel"]')
+    app_page.tap('[data-paint-choose="cancel"]')
     assert not app_page.evaluate("document.body.classList.contains('paint-choosing')")
+    assert app_page.locator(".paint-pick").count() == 0
     assert app_page.locator("#tab-dashboard.active").count() == 1
+    # Daneben tippen bricht ebenfalls ab
+    app_page.tap("#btn-paint")
+    app_page.tap(".paint-pick-shield", position={"x": 5, "y": 5})
+    assert app_page.locator(".paint-pick").count() == 0 and app_page.locator("#paint-mode:visible").count() == 0
 
     # Kachel antippen öffnet den Mal-Modus für die Kachel (nicht das Fach)
-    _open_tile(app_page, TILE.format("sub_math"))
+    _open_tile(app_page, KEY.format("sub_math"))
     assert app_page.locator("#tab-dashboard.active").count() == 1
     box = app_page.locator(".paint-viewport").bounding_box()
     assert abs(box["width"] - box["height"]) < 1  # Kachelart quadrat
@@ -235,7 +258,7 @@ def test_choosing_marks_tiles_and_a_tap_does_not_open_the_subject(app_page, clea
 
 def test_subject_tile_own_picture_or_one_for_all(app_page, clean_dashboard):
     # Mathe bekommt ein eigenes Bild
-    _open_tile(app_page, TILE.format("sub_math"))
+    _open_tile(app_page, KEY.format("sub_math"))
     with app_page.expect_response(_paintings_request("POST"), timeout=6000) as resp:
         app_page.evaluate(PAINT_DRAW, LINE)
     math = resp.value.json()
@@ -245,7 +268,7 @@ def test_subject_tile_own_picture_or_one_for_all(app_page, clean_dashboard):
     assert app_page.locator(f"{TILE.format('sub_bio')}.has-paint").count() == 0
 
     # Biologie: „für alle Fächer“ → gilt für alle Fach-Kacheln ohne eigenes Bild
-    _open_tile(app_page, TILE.format("sub_bio"))
+    _open_tile(app_page, KEY.format("sub_bio"))
     app_page.click('[data-paint-action="scope"]')
     assert app_page.get_attribute('[data-paint-action="scope"]', "title") == "Für alle Fächer"
     with app_page.expect_response(_paintings_request("POST"), timeout=6000) as resp:
@@ -258,7 +281,7 @@ def test_subject_tile_own_picture_or_one_for_all(app_page, clean_dashboard):
     assert style(TILE.format("sub_bio")) == style(TILE.format("sub_physics"))
 
     # Mathe auf „für alle“: sein Bild wird das gemeinsame, der eigene Platz wird frei
-    _open_tile(app_page, TILE.format("sub_math"))
+    _open_tile(app_page, KEY.format("sub_math"))
     with app_page.expect_response(lambda r: r.request.method == "DELETE" and "slots/dashboard/tile/sub_math" in r.url):
         app_page.click('[data-paint-action="scope"]')
     app_page.click('[data-paint-action="done"]')
@@ -273,7 +296,7 @@ def test_subject_page_background_and_cards(app_page, clean_dashboard):
     app_page.locator("#tab-subject-detail.active").wait_for()
     app_page.wait_for_load_state("networkidle")
     assert app_page.get_attribute("#tab-subject-detail", "data-paint") == "subject-detail/sub_math"
-    _open_tile(app_page, '[data-paint-tile="tafel"]')
+    _open_tile(app_page, "subject-detail/sub_math/tile/tafel")
     box = app_page.locator(".paint-viewport").bounding_box()
     assert abs(box["width"] / box["height"] - 2.4) < 0.05  # Kachelart karte
     with app_page.expect_response(_paintings_request("POST"), timeout=6000) as resp:
@@ -294,4 +317,62 @@ def test_subject_page_background_and_cards(app_page, clean_dashboard):
     app_page.wait_for_function(f"!{ON}", timeout=5000)
     assert app_page.locator('[data-paint-tile="tafel"].has-paint').count() == 0
     app_page.wait_for_load_state("networkidle")
+    assert app_page.problems.errors == []
+
+
+def test_ghost_sits_where_the_picture_will_be(app_page, clean_dashboard):
+    """Geisterbild = so, wie Seite bzw. Kachel später über dem Bild liegt (Bild randlos eingepasst)."""
+    for w, h in [(1194, 834), (834, 1194)]:
+        app_page.set_viewport_size({"width": w, "height": h})
+        _open_background(app_page)
+        _assert_ghost_fits(app_page, ".paint-ghost-page")
+        app_page.click('[data-paint-action="done"]')
+        for key in [KEY.format("sub_math"), "dashboard/tile/stundenplan"]:
+            _open_tile(app_page, key)
+            _assert_ghost_fits(app_page, ".paint-ghost-tile")
+            app_page.click('[data-paint-action="done"]')
+            app_page.locator("#paint-mode").wait_for(state="hidden")
+    assert app_page.problems.errors == []
+
+
+RECTS = """() => [...document.querySelectorAll(
+  '#tab-dashboard .section-title, #tab-dashboard .subject-app-tile, .subject-tile-name, .dash-tt-title, .dash-tt-empty, .header')]
+  .map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.height)]; })"""
+
+
+def test_painted_surfaces_do_not_move_the_layout(app_page):
+    # Sonst passte das Geisterbild (ohne Bild aufgenommen) nicht mehr zur Seite mit Bild
+    app_page.wait_for_load_state("networkidle")
+    before = app_page.evaluate(RECTS)
+    app_page.evaluate("""() => {
+      document.body.classList.add('paint-bg-on');
+      document.querySelectorAll('[data-paint-tile]').forEach((el) => {
+        el.classList.add('has-paint'); el.style.setProperty('--paint-img', 'none'); });
+    }""")
+    assert app_page.evaluate(RECTS) == before
+    app_page.evaluate("applyPaintings()")
+
+
+def test_ghost_tiles_lie_exactly_over_the_real_tiles(app_page, clean_dashboard):
+    for w, h in [(1194, 834), (834, 1194)]:
+        app_page.set_viewport_size({"width": w, "height": h})
+        _open_background(app_page)
+        # Geisterbild zurückrechnen: Bildschirmpunkt = (Punkt im Bild − Versatz) / Maßstab
+        off = app_page.evaluate("""() => {
+          const v = document.querySelector('.paint-viewport').getBoundingClientRect();
+          const g = document.querySelector('.paint-ghost-page').getBoundingClientRect();
+          const k = g.width / innerWidth;
+          const back = (el) => { const r = el.getBoundingClientRect();
+            return [(r.left - g.left) / k, (r.top - g.top) / k]; };
+          const all = (sel) => [...document.querySelectorAll(sel)].filter((el) => el.getClientRects().length);
+          const ghost = [...all('.paint-ghost .subject-app-tile'), ...all('.paint-ghost .nav-tab')].map(back);
+          const real = [...all('#tab-dashboard .subject-app-tile'), ...all('.app-container > .header .nav-tab')]
+            .filter((el) => !el.closest('.paint-ghost'))  // der Klon trägt dieselben IDs und Klassen
+            .map((el) => { const r = el.getBoundingClientRect(); return [r.left, r.top]; });
+          if (ghost.length !== real.length) return [ghost.length, real.length, 'Anzahl'];
+          return ghost.map((p, i) => Math.max(Math.abs(p[0] - real[i][0]), Math.abs(p[1] - real[i][1])));
+        }""")
+        assert off and max(off) < 1.5, (w, h, off)
+        app_page.click('[data-paint-action="done"]')
+        app_page.locator("#paint-mode").wait_for(state="hidden")
     assert app_page.problems.errors == []

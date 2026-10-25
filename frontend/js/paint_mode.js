@@ -197,7 +197,9 @@ function buildPaintGhost() {
     sh = r.height;
     source = ghostOfTile(t.el, sw, sh);
   }
-  const k = Math.max(w / sw, h / sh), ox = (w - sw * k) / 2, oy = (h - sh * k) / 2;
+  // Das Bild bedeckt Bildschirm bzw. Kachel (object-fit/background-size: cover) – umgekehrt liegt
+  // also Bildschirm bzw. Kachel ganz im Bild: einpassen, nicht füllen
+  const k = Math.min(w / sw, h / sh), ox = (w - sw * k) / 2, oy = (h - sh * k) / 2;
   if (source) {
     source.style.transform = `translate(${ox}px, ${oy}px) scale(${k})`;
     layer.appendChild(source);
@@ -209,12 +211,13 @@ function buildPaintGhost() {
     const part = w / (Math.max(sw, sh) / Math.min(sw, sh)), off = (w - part) / 2;
     layer.insertAdjacentHTML("beforeend", frame(0, off, w, part, sw >= sh) + frame(off, 0, part, h, sw < sh));
   } else {
-    layer.insertAdjacentHTML("beforeend", frame(Math.max(0, ox), Math.max(0, oy), Math.min(w, sw * k), Math.min(h, sh * k), true));
+    layer.insertAdjacentHTML("beforeend", frame(ox, oy, sw * k, sh * k, true));
   }
   applyPaintGhost();
 }
 
-// Kopfzeile und aktive Seite (die übrigen Tabs sind verborgen und groß), beim aktuellen Scrollstand
+// Kopfzeile und aktive Seite (die übrigen Tabs sind verborgen und groß), jeweils genau an ihrer
+// Stelle auf dem Bildschirm (Scrollstand, klebende Kopfzeile, Staging-Banner darüber)
 function ghostOfPage(sw, sh) {
   const src = document.querySelector(".app-container");
   const header = src && src.querySelector(".header");
@@ -226,11 +229,15 @@ function ghostOfPage(sw, sh) {
   page.style.width = `${sw}px`;
   page.style.height = `${sh}px`;
   const clone = src.cloneNode(false), mainClone = main.cloneNode(false);
-  const headerClone = ghostClone(header), paneClone = ghostClone(pane);
-  clone.style.marginTop = `${-paintMode.scrollY}px`;
-  headerClone.style.transform = `translateY(${paintMode.scrollY}px)`;  // klebt oben wie beim Scrollen
-  mainClone.appendChild(paneClone);
-  clone.append(headerClone, mainClone);
+  const headerClone = ghostClone(header);
+  mainClone.appendChild(ghostClone(pane));
+  Object.assign(clone.style, { position: "static", margin: "0", padding: "0", maxWidth: "none", minHeight: "0" });
+  [[header, headerClone], [main, mainClone]].forEach(([el, c]) => {
+    const r = el.getBoundingClientRect();
+    Object.assign(c.style, { position: "absolute", left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`,
+      margin: "0", boxSizing: "border-box" });
+  });
+  clone.append(mainClone, headerClone);
   clone.setAttribute("inert", "");
   page.appendChild(clone);
   return page;
@@ -485,6 +492,8 @@ async function previewPaintTile() {
 }
 
 // ---- Fläche wählen: Kacheln umrandet antippen, oder „Hintergrund“ ----
+// Eigene Felder genau über den Kacheln (Safari auf dem iPad schickt Klicks auf Flächen ohne eigenen
+// Klick-Handler nicht zuverlässig); eine Abdeckung darunter fängt alles andere ab (= Abbrechen).
 function buildPaintChooser() {
   if (paintMode.chooser) return paintMode.chooser;
   const bar = document.createElement("div");
@@ -493,40 +502,55 @@ function buildPaintChooser() {
   bar.innerHTML = `
     <button type="button" class="paint-btn" data-paint-choose="background" title="Hintergrund" aria-label="Hintergrund">${icon("Bild")}</button>
     <button type="button" class="paint-btn" data-paint-choose="cancel" title="Abbrechen" aria-label="Abbrechen">${icon("Schließen")}</button>`;
+  bar.addEventListener("click", (e) => {
+    const choice = e.target.closest("[data-paint-choose]");
+    if (!choice) return;
+    stopPaintChoosing();
+    if (choice.dataset.paintChoose === "background") openPaintMode(null);
+  });
   document.body.appendChild(bar);
   paintMode.chooser = bar;
-  // Während der Auswahl öffnet ein Tippen auf eine Kachel den Mal-Modus statt der Kachel selbst
-  document.addEventListener("click", (e) => {
-    if (!document.body.classList.contains("paint-choosing")) return;
-    const choice = e.target.closest("[data-paint-choose]");
-    e.preventDefault();
-    e.stopPropagation();
-    if (choice) {
-      stopPaintChoosing();
-      if (choice.dataset.paintChoose === "background") openPaintMode(null);
-      return;
-    }
-    const tile = paintTilesOf(activePaintPane()).find((x) => x.el.contains(e.target));
-    stopPaintChoosing();
-    if (tile) openPaintMode(tile);
-  }, true);
   return bar;
 }
 
 function startPaintChoosing() {
   const pane = typeof activePaintPane === "function" ? activePaintPane() : null;
   if (!pane || (typeof isParentActive !== "undefined" && isParentActive)) return;
-  if (!paintTilesOf(pane).length) {
+  const tiles = paintTilesOf(pane);
+  if (!tiles.length) {
     openPaintMode(null);
     return;
   }
+  stopPaintChoosing();
+  const shield = document.createElement("div");
+  shield.className = "paint-pick-shield";
+  shield.addEventListener("click", stopPaintChoosing);
+  document.body.appendChild(shield);
+  tiles.forEach((tile) => {
+    const r = tile.el.getBoundingClientRect();
+    const pick = document.createElement("button");
+    pick.type = "button";
+    pick.className = "paint-pick";
+    pick.dataset.paintPick = tile.key;
+    pick.title = "Diese Kachel bemalen";
+    pick.setAttribute("aria-label", pick.title);
+    // Seitenkoordinaten: die Felder scrollen mit der Seite
+    Object.assign(pick.style, { left: `${r.left + window.scrollX}px`, top: `${r.top + window.scrollY}px`,
+      width: `${r.width}px`, height: `${r.height}px` });
+    pick.addEventListener("click", (e) => {
+      e.preventDefault();
+      stopPaintChoosing();
+      openPaintMode(tile);
+    });
+    document.body.appendChild(pick);
+  });
   buildPaintChooser().hidden = false;
-  // erst nach diesem Klick, sonst fängt die Auswahl den Klick auf den Pinsel selbst
-  setTimeout(() => document.body.classList.add("paint-choosing"), 0);
+  document.body.classList.add("paint-choosing");
 }
 
 function stopPaintChoosing() {
   document.body.classList.remove("paint-choosing");
+  document.querySelectorAll(".paint-pick, .paint-pick-shield").forEach((el) => el.remove());
   if (paintMode.chooser) paintMode.chooser.hidden = true;
 }
 
