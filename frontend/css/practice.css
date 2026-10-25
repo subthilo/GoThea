@@ -2130,6 +2130,15 @@ button.sr-cell.in.active {
 .kr-box.wrong { border: 3px solid var(--warning); background: rgba(245, 158, 11, 0.12); }
 .kr-box.shown { border: 3px solid var(--warning); }
 
+/* Stufe -1: angetipptes Ergebnis in der Gleichung (Brüche passen ins Kästchen) */
+.kr-box-tap {
+  justify-content: center;
+}
+
+.kr-box-tap .kr-frac {
+  font-size: 0.8em;
+}
+
 /* Einmaleins-Check: falsche Antwort durchgestrichen vor dem richtigen Ergebnis */
 .kr-given {
   color: var(--text-muted);

@@ -93,6 +93,7 @@
     run.state = "offen";       // offen | richtig | gezeigt
     run.msg = "";
     run.tried = new Set();     // Stufe -1: falsch angetippte Angebote
+    run.tapped = null;         // Stufe -1: zuletzt angetipptes Ergebnis (steht in der Gleichung)
     run.ueWrong = new Set();
     run.ueDone = !(run.stage === 1 && item().ueberschlag);
     run.ueShown = false;       // Stufe 2: Überschlag als Hilfe nach einem Fehler
@@ -190,7 +191,13 @@
   function answerBoxHtml() {
     const it = item();
     const st = run.state === "richtig" ? " ok" : ["gezeigt", "korrigiert"].includes(run.state) ? " shown" : run.msg ? " wrong" : "";
-    if (run.stage < 0 && run.state === "offen") return `<span class="kr-box kr-box-empty${st}"></span>`;
+    // Stufe -1: das angetippte Ergebnis steht in der Gleichung – falsch bleibt es markiert stehen, bis Thea ein
+    // anderes antippt; richtig leuchtet es kurz grün (Nutzer 25.10.)
+    if (run.stage < 0) {
+      const shown = run.state === "gezeigt" ? item().loesung : run.tapped;
+      const cls = run.state === "richtig" ? " ok" : run.state === "gezeigt" ? " shown" : shown ? " wrong" : " kr-box-empty";
+      return `<span class="kr-box kr-box-tap${cls}">${shown ? mathHtml(shown) : ""}</span>`;
+    }
     if (it.antwort === "bruch") {
       const f = (key) => `<button type="button" class="kr-box kr-field${st}${run.input.field === key && run.state === "offen" ? " active" : ""}" data-field="${key}" aria-label="${key === "z" ? "Zähler" : "Nenner"}">${esc(run.input[key])}</button>`;
       return `<span class="kr-frac kr-frac-input">${f("z")}${f("n")}</span>`;
@@ -400,6 +407,7 @@
   function tapChoice(i) {
     const a = item().auswahl;
     const value = a.angebote[i];
+    run.tapped = value;
     if (i === a.richtig) return submit(value, "richtig");
     run.tried.add(i);
     const verdict = item().antwort === "zahl" && commaOff(parseDecimal(value) || { n: 0n, d: 1n }, big(item().wert)) ? "komma" : "falsch";

@@ -52,7 +52,10 @@ def test_tap_stage_marks_wrong_offers(app_page):
     wrong = (a["richtig"] + 1) % len(a["angebote"])
     app_page.click(f'.kr-choice[data-choice="{wrong}"]')
     assert app_page.locator(".kr-choice.wrong").count() == 1
+    # das angetippte Ergebnis steht in der Gleichung und bleibt markiert stehen
+    assert app_page.inner_text(".kr-box-tap.wrong").replace("\n", "/") == a["angebote"][wrong]
     app_page.click(f'.kr-choice[data-choice="{a["richtig"]}"]')
+    assert app_page.inner_text(".kr-box-tap.ok").replace("\n", "/") == a["angebote"][a["richtig"]]
     app_page.wait_for_selector(".kr-dot.done")
     assert app_page.problems.errors == []
 
