@@ -7,7 +7,7 @@ argument-hint: <Fach> ["Thema"]
 # Übungen erstellen und begutachten
 
 Eine Session erstellt Übungen zu **einem Thema** und endet mit freigegebenen Übungen auf Staging. Der Nutzer
-(Elternteil) begutachtet in der Session; eine Freigabe in der App gibt es bewusst nicht. An jedem ⏸ anhalten und
+(Elternteil) begutachtet in der Session oder gibt später selbst in der App frei (Tab „Üben“, Eltern-Modus, seit 25.10.). An jedem ⏸ anhalten und
 auf den Nutzer warten. Deutsch, knapp, Tabellen statt Fließtext.
 
 ## Grundsätze (mit dem Nutzer abgestimmt, nicht verhandelbar)
@@ -114,7 +114,9 @@ Prüfen, bevor der Nutzer etwas sieht:
 ### 5. Freigeben
 
 Für jede abgesegnete Übung `"status": "freigegeben"` und `"freigegeben_am": "<JJJJ-MM-TT>"` setzen (ohne Datum
-scheitern die Tests). Tests → Commit
+scheitern die Tests). Alternativ gibt der Nutzer in der App frei (Haken an der Übung in der Liste); das liegt in der
+Datenbank (`practice_releases`) und gilt vor dem Status der Datei – vor einer Session den Stand mit
+`check_exercises.py` ansehen, nicht an der Datei ablesen. Tests → Commit
 `feat(exercises): release …` → `./deploy.sh` → `check_exercises.py`. Produktion nur auf ausdrückliches OK des
 Nutzers – und erst nach der Datenübernahme Staging → Produktion (vorher fehlen dort die Materialien und IDs).
 
