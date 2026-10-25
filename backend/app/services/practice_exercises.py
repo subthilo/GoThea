@@ -5,7 +5,8 @@ entstehen in Claude-Code-Sessions, werden dort von den Eltern begutachtet und li
 ``backend/app/exercise_sets/`` (eine Datei je Typ und Sammlung, ``"typ"`` nennt den Übungstyp).
 Der Kern kennt den Kopf jeder Übung (Fach, Thema, Fundstelle, Status) und die Liste; was die
 Aufgabenform ausmacht (Datenprüfung, Stufen, Bausteine), steht im Typ (services/exercise_types/).
-Entwürfe sieht nur der Eltern-Modus.
+Entwürfe sieht nur der Eltern-Modus. Die Eltern geben Übungen in der App frei (oder ziehen sie zurück); das
+liegt in der Datenbank (``practice_releases``) und gilt vor dem Status der Datei – ``sync_releases`` lädt es.
 """
 from __future__ import annotations
 
@@ -169,8 +170,64 @@ def check_collection() -> List[str]:
     return errors
 
 
+# --- Freigaben aus der App (Datenbank) ----------------------------------------------------------------------
+# exercise_id → (status, Datum); gilt vor dem Status der Datei. Der Router lädt sie zu Beginn jeder Anfrage.
+_releases: Dict[str, tuple] = {}
+
+
+def sync_releases(db) -> None:
+    from backend.app.models.practice_release import PracticeRelease
+    _releases.clear()
+    for r in db.query(PracticeRelease).all():
+        _releases[r.exercise_id] = (r.status, r.changed_at.strftime("%Y-%m-%d"))
+
+
+def _effective(ex: dict) -> dict:
+    if ex["id"] not in _releases:
+        return ex
+    status, day = _releases[ex["id"]]
+    out = {**ex, "status": status, "freigabe_in_app": True}
+    if status == FREIGEGEBEN:
+        out["freigegeben_am"] = day
+    return out
+
+
+def family_ids(exercise_id: str) -> List[str]:
+    """Eine Aufgabe = Original (A, C) mit seinen Zwillingen (B); freigegeben wird immer die ganze Aufgabe."""
+    exercises = _load_all()
+    head = exercises[exercise_id].get("zwilling_von") or exercise_id
+    return [head] + [i for i, ex in exercises.items() if ex.get("zwilling_von") == head]
+
+
+def set_release(db, exercise_id: str, status: str) -> List[str]:
+    """Aufgabe (Original + Zwillinge) freigeben oder zurückziehen. Freigeben nur, wenn die Daten stimmig sind."""
+    from datetime import datetime
+    from backend.app.models.practice_release import PracticeRelease
+    if status not in STATUSES:
+        raise ValueError(f"Status {status} gibt es nicht")
+    if exercise_id not in _load_all():
+        raise KeyError(exercise_id)
+    ids = family_ids(exercise_id)
+    if status == FREIGEGEBEN:
+        for i in ids:
+            errors = validate(get_exercise(i, include_drafts=True))
+            if errors:
+                raise ValueError(f"{i}: {'; '.join(errors)}")
+    now = datetime.utcnow()
+    for i in ids:
+        row = db.get(PracticeRelease, i)
+        if row is None:
+            db.add(PracticeRelease(exercise_id=i, status=status, changed_at=now))
+        else:
+            row.status, row.changed_at = status, now
+    db.commit()
+    sync_releases(db)
+    return ids
+
+
 def _visible(include_drafts: bool) -> Dict[str, dict]:
-    return {i: ex for i, ex in _load_all().items() if include_drafts or not is_draft(ex)}
+    effective = {i: _effective(ex) for i, ex in _load_all().items()}
+    return {i: ex for i, ex in effective.items() if include_drafts or not is_draft(ex)}
 
 
 def _stages(ex: dict) -> dict:
@@ -194,6 +251,7 @@ def list_exercises(include_drafts: bool = False) -> List[dict]:
             "fach": ex["fach"],
             "thema": ex["thema"],
             "status": ex["status"],
+            "freigegeben_am": ex.get("freigegeben_am"),
             "aufgabentext": ex["aufgabentext"],
             "abschnitt": ex.get("abschnitt"),
             "quelle": ex["quelle"],

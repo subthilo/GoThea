@@ -69,22 +69,13 @@ function registerPracticeType(typ, view) {
     tryRound.setAttribute("aria-label", "Runde wie Thea");
     tryRound.innerHTML = `${icon("Kind")}${icon("Pfeil rechts")}`;
     tryRound.addEventListener("click", () => askBattery(null));
-    listEl.appendChild(tryRound);
+    const bar = document.createElement("div");
+    bar.className = "practice-list-bar";
+    bar.appendChild(filterBar(data.exercises));
+    bar.appendChild(tryRound);
+    listEl.appendChild(bar);
     if (data.vorschlag) listEl.appendChild(buildSuggestion(data.vorschlag, families[data.vorschlag.familie]));
-
-    const groups = new Map();
-    data.exercises.forEach((ex) => {
-      const key = `${ex.fach}|${ex.abschnitt || ""}`;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(ex);
-    });
-    groups.forEach((list) => {
-      const h = document.createElement("h3");
-      h.className = "practice-group-title";
-      h.textContent = list[0].abschnitt || "";
-      listEl.appendChild(h);
-      list.forEach((ex) => listEl.appendChild(buildRow(ex, data.stand[ex.id])));
-    });
+    listEl.appendChild(buildTree(data));
 
     if (data.wiederholen.length) {
       const h = document.createElement("h3");
@@ -94,6 +85,144 @@ function registerPracticeType(typ, view) {
       listEl.appendChild(h);
       data.wiederholen.forEach((r) => listEl.appendChild(buildRepeatRow(r, families[r.familie])));
     }
+  }
+
+  // ---------- Baum für die Eltern: Fach › Thema › Übung, aufklappbar; Filter alle / wartend / freigegeben ----------
+  // Aufgeklappte Zweige und Filter merkt sich das Gerät (nur Bequemlichkeit, ohne Speicher geht es auch).
+
+  const FILTERS = [
+    { key: "alle", icon: "Inhaltsverzeichnis", title: "Alle" },
+    { key: "wartend", icon: "Sanduhr", title: "Wartet auf Freigabe" },
+    { key: "frei", icon: "Haken", title: "Freigegeben" },
+  ];
+  const store = {
+    get(key, fallback) { try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; } },
+    set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* ohne Speicher */ } },
+  };
+  let listFilter = store.get("gothea.practiceFilter", "alle");
+  const openNodes = new Set(store.get("gothea.practiceOpen", []));
+
+  const waiting = (ex) => ex.status === "entwurf";
+  const passes = (ex) => listFilter === "alle" || (listFilter === "wartend") === waiting(ex);
+
+  function filterBar(exercises) {
+    const el = document.createElement("div");
+    el.className = "practice-filter";
+    el.setAttribute("role", "group");
+    el.setAttribute("aria-label", "Filter");
+    const count = { alle: exercises.length, wartend: exercises.filter(waiting).length };
+    count.frei = count.alle - count.wartend;
+    el.innerHTML = FILTERS.map((f) => `<button type="button" class="practice-filter-btn${f.key === listFilter ? " active" : ""}"
+      data-filter="${f.key}" title="${f.title}" aria-label="${f.title}" aria-pressed="${f.key === listFilter}">${icon(f.icon)}<span>${count[f.key]}</span></button>`).join("");
+    el.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-filter]");
+      if (!b) return;
+      listFilter = b.dataset.filter;
+      store.set("gothea.practiceFilter", listFilter);
+      loadPracticeList().catch((err) => console.warn("Übungen nicht geladen:", err));
+    });
+    return el;
+  }
+
+  function nodeHtml(label, iconHtml, list) {
+    const w = list.filter(waiting).length;
+    return `<span class="practice-node-chevron">${icon("Aufklappen")}</span>${iconHtml}
+      <span class="practice-node-label">${label}</span>
+      ${w ? `<span class="practice-node-count wartend" title="Wartet auf Freigabe">${icon("Sanduhr")}${w}</span>` : ""}
+      <span class="practice-node-count" title="Übungen">${list.length}</span>`;
+  }
+
+  function buildNode(key, headHtml, level, fillBody) {
+    const node = document.createElement("div");
+    node.className = `practice-node level-${level}${openNodes.has(key) ? " open" : ""}`;
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "practice-node-head";
+    head.setAttribute("aria-expanded", String(openNodes.has(key)));
+    head.innerHTML = headHtml;
+    const body = document.createElement("div");
+    body.className = "practice-node-body";
+    node.append(head, body);
+    let filled = false;
+    const fill = () => { if (!filled) { fillBody(body); filled = true; } };
+    if (openNodes.has(key)) fill();
+    head.addEventListener("click", () => {
+      const open = !node.classList.contains("open");
+      node.classList.toggle("open", open);
+      head.setAttribute("aria-expanded", String(open));
+      if (open) { openNodes.add(key); fill(); } else openNodes.delete(key);
+      store.set("gothea.practiceOpen", [...openNodes]);
+    });
+    return node;
+  }
+
+  function buildTree(data) {
+    const tree = document.createElement("div");
+    tree.className = "practice-tree";
+    const shown = data.exercises.filter(passes);
+    const bySubject = new Map();
+    shown.forEach((ex) => {
+      if (!bySubject.has(ex.fach)) bySubject.set(ex.fach, new Map());
+      const topics = bySubject.get(ex.fach);
+      if (!topics.has(ex.thema)) topics.set(ex.thema, []);
+      topics.get(ex.thema).push(ex);
+    });
+    const subjectName = (id) => (data.faecher || {})[id] || id;
+    const topicName = (id) => ((data.themen || {})[id] || {}).name || id;
+    const topicArea = (id) => ((data.themen || {})[id] || {}).bereich || "";
+    [...bySubject.keys()].sort((a, b) => subjectName(a).localeCompare(subjectName(b), "de")).forEach((fach) => {
+      const topics = bySubject.get(fach);
+      const all = [...topics.values()].flat();
+      const node = buildNode(`f:${fach}`, nodeHtml(esc(subjectName(fach)), subjectIcon(fach, "practice-row-icon"), all), 1, (body) => {
+        [...topics.keys()].sort((a, b) => (topicArea(a) + topicName(a)).localeCompare(topicArea(b) + topicName(b), "de")).forEach((thema) => {
+          const list = topics.get(thema);
+          const area = topicArea(thema);
+          const label = `${area ? `<span class="practice-node-area">${esc(area)} ›</span> ` : ""}${esc(topicName(thema))}`;
+          body.appendChild(buildNode(`t:${thema}`, nodeHtml(label, "", list), 2, (inner) => {
+            let section = null;
+            list.forEach((ex) => {
+              if ((ex.abschnitt || "") !== section) {
+                section = ex.abschnitt || "";
+                if (section) {
+                  const h = document.createElement("h4");
+                  h.className = "practice-group-title";
+                  h.textContent = section;
+                  inner.appendChild(h);
+                }
+              }
+              inner.appendChild(buildRow(ex, data.stand[ex.id]));
+            });
+          }));
+        });
+      });
+      node.style.setProperty("--subject-color", subjectColor(fach));
+      tree.appendChild(node);
+    });
+    if (!shown.length) tree.innerHTML = `<p class="practice-empty">${icon(listFilter === "wartend" ? "Haken" : "Sanduhr")}</p>`;
+    return tree;
+  }
+
+  // Freigeben / zurückziehen (ganze Aufgabe mit Zwillingen), danach die Liste neu
+  async function setRelease(ex, status) {
+    await apiJson(`/api/v1/practice/${encodeURIComponent(ex.id)}/freigabe`, { method: "PUT", json: { status } });
+    await loadPracticeList();
+    refreshDueHint();
+  }
+
+  function releaseButton(ex) {
+    const b = document.createElement("button");
+    b.type = "button";
+    const draft = waiting(ex);
+    b.className = `practice-icon-btn practice-release${draft ? " is-draft" : ""}`;
+    b.title = draft ? "Freigeben" : `Freigegeben${ex.freigegeben_am ? ` am ${ex.freigegeben_am.split("-").reverse().join(".")}` : ""} – zurückziehen`;
+    b.setAttribute("aria-label", draft ? "Freigeben" : "Zurückziehen");
+    b.dataset.release = draft ? "freigegeben" : "entwurf";
+    b.innerHTML = icon(draft ? "Haken" : "Rückgängig");
+    b.addEventListener("click", () => setRelease(ex, b.dataset.release).catch((err) => {
+      console.warn("Freigabe nicht gespeichert:", err);
+      b.classList.add("failed");
+    }));
+    return b;
   }
 
   function openBoard(ex, exerciseId, stage) {
@@ -176,6 +305,7 @@ function registerPracticeType(typ, view) {
       twin.addEventListener("click", () => startPractice({ exercise_id: ex.zwillinge[0], stufe: next }, ex));
       row.appendChild(twin);
     }
+    row.appendChild(releaseButton(ex));
     draftMark(ex, row);
     return row;
   }

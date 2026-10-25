@@ -95,6 +95,14 @@ def isolated_parent_auth(tmp_path, monkeypatch):
     parent_auth.reset_lockout_state()
 
 @pytest.fixture(autouse=True)
+def no_practice_releases_between_tests():
+    """Freigaben aus der App liegen im Speicher des Übungskerns: jeder Test beginnt ohne."""
+    from backend.app.services import practice_exercises
+    practice_exercises._releases.clear()
+    yield
+    practice_exercises._releases.clear()
+
+@pytest.fixture(autouse=True)
 def disable_openai_in_tests(monkeypatch):
     """Verhindert echte OpenAI API-Aufrufe während der Standard-Test-Suite.
 

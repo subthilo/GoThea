@@ -26,11 +26,20 @@ from backend.app.services import (exercise_types, llm, practice_attempts, practi
                                   practice_check_zuordnen, practice_due,
                                   practice_exercises, practice_plan)
 from backend.app.services.exercise_types import zuordnen
-from backend.app.services.parent_auth import is_parent
+from backend.app.services.parent_auth import is_parent, require_parent
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/practice", tags=["Übungen"])
+def _sync_releases(db: Session = Depends(get_db)) -> None:
+    """Freigaben der Eltern (Datenbank) vor jeder Anfrage laden – sie gelten vor dem Status der Übungsdatei."""
+    practice_exercises.sync_releases(db)
+
+
+router = APIRouter(prefix="/api/v1/practice", tags=["Übungen"], dependencies=[Depends(_sync_releases)])
+
+
+class ReleaseRequest(BaseModel):
+    status: Literal["freigegeben", "entwurf"]
 
 
 class CheckRequest(BaseModel):
@@ -99,7 +108,31 @@ def list_practice(db: Session = Depends(get_db), parent: bool = Depends(is_paren
     plan = _plan(db, families)
     scope, solved_days = practice_due.collect(db)
     due = practice_due.build_round(families, scope, plan, solved_days=solved_days)
-    return {"enabled": True, "exercises": families, **plan, "dran": due["dran"], "anzahl_dran": due["anzahl_dran"]}
+    return {"enabled": True, "exercises": families, **plan, "dran": due["dran"], "anzahl_dran": due["anzahl_dran"],
+            **_names(db, families)}
+
+
+def _names(db: Session, families: List[dict]) -> dict:
+    """Namen für die Liste der Eltern (Fach › Thema › Übung)."""
+    from backend.app.models.taxonomy import Subject, Topic
+    topic_ids = {f["thema"] for f in families}
+    topics = db.query(Topic).filter(Topic.id.in_(topic_ids)).all() if topic_ids else []
+    return {"faecher": {s.id: s.name for s in db.query(Subject).all()},
+            "themen": {t.id: {"name": t.name, "bereich": t.area} for t in topics}}
+
+
+@router.put("/{exercise_id}/freigabe", dependencies=[Depends(require_parent)])
+def release_exercise(exercise_id: str, payload: ReleaseRequest, db: Session = Depends(get_db)) -> dict:
+    """Eltern geben eine Aufgabe (mit ihren Zwillingen) frei oder ziehen sie zurück."""
+    if not config.EXERCISE_TRIAL_ENABLED:
+        raise HTTPException(status_code=404, detail="Übung nicht gefunden")
+    try:
+        ids = practice_exercises.set_release(db, exercise_id, payload.status)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Übung nicht gefunden")
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return {"status": payload.status, "uebungen": ids}
 
 
 def _plan(db: Session, families: List[dict]) -> dict:

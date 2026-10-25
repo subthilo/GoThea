@@ -14,6 +14,7 @@ from backend.app.models.timetable import TimetableSlot
 from backend.app.models.whiteboard import TutorSession, TutorMessage, TutorExercise
 from backend.app.models.exercise_score import ExerciseScore
 from backend.app.models.practice_attempt import PracticeAttempt, PracticeEvent
+from backend.app.models.practice_release import PracticeRelease
 
 __all__ = [
     "User",
@@ -36,4 +37,5 @@ __all__ = [
     "ExerciseScore",
     "PracticeAttempt",
     "PracticeEvent",
+    "PracticeRelease",
 ]

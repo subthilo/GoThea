@@ -9,6 +9,20 @@ def practice_list(page):
     if not page.evaluate("document.body.classList.contains('parent-mode-active')"):
         _unlock_parent_mode(page, PARENT_PIN)
     page.click('.nav-tab[data-tab="practice"]')
+    page.wait_for_selector(".practice-node")
+    if not page.locator('.practice-filter-btn.active[data-filter="alle"]').count():
+        page.click('.practice-filter-btn[data-filter="alle"]')
+        page.wait_for_selector('.practice-filter-btn.active[data-filter="alle"]')
+    expand_all(page)
+
+
+def expand_all(page):
+    """Baum Fach › Thema › Übung ganz aufklappen (Zeilen entstehen erst beim Aufklappen)."""
+    page.wait_for_selector(".practice-node")
+    page.evaluate("""() => {
+        let head, n = 0;  // begrenzt: klappt ein Knoten nicht auf, hängt der Test nicht
+        while (n++ < 500 && (head = document.querySelector('.practice-node:not(.open) > .practice-node-head'))) head.click();
+    }""")
     page.wait_for_selector(".practice-row")
 
 
