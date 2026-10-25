@@ -93,15 +93,20 @@ def test_solution_after_two_misses_then_whole_set_to_the_end(app_page):
     assert app_page.problems.errors == []
 
 
-def test_einmaleins_check_runs_without_feedback(app_page):
+def test_einmaleins_check_shows_the_right_result_after_a_mistake(app_page):
     open_kr(app_page, "km-einmaleins-check", 2)
     app_page.click('[data-action="kr-start"]')  # Eltern-Modus: erst die Auswertung (noch leer), dann Start
-    for _ in range(36):
-        text = app_page.inner_text(".kr-expr")
-        a, b = [int(x) for x in text.split("·")]
-        type_number(app_page, str(a * b if a != 7 else a * b + 1))  # alle Siebener falsch
+    for i in range(36):
+        app_page.wait_for_function(f"document.querySelectorAll('.kr-dot.done, .kr-dot.shown').length === {i}"
+                                   " && !!document.querySelector('.kr-pad:not(.locked)')")
+        a, b = [int(x) for x in app_page.inner_text(".kr-expr").split("·")]
+        wrong = 7 in (a, b)                                      # alle Siebener falsch
+        type_number(app_page, str(a * b + 1 if wrong else a * b))
         app_page.click('[data-action="kr-submit"]')
-        assert app_page.locator(".kr-left .px-luna .px-say").count() == 0  # keine Rückmeldung
+        if wrong:
+            assert app_page.inner_text(".kr-given") == str(a * b + 1)   # eigene Antwort durchgestrichen
+            assert app_page.inner_text(".kr-box.shown") == str(a * b)   # daneben das richtige Ergebnis
+            app_page.click('[data-action="kr-next"]')
     app_page.wait_for_selector(".kr-done")
     assert app_page.problems.errors == []
 

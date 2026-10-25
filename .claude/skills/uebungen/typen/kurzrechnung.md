@@ -35,7 +35,7 @@ sein), `ueberschlag: false`, `vor` (Wort vor der Aufgabe, dann steht „→“ s
 **Grundwissen** (vom Code erzeugt, Ausnahme vom Grundsatz „nie frei erdacht“): `erzeugt` statt `aufgaben`,
 `stufen: [2]`, `quelle: {"material": "Grundwissen", "grundwissen": "Einmaleins", "nummer": "1"}`, Thema
 „Grundwissen: Einmaleins und Zehnerzahlen“ (`top_a78913bc`, nur Staging).
-- `einmaleins`: alle 36 Aufgaben 2·2 … 9·9 ohne Tauschaufgaben als Check – keine Rückmeldung, Zeit still gemessen.
+- `einmaleins`: alle 36 Aufgaben 2·2 … 9·9 ohne Tauschaufgaben als Check – Zeit still gemessen (nur die erste Antwort zählt); richtig kurz grün, falsch: eigene Antwort durchgestrichen, das richtige Ergebnis daneben, weiter mit „Weiter“.
   Im Eltern-Modus zeigt die Übung vorher die Auswertung: sicher / langsam (mehr als doppelt so lange wie Theas
   Median, mindestens 4 s) / falsch.
 - `einmaleins_wacklig` (`aus`: ID des Checks): nur die wackligen Aufgaben des letzten Checks; eine Aufgabe ist

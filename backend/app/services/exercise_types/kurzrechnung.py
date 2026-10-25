@@ -15,8 +15,8 @@ Optional je Aufgabe ``nummer`` (wie auf dem Blatt), ``fehler`` (Theas falsche An
 ``ueberschlag: false``.
 
 Grundwissen (Ausnahme vom Grundsatz „nie frei erdacht“, Nutzer 24.10.): ``erzeugt`` statt ``aufgaben``.
-  "einmaleins"          alle 36 Aufgaben 2·2 … 9·9 ohne Tauschaufgaben, als Check: keine Rückmeldung, Zeit still
-                        gemessen; Auswertung für die Eltern (sicher / langsam / falsch)
+  "einmaleins"          alle 36 Aufgaben 2·2 … 9·9 ohne Tauschaufgaben, als Check: Zeit still gemessen (erste
+                        Antwort), falsch → richtiges Ergebnis gezeigt; Auswertung für die Eltern (sicher / langsam / falsch)
   "einmaleins_wacklig"  (``aus``: ID des Checks) nur die wackligen Aufgaben aus dem letzten Check, normal geübt;
                         eine Aufgabe ist wieder sicher, sobald sie in einem Versuch auf Anhieb und schnell gelang.
                         Ohne wacklige Aufgaben ist die Übung ausgeblendet.

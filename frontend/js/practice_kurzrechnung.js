@@ -10,8 +10,10 @@
 // Bruch aus BigInt, kein Rundungsfehler): „Komma“ = Ziffern stimmen, Wert um
 // eine Zehnerpotenz daneben; „Wert“ = richtiger Wert, aber nicht der verlangte
 // Bruch (nicht fertig gekürzt, mit der falschen Zahl gekürzt).
-// Einmaleins-Check (ex.check): keine Rückmeldung, Zeit still gemessen; im
-// Eltern-Modus vorher die Auswertung (sicher / langsam / falsch).
+// Einmaleins-Check (ex.check): Zeit still gemessen (keine Uhr); richtig kurz grün,
+// falsch: eigene Antwort durchgestrichen, das richtige Ergebnis daneben, weiter
+// mit „Weiter“ (Nutzer 25.10.: Fehler müssen sichtbar sein). Gemessen wird nur die
+// erste Antwort. Im Eltern-Modus vorher die Auswertung (sicher / langsam / falsch).
 // Jede Antwort geht als Ereignis „step“ mit Zeit an den Server.
 // ==========================================================================
 
@@ -27,6 +29,7 @@
   const say = (t) => `<div class="px-say">${icon("Luna", "px-luna-icon")}<p>${esc(t)}</p></div>`;
   const isParent = () => document.body.classList.contains("parent-mode-active");
   const RIGHT_PAUSE_MS = 700;
+  const CHECK_PAUSE_MS = 350;  // Einmaleins-Check: kurz grün, das Tempo bleibt
 
   // „15/24“ → gestapelter Bruch; sonst Text
   function mathHtml(text) {
@@ -105,7 +108,7 @@
     render();
     if (state === "richtig") {
       const i = run.i;
-      setTimeout(() => { if (run && run.i === i && run.state === "richtig") nextItem(); }, run.ex.check ? 0 : RIGHT_PAUSE_MS);
+      setTimeout(() => { if (run && run.i === i && run.state === "richtig") nextItem(); }, run.ex.check ? CHECK_PAUSE_MS : RIGHT_PAUSE_MS);
     }
   }
 
@@ -131,7 +134,13 @@
     if (verdict === "leer") return;
     const ms = Math.round(performance.now() - run.t0);
     logStep(answer, verdict);
-    if (run.ex.check) return finishItem("richtig");  // Check: keine Rückmeldung, einfach weiter
+    if (run.ex.check) {  // Check: nur die erste Antwort zählt; falsch → richtiges Ergebnis zeigen
+      if (verdict === "richtig") return finishItem("richtig");
+      run.given = answer;
+      const [z, n] = item().antwort === "bruch" ? item().loesung.split("/") : [];
+      run.input = item().antwort === "bruch" ? { ...run.input, z, n } : { ...run.input, zahl: item().loesung };
+      return finishItem("korrigiert");
+    }
     const first = run.firstAnswer;
     run.firstAnswer = false;
     if (verdict === "richtig") {
@@ -173,14 +182,14 @@
   function dotsHtml() {
     if (run.ex.liste.length < 2) return "";
     return `<div class="kr-dots" aria-label="Aufgabe ${run.i + 1} von ${run.ex.liste.length}">${run.ex.liste.map((_, i) => {
-      const cls = run.results[i] === "gezeigt" ? " shown" : run.results[i] ? " done" : i === run.i ? " now" : "";
+      const cls = ["gezeigt", "korrigiert"].includes(run.results[i]) ? " shown" : run.results[i] ? " done" : i === run.i ? " now" : "";
       return `<span class="kr-dot${cls}"></span>`;
     }).join("")}</div>`;
   }
 
   function answerBoxHtml() {
     const it = item();
-    const st = run.state === "richtig" ? " ok" : run.state === "gezeigt" ? " shown" : run.msg ? " wrong" : "";
+    const st = run.state === "richtig" ? " ok" : ["gezeigt", "korrigiert"].includes(run.state) ? " shown" : run.msg ? " wrong" : "";
     if (run.stage < 0 && run.state === "offen") return `<span class="kr-box kr-box-empty${st}"></span>`;
     if (it.antwort === "bruch") {
       const f = (key) => `<button type="button" class="kr-box kr-field${st}${run.input.field === key && run.state === "offen" ? " active" : ""}" data-field="${key}" aria-label="${key === "z" ? "Zähler" : "Nenner"}">${esc(run.input[key])}</button>`;
@@ -196,6 +205,7 @@
           ${it.nummer ? `<span class="kr-no">${esc(it.nummer)}</span>` : ""}
           <span class="kr-expr">${mathHtml(it.zeige)}</span>
           <span class="kr-eq">${it.vor ? "→" : "="}</span>
+          ${run.state === "korrigiert" ? `<s class="kr-given" aria-label="Deine Antwort">${esc(run.given)}</s>` : ""}
           ${answerBoxHtml()}
           ${it.nach ? `<span class="kr-unit">${esc(it.nach)}</span>` : ""}
         </div>`;
@@ -266,7 +276,7 @@
 
   function actionsHtml() {
     if (run.done) return nextButtons();
-    if (run.state === "gezeigt") return `<button type="button" class="px-check" data-action="kr-next" title="Weiter" aria-label="Weiter">${icon("Pfeil rechts")}</button>`;
+    if (run.state === "gezeigt" || run.state === "korrigiert") return `<button type="button" class="px-check" data-action="kr-next" title="Weiter" aria-label="Weiter">${icon("Pfeil rechts")}</button>`;
     if (run.state !== "offen") return "";
     const show = !run.ex.check && run.fails >= 2
       ? `<button type="button" class="px-check secondary" data-action="kr-show" title="Lösung zeigen" aria-label="Lösung zeigen">${icon("Anzeigen")}</button>` : "";
