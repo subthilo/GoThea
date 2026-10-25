@@ -14,7 +14,7 @@ def test_uploads_list_filters_by_subject_and_search(app_page, parent_pin):
     upload_document(app_page, "Bruchrechnung QZX", "sub_math", pages=1, kind="Test")
 
     app_page.click('.nav-tab[data-tab="uploads"]')
-    app_page.wait_for_selector("#tab-uploads .doc-row", timeout=5000)
+    app_page.wait_for_selector("#uploads-history-list .doc-row", timeout=5000)
     cards = app_page.locator("#uploads-history-list .doc-row")
     app_page.fill("#uploads-filter-input", "qzx")
     assert cards.count() == 2

@@ -419,3 +419,72 @@ body.paint-mode-open {
     margin-left: auto;
   }
 }
+
+/* ==========================================================================
+   Ausmalbilder verwalten (Eltern-Modus, Tab „Upload“, js/coloring_pages.js)
+   Vorschaubild und Vorschau liegen auf weißem Papier (wie ein Ausmalblatt, bewusst fest).
+   ========================================================================== */
+.coloring-thumb {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--text-secondary);
+}
+
+.coloring-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.coloring-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.coloring-row.status-freigegeben .coloring-status {
+  color: var(--success-text);
+}
+
+.coloring-row.status-fehler .coloring-status,
+.coloring-error {
+  color: var(--danger-text);
+}
+
+.coloring-row.status-rechnet .coloring-status .ui-icon {
+  animation: coloring-spin 2s linear infinite;
+}
+
+@keyframes coloring-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coloring-row.status-rechnet .coloring-status .ui-icon {
+    animation: none;
+  }
+}
+
+.coloring-preview-svg {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  margin: 4px 0 12px;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.btn-mat-action.failed {
+  border-color: var(--danger-text);
+}

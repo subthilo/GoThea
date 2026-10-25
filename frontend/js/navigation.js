@@ -37,6 +37,7 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
     if (btn.dataset.tab === "uploads") {
       checkInboxStatus();
       loadUploadsHistory();
+      if (typeof loadColoringPages === "function") loadColoringPages();
     }
     applyTabViewModes(btn.dataset.tab);
     if (btn.dataset.tab === "timetable") {

@@ -414,6 +414,19 @@
           </div>
         </div>
 
+        <!-- Ausmalbilder (js/coloring_pages.js): SVG hochladen, Felder prüfen, für Thea freigeben -->
+        <div class="upload-history-section coloring-section parent-only" style="margin-top: 36px;">
+          <div class="section-title-row">
+            <h3 class="icon-heading" title="Ausmalbilder"><span class="ui-icon i-pinsel" aria-hidden="true"></span><span class="sr-only">Ausmalbilder</span></h3>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button id="btn-coloring-upload" class="btn-secondary-sm" type="button" title="Ausmalbild hochladen (SVG)" aria-label="Ausmalbild hochladen"><span class="ui-icon i-plus" aria-hidden="true"></span></button>
+              <input type="file" id="coloring-file-input" accept=".svg,image/svg+xml" multiple style="display: none;">
+              <span class="badge-minutes" id="coloring-pages-count">0</span>
+            </div>
+          </div>
+          <div id="coloring-pages-list" class="doc-list"></div>
+        </div>
+
         <!-- 3. Upload-Historie & Zuletzt importiert -->
         <div class="upload-history-section" style="margin-top: 36px;">
           <div class="section-title-row">
@@ -983,6 +996,7 @@
   <script src="/static/js/profile_status.js?v={{v}}"></script>
   <script src="/static/js/planner.js?v={{v}}"></script>
   <script src="/static/js/uploads.js?v={{v}}"></script>
+  <script src="/static/js/coloring_pages.js?v={{v}}"></script>
   <script src="/static/js/viewer.js?v={{v}}"></script>
   <script src="/static/js/material_edit.js?v={{v}}"></script>
   <script src="/static/js/timetable.js?v={{v}}"></script>
