@@ -14,75 +14,44 @@
 }
 
 /* ==========================================================================
-   Profile Tab: Themes Grid Selector
+   Profil: Farbschema als Farbtupfer (Grund + Akzent), Name nur im Tooltip
    ========================================================================== */
-.theme-grid-selector {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+.theme-dots {
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
 }
 
-.theme-card-btn {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-color);
-  border-radius: 14px;
-  padding: 14px;
+.theme-dot {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
   cursor: pointer;
-  text-align: left;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--text-primary);
   position: relative;
-  overflow: hidden;
+  background: var(--dot-bg);
+  box-shadow: 0 0 0 1px var(--border-color);
+  transition: transform 0.15s;
 }
 
-.theme-card-btn:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-active);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+.theme-dot::after {
+  content: "";
+  position: absolute;
+  inset: 15px;
+  border-radius: 50%;
+  background: var(--dot-accent);
 }
 
-.theme-card-btn.active {
-  border-color: var(--accent);
-  background: var(--bg-card);
-  box-shadow: 0 0 0 1px var(--accent), 0 8px 20px var(--theme-glow);
+.theme-dot:hover {
+  transform: scale(1.06);
 }
 
-.theme-card-preview {
-  display: block;
-  height: 48px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.theme-dot[aria-pressed="true"] {
+  box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px var(--text-primary);
 }
 
-.theme-preview-space {
-  background: linear-gradient(135deg, #0a0c10 0%, #181c26 50%, #6366f1 100%);
+.theme-dot:focus-visible {
+  outline: 3px solid var(--accent-light);
+  outline-offset: 4px;
 }
-
-.theme-preview-sunset {
-  background: linear-gradient(135deg, #140d18 0%, #291932 50%, #f43f5e 100%);
-}
-
-.theme-preview-nature {
-  background: linear-gradient(135deg, #071510 0%, #142f24 50%, #10b981 100%);
-}
-
-.theme-preview-candy {
-  background: linear-gradient(135deg, #120e22 0%, #271f49 50%, #a855f7 100%);
-}
-
-.theme-card-info strong {
-  display: block;
-  font-size: 0.95rem;
-  margin-bottom: 4px;
-}
-
-.theme-card-info span {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  line-height: 1.35;
-}
-

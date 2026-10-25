@@ -10,6 +10,7 @@ import backend.app.models  # noqa: F401  (registriert alle Tabellen für create_
 from backend.app.services.seeder import seed_database
 from backend.app.services.frontend_page import render_index
 from backend.app.routers.profile import router as profile_router
+from backend.app.routers.design import router as design_router
 from backend.app.routers.taxonomy import router as taxonomy_router
 from backend.app.routers.env import router as env_router
 from backend.app.routers.planner import router as planner_router
@@ -74,6 +75,7 @@ app = FastAPI(title="GoThea Multimodale Lernzentrale", lifespan=lifespan)
 
 # API Router einbinden
 app.include_router(profile_router)
+app.include_router(design_router)
 app.include_router(taxonomy_router)
 app.include_router(env_router)
 app.include_router(planner_router)

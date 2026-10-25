@@ -43,6 +43,13 @@ def test_theme_is_readable(theme):
     assert weak == [], f"Fachfarben auf Karten schlecht sichtbar: {weak}"
 
 
+def test_frontend_knows_the_same_legacy_names_and_neutral_theme():
+    js = (FRONTEND / "js" / "theme.js").read_text(encoding="utf-8")
+    legacy = dict(re.findall(r'(\w+): "(\w+)"', js.split("const LEGACY_THEMES = {", 1)[1].split("}", 1)[0]))
+    assert legacy == design.LEGACY_THEMES
+    assert f'const NEUTRAL_THEME = "{design.DEFAULT_THEME}";' in js
+
+
 def test_no_fixed_indigo_left_in_css():
     allowed = ("transparent 27px, rgba(99, 102, 241, 0.2) 28px", "transparent 4px, rgba(99, 102, 241, 0.6) 5px")
     found = []
