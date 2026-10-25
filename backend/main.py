@@ -26,6 +26,7 @@ from backend.app.routers.boards import router as boards_router
 from backend.app.routers.search import router as search_router
 from backend.app.routers.practice import router as practice_router
 from backend.app.routers.paintings import router as paintings_router
+from backend.app.routers.coloring_pages import router as coloring_pages_router
 
 # Meldungen der App-Module (Renderer, Segmentierung, Importe) im systemd-Journal sichtbar machen
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -50,6 +51,9 @@ async def lifespan(app: FastAPI):
         # practice_exercises.set_release im Speicher aktuell – keine Datenbankabfrage pro Anfrage
         from backend.app.services.practice_exercises import sync_releases
         sync_releases(db)
+        # Ausmalbilder, deren Berechnung ein Neustart abgebrochen hat: als Fehler markieren (neu berechenbar)
+        from backend.app.services.coloring_pages import recover_interrupted
+        recover_interrupted(db)
     finally:
         db.close()
 
@@ -93,6 +97,7 @@ app.include_router(boards_router)
 app.include_router(search_router)
 app.include_router(practice_router)
 app.include_router(paintings_router)
+app.include_router(coloring_pages_router)
 
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():

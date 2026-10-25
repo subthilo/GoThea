@@ -12,6 +12,11 @@ pypdf==6.20.1
 openai==2.48.0
 pillow==11.3.0
 python-dotenv==1.2.1
+# Ausmalbilder: Felder aus SVG-Linien. Auf dem Pi brauchen sie die Systembibliotheken libgeos-c1v5 und
+# libopenblas0 (apt, installiert am 25.10.2026)
+shapely==2.0.7
+svgelements==1.9.6
+numpy==2.0.2
 
 # Indirekte Abhängigkeiten (aus pip freeze), damit auch sie nicht wandern
 annotated-doc==0.0.5

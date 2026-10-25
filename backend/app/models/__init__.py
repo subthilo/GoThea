@@ -16,6 +16,7 @@ from backend.app.models.exercise_score import ExerciseScore
 from backend.app.models.practice_attempt import PracticeAttempt, PracticeEvent
 from backend.app.models.practice_release import PracticeRelease
 from backend.app.models.painting import Painting, PaintingSlot
+from backend.app.models.coloring_page import ColoringPage
 
 __all__ = [
     "User",
@@ -41,4 +42,5 @@ __all__ = [
     "PracticeRelease",
     "Painting",
     "PaintingSlot",
+    "ColoringPage",
 ]
