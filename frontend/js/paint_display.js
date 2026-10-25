@@ -35,6 +35,8 @@ function showPaintBackground(url) {
 async function applyPaintings() {
   const request = ++paintDisplayRequest;
   const key = typeof isParentActive !== "undefined" && isParentActive ? null : activePaintKey();
+  const fab = document.getElementById("btn-paint");
+  if (fab) fab.hidden = !key;
   if (!key) {
     showPaintBackground(null);
     return;

@@ -68,3 +68,263 @@ body.paint-bg-on .tab-pane > .section-title {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
+
+/* ==========================================================================
+   Mal-Modus (js/paint_mode.js): Vollbild, Farben | Bild | Werkzeuge – quer nebeneinander,
+   hoch untereinander. Das Bild ist quadratisch und so groß, wie die Bühne erlaubt.
+   ========================================================================== */
+
+/* Pinsel-Knopf: schwebt unten rechts, nur Thea-Modus und nur auf bemalbaren Seiten */
+.paint-fab {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 8px 24px rgba(var(--shade-rgb), 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.paint-fab[hidden],
+body.parent-mode-active .paint-fab,
+body.paint-mode-open .paint-fab {
+  display: none;
+}
+
+body.paint-mode-open {
+  overflow: hidden;
+}
+
+.paint-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right))
+    calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.paint-mode[hidden] {
+  display: none;
+}
+
+.paint-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  overflow: auto;
+  flex: 0 0 auto;
+}
+
+.paint-swatches {
+  display: grid;
+  grid-template-columns: repeat(2, 36px);
+  gap: 8px;
+}
+
+.paint-swatches-theme {
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.paint-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--ink-rgb), 0.25);
+  background: var(--swatch);
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0;
+}
+
+.paint-swatch.active {
+  outline: 3px solid var(--accent-light);
+  outline-offset: 2px;
+}
+
+.paint-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0;
+}
+
+.paint-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.paint-btn-done {
+  margin-top: auto;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+/* Breiten-Punkte in der gewählten Farbe */
+.paint-dot {
+  display: block;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: var(--paint-current, currentColor);
+  border: 1px solid rgba(var(--ink-rgb), 0.3);
+  pointer-events: none;
+}
+
+.paint-save-error {
+  color: var(--danger-text);
+  font-size: 1.3rem;
+}
+
+.paint-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.paint-viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  /* Ungemalte Stellen bleiben im fertigen Bild durchsichtig (dort scheint der Seitengrund durch) */
+  background: var(--bg-secondary);
+  box-shadow: 0 0 0 1px var(--border-color);
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.paint-viewport canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: crosshair;
+}
+
+.paint-overlay {
+  pointer-events: none;
+}
+
+/* Geisterbild: über den Strichen, ohne Antippen (der Stift malt hindurch) */
+.paint-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.paint-ghost-page {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
+}
+
+.paint-ghost[data-ghost="half"] .paint-ghost-page {
+  opacity: 0.45;
+}
+
+.paint-ghost[data-ghost="off"] .paint-ghost-page {
+  display: none;
+}
+
+/* Nur Umrisse: Flächen als gestrichelte Linie, alles andere unsichtbar */
+.paint-ghost[data-ghost="outline"] .paint-ghost-page * {
+  color: transparent !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.paint-ghost[data-ghost="outline"] .paint-ghost-page img {
+  opacity: 0;
+}
+
+.paint-ghost[data-ghost="outline"] .paint-ghost-page .ghost-box {
+  border: 2px dashed rgba(var(--ink-rgb), 0.75) !important;
+}
+
+/* Was quer und was hoch zu sehen ist */
+.paint-frame {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px dashed rgba(var(--ink-rgb), 0.35);
+}
+
+.paint-frame.current {
+  border-color: rgba(var(--ink-rgb), 0.8);
+}
+
+@media (orientation: portrait) {
+  .paint-mode {
+    flex-direction: column;
+  }
+
+  .paint-bar {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .paint-swatches {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, 36px);
+  }
+
+  .paint-swatches-theme {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    padding-right: 8px;
+    margin-right: 4px;
+    border-bottom: none;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .paint-btn-done {
+    margin-top: 0;
+    margin-left: auto;
+  }
+}

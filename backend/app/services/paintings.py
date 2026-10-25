@@ -107,7 +107,8 @@ def slots_of(db: Session, painting_id: str) -> List[str]:
 
 # ---- Bilder ----
 def summary(painting: Painting) -> dict:
-    version = int(painting.updated_at.timestamp()) if painting.updated_at else 0
+    # Millisekunden: zwei Speicherungen in derselben Sekunde brauchen verschiedene Adressen (Bild wird lange gecacht)
+    version = int(painting.updated_at.timestamp() * 1000) if painting.updated_at else 0
     return dict(
         id=painting.id,
         kind=painting.kind,

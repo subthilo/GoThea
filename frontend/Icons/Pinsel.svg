@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Malpinsel schräg: Stiel, Zwinge, Borsten mit Farbtropfen -->
+  <g transform="rotate(45 50 50)">
+    <path d="M 46 10 A 4 4 0 0 1 54 10 L 55 46 L 45 46 Z" />
+    <rect x="43" y="46" width="14" height="12" rx="2" />
+    <path d="M 43 58 C 41 70, 44 80, 50 90 C 56 80, 59 70, 57 58" />
+  </g>
+</svg>

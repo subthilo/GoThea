@@ -40,6 +40,8 @@
 <body>
   <!-- Theas gemalter Hintergrund der aktuellen Seite (js/paint_display.js) -->
   <div class="paint-bg" id="paint-bg" aria-hidden="true"><img class="paint-bg-img" alt=""></div>
+  <!-- Pinsel: Mal-Modus für den Hintergrund dieser Seite (js/paint_mode.js) -->
+  <button class="paint-fab" id="btn-paint" type="button" title="Malen" aria-label="Malen" hidden><span class="ui-icon i-pinsel" aria-hidden="true"></span></button>
   <!-- Staging Banner (nur sichtbar in Staging-Umgebung) -->
   <div class="staging-banner" id="staging-banner" style="display: none;">
     <div class="staging-content">
@@ -998,6 +1000,7 @@
   <script src="/static/js/init.js?v={{v}}"></script>
   <script src="/static/js/ink_core.js?v={{v}}"></script>
   <script src="/static/js/digit_pad.js?v={{v}}"></script>
+  <script src="/static/js/paint_mode.js?v={{v}}"></script>
   <script src="/static/whiteboard.js?v={{v}}"></script>
 </body>
 </html>
