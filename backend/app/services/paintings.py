@@ -100,6 +100,12 @@ def assign(db: Session, slot_key: str, painting: Painting) -> PaintingSlot:
     return slot
 
 
+def unassign(db: Session, slot_key: str) -> None:
+    """Gibt den Platz frei (dann gilt wieder der Rückfall, z. B. das Bild für alle Fächer); das Bild bleibt."""
+    db.query(PaintingSlot).filter(PaintingSlot.slot_key == check_slot_key(slot_key)).delete()
+    db.commit()
+
+
 def slots_of(db: Session, painting_id: str) -> List[str]:
     rows = db.query(PaintingSlot.slot_key).filter(PaintingSlot.painting_id == painting_id).all()
     return sorted(r[0] for r in rows)

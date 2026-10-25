@@ -1,28 +1,37 @@
 // ============================================================================
-// Mal-Modus: Thea bemalt den Hintergrund der Seite, auf der sie gerade ist (Malen – Architektur)
+// Mal-Modus: Thea bemalt den Hintergrund der Seite oder eine Kachel darauf (Malen – Architektur)
 // ============================================================================
-// Pinsel-Knopf unten rechts (nur Thea-Modus, nur auf Seiten mit data-paint) → Vollbild mit dem
-// quadratischen Bild. Derselbe Zeichenkern wie die Tafel (createInkSurface, unverändert, eigenes
-// Exemplar): der Stift malt, zwei Finger zoomen und verschieben.
-// Geisterbild: die echte Seite liegt darüber, so wie sie auf dem Bildschirm über dem Bild liegen wird
-// (voll · halb · nur Umrisse · aus); zwei Rahmen zeigen, was quer und was hoch zu sehen ist.
-// Striche werden in einem festen Raster gespeichert (PAINT_UNITS × PAINT_UNITS), unabhängig von
-// Bildschirm und Lage; das fertige Bild rendert der Browser und lädt es mit hoch.
-// Speichern läuft unsichtbar nach jedem Strich, sichtbar nur bei Fehler.
+// Pinsel-Knopf unten rechts (nur Thea-Modus, nur auf Seiten mit data-paint): zuerst die Fläche
+// wählen – die bemalbaren Kacheln sind umrandet, antippen; oder „Hintergrund“. Dann Vollbild mit
+// dem Bild in seinem festen Format (Hintergrund quadratisch, Kacheln je Art, js/paint_slots.js).
+// Derselbe Zeichenkern wie die Tafel (createInkSurface, unverändert, eigenes Exemplar): der Stift
+// malt, zwei Finger zoomen und verschieben.
+// Geisterbild: die echte Seite bzw. der Inhalt der Kachel liegt darüber, so wie später über dem Bild
+// (halb · nur Umrisse · aus · voll); Rahmen zeigen, was davon zu sehen ist (Hintergrund: quer und hoch).
+// Striche werden in Rastereinheiten gespeichert (Breite = PAINT_UNITS), unabhängig von Bildschirm und
+// Lage; das fertige Bild rendert der Browser und lädt es mit hoch. Speichern läuft unsichtbar nach
+// jedem Strich, sichtbar nur bei Fehler.
+// Plätze mit Fach (Fachseite, Fach-Kachel): „nur dieses Fach“ oder „für alle Fächer“.
 // Bilder ohne Striche (z. B. von Hand eingespielt) werden nicht übermalt: dann beginnt ein neues Bild,
 // das alte bleibt unter „Meine Bilder“.
 
 const PAINT_UNITS = 1000;
 const PAINT_SAVE_DELAY_MS = 1200;
 const PAINT_MAX_IMAGE_PX = 2400;
+const PAINT_PREVIEW_MS = 2500;
 const PAINT_PREFS_KEY = "gothea.paint";
 // Theas Malfarben sind fest (die Farben des Schemas kommen beim Öffnen dazu)
 const PAINT_COLORS = ["#000000", "#ffffff", "#9e9e9e", "#8d6e63", "#e53935", "#d81b60", "#fb8c00", "#fdd835",
   "#7cb342", "#2e7d32", "#00acc1", "#1e88e5", "#3949ab", "#8e24aa"];
 const PAINT_THEME_VARS = ["--accent", "--accent-light", "--text-primary", "--bg-card", "--bg-primary"];
-// Breiten in Rastereinheiten (ein Tausendstel der Bildkante)
-const PAINT_WIDTHS = [{ size: 3, title: "Fein" }, { size: 8, title: "Mittel" }, { size: 18, title: "Dick" },
-  { size: 40, title: "Sehr dick" }];
+// Breiten: Hintergrund in Rastereinheiten (ein Tausendstel der Bildkante); Kacheln in Bildschirmpunkten
+// der echten Kachel – „fein“ muss in der kleinen Kachel noch sichtbar sein, nicht nur im Vollbild
+const PAINT_WIDTHS = [
+  { bg: 3, tile: 1.5, title: "Fein" },
+  { bg: 8, tile: 3, title: "Mittel" },
+  { bg: 18, tile: 6, title: "Dick" },
+  { bg: 40, tile: 14, title: "Sehr dick" },
+];
 const PAINT_GHOSTS = [
   { id: "half", title: "Seite halb durchsichtig", icon: "Anzeigen" },
   { id: "outline", title: "Nur Umrisse der Seite", icon: "Übersicht" },
@@ -31,16 +40,16 @@ const PAINT_GHOSTS = [
 ];
 
 const paintMode = {
-  el: null, surface: null, viewport: null, ghostLayer: null,
-  side: 0, key: null, paintingId: null,
-  tool: "pen", color: null, width: 8, ghost: "half",
+  el: null, surface: null, viewport: null, ghostLayer: null, chooser: null,
+  w: 0, h: 0, target: null, paintingId: null, scrollY: 0,
+  tool: "pen", color: null, widthIndex: 1, ghost: "half",
   saveTimer: null, dirty: false, pending: Promise.resolve(),
 };
 
 function loadPaintPrefs() {
   try {
     const p = JSON.parse(localStorage.getItem(PAINT_PREFS_KEY) || "{}");
-    if (PAINT_WIDTHS.some((w) => w.size === p.width)) paintMode.width = p.width;
+    if (PAINT_WIDTHS[p.widthIndex]) paintMode.widthIndex = p.widthIndex;
     if (PAINT_GHOSTS.some((g) => g.id === p.ghost)) paintMode.ghost = p.ghost;
     if (typeof p.color === "string") paintMode.color = p.color;
   } catch (e) { /* ohne Speicher: Standard */ }
@@ -48,8 +57,13 @@ function loadPaintPrefs() {
 
 function savePaintPrefs() {
   try {
-    localStorage.setItem(PAINT_PREFS_KEY, JSON.stringify({ width: paintMode.width, ghost: paintMode.ghost, color: paintMode.color }));
+    localStorage.setItem(PAINT_PREFS_KEY, JSON.stringify({ widthIndex: paintMode.widthIndex, ghost: paintMode.ghost, color: paintMode.color }));
   } catch (e) { /* ohne Speicher */ }
+}
+
+// Platz, an dem gerade gemalt wird (je nach „nur dieses Fach“ / „für alle“)
+function paintTargetKey(t) {
+  return t.scope === "all" && t.generalKey ? t.generalKey : t.specificKey;
 }
 
 // ---- Aufbau (einmal; der Zeichenkern hängt globale Listener an, deshalb nur ein Exemplar) ----
@@ -70,10 +84,12 @@ function buildPaintMode() {
     <div class="paint-bar paint-bar-tools" role="toolbar" aria-label="Werkzeuge">
       <button type="button" class="paint-btn" data-paint-tool="pen" title="Pinsel" aria-label="Pinsel">${icon("Pinsel")}</button>
       <button type="button" class="paint-btn" data-paint-tool="pixel_eraser" title="Radierer" aria-label="Radierer">${icon("Radierer")}</button>
-      ${PAINT_WIDTHS.map((w) => `<button type="button" class="paint-btn" data-paint-width="${w.size}" title="${w.title}" aria-label="${w.title}"><span class="paint-dot" style="--dot:${Math.min(30, 4 + w.size * 0.6)}px"></span></button>`).join("")}
+      ${PAINT_WIDTHS.map((w, i) => `<button type="button" class="paint-btn" data-paint-width="${i}" title="${w.title}" aria-label="${w.title}"><span class="paint-dot" style="--dot:${[5, 9, 15, 26][i]}px"></span></button>`).join("")}
       <button type="button" class="paint-btn" data-paint-action="undo" title="Rückgängig" aria-label="Rückgängig">${icon("Rückgängig")}</button>
       <button type="button" class="paint-btn" data-paint-action="redo" title="Wiederholen" aria-label="Wiederholen">${icon("Wiederholen")}</button>
       <button type="button" class="paint-btn" data-paint-action="ghost" title="" aria-label=""></button>
+      <button type="button" class="paint-btn" data-paint-action="scope" title="" aria-label=""></button>
+      <button type="button" class="paint-btn" data-paint-action="preview" title="So sieht es aus" aria-label="So sieht es aus">${icon("Bild")}</button>
       <span class="paint-save-error" hidden title="Speichern hat nicht geklappt – es wird weiter versucht">${icon("Warnung")}</span>
       <button type="button" class="paint-btn paint-btn-done" data-paint-action="done" title="Fertig" aria-label="Fertig">${icon("Haken")}</button>
     </div>`;
@@ -104,7 +120,9 @@ function buildPaintMode() {
   el.addEventListener("click", onPaintClick);
   window.addEventListener("resize", () => { if (!el.hidden) layoutPaintMode(); });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !el.hidden) closePaintMode();
+    if (e.key !== "Escape") return;
+    if (!el.hidden) closePaintMode();
+    else stopPaintChoosing();
   });
   return el;
 }
@@ -119,20 +137,23 @@ function renderPaintColors() {
   if (!paintMode.color) paintMode.color = theme[0] || PAINT_COLORS[4];
 }
 
-// ---- Größe: das Quadrat füllt die Bühne; Striche wachsen mit, wenn sich die Kante ändert ----
+// ---- Größe: das Bild füllt die Bühne in seinem Format; Striche wachsen mit, wenn es sich ändert ----
 function layoutPaintMode() {
   const stage = paintMode.el.querySelector(".paint-stage").getBoundingClientRect();
-  const side = Math.floor(Math.min(stage.width, stage.height));
-  if (side <= 0) return;
-  const old = paintMode.side;
-  paintMode.side = side;
-  paintMode.viewport.style.width = `${side}px`;
-  paintMode.viewport.style.height = `${side}px`;
+  const a = paintMode.target.aspect;
+  const w = Math.floor(Math.min(stage.width, stage.height * a));
+  const h = Math.floor(w / a);
+  if (w <= 0 || h <= 0) return;
+  const old = paintMode.w;
+  paintMode.w = w;
+  paintMode.h = h;
+  paintMode.viewport.style.width = `${w}px`;
+  paintMode.viewport.style.height = `${h}px`;
   const s = paintMode.surface;
-  if (old && old !== side) {
-    const f = side / old;
+  if (old && old !== w) {
+    const f = w / old;
     s.strokes.forEach((st) => scaleStroke(st, f));
-    (s.redoStack || []).forEach((a) => a.stroke && scaleStroke(a.stroke, f));
+    (s.redoStack || []).forEach((act) => act.stroke && scaleStroke(act.stroke, f));
     s.scale = 1.0;
     s.panX = 0;
     s.panY = 0;
@@ -150,9 +171,9 @@ function scaleStroke(stroke, f) {
 }
 
 function clampPaintPan() {
-  const s = paintMode.surface, side = paintMode.side;
-  const min = side - side * s.scale;
-  const x = Math.max(min, Math.min(0, s.panX)), y = Math.max(min, Math.min(0, s.panY));
+  const s = paintMode.surface;
+  const x = Math.max(paintMode.w - paintMode.w * s.scale, Math.min(0, s.panX));
+  const y = Math.max(paintMode.h - paintMode.h * s.scale, Math.min(0, s.panY));
   if (x !== s.panX || y !== s.panY) {
     s.panX = x;
     s.panY = y;
@@ -160,40 +181,76 @@ function clampPaintPan() {
   }
 }
 
-// ---- Geisterbild: die Seite so, wie sie über dem Bild liegt (Bild = Quadrat, randlos eingepasst) ----
+// ---- Geisterbild: Seite bzw. Kachelinhalt so, wie es über dem Bild liegt (Bild randlos eingepasst) ----
 function buildPaintGhost() {
   const layer = paintMode.ghostLayer;
   layer.innerHTML = "";
-  const W = window.innerWidth, H = window.innerHeight, D = Math.max(W, H);
-  const k = paintMode.side / D;
+  const t = paintMode.target, w = paintMode.w, h = paintMode.h;
+  let source, sw, sh;
+  if (t.kind === "background") {
+    sw = window.innerWidth;
+    sh = window.innerHeight;
+    source = ghostOfPage(sw, sh);
+  } else {
+    const r = t.el.getBoundingClientRect();
+    sw = r.width;
+    sh = r.height;
+    source = ghostOfTile(t.el, sw, sh);
+  }
+  const k = Math.max(w / sw, h / sh), ox = (w - sw * k) / 2, oy = (h - sh * k) / 2;
+  if (source) {
+    source.style.transform = `translate(${ox}px, ${oy}px) scale(${k})`;
+    layer.appendChild(source);
+  }
+  // Rahmen: was zu sehen ist – beim Hintergrund quer und hoch (aktuelle Lage kräftiger)
+  const frame = (x, y, fw, fh, current) =>
+    `<div class="paint-frame${current ? " current" : ""}" style="left:${x}px;top:${y}px;width:${fw}px;height:${fh}px"></div>`;
+  if (t.kind === "background") {
+    const part = w / (Math.max(sw, sh) / Math.min(sw, sh)), off = (w - part) / 2;
+    layer.insertAdjacentHTML("beforeend", frame(0, off, w, part, sw >= sh) + frame(off, 0, part, h, sw < sh));
+  } else {
+    layer.insertAdjacentHTML("beforeend", frame(Math.max(0, ox), Math.max(0, oy), Math.min(w, sw * k), Math.min(h, sh * k), true));
+  }
+  applyPaintGhost();
+}
+
+// Kopfzeile und aktive Seite (die übrigen Tabs sind verborgen und groß), beim aktuellen Scrollstand
+function ghostOfPage(sw, sh) {
   const src = document.querySelector(".app-container");
   const header = src && src.querySelector(".header");
   const main = src && src.querySelector(".content");
   const pane = main && main.querySelector(".tab-pane.active");
-  if (header && pane) {
-    const page = document.createElement("div");
-    page.className = "paint-ghost-page";
-    page.style.width = `${W}px`;
-    page.style.height = `${H}px`;
-    page.style.transform = `translate(${((D - W) / 2) * k}px, ${((D - H) / 2) * k}px) scale(${k})`;
-    // Nur Kopfzeile und aktive Seite (die übrigen Tabs sind verborgen und groß)
-    const clone = src.cloneNode(false), mainClone = main.cloneNode(false);
-    const headerClone = ghostClone(header), paneClone = ghostClone(pane);
-    clone.style.marginTop = `${-paintMode.scrollY}px`;
-    headerClone.style.transform = `translateY(${paintMode.scrollY}px)`;  // klebt oben wie beim Scrollen
-    mainClone.appendChild(paneClone);
-    clone.append(headerClone, mainClone);
-    clone.setAttribute("inert", "");
-    page.appendChild(clone);
-    layer.appendChild(page);
-  }
-  // Rahmen: was quer und was hoch zu sehen ist (bei diesem Gerät), die aktuelle Lage kräftiger
-  const ratio = D / Math.min(W, H), side = paintMode.side, part = side / ratio, off = (side - part) / 2;
-  const landscape = W >= H;
-  layer.insertAdjacentHTML("beforeend",
-    `<div class="paint-frame${landscape ? " current" : ""}" style="left:0;top:${off}px;width:${side}px;height:${part}px"></div>
-     <div class="paint-frame${landscape ? "" : " current"}" style="left:${off}px;top:0;width:${part}px;height:${side}px"></div>`);
-  applyPaintGhost();
+  if (!header || !pane) return null;
+  const page = document.createElement("div");
+  page.className = "paint-ghost-page";
+  page.style.width = `${sw}px`;
+  page.style.height = `${sh}px`;
+  const clone = src.cloneNode(false), mainClone = main.cloneNode(false);
+  const headerClone = ghostClone(header), paneClone = ghostClone(pane);
+  clone.style.marginTop = `${-paintMode.scrollY}px`;
+  headerClone.style.transform = `translateY(${paintMode.scrollY}px)`;  // klebt oben wie beim Scrollen
+  mainClone.appendChild(paneClone);
+  clone.append(headerClone, mainClone);
+  clone.setAttribute("inert", "");
+  page.appendChild(clone);
+  return page;
+}
+
+// Nur der Inhalt der Kachel (Icon, Text, Zahl) – ihre Fläche ist ja das Bild
+function ghostOfTile(el, sw, sh) {
+  const page = document.createElement("div");
+  page.className = "paint-ghost-page";
+  page.style.width = `${sw}px`;
+  page.style.height = `${sh}px`;
+  const clone = ghostClone(el);
+  clone.classList.remove("has-paint");
+  clone.classList.add("paint-ghost-tile");
+  clone.style.width = `${sw}px`;
+  clone.style.height = `${sh}px`;
+  clone.style.margin = "0";
+  clone.setAttribute("inert", "");
+  page.appendChild(clone);
+  return page;
 }
 
 function ghostClone(src) {
@@ -222,14 +279,34 @@ function applyPaintGhost() {
   btn.setAttribute("aria-label", g.title);
 }
 
+// „Nur dieses Fach“ (Fach-Icon) oder „für alle Fächer“ (Schulranzen); nur bei Plätzen mit Fach
+function renderPaintScope() {
+  const t = paintMode.target, btn = paintMode.el.querySelector('[data-paint-action="scope"]');
+  btn.hidden = !t.generalKey;
+  if (!t.generalKey) return;
+  const subjects = typeof cachedSubjects !== "undefined" && Array.isArray(cachedSubjects) ? cachedSubjects : [];
+  const subject = subjects.find((s) => s.id === paintSubjectOfKey(t.specificKey));
+  const name = subject ? subject.name : "dieses Fach";
+  const all = t.scope === "all";
+  btn.innerHTML = all ? icon("Schulranzen") : (subject ? subjectIcon(subject.name) : icon("Thema"));
+  btn.title = all ? "Für alle Fächer" : `Nur für ${name}`;
+  btn.setAttribute("aria-label", btn.title);
+  btn.style.color = all || !subject ? "" : subjectColor(subject.name);
+}
+
 // ---- Werkzeug ----
+function paintWidthUnits(index) {
+  const t = paintMode.target, w = PAINT_WIDTHS[index];
+  return t.kind === "background" ? w.bg : (w.tile * PAINT_UNITS) / t.displayW;
+}
+
 function applyPaintTool() {
   const s = paintMode.surface;
   s.currentTool = paintMode.tool;
   s.currentColor = paintMode.color;
-  s.currentBaseWidth = (paintMode.width * paintMode.side) / PAINT_UNITS;
+  s.currentBaseWidth = (paintWidthUnits(paintMode.widthIndex) * paintMode.w) / PAINT_UNITS;
   paintMode.el.querySelectorAll("[data-paint-tool]").forEach((b) => b.classList.toggle("active", b.dataset.paintTool === paintMode.tool));
-  paintMode.el.querySelectorAll("[data-paint-width]").forEach((b) => b.classList.toggle("active", Number(b.dataset.paintWidth) === paintMode.width));
+  paintMode.el.querySelectorAll("[data-paint-width]").forEach((b) => b.classList.toggle("active", Number(b.dataset.paintWidth) === paintMode.widthIndex));
   paintMode.el.querySelectorAll("[data-paint-color]").forEach((b) => b.classList.toggle("active", b.dataset.paintColor === paintMode.color));
   paintMode.el.style.setProperty("--paint-current", paintMode.color);
 }
@@ -237,30 +314,36 @@ function applyPaintTool() {
 function onPaintClick(e) {
   const btn = e.target.closest("button");
   if (!btn || !paintMode.el.contains(btn)) return;
-  const s = paintMode.surface;
+  const s = paintMode.surface, action = btn.dataset.paintAction;
   if (btn.dataset.paintColor) {
     paintMode.color = btn.dataset.paintColor;
     paintMode.tool = "pen";
   } else if (btn.dataset.paintTool) {
     paintMode.tool = btn.dataset.paintTool;
-  } else if (btn.dataset.paintWidth) {
-    paintMode.width = Number(btn.dataset.paintWidth);
-  } else if (btn.dataset.paintAction === "undo" || btn.dataset.paintAction === "redo") {
-    const from = btn.dataset.paintAction === "undo" ? s.undoStack : s.redoStack;
-    const to = btn.dataset.paintAction === "undo" ? s.redoStack : s.undoStack;
-    const action = from.pop();
-    if (!action || action.type !== "add_stroke") return;
-    if (from === s.undoStack) s.strokes = s.strokes.filter((st) => st !== action.stroke);
-    else s.strokes.push(action.stroke);
-    to.push(action);
+  } else if (btn.dataset.paintWidth !== undefined) {
+    paintMode.widthIndex = Number(btn.dataset.paintWidth);
+  } else if (action === "undo" || action === "redo") {
+    const from = action === "undo" ? s.undoStack : s.redoStack;
+    const to = action === "undo" ? s.redoStack : s.undoStack;
+    const act = from.pop();
+    if (!act || act.type !== "add_stroke") return;
+    if (action === "undo") s.strokes = s.strokes.filter((st) => st !== act.stroke);
+    else s.strokes.push(act.stroke);
+    to.push(act);
     s.redrawAllStrokes();
     schedulePaintSave();
     return;
-  } else if (btn.dataset.paintAction === "ghost") {
+  } else if (action === "ghost") {
     const i = PAINT_GHOSTS.findIndex((g) => g.id === paintMode.ghost);
     paintMode.ghost = PAINT_GHOSTS[(i + 1) % PAINT_GHOSTS.length].id;
     applyPaintGhost();
-  } else if (btn.dataset.paintAction === "done") {
+  } else if (action === "scope") {
+    setPaintScope(paintMode.target.scope === "all" ? "subject" : "all");
+    return;
+  } else if (action === "preview") {
+    previewPaintTile();
+    return;
+  } else if (action === "done") {
     closePaintMode();
     return;
   } else {
@@ -275,7 +358,7 @@ function strokesFromSaved(json) {
   let data = null;
   try { data = JSON.parse(json || "null"); } catch (e) { return []; }
   const list = Array.isArray(data) ? data : (data && Array.isArray(data.strokes) ? data.strokes : []);
-  const f = paintMode.side / PAINT_UNITS;
+  const f = paintMode.w / PAINT_UNITS;
   return list.filter((st) => st && Array.isArray(st.points) && st.points.length).map((st) => {
     const stroke = { tool: st.tool || "pen", color: st.color || "#000000", width: (st.width || 8) * f,
       points: st.points.map((p) => ({ x: p.x * f, y: p.y * f, pressure: p.pressure || 0.5 })) };
@@ -285,7 +368,7 @@ function strokesFromSaved(json) {
 }
 
 function strokesInUnits() {
-  const f = PAINT_UNITS / paintMode.side;
+  const f = PAINT_UNITS / paintMode.w;
   const r = (v) => Math.round(v * 10) / 10;
   return paintMode.surface.strokes.map((st) => ({
     tool: st.tool, color: st.color, width: r(st.width * f),
@@ -293,12 +376,16 @@ function strokesInUnits() {
   }));
 }
 
+// Auflösung: Hintergrund nach dem Bildschirm, Kachel nach ihrer echten Größe × Dichte × 2 (für Zoom)
 function renderPaintImage(strokes) {
-  const px = Math.min(PAINT_MAX_IMAGE_PX, Math.round(Math.max(screen.width, screen.height) * (window.devicePixelRatio || 1)));
+  const t = paintMode.target, dpr = window.devicePixelRatio || 1;
+  const base = t.kind === "background" ? Math.max(screen.width, screen.height) * dpr : t.displayW * dpr * 2;
+  const pw = Math.min(PAINT_MAX_IMAGE_PX, Math.round(base));
   const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = px;
+  canvas.width = pw;
+  canvas.height = Math.round(pw / t.aspect);
   const ctx = canvas.getContext("2d");
-  ctx.scale(px / PAINT_UNITS, px / PAINT_UNITS);
+  ctx.scale(pw / PAINT_UNITS, pw / PAINT_UNITS);
   strokes.forEach((st) => paintMode.surface.renderStrokeToContext(ctx, st));
   // Safari kann teils kein WebP erzeugen und liefert dann PNG – der Server nimmt beides
   return new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
@@ -320,26 +407,26 @@ function flushPaintSave() {
 }
 
 async function savePaintingNow() {
-  const key = paintMode.key;
+  const target = paintMode.target;
   const strokes = strokesInUnits();
   if (!paintMode.paintingId && !strokes.length) return;
   try {
     const form = new FormData();
-    form.append("strokes_json", JSON.stringify({ v: 1, units: PAINT_UNITS, strokes }));
+    form.append("strokes_json", JSON.stringify({ v: 1, units: PAINT_UNITS, aspect: target.aspect, strokes }));
     form.append("image", await renderPaintImage(strokes), "bild");
     if (paintMode.paintingId) {
       await apiJson(`/api/v1/paintings/${paintMode.paintingId}`, { method: "PUT", body: form });
     } else {
-      form.append("kind", "background");
-      form.append("format", "square");
-      form.append("slot_key", key);
+      form.append("kind", target.kind);
+      form.append("format", target.format);
+      form.append("slot_key", paintTargetKey(target));
       paintMode.paintingId = (await apiJson("/api/v1/paintings", { method: "POST", body: form })).id;
     }
     showPaintSaveError(false);
   } catch (err) {
     console.warn("Bild nicht gespeichert:", err);
     showPaintSaveError(true);
-    if (paintMode.key === key) schedulePaintSave();  // später noch einmal
+    if (paintMode.target === target) schedulePaintSave();  // später noch einmal
   }
 }
 
@@ -348,13 +435,115 @@ function showPaintSaveError(on) {
   if (el) el.hidden = !on;
 }
 
+// Für alle Fächer: das Bild hängt am gemeinsamen Platz, der Platz des Fachs wird frei (Rückfall).
+// Nur dieses Fach: ab jetzt eine eigene Kopie, die das gemeinsame Bild nicht mehr ändert.
+function setPaintScope(scope) {
+  const t = paintMode.target;
+  if (!t.generalKey || t.scope === scope) return;
+  t.scope = scope;
+  renderPaintScope();
+  if (scope === "subject") {
+    paintMode.pending = paintMode.pending.then(() => { paintMode.paintingId = null; });
+    paintMode.dirty = true;
+    flushPaintSave();
+    return;
+  }
+  paintMode.pending = paintMode.pending.then(async () => {
+    try {
+      if (paintMode.paintingId) {
+        await apiJson(`/api/v1/paintings/slots/${t.generalKey}`, { method: "PUT", json: { painting_id: paintMode.paintingId } });
+      }
+      await apiJson(`/api/v1/paintings/slots/${t.specificKey}`, { method: "DELETE" });
+    } catch (err) {
+      console.warn("Bild nicht für alle Fächer übernommen:", err);
+      showPaintSaveError(true);
+    }
+  });
+}
+
+// „So sieht es aus“: die Kachel kurz in Originalgröße an ihrem Platz, dann zurück zum Malen
+async function previewPaintTile() {
+  const t = paintMode.target;
+  await flushPaintSave();
+  paintMode.el.hidden = true;
+  document.body.classList.remove("paint-mode-open");
+  document.body.classList.add("paint-previewing");
+  if (typeof applyPaintings === "function") await applyPaintings();
+  if (t.el) t.el.scrollIntoView({ block: "center" });
+  let timer = null;
+  const back = (e) => {
+    if (e) e.preventDefault();
+    clearTimeout(timer);
+    document.removeEventListener("pointerdown", back, true);
+    document.body.classList.remove("paint-previewing");
+    if (paintMode.target !== t) return;
+    paintMode.el.hidden = false;
+    document.body.classList.add("paint-mode-open");
+  };
+  timer = setTimeout(back, PAINT_PREVIEW_MS);
+  setTimeout(() => document.addEventListener("pointerdown", back, true), 0);
+}
+
+// ---- Fläche wählen: Kacheln umrandet antippen, oder „Hintergrund“ ----
+function buildPaintChooser() {
+  if (paintMode.chooser) return paintMode.chooser;
+  const bar = document.createElement("div");
+  bar.className = "paint-chooser";
+  bar.hidden = true;
+  bar.innerHTML = `
+    <button type="button" class="paint-btn" data-paint-choose="background" title="Hintergrund" aria-label="Hintergrund">${icon("Bild")}</button>
+    <button type="button" class="paint-btn" data-paint-choose="cancel" title="Abbrechen" aria-label="Abbrechen">${icon("Schließen")}</button>`;
+  document.body.appendChild(bar);
+  paintMode.chooser = bar;
+  // Während der Auswahl öffnet ein Tippen auf eine Kachel den Mal-Modus statt der Kachel selbst
+  document.addEventListener("click", (e) => {
+    if (!document.body.classList.contains("paint-choosing")) return;
+    const choice = e.target.closest("[data-paint-choose]");
+    e.preventDefault();
+    e.stopPropagation();
+    if (choice) {
+      stopPaintChoosing();
+      if (choice.dataset.paintChoose === "background") openPaintMode(null);
+      return;
+    }
+    const tile = paintTilesOf(activePaintPane()).find((x) => x.el.contains(e.target));
+    stopPaintChoosing();
+    if (tile) openPaintMode(tile);
+  }, true);
+  return bar;
+}
+
+function startPaintChoosing() {
+  const pane = typeof activePaintPane === "function" ? activePaintPane() : null;
+  if (!pane || (typeof isParentActive !== "undefined" && isParentActive)) return;
+  if (!paintTilesOf(pane).length) {
+    openPaintMode(null);
+    return;
+  }
+  buildPaintChooser().hidden = false;
+  // erst nach diesem Klick, sonst fängt die Auswahl den Klick auf den Pinsel selbst
+  setTimeout(() => document.body.classList.add("paint-choosing"), 0);
+}
+
+function stopPaintChoosing() {
+  document.body.classList.remove("paint-choosing");
+  if (paintMode.chooser) paintMode.chooser.hidden = true;
+}
+
 // ---- Öffnen und Schließen ----
-async function openPaintMode() {
-  const key = typeof activePaintKey === "function" ? activePaintKey() : null;
-  if (!key || (typeof isParentActive !== "undefined" && isParentActive)) return;
+// tile = { el, kind, key } aus paintTilesOf() oder null für den Hintergrund der Seite
+async function openPaintMode(tile) {
+  const pane = activePaintPane();
+  if (!pane || (typeof isParentActive !== "undefined" && isParentActive)) return;
   buildPaintMode();
   loadPaintPrefs();
-  paintMode.key = key;
+  const specificKey = tile ? tile.key : pane.dataset.paint;
+  const target = tile
+    ? { kind: "tile", format: tile.kind, aspect: PAINT_TILE_KINDS[tile.kind].aspect, el: tile.el,
+      displayW: tile.el.getBoundingClientRect().width }
+    : { kind: "background", format: "square", aspect: 1, el: null };
+  Object.assign(target, { specificKey, generalKey: paintGeneralKey(specificKey), scope: "subject" });
+  paintMode.target = target;
   paintMode.paintingId = null;
   paintMode.scrollY = window.scrollY;
   const s = paintMode.surface;
@@ -365,22 +554,33 @@ async function openPaintMode() {
   s.panX = 0;
   s.panY = 0;
   renderPaintColors();
+  paintMode.el.querySelector('[data-paint-action="preview"]').hidden = target.kind !== "tile";
   paintMode.el.hidden = false;
   document.body.classList.add("paint-mode-open");
-  paintMode.side = 0;
+  paintMode.w = 0;
   layoutPaintMode();
+  renderPaintScope();
 
+  // Laden läuft in derselben Kette wie Speichern und Umschalten: die warten, bis das Bild da ist
+  paintMode.pending = paintMode.pending.then(() => loadPaintingFor(target));
+  await paintMode.pending;
+}
+
+async function loadPaintingFor(target) {
+  const s = paintMode.surface, key = target.specificKey;
   try {
     const slot = (await apiJson(`/api/v1/paintings?keys=${encodeURIComponent(key)}`)).slots[key];
-    if (slot && paintMode.key === key) {
-      const painting = await apiJson(`/api/v1/paintings/${slot.id}`);
-      const strokes = strokesFromSaved(painting.strokes_json);
-      // Ohne Striche (von Hand eingespielt): nicht übermalen, sondern neu beginnen
-      if (strokes.length && paintMode.key === key) {
-        paintMode.paintingId = painting.id;
-        s.strokes = strokes;
-        s.redrawAllStrokes();
-      }
+    if (!slot || paintMode.target !== target) return;
+    // Kommt das Bild vom gemeinsamen Platz, malt Thea zunächst „für alle“ weiter
+    if (slot.slot_key === target.generalKey) target.scope = "all";
+    renderPaintScope();
+    const painting = await apiJson(`/api/v1/paintings/${slot.id}`);
+    const strokes = strokesFromSaved(painting.strokes_json);
+    // Ohne Striche (von Hand eingespielt): nicht übermalen, sondern neu beginnen
+    if (strokes.length && paintMode.target === target) {
+      paintMode.paintingId = painting.id;
+      s.strokes = strokes.concat(s.strokes);  // schon während des Ladens Gemaltes bleibt obenauf
+      s.redrawAllStrokes();
     }
   } catch (err) {
     console.warn("Bild zum Weitermalen nicht geladen:", err);
@@ -391,7 +591,7 @@ async function closePaintMode() {
   if (!paintMode.el || paintMode.el.hidden) return;
   await flushPaintSave();
   paintMode.el.hidden = true;
-  paintMode.key = null;
+  paintMode.target = null;
   paintMode.ghostLayer.innerHTML = "";  // der Klon trägt dieselben IDs wie die Seite
   document.body.classList.remove("paint-mode-open");
   window.scrollTo(0, paintMode.scrollY || 0);
@@ -400,7 +600,7 @@ async function closePaintMode() {
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("btn-paint");
-  if (btn) btn.addEventListener("click", openPaintMode);
+  if (btn) btn.addEventListener("click", startPaintChoosing);
 });
 
 window.openPaintMode = openPaintMode;

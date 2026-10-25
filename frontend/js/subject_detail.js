@@ -11,6 +11,8 @@ function renderDashboardSubjects(subjects, topicsMap) {
     const subColor = subjectColor(s.name);
     card.style.setProperty("--tile-color", subColor);
     card.dataset.subjectId = s.id;
+    card.dataset.paintTile = s.id;  // bemalbar: Platz dashboard/tile/<Fach>
+    card.dataset.paintKind = "quadrat";
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
     card.setAttribute("title", `${s.name} öffnen`);
@@ -36,6 +38,7 @@ function renderDashboardSubjects(subjects, topicsMap) {
 
     dashboardSubjectsGrid.appendChild(card);
   });
+  if (typeof applyPaintings === "function") applyPaintings();  // neue Kacheln bekommen ihre Bilder
 }
 
 let subjectDetailSourceTab = "dashboard";
@@ -164,7 +167,10 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
   document.querySelectorAll(".nav-tab").forEach((b) => b.classList.remove("active"));
   const tabEl = document.getElementById("tab-subject-detail");
-  if (tabEl) tabEl.classList.add("active");
+  if (tabEl) {
+    tabEl.dataset.paint = `subject-detail/${subjectId}`;  // bemalbar, eigenes Bild je Fach (sonst für alle)
+    tabEl.classList.add("active");
+  }
   document.body.classList.remove("reader-zen-mode");
   applyTabViewModes("subject-detail");
   window.scrollTo({ top: 0, behavior: "smooth" });

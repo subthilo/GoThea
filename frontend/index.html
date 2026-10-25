@@ -183,7 +183,7 @@
         </div>
 
         <!-- Dashboard Stundenplan-Widget -->
-        <div class="dash-timetable-card" id="dash-tt-card">
+        <div class="dash-timetable-card" id="dash-tt-card" data-paint-tile="stundenplan" data-paint-kind="band">
           <div class="dash-tt-header">
             <div class="dash-tt-title-group">
               <div class="dash-tt-icon-wrap">
@@ -449,7 +449,7 @@
         </div>
 
         <!-- Fach Hero Header -->
-        <div class="subject-hero-card" id="subject-hero-card">
+        <div class="subject-hero-card" id="subject-hero-card" data-paint-tile="kopf" data-paint-kind="band">
           <div class="subject-hero-main">
             <div class="subject-hero-icon" id="subject-detail-icon">
               <!-- Dynamisch mit Fach-SVG befüllt -->
@@ -465,21 +465,21 @@
 
         <!-- 3 Große Touch-Aktionskarten statt Buttonleiste -->
         <div class="subject-action-cards-grid">
-          <div class="subject-action-card card-accent-tafel" id="btn-subject-open-wb" role="button" tabindex="0" title="Tafel">
+          <div class="subject-action-card card-accent-tafel" id="btn-subject-open-wb" data-paint-tile="tafel" data-paint-kind="karte" role="button" tabindex="0" title="Tafel">
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Tafel.svg" class="action-card-svg" alt="Tafel">
             </div>
             <div class="action-card-title sr-only">Tafel</div>
           </div>
 
-          <div class="subject-action-card card-accent-exercise" id="btn-subject-start-exercise" role="button" tabindex="0" title="Üben">
+          <div class="subject-action-card card-accent-exercise" id="btn-subject-start-exercise" data-paint-tile="ueben" data-paint-kind="karte" role="button" tabindex="0" title="Üben">
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Übungen.svg" class="action-card-svg" alt="Übungen">
             </div>
             <div class="action-card-title sr-only">Üben</div>
           </div>
 
-          <div class="subject-action-card card-accent-upload" id="btn-subject-upload-doc" role="button" tabindex="0" title="Upload">
+          <div class="subject-action-card card-accent-upload" id="btn-subject-upload-doc" data-paint-tile="upload" data-paint-kind="karte" role="button" tabindex="0" title="Upload">
             <div class="action-card-icon-wrap">
               <img src="/static/Icons/Upload.svg" class="action-card-svg" alt="Upload">
             </div>
@@ -976,6 +976,7 @@
   <script src="/static/js/theme.js?v={{v}}"></script>
   <script src="/static/js/gamification.js?v={{v}}"></script>
   <script src="/static/js/navigation.js?v={{v}}"></script>
+  <script src="/static/js/paint_slots.js?v={{v}}"></script>
   <script src="/static/js/paint_display.js?v={{v}}"></script>
   <script src="/static/js/taxonomy.js?v={{v}}"></script>
   <script src="/static/js/subject_detail.js?v={{v}}"></script>

@@ -93,6 +93,15 @@ def test_reassigning_a_slot_keeps_the_old_picture(strict_client):
     assert _resolve(strict_client, "dashboard")["dashboard"]["id"] == old["id"]
 
 
+def test_clearing_a_subject_slot_falls_back_to_all_subjects(strict_client):
+    general = _paint(strict_client, slot_key="subject-detail")
+    math = _paint(strict_client, slot_key="subject-detail/sub_math")
+    assert strict_client.delete("/api/v1/paintings/slots/subject-detail/sub_math").status_code == 204
+    slot = _resolve(strict_client, "subject-detail/sub_math")["subject-detail/sub_math"]
+    assert slot["id"] == general["id"] and slot["slot_key"] == "subject-detail"
+    assert strict_client.get(f"/api/v1/paintings/{math['id']}").status_code == 200  # das Bild bleibt
+
+
 def test_archived_picture_disappears_falls_back_and_comes_back(strict_client):
     general = _paint(strict_client, slot_key="subject-detail")
     math = _paint(strict_client, slot_key="subject-detail/sub_math")

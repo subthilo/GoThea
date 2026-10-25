@@ -62,6 +62,16 @@ def assign_slot(slot_key: str, payload: SlotAssign, db: Session = Depends(get_db
     return {"slot_key": slot_key, "painting": svc.summary(painting)}
 
 
+@router.delete("/slots/{slot_key:path}", status_code=204)
+def clear_slot(slot_key: str, db: Session = Depends(get_db)):
+    """Thea malt „für alle Fächer“: der Platz des einen Fachs zeigt dann wieder das gemeinsame Bild."""
+    try:
+        svc.unassign(db, slot_key)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return Response(status_code=204)
+
+
 @router.post("", status_code=201)
 async def create_painting(kind: str = Form(...), format: str = Form(...), strokes_json: Optional[str] = Form(None),
                           slot_key: Optional[str] = Form(None), image: Optional[UploadFile] = File(None),
