@@ -31,13 +31,8 @@ body.paint-bg-on .paint-bg {
   object-position: center;
 }
 
-/* Leichte Abdeckung aus der Grundfarbe: dunkelt bei dunklen Schemen ab, hellt bei hellen auf */
-.paint-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--bg-primary) var(--paint-bg-cover, 45%), transparent);
-}
+/* Keine Abdeckung: die Farben sehen aus wie beim Malen (Nutzer, 25.10.); lesbar bleibt die Schrift
+   durch den Textschutz unten */
 
 /* Kopfzeile: durchscheinend statt deckend, Schrift bleibt durch die Unschärfe lesbar. Die Fläche
    reicht über die volle Bildschirmbreite (die Kopfzeile selbst ist nur so breit wie der Inhalt). */
@@ -70,11 +65,9 @@ body.paint-bg-on .tab-pane > .section-title {
   box-shadow: 0 0 0 8px var(--plaque);
 }
 
-/* Kacheln: Bild innen, Rundung/Rand/Schatten gehören der Kachel; Abdeckung in Kartenfarbe */
+/* Kacheln: Bild innen, Rundung/Rand/Schatten gehören der Kachel; keine Abdeckung (Farben wie beim Malen) */
 [data-paint-tile].has-paint {
-  --paint-tile-cover: color-mix(in srgb, var(--bg-card) 45%, transparent);
   background:
-    linear-gradient(var(--paint-tile-cover), var(--paint-tile-cover)),
     var(--paint-img) center / cover no-repeat,
     var(--bg-card);
   overflow: hidden;
