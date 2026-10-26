@@ -41,7 +41,7 @@ const PAINT_GHOSTS = [
 
 const paintMode = {
   el: null, surface: null, viewport: null, ghostLayer: null, chooser: null,
-  w: 0, h: 0, target: null, paintingId: null, scrollY: 0,
+  w: 0, h: 0, target: null, scrollY: 0,  // target.paintingId: das Bild, an dem gerade gemalt wird
   tool: "pen", color: null, widthIndex: 1, ghost: "half",
   saveTimer: null, dirty: false, pending: Promise.resolve(),
 };
@@ -414,9 +414,10 @@ function strokesInUnits() {
   }));
 }
 
-// Auflösung: Hintergrund nach dem Bildschirm, Kachel nach ihrer echten Größe × Dichte × 2 (für Zoom)
-function renderPaintImage(strokes) {
-  const t = paintMode.target, dpr = window.devicePixelRatio || 1;
+// Auflösung: Hintergrund nach dem Bildschirm, Kachel nach ihrer echten Größe × Dichte × 2 (für Zoom).
+// Arbeitet nur mit der Momentaufnahme (snap) – der Mal-Modus kann schon geschlossen sein.
+function renderPaintImage(snap) {
+  const t = snap.target, dpr = window.devicePixelRatio || 1;
   const base = t.kind === "background" ? Math.max(screen.width, screen.height) * dpr : t.displayW * dpr * 2;
   const pw = Math.min(PAINT_MAX_IMAGE_PX, Math.round(base));
   const canvas = document.createElement("canvas");
@@ -424,13 +425,18 @@ function renderPaintImage(strokes) {
   canvas.height = Math.round(pw / t.aspect);
   const ctx = canvas.getContext("2d");
   ctx.scale(pw / PAINT_UNITS, pw / PAINT_UNITS);
-  strokes.forEach((st) => {
+  const clips = new Map();  // jedes Feld nur einmal als Pfad bauen (viele Striche liegen im selben Feld)
+  const clipFor = (key) => {
+    if (!clips.has(key)) clips.set(key, coloringBuildClip(key, 1, PAINT_UNITS, PAINT_UNITS / t.aspect, snap.pages));
+    return clips.get(key);
+  };
+  snap.strokes.forEach((st) => {
     ctx.save();
-    if (st.clip != null) ctx.clip(coloringClipUnits(st.clip), "evenodd");  // im Feld des Ausmalbilds
+    if (st.clip != null) ctx.clip(clipFor(st.clip), "evenodd");  // im Feld des Ausmalbilds
     paintMode.surface.renderStrokeToContext(ctx, { ...st, clip: undefined });
     ctx.restore();
   });
-  coloringDrawLines(ctx);
+  coloringDrawLines(ctx, snap.pages);
   // Safari kann teils kein WebP erzeugen und liefert dann PNG – der Server nimmt beides
   return new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
 }
@@ -441,39 +447,46 @@ function schedulePaintSave() {
   paintMode.saveTimer = setTimeout(flushPaintSave, PAINT_SAVE_DELAY_MS);
 }
 
+// Momentaufnahme jetzt, Speichern danach in der Kette: das dauert bei großen Bildern auf dem iPad
+// Sekunden (Bild rechnen, hochladen), und der Mal-Modus kann inzwischen geschlossen oder ein anderes
+// Bild offen sein
 function flushPaintSave() {
   clearTimeout(paintMode.saveTimer);
-  if (paintMode.dirty) {
+  if (paintMode.dirty && paintMode.target) {
     paintMode.dirty = false;
-    paintMode.pending = paintMode.pending.then(savePaintingNow);
+    const snap = { target: paintMode.target, strokes: strokesInUnits(), pages: coloringSerialize(), tries: 0 };
+    snap.target.lastSnap = snap;
+    paintMode.pending = paintMode.pending.then(() => savePaintingNow(snap));
   }
   return paintMode.pending;
 }
 
-async function savePaintingNow() {
-  const target = paintMode.target;
-  const strokes = strokesInUnits();
-  const pages = coloringSerialize();
-  if (!paintMode.paintingId && !strokes.length && !pages.length) return;
+async function savePaintingNow(snap) {
+  const { target, strokes, pages } = snap;
+  if (!target.paintingId && !strokes.length && !pages.length) return;
   try {
     const form = new FormData();
     // Als Datei-Teil: Formularfelder nimmt der Server nur bis 1 MB an, ein fleißig bemaltes Bild ist größer
     const data = JSON.stringify({ v: 1, units: PAINT_UNITS, aspect: target.aspect, strokes, pages });
     form.append("strokes", new Blob([data], { type: "application/json" }), "strokes.json");
-    form.append("image", await renderPaintImage(strokes), "bild");
-    if (paintMode.paintingId) {
-      await apiJson(`/api/v1/paintings/${paintMode.paintingId}`, { method: "PUT", body: form });
+    form.append("image", await renderPaintImage(snap), "bild");
+    if (target.paintingId) {
+      await apiJson(`/api/v1/paintings/${target.paintingId}`, { method: "PUT", body: form });
     } else {
       form.append("kind", target.kind);
       form.append("format", target.format);
       form.append("slot_key", paintTargetKey(target));
-      paintMode.paintingId = (await apiJson("/api/v1/paintings", { method: "POST", body: form })).id;
+      target.paintingId = (await apiJson("/api/v1/paintings", { method: "POST", body: form })).id;
     }
     showPaintSaveError(false);
   } catch (err) {
     console.warn("Bild nicht gespeichert:", err);
     showPaintSaveError(true);
-    if (paintMode.target === target) schedulePaintSave();  // später noch einmal
+    // Später noch einmal – mit dieser Aufnahme, solange keine neuere für dasselbe Bild unterwegs ist
+    if (paintMode.target === target) schedulePaintSave();
+    else if (target.lastSnap === snap && snap.tries++ < 3) {
+      setTimeout(() => { paintMode.pending = paintMode.pending.then(() => savePaintingNow(snap)); }, 5000);
+    }
   }
 }
 
@@ -490,15 +503,15 @@ function setPaintScope(scope) {
   t.scope = scope;
   renderPaintScope();
   if (scope === "subject") {
-    paintMode.pending = paintMode.pending.then(() => { paintMode.paintingId = null; });
+    paintMode.pending = paintMode.pending.then(() => { t.paintingId = null; });
     paintMode.dirty = true;
     flushPaintSave();
     return;
   }
   paintMode.pending = paintMode.pending.then(async () => {
     try {
-      if (paintMode.paintingId) {
-        await apiJson(`/api/v1/paintings/slots/${t.generalKey}`, { method: "PUT", json: { painting_id: paintMode.paintingId } });
+      if (t.paintingId) {
+        await apiJson(`/api/v1/paintings/slots/${t.generalKey}`, { method: "PUT", json: { painting_id: t.paintingId } });
       }
       await apiJson(`/api/v1/paintings/slots/${t.specificKey}`, { method: "DELETE" });
     } catch (err) {
@@ -606,9 +619,8 @@ async function openPaintMode(tile) {
     ? { kind: "tile", format: tile.kind, aspect: PAINT_TILE_KINDS[tile.kind].aspect, el: tile.el,
       displayW: tile.el.getBoundingClientRect().width }
     : { kind: "background", format: "square", aspect: 1, el: null };
-  Object.assign(target, { specificKey, generalKey: paintGeneralKey(specificKey), scope: "subject" });
+  Object.assign(target, { specificKey, generalKey: paintGeneralKey(specificKey), scope: "subject", paintingId: null });
   paintMode.target = target;
-  paintMode.paintingId = null;
   paintMode.scrollY = window.scrollY;
   coloringReset();
   coloringRefreshAvailable();
@@ -649,7 +661,7 @@ async function loadPaintingFor(target) {
     if ((strokes.length || pages.length) && paintMode.target === target) {
       await coloringLoad(pages);  // Felder müssen da sein, bevor Striche darin gezeichnet werden
       if (paintMode.target !== target) return;
-      paintMode.paintingId = painting.id;
+      target.paintingId = painting.id;
       s.strokes = strokes.concat(s.strokes);  // schon während des Ladens Gemaltes bleibt obenauf
       s.redrawAllStrokes();
       coloringRender();
@@ -662,13 +674,14 @@ async function loadPaintingFor(target) {
 async function closePaintMode() {
   if (!paintMode.el || paintMode.el.hidden) return;
   coloring.placing = false;
-  await flushPaintSave();
+  // Sofort schließen; gespeichert wird im Hintergrund weiter, danach zeigt die Seite das neue Bild
+  const saved = flushPaintSave();
   paintMode.el.hidden = true;
   paintMode.target = null;
   paintMode.ghostLayer.innerHTML = "";  // der Klon trägt dieselben IDs wie die Seite
   document.body.classList.remove("paint-mode-open");
   window.scrollTo(0, paintMode.scrollY || 0);
-  if (typeof applyPaintings === "function") applyPaintings();
+  saved.then(() => { if (typeof applyPaintings === "function") applyPaintings(); });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

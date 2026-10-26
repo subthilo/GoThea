@@ -379,3 +379,25 @@ def test_ghost_tiles_lie_exactly_over_the_real_tiles(app_page, clean_dashboard):
         app_page.click('[data-paint-action="done"]')
         app_page.locator("#paint-mode").wait_for(state="hidden")
     assert app_page.problems.errors == []
+
+
+def test_done_closes_at_once_and_saving_finishes_in_the_background(app_page, clean_dashboard):
+    """Großes Bild auf dem iPad: Speichern dauert Sekunden – der Haken schließt trotzdem sofort (26.10.)."""
+    held = []
+    app_page.route("**/api/v1/paintings", lambda route: held.append(route) if route.request.method == "POST"
+                   else route.continue_())
+    _open_background(app_page)
+    app_page.evaluate(PAINT_DRAW, LINE)
+    for _ in range(40):  # die Speicherung startet nach kurzer Pause und hängt dann fest
+        if held:
+            break
+        app_page.wait_for_timeout(100)
+    assert held, "Speichern wurde nicht gestartet"
+    app_page.click('[data-paint-action="done"]')
+    app_page.locator("#paint-mode").wait_for(state="hidden", timeout=1000)  # sofort zu
+    assert app_page.evaluate(ON) is False                                    # Bild noch nicht da
+    held[0].continue_()
+    app_page.wait_for_function(ON, timeout=8000)                             # nach dem Speichern sichtbar
+    app_page.unroute("**/api/v1/paintings")
+    app_page.wait_for_load_state("networkidle")
+    assert app_page.problems.errors == []

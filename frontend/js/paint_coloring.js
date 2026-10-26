@@ -99,15 +99,16 @@ function coloringMatrix(p, k) {
     .scaleSelf(p.size / s.width, p.size / s.width).translateSelf(-s.width / 2, -s.height / 2);
 }
 
-function coloringBuildClip(key, k, w, h) {
+// pages: die Ausmalbilder dazu – die aktuellen oder die einer Momentaufnahme fürs Speichern
+function coloringBuildClip(key, k, w, h, pages = coloring.pages) {
   const path = new Path2D();
   if (key === "bg") {
     path.rect(0, 0, w, h);
-    coloring.pages.forEach((p) => path.addPath(coloring.shapes.get(p.id).outline, coloringMatrix(p, k)));
+    pages.forEach((p) => path.addPath(coloring.shapes.get(p.id).outline, coloringMatrix(p, k)));
     return path;
   }
   const [uid, fid] = String(key).split(":");
-  const page = coloring.pages.find((p) => p.uid === uid);
+  const page = pages.find((p) => p.uid === uid);
   if (!page || fid === "x") return path;  // leer: malt nichts
   const field = coloring.shapes.get(page.id).fields.find((f) => String(f.id) === fid);
   if (field) path.addPath(field.path, coloringMatrix(page, k));
@@ -211,8 +212,8 @@ function coloringRender() {
 }
 
 // Fürs fertige Bild: ctx steht auf Rastereinheiten des Bildes
-function coloringDrawLines(ctx) {
-  coloring.pages.forEach((p) => {
+function coloringDrawLines(ctx, pages = coloring.pages) {
+  pages.forEach((p) => {
     const s = coloring.shapes.get(p.id);
     if (!s) return;
     const delta = Math.max(p.delta || 0, -s.bleed * 0.9);
@@ -244,10 +245,6 @@ function coloringDrawLines(ctx) {
     ctx.drawImage(tmp, 0, 0);
     ctx.restore();
   });
-}
-
-function coloringClipUnits(key) {
-  return coloringBuildClip(key, 1, PAINT_UNITS, coloringUnitsHeight());
 }
 
 function coloringSerialize() {
