@@ -18,7 +18,7 @@ function renderDashboardSubjects(subjects, topicsMap) {
     card.setAttribute("title", `${s.name} öffnen`);
 
     card.innerHTML = `
-      <div class="subject-tile-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}45;">
+      <div class="subject-tile-icon-wrap">
         ${subjectIcon(s.name, "subject-tile-icon")}
       </div>
       <div class="subject-tile-name">${escapeHtml(s.name)}</div>
@@ -77,8 +77,7 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   const iconEl = document.getElementById("subject-detail-icon");
   if (iconEl) {
     iconEl.innerHTML = subjectIcon(s.name, "subject-hero-icon-svg");
-    iconEl.style.background = `${subjectColor(s.name)}22`;
-    iconEl.style.borderColor = `${subjectColor(s.name)}44`;
+    iconEl.style.setProperty("--tile-color", subjectColor(s.name));
   }
 
   const nameEl = document.getElementById("subject-detail-name");
