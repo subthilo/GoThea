@@ -154,3 +154,22 @@ def test_invalid_input_is_rejected(strict_client, data, files):
 
 def test_invalid_slot_key_in_query_is_rejected(strict_client):
     assert strict_client.get("/api/v1/paintings", params={"keys": "Dashboard!"}).status_code == 422
+
+
+def test_large_stroke_data_goes_as_a_file_part(strict_client):
+    """Formularfelder nimmt der Server nur bis 1 MB an; Striche gehen deshalb als Datei-Teil (iPad, 26.10.)."""
+    big = json.dumps({"strokes": [{"tool": "pen", "color": "#f00", "width": 6,
+                                   "points": [{"x": i % 1000, "y": i // 1000, "pressure": 0.5} for i in range(40000)]}]})
+    assert len(big) > 1024 * 1024
+    res = strict_client.post("/api/v1/paintings", data={"kind": "background", "format": "square", "slot_key": "dashboard"},
+                             files={"strokes": ("strokes.json", big.encode(), "application/json"),
+                                    "image": ("bild.webp", WEBP, "image/webp")})
+    assert res.status_code == 201, res.text
+    pid = res.json()["id"]
+    res = strict_client.put(f"/api/v1/paintings/{pid}", files={"strokes": ("strokes.json", big.encode(), "application/json")})
+    assert res.status_code == 200, res.text
+    assert strict_client.get(f"/api/v1/paintings/{pid}").json()["strokes_json"] == big
+    # als Formularfeld neben dem Bild (multipart, wie bisher vom iPad) lehnt der Server ab – so trat der Fehler auf
+    res = strict_client.put(f"/api/v1/paintings/{pid}", data={"strokes_json": big},
+                            files={"image": ("bild.webp", WEBP, "image/webp")})
+    assert res.status_code == 400

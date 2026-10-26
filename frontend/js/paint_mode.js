@@ -457,7 +457,9 @@ async function savePaintingNow() {
   if (!paintMode.paintingId && !strokes.length && !pages.length) return;
   try {
     const form = new FormData();
-    form.append("strokes_json", JSON.stringify({ v: 1, units: PAINT_UNITS, aspect: target.aspect, strokes, pages }));
+    // Als Datei-Teil: Formularfelder nimmt der Server nur bis 1 MB an, ein fleißig bemaltes Bild ist größer
+    const data = JSON.stringify({ v: 1, units: PAINT_UNITS, aspect: target.aspect, strokes, pages });
+    form.append("strokes", new Blob([data], { type: "application/json" }), "strokes.json");
     form.append("image", await renderPaintImage(strokes), "bild");
     if (paintMode.paintingId) {
       await apiJson(`/api/v1/paintings/${paintMode.paintingId}`, { method: "PUT", body: form });

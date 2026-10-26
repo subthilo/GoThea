@@ -72,8 +72,8 @@ def test_colour_stays_in_its_field_and_moves_with_the_page(app_page, coloring_pa
         app_page.evaluate(PAINT_DRAW, pts)
     assert app_page.evaluate(INK_IN, [250, 470]) > 0       # links gemalt
     assert app_page.evaluate(INK_IN, [540, 800]) == 0      # rechts nichts – die Farbe bleibt im Feld
-    saved = json.loads(resp.value.request.post_data_buffer.decode("utf-8", "ignore").split("strokes_json")[1]
-                       .split("\r\n\r\n", 1)[1].split("\r\n--", 1)[0])
+    painting = app_page.evaluate("(id) => apiJson(`/api/v1/paintings/${id}`)", resp.value.json()["id"])
+    saved = json.loads(painting["strokes_json"])
     assert saved["pages"][0]["id"] == coloring_page
     uid = saved["pages"][0]["uid"]
     assert saved["strokes"][0]["clip"].startswith(f"{uid}:")
@@ -104,3 +104,4 @@ def test_colour_stays_in_its_field_and_moves_with_the_page(app_page, coloring_pa
     app_page.click('[data-paint-action="done"]')
     app_page.wait_for_load_state("networkidle")
     assert app_page.problems.errors == []
+

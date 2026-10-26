@@ -25,6 +25,19 @@ def _get(db: Session, painting_id: str) -> Painting:
     return painting
 
 
+async def _read_strokes(form_value: Optional[str], upload: Optional[UploadFile]) -> Optional[str]:
+    """Striche als Datei-Teil (beliebig groß) oder – für kleine Bilder – als Formularfeld.
+
+    Formularfelder nimmt Starlette nur bis 1 MB an (sonst 400); ein fleißig bemaltes Bild überschreitet das.
+    """
+    if upload is None:
+        return form_value
+    data = await upload.read(svc.MAX_STROKES_BYTES + 1)
+    if len(data) > svc.MAX_STROKES_BYTES:
+        raise HTTPException(status_code=422, detail="Zu viele Striche für ein Bild.")
+    return data.decode("utf-8")
+
+
 async def _read_image(image: Optional[UploadFile]) -> Optional[bytes]:
     if image is None:
         return None
@@ -74,10 +87,12 @@ def clear_slot(slot_key: str, db: Session = Depends(get_db)):
 
 @router.post("", status_code=201)
 async def create_painting(kind: str = Form(...), format: str = Form(...), strokes_json: Optional[str] = Form(None),
+                          strokes: Optional[UploadFile] = File(None),
                           slot_key: Optional[str] = Form(None), image: Optional[UploadFile] = File(None),
                           db: Session = Depends(get_db)):
+    strokes_text = await _read_strokes(strokes_json, strokes)
     try:
-        painting = svc.create(db, kind, format, strokes_json, await _read_image(image), slot_key)
+        painting = svc.create(db, kind, format, strokes_text, await _read_image(image), slot_key)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     return dict(svc.summary(painting), slots=svc.slots_of(db, painting.id))
@@ -92,10 +107,12 @@ def get_painting(painting_id: str, db: Session = Depends(get_db)):
 
 @router.put("/{painting_id}")
 async def update_painting(painting_id: str, strokes_json: Optional[str] = Form(None),
+                          strokes: Optional[UploadFile] = File(None),
                           image: Optional[UploadFile] = File(None), db: Session = Depends(get_db)):
     painting = _get(db, painting_id)
+    strokes_text = await _read_strokes(strokes_json, strokes)
     try:
-        svc.update(db, painting, strokes_json, await _read_image(image))
+        svc.update(db, painting, strokes_text, await _read_image(image))
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     return svc.summary(painting)
