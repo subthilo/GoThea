@@ -206,6 +206,37 @@ def test_paint_save_and_paint_on_later(app_page, clean_dashboard):
     assert app_page.problems.errors == []
 
 
+def test_slow_saves_do_not_pile_up(app_page, clean_dashboard):
+    # Auf dem iPad dauerte ein Speichern 5–11 s; jede Malpause legte eine weitere Aufnahme in die Kette,
+    # das Bild erschien erst Minuten nach dem Haken (26.10.). Jetzt wartet höchstens die neueste.
+    _open_background(app_page)
+    with app_page.expect_response(_paintings_request("POST"), timeout=6000) as resp:
+        app_page.evaluate(PAINT_DRAW, LINE)
+    painting_id = resp.value.json()["id"]
+    # Speichern im Browser verlangsamen (eine Verzögerung in page.route hielte auch die Testschritte an)
+    app_page.evaluate("""() => {
+      window.__puts = 0;
+      const orig = window.fetch;
+      window.fetch = async (url, opts) => {
+        if (opts && opts.method === 'PUT' && String(url).includes('/api/v1/paintings/')) {
+          window.__puts++;
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        return orig(url, opts);
+      };
+    }""")
+    for i in range(6):  # sechs Striche mit Malpause, schneller als ein Speichern dauert
+        app_page.evaluate(PAINT_DRAW, [[100 + i * 40, 100], [100 + i * 40, 400]])
+        app_page.evaluate("() => { flushPaintSave(); }")  # nicht auf das Speichern warten
+    app_page.click('[data-paint-action="done"]')
+    app_page.wait_for_function(f"document.querySelector('.paint-bg-img').src.includes('{painting_id}')", timeout=8000)
+    app_page.evaluate("paintMode.pending")
+    assert app_page.evaluate("window.__puts") <= 2
+    saved = app_page.evaluate(f"apiJson('/api/v1/paintings/{painting_id}')")
+    assert len(__import__("json").loads(saved["strokes_json"])["strokes"]) == 7
+    assert app_page.problems.errors == []
+
+
 def test_paint_mode_fits_the_screen_in_both_orientations(app_page, clean_dashboard):
     # iPad Pro 11 und mini, quer und hoch – auch beim Drehen mit offenem Mal-Modus
     _open_background(app_page)

@@ -43,7 +43,7 @@ const paintMode = {
   el: null, surface: null, viewport: null, ghostLayer: null, chooser: null,
   w: 0, h: 0, target: null, scrollY: 0,  // target.paintingId: das Bild, an dem gerade gemalt wird
   tool: "pen", color: null, widthIndex: 1, ghost: "half",
-  saveTimer: null, dirty: false, pending: Promise.resolve(),
+  saveTimer: null, dirty: false, pending: Promise.resolve(), waitingSave: null,
 };
 
 function loadPaintPrefs() {
@@ -432,14 +432,26 @@ function schedulePaintSave() {
 
 // Momentaufnahme jetzt, Speichern danach in der Kette: das dauert bei großen Bildern auf dem iPad
 // Sekunden (Bild rechnen, hochladen), und der Mal-Modus kann inzwischen geschlossen oder ein anderes
-// Bild offen sein
+// Bild offen sein. Wartet schon eine Aufnahme desselben Bildes, ersetzt die neue sie: sonst wuchs die
+// Kette beim Malen schneller, als das iPad speichern konnte – das Bild erschien erst Minuten nach dem
+// Haken, und ein Neuladen der App verwarf den Rest (26.10.).
 function flushPaintSave() {
   clearTimeout(paintMode.saveTimer);
   if (paintMode.dirty && paintMode.target) {
     paintMode.dirty = false;
     const snap = { target: paintMode.target, strokes: strokesInUnits(), pages: coloringSerialize(), tries: 0 };
     snap.target.lastSnap = snap;
-    paintMode.pending = paintMode.pending.then(() => savePaintingNow(snap));
+    const waiting = paintMode.waitingSave;
+    if (waiting && waiting.target === snap.target) {
+      waiting.snap = snap;
+    } else {
+      const entry = { target: snap.target, snap };
+      paintMode.waitingSave = entry;
+      paintMode.pending = paintMode.pending.then(() => {
+        if (paintMode.waitingSave === entry) paintMode.waitingSave = null;
+        return savePaintingNow(entry.snap);
+      });
+    }
   }
   return paintMode.pending;
 }
