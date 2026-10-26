@@ -34,7 +34,7 @@ def test_parents_upload_preview_and_release(app_page, parent_pin, tmp_path):
 
     row.locator(".doc-row-head").click()
     row.locator(".coloring-preview-svg").wait_for()
-    assert row.locator(".coloring-preview-svg path").count() == 3  # 2 Felder + Linie
+    assert row.locator(".coloring-preview-svg path").count() == 1  # nur die Linien
 
     row.locator(".coloring-release").click()
     app_page.locator(".coloring-row.status-freigegeben", has_text=name).wait_for()

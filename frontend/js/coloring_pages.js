@@ -2,9 +2,8 @@
 // Ausmalbilder verwalten (Eltern-Modus, Tab „Upload“): SVG hochladen, Vorschau, freigeben, entfernen
 // ============================================================================
 // Der Server berechnet die Felder im Hintergrund (auf dem Pi bis zu zwei Minuten); solange ein Bild
-// „rechnet“, fragt die Liste alle paar Sekunden nach. Die Vorschau zeigt jedes Feld in einer eigenen
-// Farbe – so sieht man, ob die Datei taugt (Lücken in Linien, schon farbige Bilder). Erst freigegebene
-// Bilder sieht Thea im Mal-Modus. Konzept-Doc, Tab „Ausmalbilder“.
+// „rechnet“, fragt die Liste alle paar Sekunden nach. Die Vorschau zeigt die Linien, so wie Thea sie
+// ausmalt. Erst freigegebene Bilder sieht Thea im Mal-Modus. Konzept-Doc, Tab „Ausmalbilder“.
 
 const COLORING_POLL_MS = 5000;
 const openColoringRows = new Set();
@@ -86,7 +85,7 @@ function buildColoringRow(p) {
   return row;
 }
 
-// Vorschau: jedes Feld in einer eigenen hellen Farbe, darüber die Linien
+// Vorschau: die Linien auf weißem Grund (bunte Felder brauchte es nicht, Nutzer 26.10.)
 async function renderColoringPreview(box, p) {
   if (box.dataset.loaded) return;
   box.dataset.loaded = "1";
@@ -96,16 +95,11 @@ async function renderColoringPreview(box, p) {
     const svg = document.createElementNS(ns, "svg");
     svg.setAttribute("viewBox", `0 0 ${shapes.width} ${shapes.height}`);
     svg.setAttribute("class", "coloring-preview-svg");
-    const path = (d, fill) => {
-      const el = document.createElementNS(ns, "path");
-      el.setAttribute("d", d);
-      el.setAttribute("fill", fill);
-      el.setAttribute("fill-rule", "evenodd");
-      svg.appendChild(el);
-    };
-    // Goldener Winkel: benachbarte Felder bekommen deutlich verschiedene Farben
-    shapes.fields.forEach((f, i) => path(f.d, `hsl(${(i * 137.5) % 360} 75% 78%)`));
-    path(shapes.ink, "#111");
+    const ink = document.createElementNS(ns, "path");
+    ink.setAttribute("d", shapes.ink);
+    ink.setAttribute("fill", "#111");
+    ink.setAttribute("fill-rule", "evenodd");
+    svg.appendChild(ink);
     box.appendChild(svg);
   } catch (err) {
     box.dataset.loaded = "";
