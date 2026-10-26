@@ -35,6 +35,19 @@ const coloring = {
   frame: 0,
 };
 
+// Den Knopf „Ausmalbild“ gibt es nur, wenn es freigegebene Ausmalbilder gibt (sonst sähe Thea eine leere
+// Auswahl, die wie „lädt noch“ aussieht)
+async function coloringRefreshAvailable() {
+  const btn = paintMode.el && paintMode.el.querySelector('[data-paint-action="coloring"]');
+  if (!btn) return;
+  btn.hidden = true;
+  try {
+    btn.hidden = !(await apiJson("/api/v1/coloring-pages")).length;
+  } catch (err) {
+    console.warn("Ausmalbilder nicht geladen:", err);
+  }
+}
+
 function coloringReset() {
   coloring.pages = [];
   coloring.selected = null;

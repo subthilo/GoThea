@@ -105,3 +105,13 @@ def test_colour_stays_in_its_field_and_moves_with_the_page(app_page, coloring_pa
     app_page.wait_for_load_state("networkidle")
     assert app_page.problems.errors == []
 
+
+@pytest.mark.usefixtures("clean_dashboard")
+def test_no_released_pages_no_button(app_page):
+    # Ohne freigegebene Ausmalbilder gibt es den Knopf nicht (eine leere Auswahl sähe aus wie „lädt noch“)
+    app_page.route("**/api/v1/coloring-pages", lambda route: route.fulfill(json=[]))
+    _open_background(app_page)
+    app_page.wait_for_load_state("networkidle")
+    assert app_page.locator('[data-paint-action="coloring"]').is_hidden()
+    app_page.click('[data-paint-action="done"]')
+    assert app_page.problems.errors == []

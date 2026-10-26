@@ -611,6 +611,7 @@ async function openPaintMode(tile) {
   paintMode.paintingId = null;
   paintMode.scrollY = window.scrollY;
   coloringReset();
+  coloringRefreshAvailable();
   paintMode.el.querySelector(".paint-coloring-sheet").hidden = true;
   const s = paintMode.surface;
   s.strokes = [];
