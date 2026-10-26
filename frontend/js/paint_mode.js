@@ -77,10 +77,24 @@ function buildPaintMode() {
     <div class="paint-bar paint-bar-colors" role="toolbar" aria-label="Farben"></div>
     <div class="paint-stage">
       <div class="paint-viewport">
-        <canvas class="paint-ink"></canvas><canvas class="paint-overlay"></canvas>
+        <canvas class="paint-layer paint-layer-below"></canvas><canvas class="paint-ink"></canvas>
+        <canvas class="paint-layer paint-layer-above"></canvas><canvas class="paint-overlay"></canvas>
         <div class="paint-lines" aria-hidden="true"></div>
         <div class="paint-ghost" aria-hidden="true"></div>
-        <div class="paint-placing" hidden></div>
+      </div>
+      <div class="paint-placing" hidden></div>
+      <div class="paint-layers-bar" hidden>
+        <div class="paint-layer-list"></div>
+        <div class="paint-layer-tools">
+          <button type="button" class="paint-btn" data-paint-action="c-hide"></button>
+          <button type="button" class="paint-btn" data-paint-action="c-free"></button>
+          <button type="button" class="paint-btn" data-paint-action="c-back" title="Nach hinten" aria-label="Nach hinten">${icon("Pfeil links")}</button>
+          <button type="button" class="paint-btn" data-paint-action="c-front" title="Nach vorn" aria-label="Nach vorn">${icon("Pfeil rechts")}</button>
+          <button type="button" class="paint-btn" data-paint-action="c-thin" title="Linien dünner" aria-label="Linien dünner">${icon("Minus")}</button>
+          <button type="button" class="paint-btn" data-paint-action="c-thick" title="Linien dicker" aria-label="Linien dicker">${icon("Plus")}</button>
+          <button type="button" class="paint-btn" data-paint-action="c-color" title="Linien in der gewählten Farbe" aria-label="Linienfarbe">${icon("Marker")}</button>
+          <button type="button" class="paint-btn" data-paint-action="c-remove" title="Ausmalbild entfernen" aria-label="Ausmalbild entfernen">${icon("Papierkorb")}</button>
+        </div>
       </div>
     </div>
     <div class="paint-coloring-sheet" hidden>
@@ -96,11 +110,7 @@ function buildPaintMode() {
       <button type="button" class="paint-btn" data-paint-action="ghost" title="" aria-label=""></button>
       <button type="button" class="paint-btn" data-paint-action="scope" title="" aria-label=""></button>
       <button type="button" class="paint-btn" data-paint-action="coloring" title="Ausmalbild" aria-label="Ausmalbild">${icon("Ausmalbild")}</button>
-      <button type="button" class="paint-btn" data-paint-action="c-place" data-coloring-tool hidden title="Ausmalbild verschieben, drehen, größer/kleiner" aria-label="Ausmalbild platzieren">${icon("Hand")}</button>
-      <button type="button" class="paint-btn" data-paint-action="c-thin" data-coloring-tool hidden title="Linien dünner" aria-label="Linien dünner">${icon("Minus")}</button>
-      <button type="button" class="paint-btn" data-paint-action="c-thick" data-coloring-tool hidden title="Linien dicker" aria-label="Linien dicker">${icon("Plus")}</button>
-      <button type="button" class="paint-btn" data-paint-action="c-color" data-coloring-tool hidden title="Linien in der gewählten Farbe" aria-label="Linienfarbe">${icon("Marker")}</button>
-      <button type="button" class="paint-btn" data-paint-action="c-remove" data-coloring-tool hidden title="Ausmalbild entfernen" aria-label="Ausmalbild entfernen">${icon("Papierkorb")}</button>
+      <button type="button" class="paint-btn" data-paint-action="c-place" hidden title="Ausmalbilder bearbeiten" aria-label="Ausmalbilder bearbeiten">${icon("Hand")}</button>
       <button type="button" class="paint-btn" data-paint-action="preview" title="So sieht es aus" aria-label="So sieht es aus">${icon("Bild")}</button>
       <span class="paint-save-error" hidden title="Speichern hat nicht geklappt – es wird weiter versucht">${icon("Warnung")}</span>
       <button type="button" class="paint-btn paint-btn-done" data-paint-action="done" title="Fertig" aria-label="Fertig">${icon("Haken")}</button>
@@ -110,6 +120,8 @@ function buildPaintMode() {
   paintMode.viewport = el.querySelector(".paint-viewport");
   paintMode.ghostLayer = el.querySelector(".paint-ghost");
   paintMode.linesLayer = el.querySelector(".paint-lines");
+  paintMode.layerBelow = el.querySelector(".paint-layer-below");
+  paintMode.layerAbove = el.querySelector(".paint-layer-above");
   const ink = el.querySelector(".paint-ink"), overlay = el.querySelector(".paint-overlay");
 
   paintMode.surface = createInkSurface({
@@ -129,6 +141,8 @@ function buildPaintMode() {
   });
   paintMode.surface.isUnderlayVisible = true;
   coloringBindPlacing(el.querySelector(".paint-placing"));
+  // Der Kern setzt beim Zoomen und Verschieben die Lage der Linien-Ebene: die Ebenen-Leinwände folgen
+  new MutationObserver(coloringFollowView).observe(paintMode.linesLayer, { attributes: true, attributeFilter: ["style"] });
 
   // Das Bild bleibt im Rahmen: nicht über seine Kanten hinaus verschieben
   const clamp = () => clampPaintPan();
@@ -173,7 +187,7 @@ function layoutPaintMode() {
   const s = paintMode.surface;
   if (old && old !== w) {
     const f = w / old;
-    s.strokes.forEach((st) => scaleStroke(st, f));
+    coloringAllStrokes().forEach((st) => scaleStroke(st, f));
     (s.redoStack || []).forEach((act) => act.stroke && scaleStroke(act.stroke, f));
     s.scale = 1.0;
     s.panX = 0;
@@ -356,10 +370,13 @@ function onPaintClick(e) {
     const to = action === "undo" ? s.redoStack : s.undoStack;
     const act = from.pop();
     if (!act || act.type !== "add_stroke") return;
-    if (action === "undo") s.strokes = s.strokes.filter((st) => st !== act.stroke);
-    else s.strokes.push(act.stroke);
+    // Der Strich kann auf einer anderen Ebene liegen als der, die der Kern gerade hält
+    const layer = coloringLayer(coloringLayerOf(act.stroke));
+    if (action === "undo") layer.splice(layer.indexOf(act.stroke), 1);
+    else layer.push(act.stroke);
     to.push(act);
     s.redrawAllStrokes();
+    coloringRenderLayers();
     schedulePaintSave();
     return;
   } else if (action === "ghost") {
@@ -379,7 +396,7 @@ function onPaintClick(e) {
     paintMode.el.querySelector(".paint-coloring-sheet").hidden = true;
     return;
   } else if (action === "coloring" || (action && action.startsWith("c-"))) {
-    coloringAction(action);
+    coloringAction(action, btn);
     return;
   } else {
     return;
@@ -408,7 +425,7 @@ function strokesFromSaved(data) {
 function strokesInUnits() {
   const f = PAINT_UNITS / paintMode.w;
   const r = (v) => Math.round(v * 10) / 10;
-  return paintMode.surface.strokes.map((st) => ({
+  return coloringAllStrokes().map((st) => ({
     tool: st.tool, color: st.color, width: r(st.width * f), ...(st.clip != null ? { clip: st.clip } : {}),
     points: st.points.map((p) => ({ x: r(p.x * f), y: r(p.y * f), pressure: Math.round((p.pressure || 0.5) * 100) / 100 })),
   }));
@@ -425,18 +442,7 @@ function renderPaintImage(snap) {
   canvas.height = Math.round(pw / t.aspect);
   const ctx = canvas.getContext("2d");
   ctx.scale(pw / PAINT_UNITS, pw / PAINT_UNITS);
-  const clips = new Map();  // jedes Feld nur einmal als Pfad bauen (viele Striche liegen im selben Feld)
-  const clipFor = (key) => {
-    if (!clips.has(key)) clips.set(key, coloringBuildClip(key, 1, PAINT_UNITS, PAINT_UNITS / t.aspect, snap.pages));
-    return clips.get(key);
-  };
-  snap.strokes.forEach((st) => {
-    ctx.save();
-    if (st.clip != null) ctx.clip(clipFor(st.clip), "evenodd");  // im Feld des Ausmalbilds
-    paintMode.surface.renderStrokeToContext(ctx, { ...st, clip: undefined });
-    ctx.restore();
-  });
-  coloringDrawLines(ctx, snap.pages);
+  coloringRenderImage(ctx, snap.strokes, snap.pages);  // Ebenen wie im Mal-Modus, ausgeblendete nicht
   // Safari kann teils kein WebP erzeugen und liefert dann PNG – der Server nimmt beides
   return new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
 }
@@ -626,7 +632,6 @@ async function openPaintMode(tile) {
   coloringRefreshAvailable();
   paintMode.el.querySelector(".paint-coloring-sheet").hidden = true;
   const s = paintMode.surface;
-  s.strokes = [];
   s.undoStack = [];
   s.redoStack = [];
   s.scale = 1.0;
@@ -659,10 +664,9 @@ async function loadPaintingFor(target) {
     const pages = data && Array.isArray(data.pages) ? data.pages : [];
     // Ohne Striche und Ausmalbilder (von Hand eingespielt): nicht übermalen, sondern neu beginnen
     if ((strokes.length || pages.length) && paintMode.target === target) {
-      await coloringLoad(pages);  // Felder müssen da sein, bevor Striche darin gezeichnet werden
+      await coloringLoad(pages, strokes);  // Felder müssen da sein, bevor Striche darin gezeichnet werden
       if (paintMode.target !== target) return;
       target.paintingId = painting.id;
-      s.strokes = strokes.concat(s.strokes);  // schon während des Ladens Gemaltes bleibt obenauf
       s.redrawAllStrokes();
       coloringRender();
     }

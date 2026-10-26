@@ -287,6 +287,7 @@ body.paint-mode-open {
 }
 
 .paint-stage {
+  position: relative;
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -320,6 +321,12 @@ body.paint-mode-open {
 
 .paint-overlay {
   pointer-events: none;
+}
+
+/* Ebenen unter und über dem Zeichenkern (js/paint_coloring.js); folgen Zoom und Verschieben */
+.paint-layer {
+  pointer-events: none;
+  transform-origin: 0 0;
 }
 
 /* Geisterbild: über den Strichen, ohne Antippen (der Stift malt hindurch) */
@@ -516,7 +523,8 @@ body.paint-mode-open {
   stroke-dasharray: 8 6;
 }
 
-/* Platzieren: fängt Finger und Stift ab (ein Finger verschiebt, zwei drehen und skalieren) */
+/* Bearbeiten: fängt Finger und Stift über der ganzen Bühne ab (ein Finger verschiebt, zwei drehen und
+   skalieren); liegt außerhalb der Malfläche, damit der Zeichenkern nicht mitzoomt */
 .paint-placing {
   position: absolute;
   inset: 0;
@@ -531,6 +539,74 @@ body.paint-mode-open {
 
 .paint-placing[hidden] {
   display: none;
+}
+
+/* Leiste beim Bearbeiten: Ausmalbilder von hinten (links) nach vorn, Werkzeuge für das gewählte */
+.paint-layers-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  z-index: 6;
+  max-width: calc(100% - 16px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 30px rgba(var(--shade-rgb), 0.4);
+  overflow-x: auto;
+}
+
+.paint-layers-bar[hidden] {
+  display: none;
+}
+
+.paint-layer-list,
+.paint-layer-tools {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.paint-layer-tools {
+  padding-left: 12px;
+  border-left: 1px solid var(--border-color);
+}
+
+.paint-layer-tools .paint-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Vorschaubild auf weißem Papier (wie in der Auswahl, bewusst fest) */
+.paint-layer-choice {
+  width: 52px;
+  height: 52px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 2px solid var(--border-color);
+  background: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.paint-layer-choice img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.paint-layer-choice.selected {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent-light);
+}
+
+.paint-layer-choice.is-hidden {
+  opacity: 0.35;
 }
 
 /* Auswahl der freigegebenen Ausmalbilder */

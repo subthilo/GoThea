@@ -1,5 +1,6 @@
 """Ausmalbild im Mal-Modus: wählen, platzieren, im Feld malen (die Farbe bleibt im Feld), speichern,
-verschieben (die Farbe wandert mit), Linien dicker – und nach dem Wiederöffnen ist alles wieder da."""
+verschieben (die Farbe wandert mit), Linien dicker – und nach dem Wiederöffnen ist alles wieder da.
+Ebenen: ausblenden, Feld-Schalter, Reihenfolge."""
 import json
 
 import pytest
@@ -27,9 +28,10 @@ UPLOAD = """async (svg) => {
   return page.id;
 }"""
 
-# Farbige Pixel in einem Streifen der Malfläche (x0..x1 in Rastereinheiten, 0..1000)
-INK_IN = """([x0, x1]) => {
-  const c = document.querySelector('.paint-ink');
+# Farbige Pixel in einem Streifen einer Leinwand (x0..x1 in Rastereinheiten, 0..1000): Zeichenkern
+# (aktive Ebene) oder Ebenen darüber (Linien der aktiven Ebene und alles davor)
+INK_IN = """([x0, x1, sel]) => {
+  const c = document.querySelector(sel || '.paint-ink');
   const g = c.getContext('2d'), k = c.width / 1000;
   const d = g.getImageData(Math.round(x0 * k), Math.round(480 * k), Math.round((x1 - x0) * k), Math.round(40 * k)).data;
   let n = 0;
@@ -62,7 +64,7 @@ def test_colour_stays_in_its_field_and_moves_with_the_page(app_page, coloring_pa
     # Der Testserver wird geteilt: genau das eigene Ausmalbild wählen, nicht „das letzte“
     app_page.locator(f'.paint-coloring-choice[data-coloring-id="{coloring_page}"]').click()
     app_page.wait_for_function("coloring.pages.length === 1 && coloring.placing")
-    assert app_page.locator(".paint-lines svg path").count() >= 1
+    assert app_page.evaluate(INK_IN, [100, 900, ".paint-layer-above"]) > 0  # Linien
     app_page.click('[data-paint-action="c-place"]')  # fertig platziert
     assert app_page.evaluate("coloring.placing") is False
 
@@ -91,16 +93,16 @@ def test_colour_stays_in_its_field_and_moves_with_the_page(app_page, coloring_pa
     app_page.wait_for_timeout(100)
     after = app_page.evaluate("paintMode.surface.strokes[0].points[0].x")
     assert abs(after - before - 60) < 1
-    app_page.click('[data-paint-action="c-place"]')
 
-    # Linien dicker, dann fertig; wieder öffnen: Ausmalbild, Linienstärke und Farbe sind da
+    # Linien dicker (in der Leiste beim Bearbeiten), dann fertig; wieder öffnen: alles ist da
     app_page.click('[data-paint-action="c-thick"]')
+    app_page.click('[data-paint-action="c-place"]')
     app_page.click('[data-paint-action="done"]')
     app_page.locator("#paint-mode").wait_for(state="hidden")
     _open_background(app_page)
-    app_page.wait_for_function("coloring.pages.length === 1 && paintMode.surface.strokes.length === 1", timeout=8000)
+    app_page.wait_for_function("coloring.pages.length === 1 && coloringAllStrokes().length === 1", timeout=8000)
     assert app_page.evaluate("coloring.pages[0].delta") > 0
-    assert app_page.locator(".paint-lines svg path").count() >= 1
+    assert app_page.evaluate(INK_IN, [100, 900, ".paint-layer-above"]) > 0
     app_page.click('[data-paint-action="done"]')
     app_page.wait_for_load_state("networkidle")
     assert app_page.problems.errors == []
@@ -114,4 +116,71 @@ def test_no_released_pages_no_button(app_page):
     app_page.wait_for_load_state("networkidle")
     assert app_page.locator('[data-paint-action="coloring"]').is_hidden()
     app_page.click('[data-paint-action="done"]')
+    assert app_page.problems.errors == []
+
+
+def _add_page(app_page, page_id):
+    app_page.click('[data-paint-action="coloring"]')
+    app_page.locator(f'.paint-coloring-choice[data-coloring-id="{page_id}"]').click()
+    app_page.wait_for_function("coloring.placing")
+
+
+def _saved(app_page):
+    """Gespeicherter Stand nach dem nächsten Speichern."""
+    with app_page.expect_response(lambda r: r.request.method in ("POST", "PUT") and "/api/v1/paintings" in r.url
+                                  and "/slots/" not in r.url, timeout=8000) as resp:
+        app_page.evaluate("flushPaintSave()")
+    painting = app_page.evaluate("(id) => apiJson(`/api/v1/paintings/${id}`)", resp.value.json()["id"])
+    return json.loads(painting["strokes_json"])
+
+
+@pytest.mark.usefixtures("clean_dashboard")
+def test_coloring_pages_are_layers(app_page, coloring_page):
+    _open_background(app_page)
+    # Bearbeiten liegt außerhalb der Malfläche: zwei Finger zoomen dort nicht die Malfläche mit
+    assert app_page.evaluate("!paintMode.viewport.contains(document.querySelector('.paint-placing'))")
+    _add_page(app_page, coloring_page)
+    app_page.click('[data-paint-action="c-place"]')
+    stroke = [_units_to_px(app_page, x, 500) for x in range(300, 720, 20)]
+    app_page.evaluate(PAINT_DRAW, stroke)
+    assert app_page.evaluate("coloring.active") == app_page.evaluate("coloring.pages[0].uid")
+
+    # Ausblenden: Linien und Farbe weg, der Stift malt dort auf dem Hintergrund
+    app_page.click('[data-paint-action="c-place"]')
+    app_page.click('[data-paint-action="c-hide"]')
+    app_page.click('[data-paint-action="c-place"]')
+    assert app_page.evaluate("coloring.active") == "bg"
+    assert app_page.evaluate(INK_IN, [100, 900, ".paint-layer-above"]) == 0
+    assert app_page.evaluate(INK_IN, [100, 900]) == 0
+    app_page.evaluate(PAINT_DRAW, stroke)
+    assert app_page.evaluate(INK_IN, [540, 800]) > 0  # über die ganze Breite, nicht nur im Feld
+    saved = _saved(app_page)
+    assert saved["pages"][0]["hidden"] is True
+    assert sorted("clip" in st for st in saved["strokes"]) == [False, True]
+
+    # Rückgängig trifft den letzten Strich, auch wenn er auf einer anderen Ebene liegt
+    app_page.click('[data-paint-action="undo"]')
+    assert app_page.evaluate("coloringAllStrokes().length") == 1
+
+    # Wieder einblenden, Feld-Schalter aus: der Strich geht über beide Felder, bleibt im Umriss
+    app_page.click('[data-paint-action="c-place"]')
+    app_page.click('[data-paint-action="c-hide"]')
+    app_page.click('[data-paint-action="c-free"]')
+    app_page.click('[data-paint-action="c-place"]')
+    app_page.evaluate(PAINT_DRAW, stroke)
+    assert app_page.evaluate(INK_IN, [540, 800]) > 0
+    uid = app_page.evaluate("coloring.pages[0].uid")
+    assert app_page.evaluate("paintMode.surface.strokes.at(-1).clip") == f"{uid}:o"
+
+    # Zweites Ausmalbild liegt vorn; nach hinten schieben
+    _add_page(app_page, coloring_page)
+    first, second = app_page.evaluate("coloring.pages.map((p) => p.uid)")
+    assert app_page.locator(".paint-layer-choice").count() == 2
+    app_page.click('[data-paint-action="c-back"]')
+    assert app_page.evaluate("coloring.pages.map((p) => p.uid)") == [second, first]
+    saved = _saved(app_page)
+    assert [p["uid"] for p in saved["pages"]] == [second, first]
+    assert saved["pages"][1]["free"] is True
+    app_page.click('[data-paint-action="done"]')
+    app_page.wait_for_load_state("networkidle")
     assert app_page.problems.errors == []
