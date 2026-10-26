@@ -257,6 +257,48 @@ def test_paint_mode_fits_the_screen_in_both_orientations(app_page, clean_dashboa
     assert app_page.problems.errors == []
 
 
+def test_color_mixer_mixes_like_paint_and_keeps_the_color(app_page, clean_dashboard):
+    # Acht eigene Farben (das Höchste) – die Leiste muss trotzdem auf den Bildschirm passen
+    full = [f"#1{i}2{i}3{i}" for i in range(8)]
+    app_page.evaluate("(c) => apiJson('/api/v1/design/paint-colors', {method: 'PUT', json: {colors: c}})", full)
+    try:
+        _open_background(app_page)
+        app_page.locator(".paint-swatches-own .paint-swatch[data-paint-color]").nth(7).wait_for()
+        app_page.click('[data-paint-action="mixer"]')
+        mixer = app_page.locator(".paint-mixer")
+        assert mixer.is_visible()
+        for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
+            app_page.set_viewport_size({"width": width, "height": height})
+            app_page.wait_for_timeout(150)
+            for sel in [".paint-bar-colors", ".paint-bar-tools", ".paint-mixer"]:
+                r = app_page.locator(sel).bounding_box()
+                assert r["x"] >= 0 and r["y"] >= 0 and r["x"] + r["width"] <= width + 1 \
+                    and r["y"] + r["height"] <= height + 1, (sel, width, height)
+
+        # Topf 1 wählen, Blau hinein; danach ist Topf 2 dran: Gelb – heraus kommt Grün, nicht Grau
+        app_page.click('.paint-mixer-pot[data-pot="0"]')
+        app_page.click('.paint-bar-colors [data-paint-color="#1e88e5"]')
+        app_page.click('.paint-bar-colors [data-paint-color="#fdd835"]')
+        app_page.locator(".paint-mixer-ratio").fill("50")
+        r, g, b = app_page.evaluate("() => mixerRgb(mixerResult())")
+        assert g > r + 40 and g > b + 40, (r, g, b)
+        # Der Pinsel hat seine Farbe behalten, solange gemischt wird
+        assert app_page.evaluate("paintMode.color") not in ("#1e88e5", "#fdd835")
+
+        with app_page.expect_response(lambda res: "/api/v1/design/paint-colors" in res.url) as resp:
+            app_page.click('[data-paint-action="m-take"]')
+        saved = resp.value.json()["paint_colors"]
+        mixed = app_page.evaluate("paintMode.color")
+        assert saved[0] == mixed and len(saved) == 8 and full[7] not in saved
+        assert not mixer.is_visible()
+        assert app_page.locator(f'.paint-swatches-own [data-paint-color="{mixed}"].active').count() == 1
+        app_page.click('[data-paint-action="done"]')
+        app_page.wait_for_load_state("networkidle")
+        assert app_page.problems.errors == []
+    finally:
+        app_page.evaluate("() => apiJson('/api/v1/design/paint-colors', {method: 'PUT', json: {colors: []}})")
+
+
 # ---- Kacheln ----
 TILE = '#dashboard-subjects-grid [data-paint-tile="{}"]'
 KEY = "dashboard/tile/{}"

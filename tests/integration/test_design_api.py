@@ -39,3 +39,20 @@ def test_old_theme_name_is_mapped(strict_client, tmp_path):
     (tmp_path / "design").mkdir()
     (tmp_path / "design" / "settings.json").write_text('{"theme": "nature"}', encoding="utf-8")
     assert strict_client.get("/api/v1/design").json()["theme"] == "gruen"
+
+
+def test_own_paint_colors_without_pin(strict_client):
+    assert strict_client.get("/api/v1/design").json()["paint_colors"] == []
+    colors = ["#3A7D44"] + [f"#00000{i}" for i in range(9)] + ["#3a7d44"]
+    res = strict_client.put("/api/v1/design/paint-colors", json={"colors": colors})
+    assert res.status_code == 200
+    saved = res.json()["paint_colors"]
+    assert saved[0] == "#3a7d44" and len(saved) == 8 and len(set(saved)) == 8
+    assert strict_client.get("/api/v1/design").json()["paint_colors"] == saved
+    # Theas Farbschema bleibt davon unberührt
+    assert strict_client.get("/api/v1/design").json()["theme"] == "indigo"
+
+
+def test_paint_colors_must_be_colors(strict_client):
+    res = strict_client.put("/api/v1/design/paint-colors", json={"colors": ["red"]})
+    assert res.status_code == 422

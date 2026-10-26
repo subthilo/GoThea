@@ -12,6 +12,7 @@
 // Lage; das fertige Bild rendert der Browser und lädt es mit hoch. Speichern läuft unsichtbar nach
 // jedem Strich, sichtbar nur bei Fehler.
 // Jede Fläche hat ihr eigenes Bild (kein „für alle Fächer“ mehr).
+// Eigene Farben mischt Thea im Farbmischer (js/paint_mixer.js).
 // Bilder ohne Striche (z. B. von Hand eingespielt) werden nicht übermalt: dann beginnt ein neues Bild,
 // das alte bleibt unter „Meine Bilder“.
 
@@ -78,6 +79,7 @@ function buildPaintMode() {
         <div class="paint-ghost" aria-hidden="true"></div>
       </div>
       <div class="paint-placing" hidden></div>
+      ${paintMixerHtml()}
       <div class="paint-layers-bar" hidden>
         <div class="paint-layer-list"></div>
         <div class="paint-layer-tools">
@@ -135,6 +137,7 @@ function buildPaintMode() {
   });
   paintMode.surface.isUnderlayVisible = true;
   coloringBindPlacing(el.querySelector(".paint-placing"));
+  bindPaintMixer(el);
   // Der Kern setzt beim Zoomen und Verschieben die Lage der Linien-Ebene: die Ebenen-Leinwände folgen
   new MutationObserver(coloringFollowView).observe(paintMode.linesLayer, { attributes: true, attributeFilter: ["style"] });
 
@@ -160,7 +163,9 @@ function renderPaintColors() {
   const theme = PAINT_THEME_VARS.map((v) => cs.getPropertyValue(v).trim()).filter((c) => /^#[0-9a-f]{6}$/i.test(c));
   const swatch = (c) => `<button type="button" class="paint-swatch" data-paint-color="${c}" style="--swatch:${c}" title="${c}" aria-label="Farbe ${c}"></button>`;
   bar.innerHTML = `<div class="paint-swatches paint-swatches-theme">${[...new Set(theme)].map(swatch).join("")}</div>
-    <div class="paint-swatches">${PAINT_COLORS.map(swatch).join("")}</div>`;
+    <div class="paint-swatches">${PAINT_COLORS.map(swatch).join("")}</div>
+    <div class="paint-swatches paint-swatches-own">${paintMixer.own.map(swatch).join("")}
+      <button type="button" class="paint-swatch paint-swatch-mixer${paintMixerOpen() ? " active" : ""}" data-paint-action="mixer" title="Farbmischer" aria-label="Farbmischer">${icon("Farbmischer")}</button></div>`;
   if (!paintMode.color) paintMode.color = theme[0] || PAINT_COLORS[4];
 }
 
@@ -338,6 +343,7 @@ function onPaintClick(e) {
   if (!btn || !paintMode.el.contains(btn)) return;
   const s = paintMode.surface, action = btn.dataset.paintAction;
   if (btn.dataset.paintColor) {
+    if (paintMixerTakesColor(btn.dataset.paintColor)) return;
     paintMode.color = btn.dataset.paintColor;
     paintMode.tool = "pen";
   } else if (btn.dataset.paintTool) {
@@ -368,6 +374,12 @@ function onPaintClick(e) {
     return;
   } else if (action === "done") {
     closePaintMode();
+    return;
+  } else if (action === "mixer") {
+    togglePaintMixer();
+    return;
+  } else if (action && action.startsWith("m-")) {
+    paintMixerAction(action, btn);
     return;
   } else if (action === "c-close") {
     paintMode.el.querySelector(".paint-coloring-sheet").hidden = true;
@@ -600,7 +612,10 @@ async function openPaintMode(tile) {
   s.scale = 1.0;
   s.panX = 0;
   s.panY = 0;
+  paintMode.el.querySelector(".paint-mixer").hidden = true;
   renderPaintColors();
+  // Eigene Farben vom Server; die Leiste steht schon, sie kommen dazu
+  loadPaintMixerColors().then(() => { if (!paintMode.el.hidden) { renderPaintColors(); applyPaintTool(); } });
   paintMode.el.querySelector('[data-paint-action="preview"]').hidden = target.kind !== "tile";
   paintMode.el.hidden = false;
   document.body.classList.add("paint-mode-open");

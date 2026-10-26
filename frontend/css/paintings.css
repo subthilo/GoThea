@@ -231,6 +231,13 @@ body.paint-mode-open {
   border-bottom: 1px solid var(--border-color);
 }
 
+/* Eigene Farben aus dem Farbmischer: abgesetzt von den festen */
+.paint-swatches-own {
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border-color);
+}
+
 .paint-swatch {
   width: 36px;
   height: 36px;
@@ -430,6 +437,15 @@ body.paint-mode-open {
     margin-right: 4px;
     border-bottom: none;
     border-right: 1px solid var(--border-color);
+  }
+
+  .paint-swatches-own {
+    padding-top: 0;
+    margin-top: 0;
+    padding-left: 8px;
+    margin-left: 4px;
+    border-top: none;
+    border-left: 1px solid var(--border-color);
   }
 
   .paint-btn-done {
@@ -670,4 +686,126 @@ body.paint-mode-open {
 .paint-coloring-empty {
   color: var(--text-secondary);
   font-size: 2rem;
+}
+
+/* ---- Farbmischer (js/paint_mixer.js): schwebt unten über dem Bild, verschiebt nichts ---- */
+.paint-swatch-mixer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 1.2rem;
+}
+
+.paint-mixer {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: min(360px, calc(100% - 24px));
+  box-sizing: border-box;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(var(--shade-rgb), 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.paint-mixer[hidden] {
+  display: none;
+}
+
+.paint-mixer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.paint-mixer-pot {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--ink-rgb), 0.25);
+  background: var(--swatch);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.paint-mixer-pot.active {
+  outline: 3px solid var(--accent-light);
+  outline-offset: 3px;
+}
+
+.paint-mixer-result {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--ink-rgb), 0.25);
+  background: var(--swatch);
+}
+
+/* Regler als Farbverlauf: man sieht vorher, was herauskommt */
+.paint-mixer-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--ink-rgb), 0.2);
+  touch-action: manipulation;
+}
+
+.paint-mixer-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid var(--text-primary);
+  box-shadow: 0 0 0 2px var(--bg-card), 0 2px 6px rgba(var(--shade-rgb), 0.5);
+}
+
+.paint-mixer-slider::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid var(--text-primary);
+}
+
+.paint-mixer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Farbkreis des Geräts: das Farbfeld liegt unsichtbar über dem Knopf */
+.paint-mixer-wheel {
+  position: relative;
+  overflow: hidden;
+}
+
+.paint-mixer-wheel input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
 }

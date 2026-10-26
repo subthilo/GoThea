@@ -7,6 +7,7 @@ Theas Wahl liegt in DATA_DIR/design/settings.json; ändern darf sie sie ohne PIN
 """
 import json
 import logging
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
@@ -23,6 +24,10 @@ LEGACY_THEMES = {"space": "indigo", "sunset": "beere", "nature": "gruen", "candy
 # Mindestkontraste (WCAG-Verhältnis)
 MIN_ACCENT = 3.0        # Akzent auf Karte
 MIN_SUBJECT = 3.0       # Fachfarbe auf Karte und Listenzeile
+
+# Eigene Malfarben aus dem Farbmischer: die neueste zuerst, die älteste fällt heraus
+MAX_PAINT_COLORS = 8
+_HEX = re.compile(r"^#[0-9a-f]{6}$")
 
 
 # ---- Farbrechnung ----
@@ -173,6 +178,28 @@ def save_theme(theme_id: str) -> dict:
         raise ValueError(f"unbekanntes Farbschema: {theme_id}")
     data = load_settings()
     data["theme"] = theme_id
+    return _write_settings(data)
+
+
+def paint_colors(data: dict) -> List[str]:
+    colors = data.get("paint_colors")
+    return [c for c in colors if isinstance(c, str) and _HEX.match(c)] if isinstance(colors, list) else []
+
+
+def save_paint_colors(colors: Sequence[str]) -> dict:
+    clean: List[str] = []
+    for c in colors:
+        c = str(c).lower()
+        if not _HEX.match(c):
+            raise ValueError(f"keine Farbe: {c}")
+        if c not in clean:
+            clean.append(c)
+    data = load_settings()
+    data["paint_colors"] = clean[:MAX_PAINT_COLORS]
+    return _write_settings(data)
+
+
+def _write_settings(data: dict) -> dict:
     path = _settings_file()
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")

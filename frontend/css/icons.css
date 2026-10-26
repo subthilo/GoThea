@@ -44,6 +44,8 @@
 .i-englisch { -webkit-mask-image: url("/static/Icons/Englisch.svg"); mask-image: url("/static/Icons/Englisch.svg"); }
 .i-erledigt { -webkit-mask-image: url("/static/Icons/Erledigt.svg"); mask-image: url("/static/Icons/Erledigt.svg"); }
 .i-erwachsener { -webkit-mask-image: url("/static/Icons/Erwachsener.svg"); mask-image: url("/static/Icons/Erwachsener.svg"); }
+.i-farbkreis { -webkit-mask-image: url("/static/Icons/Farbkreis.svg"); mask-image: url("/static/Icons/Farbkreis.svg"); }
+.i-farbmischer { -webkit-mask-image: url("/static/Icons/Farbmischer.svg"); mask-image: url("/static/Icons/Farbmischer.svg"); }
 .i-federmappe { -webkit-mask-image: url("/static/Icons/Federmappe.svg"); mask-image: url("/static/Icons/Federmappe.svg"); }
 .i-fehler { -webkit-mask-image: url("/static/Icons/Fehler.svg"); mask-image: url("/static/Icons/Fehler.svg"); }
 .i-feier { -webkit-mask-image: url("/static/Icons/Feier.svg"); mask-image: url("/static/Icons/Feier.svg"); }
