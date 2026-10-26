@@ -11,7 +11,7 @@
 // Striche werden in Rastereinheiten gespeichert (Breite = PAINT_UNITS), unabhängig von Bildschirm und
 // Lage; das fertige Bild rendert der Browser und lädt es mit hoch. Speichern läuft unsichtbar nach
 // jedem Strich, sichtbar nur bei Fehler.
-// Plätze mit Fach (Fachseite, Fach-Kachel): „nur dieses Fach“ oder „für alle Fächer“.
+// Jede Fläche hat ihr eigenes Bild (kein „für alle Fächer“ mehr).
 // Bilder ohne Striche (z. B. von Hand eingespielt) werden nicht übermalt: dann beginnt ein neues Bild,
 // das alte bleibt unter „Meine Bilder“.
 
@@ -61,11 +61,6 @@ function savePaintPrefs() {
   } catch (e) { /* ohne Speicher */ }
 }
 
-// Platz, an dem gerade gemalt wird (je nach „nur dieses Fach“ / „für alle“)
-function paintTargetKey(t) {
-  return t.scope === "all" && t.generalKey ? t.generalKey : t.specificKey;
-}
-
 // ---- Aufbau (einmal; der Zeichenkern hängt globale Listener an, deshalb nur ein Exemplar) ----
 function buildPaintMode() {
   if (paintMode.el) return paintMode.el;
@@ -108,7 +103,6 @@ function buildPaintMode() {
       <button type="button" class="paint-btn" data-paint-action="undo" title="Rückgängig" aria-label="Rückgängig">${icon("Rückgängig")}</button>
       <button type="button" class="paint-btn" data-paint-action="redo" title="Wiederholen" aria-label="Wiederholen">${icon("Wiederholen")}</button>
       <button type="button" class="paint-btn" data-paint-action="ghost" title="" aria-label=""></button>
-      <button type="button" class="paint-btn" data-paint-action="scope" title="" aria-label=""></button>
       <button type="button" class="paint-btn" data-paint-action="coloring" title="Ausmalbild" aria-label="Ausmalbild">${icon("Ausmalbild")}</button>
       <button type="button" class="paint-btn" data-paint-action="c-place" hidden title="Ausmalbilder bearbeiten" aria-label="Ausmalbilder bearbeiten">${icon("Hand")}</button>
       <button type="button" class="paint-btn" data-paint-action="preview" title="So sieht es aus" aria-label="So sieht es aus">${icon("Bild")}</button>
@@ -322,21 +316,6 @@ function applyPaintGhost() {
   btn.setAttribute("aria-label", g.title);
 }
 
-// „Nur dieses Fach“ (Fach-Icon) oder „für alle Fächer“ (Schulranzen); nur bei Plätzen mit Fach
-function renderPaintScope() {
-  const t = paintMode.target, btn = paintMode.el.querySelector('[data-paint-action="scope"]');
-  btn.hidden = !t.generalKey;
-  if (!t.generalKey) return;
-  const subjects = typeof cachedSubjects !== "undefined" && Array.isArray(cachedSubjects) ? cachedSubjects : [];
-  const subject = subjects.find((s) => s.id === paintSubjectOfKey(t.specificKey));
-  const name = subject ? subject.name : "dieses Fach";
-  const all = t.scope === "all";
-  btn.innerHTML = all ? icon("Schulranzen") : (subject ? subjectIcon(subject.name) : icon("Thema"));
-  btn.title = all ? "Für alle Fächer" : `Nur für ${name}`;
-  btn.setAttribute("aria-label", btn.title);
-  btn.style.color = all || !subject ? "" : subjectColor(subject.name);
-}
-
 // ---- Werkzeug ----
 function paintWidthUnits(index) {
   const t = paintMode.target, w = PAINT_WIDTHS[index];
@@ -383,8 +362,6 @@ function onPaintClick(e) {
     const i = PAINT_GHOSTS.findIndex((g) => g.id === paintMode.ghost);
     paintMode.ghost = PAINT_GHOSTS[(i + 1) % PAINT_GHOSTS.length].id;
     applyPaintGhost();
-  } else if (action === "scope") {
-    setPaintScope(paintMode.target.scope === "all" ? "subject" : "all");
     return;
   } else if (action === "preview") {
     previewPaintTile();
@@ -481,7 +458,7 @@ async function savePaintingNow(snap) {
     } else {
       form.append("kind", target.kind);
       form.append("format", target.format);
-      form.append("slot_key", paintTargetKey(target));
+      form.append("slot_key", target.key);
       target.paintingId = (await apiJson("/api/v1/paintings", { method: "POST", body: form })).id;
     }
     showPaintSaveError(false);
@@ -499,32 +476,6 @@ async function savePaintingNow(snap) {
 function showPaintSaveError(on) {
   const el = paintMode.el && paintMode.el.querySelector(".paint-save-error");
   if (el) el.hidden = !on;
-}
-
-// Für alle Fächer: das Bild hängt am gemeinsamen Platz, der Platz des Fachs wird frei (Rückfall).
-// Nur dieses Fach: ab jetzt eine eigene Kopie, die das gemeinsame Bild nicht mehr ändert.
-function setPaintScope(scope) {
-  const t = paintMode.target;
-  if (!t.generalKey || t.scope === scope) return;
-  t.scope = scope;
-  renderPaintScope();
-  if (scope === "subject") {
-    paintMode.pending = paintMode.pending.then(() => { t.paintingId = null; });
-    paintMode.dirty = true;
-    flushPaintSave();
-    return;
-  }
-  paintMode.pending = paintMode.pending.then(async () => {
-    try {
-      if (t.paintingId) {
-        await apiJson(`/api/v1/paintings/slots/${t.generalKey}`, { method: "PUT", json: { painting_id: t.paintingId } });
-      }
-      await apiJson(`/api/v1/paintings/slots/${t.specificKey}`, { method: "DELETE" });
-    } catch (err) {
-      console.warn("Bild nicht für alle Fächer übernommen:", err);
-      showPaintSaveError(true);
-    }
-  });
 }
 
 // „So sieht es aus“: die Kachel kurz in Originalgröße an ihrem Platz, dann zurück zum Malen
@@ -620,12 +571,12 @@ async function openPaintMode(tile) {
   if (!pane || (typeof isParentActive !== "undefined" && isParentActive)) return;
   buildPaintMode();
   loadPaintPrefs();
-  const specificKey = tile ? tile.key : pane.dataset.paint;
+  const key = tile ? tile.key : pane.dataset.paint;
   const target = tile
     ? { kind: "tile", format: tile.kind, aspect: PAINT_TILE_KINDS[tile.kind].aspect, el: tile.el,
       displayW: tile.el.getBoundingClientRect().width }
     : { kind: "background", format: "square", aspect: 1, el: null };
-  Object.assign(target, { specificKey, generalKey: paintGeneralKey(specificKey), scope: "subject", paintingId: null });
+  Object.assign(target, { key, paintingId: null });
   paintMode.target = target;
   paintMode.scrollY = window.scrollY;
   coloringReset();
@@ -643,7 +594,6 @@ async function openPaintMode(tile) {
   document.body.classList.add("paint-mode-open");
   paintMode.w = 0;
   layoutPaintMode();
-  renderPaintScope();
 
   // Laden läuft in derselben Kette wie Speichern und Umschalten: die warten, bis das Bild da ist
   paintMode.pending = paintMode.pending.then(() => loadPaintingFor(target));
@@ -651,13 +601,10 @@ async function openPaintMode(tile) {
 }
 
 async function loadPaintingFor(target) {
-  const s = paintMode.surface, key = target.specificKey;
+  const s = paintMode.surface, key = target.key;
   try {
     const slot = (await apiJson(`/api/v1/paintings?keys=${encodeURIComponent(key)}`)).slots[key];
     if (!slot || paintMode.target !== target) return;
-    // Kommt das Bild vom gemeinsamen Platz, malt Thea zunächst „für alle“ weiter
-    if (slot.slot_key === target.generalKey) target.scope = "all";
-    renderPaintScope();
     const painting = await apiJson(`/api/v1/paintings/${slot.id}`);
     const data = parseSavedPainting(painting.strokes_json);
     const strokes = strokesFromSaved(data);

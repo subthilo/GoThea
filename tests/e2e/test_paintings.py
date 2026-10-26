@@ -252,14 +252,13 @@ def test_choosing_marks_tiles_and_a_tap_does_not_open_the_subject(app_page, clea
     box = app_page.locator(".paint-viewport").bounding_box()
     assert abs(box["width"] - box["height"]) < 1  # Kachelart quadrat
     assert app_page.locator(".paint-ghost-tile .subject-tile-name").inner_text() == "Mathematik"
-    assert app_page.locator('[data-paint-action="scope"]').is_visible()
     assert app_page.locator('[data-paint-action="preview"]').is_visible()
     app_page.click('[data-paint-action="done"]')
     app_page.wait_for_load_state("networkidle")
     assert app_page.problems.errors == []
 
 
-def test_subject_tile_own_picture_or_one_for_all(app_page, clean_dashboard):
+def test_subject_tile_picture_stays_on_its_subject(app_page, clean_dashboard):
     # Mathe bekommt ein eigenes Bild
     _open_tile(app_page, KEY.format("sub_math"))
     with app_page.expect_response(_paintings_request("POST"), timeout=6000) as resp:
@@ -270,27 +269,17 @@ def test_subject_tile_own_picture_or_one_for_all(app_page, clean_dashboard):
     app_page.wait_for_function(f"document.querySelector('{TILE.format('sub_math')}').classList.contains('has-paint')")
     assert app_page.locator(f"{TILE.format('sub_bio')}.has-paint").count() == 0
 
-    # Biologie: „für alle Fächer“ → gilt für alle Fach-Kacheln ohne eigenes Bild
+    # Biologie bekommt ein eigenes; keine andere Fach-Kachel übernimmt eins davon
     _open_tile(app_page, KEY.format("sub_bio"))
-    app_page.click('[data-paint-action="scope"]')
-    assert app_page.get_attribute('[data-paint-action="scope"]', "title") == "Für alle Fächer"
+    assert app_page.locator('[data-paint-action="scope"]').count() == 0  # „für alle“ gibt es nicht mehr
     with app_page.expect_response(_paintings_request("POST"), timeout=6000) as resp:
         app_page.evaluate(PAINT_DRAW, LINE[:6])
-    assert resp.value.json()["slots"] == ["dashboard/tile"]
+    assert resp.value.json()["slots"] == ["dashboard/tile/sub_bio"]
     app_page.click('[data-paint-action="done"]')
-    app_page.wait_for_function(f"document.querySelector('{TILE.format('sub_physics')}').classList.contains('has-paint')")
+    app_page.wait_for_function(f"document.querySelector('{TILE.format('sub_bio')}').classList.contains('has-paint')")
+    assert app_page.locator(f"{TILE.format('sub_physics')}.has-paint").count() == 0
     style = lambda sel: app_page.evaluate(f"document.querySelector('{sel}').style.getPropertyValue('--paint-img')")
-    assert math["id"] in style(TILE.format("sub_math"))  # Mathe behält sein eigenes
-    assert style(TILE.format("sub_bio")) == style(TILE.format("sub_physics"))
-
-    # Mathe auf „für alle“: sein Bild wird das gemeinsame, der eigene Platz wird frei
-    _open_tile(app_page, KEY.format("sub_math"))
-    with app_page.expect_response(lambda r: r.request.method == "DELETE" and "slots/dashboard/tile/sub_math" in r.url):
-        app_page.click('[data-paint-action="scope"]')
-    app_page.click('[data-paint-action="done"]')
-    physics = TILE.format("sub_physics")
-    app_page.wait_for_function(
-        f"document.querySelector('{physics}').style.getPropertyValue('--paint-img').includes('{math['id']}')", timeout=5000)
+    assert math["id"] in style(TILE.format("sub_math"))
     assert app_page.problems.errors == []
 
 

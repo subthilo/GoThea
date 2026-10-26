@@ -48,7 +48,7 @@ async def _read_image(image: Optional[UploadFile]) -> Optional[bytes]:
 @router.get("")
 def resolve_slots(keys: str = Query(..., description="Plätze der Seite, durch Komma getrennt"),
                   db: Session = Depends(get_db)):
-    """Für jeden Platz einer Seite das Bild, das dort erscheint (samt Rückfall auf „für alle Fächer“)."""
+    """Für jeden Platz einer Seite das Bild, das dort erscheint."""
     wanted = [k for k in (part.strip() for part in keys.split(",")) if k]
     try:
         return {"slots": svc.resolve(db, wanted)}
@@ -77,7 +77,7 @@ def assign_slot(slot_key: str, payload: SlotAssign, db: Session = Depends(get_db
 
 @router.delete("/slots/{slot_key:path}", status_code=204)
 def clear_slot(slot_key: str, db: Session = Depends(get_db)):
-    """Thea malt „für alle Fächer“: der Platz des einen Fachs zeigt dann wieder das gemeinsame Bild."""
+    """Gibt den Platz frei; das Bild bleibt erhalten (unter „Meine Bilder“)."""
     try:
         svc.unassign(db, slot_key)
     except ValueError as e:

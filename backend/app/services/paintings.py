@@ -1,9 +1,9 @@
 """Theas gemalte Hintergründe und Kacheln: speichern, Plätzen zuweisen, auflösen, wegräumen.
 
 Ein Platz-Schlüssel nennt Seite / Fach / Kachel, stabil (Fach-ID oder fester Name, nie die Position in einer
-Liste), z. B. 'dashboard', 'subject-detail/sub_math', 'dashboard/tile/sub_math'. Hat ein Platz mit Fach kein
-Bild, gilt das Bild desselben Platzes ohne Fach (Rückfall-Kette): 'subject-detail/sub_math' → 'subject-detail'.
-Ein Bild für alle Fachseiten genügt also, jedes Fach kann ein eigenes bekommen.
+Liste), z. B. 'dashboard', 'subject-detail/sub_math', 'dashboard/tile/sub_math'. Jeder Platz zeigt nur sein
+eigenes Bild – kein Rückfall auf ein Bild „für alle Fächer“ (abgeschafft 26.10.: ein Antippen im Mal-Modus
+hatte das Bild einer Kachel auf alle Fach-Kacheln gelegt).
 
 Das fertige Bild rendert der Browser und lädt es hoch; der Pi zeichnet nichts.
 """
@@ -62,26 +62,15 @@ def slot_kind(key: str) -> str:
     return "tile" if "tile" in key.split("/") else "background"
 
 
-def fallback_chain(key: str) -> List[str]:
-    """Der Platz selbst, dann derselbe Platz für alle Fächer (Fach-IDs beginnen mit 'sub_')."""
-    general = "/".join(p for p in key.split("/") if not p.startswith("sub_"))
-    return [key] if not general or general == key else [key, general]
-
-
 def resolve(db: Session, keys: List[str]) -> Dict[str, Optional[dict]]:
-    """Für jeden Platz das Bild, das dort erscheint (samt Rückfall), oder None."""
-    chains = {k: fallback_chain(check_slot_key(k)) for k in keys}
-    wanted = {k for chain in chains.values() for k in chain}
+    """Für jeden Platz das Bild, das dort erscheint, oder None."""
+    wanted = {check_slot_key(k) for k in keys}
     rows = (db.query(PaintingSlot, Painting)
             .join(Painting, Painting.id == PaintingSlot.painting_id)
             .filter(PaintingSlot.slot_key.in_(wanted), Painting.archived_at.is_(None))
             .all())
     by_key = {slot.slot_key: painting for slot, painting in rows}
-    result: Dict[str, Optional[dict]] = {}
-    for key, chain in chains.items():
-        hit = next(((k, by_key[k]) for k in chain if k in by_key), None)
-        result[key] = dict(summary(hit[1]), slot_key=hit[0]) if hit else None
-    return result
+    return {k: dict(summary(by_key[k]), slot_key=k) if k in by_key else None for k in keys}
 
 
 def assign(db: Session, slot_key: str, painting: Painting) -> PaintingSlot:
@@ -101,7 +90,7 @@ def assign(db: Session, slot_key: str, painting: Painting) -> PaintingSlot:
 
 
 def unassign(db: Session, slot_key: str) -> None:
-    """Gibt den Platz frei (dann gilt wieder der Rückfall, z. B. das Bild für alle Fächer); das Bild bleibt."""
+    """Gibt den Platz frei (dort erscheint dann kein Bild mehr); das Bild bleibt."""
     db.query(PaintingSlot).filter(PaintingSlot.slot_key == check_slot_key(slot_key)).delete()
     db.commit()
 

@@ -1,10 +1,9 @@
-"""Theas gemalte Hintergründe und Kacheln: speichern, zuweisen, Rückfall-Kette, wegräumen, löschen nur Eltern."""
+"""Theas gemalte Hintergründe und Kacheln: speichern, zuweisen, wegräumen, löschen nur Eltern."""
 import json
 
 import pytest
 
 from backend.app import config
-from backend.app.services.paintings import fallback_chain
 from backend.app.services.parent_auth import issue_token
 
 STROKES = json.dumps([{"tool": "pen", "color": "#f00", "width": 6, "points": [{"x": 1, "y": 2, "pressure": 0.5}]}])
@@ -33,14 +32,6 @@ def _resolve(client, *keys):
     return res.json()["slots"]
 
 
-def test_fallback_chain_drops_the_subject():
-    assert fallback_chain("dashboard") == ["dashboard"]
-    assert fallback_chain("subject-detail/sub_math") == ["subject-detail/sub_math", "subject-detail"]
-    assert fallback_chain("dashboard/tile/sub_math") == ["dashboard/tile/sub_math", "dashboard/tile"]
-    assert fallback_chain("subject-detail/sub_math/tile/tafel") == [
-        "subject-detail/sub_math/tile/tafel", "subject-detail/tile/tafel"]
-
-
 def test_thea_paints_without_pin_and_the_image_is_served(strict_client, tmp_path):
     p = _paint(strict_client, slot_key="dashboard")
     assert p["slots"] == ["dashboard"] and p["image_url"].startswith(f"/api/v1/paintings/{p['id']}/image?v=")
@@ -55,17 +46,14 @@ def test_thea_paints_without_pin_and_the_image_is_served(strict_client, tmp_path
     assert strict_client.get(f"/api/v1/paintings/{p['id']}").json()["strokes_json"] == STROKES
 
 
-def test_one_picture_for_all_subjects_unless_a_subject_has_its_own(strict_client):
-    general = _paint(strict_client, slot_key="subject-detail")
-    slots = _resolve(strict_client, "subject-detail/sub_math", "subject-detail/sub_bio", "dashboard")
-    assert slots["subject-detail/sub_math"]["id"] == general["id"]
-    assert slots["subject-detail/sub_math"]["slot_key"] == "subject-detail"
-    assert slots["dashboard"] is None
-
-    math = _paint(strict_client, slot_key="subject-detail/sub_math")
-    slots = _resolve(strict_client, "subject-detail/sub_math", "subject-detail/sub_bio")
-    assert slots["subject-detail/sub_math"]["id"] == math["id"]
-    assert slots["subject-detail/sub_bio"]["id"] == general["id"]
+def test_each_slot_shows_only_its_own_picture(strict_client):
+    # Kein Rückfall: ein Bild ohne Fach im Schlüssel erscheint bei keinem Fach (26.10. abgeschafft)
+    _paint(strict_client, kind="tile", fmt="quadrat", slot_key="dashboard/tile")
+    math = _paint(strict_client, kind="tile", fmt="quadrat", slot_key="dashboard/tile/sub_math")
+    slots = _resolve(strict_client, "dashboard/tile/sub_math", "dashboard/tile/sub_bio", "dashboard")
+    assert slots["dashboard/tile/sub_math"]["id"] == math["id"]
+    assert slots["dashboard/tile/sub_math"]["slot_key"] == "dashboard/tile/sub_math"
+    assert slots["dashboard/tile/sub_bio"] is None and slots["dashboard"] is None
 
 
 def test_autosave_overwrites_and_changes_the_image_url(strict_client, tmp_path):
@@ -93,21 +81,20 @@ def test_reassigning_a_slot_keeps_the_old_picture(strict_client):
     assert _resolve(strict_client, "dashboard")["dashboard"]["id"] == old["id"]
 
 
-def test_clearing_a_subject_slot_falls_back_to_all_subjects(strict_client):
-    general = _paint(strict_client, slot_key="subject-detail")
+def test_clearing_a_slot_keeps_the_picture(strict_client):
+    _paint(strict_client, slot_key="subject-detail")
     math = _paint(strict_client, slot_key="subject-detail/sub_math")
     assert strict_client.delete("/api/v1/paintings/slots/subject-detail/sub_math").status_code == 204
-    slot = _resolve(strict_client, "subject-detail/sub_math")["subject-detail/sub_math"]
-    assert slot["id"] == general["id"] and slot["slot_key"] == "subject-detail"
+    assert _resolve(strict_client, "subject-detail/sub_math")["subject-detail/sub_math"] is None
     assert strict_client.get(f"/api/v1/paintings/{math['id']}").status_code == 200  # das Bild bleibt
 
 
-def test_archived_picture_disappears_falls_back_and_comes_back(strict_client):
+def test_archived_picture_disappears_and_comes_back(strict_client):
     general = _paint(strict_client, slot_key="subject-detail")
     math = _paint(strict_client, slot_key="subject-detail/sub_math")
 
     assert strict_client.post(f"/api/v1/paintings/{math['id']}/archive").json()["archived"] is True
-    assert _resolve(strict_client, "subject-detail/sub_math")["subject-detail/sub_math"]["id"] == general["id"]
+    assert _resolve(strict_client, "subject-detail/sub_math")["subject-detail/sub_math"] is None
     history = strict_client.get("/api/v1/paintings/slots/subject-detail/sub_math/history").json()
     assert {h["id"]: h["archived"] for h in history} == {math["id"]: True, general["id"]: False}
 

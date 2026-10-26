@@ -2,7 +2,7 @@
 // Theas gemalte Hintergründe und Kacheln anzeigen (Malen – Architektur im Konzept-Doc)
 // ============================================================================
 // Welche Flächen bemalbar sind, steht in js/paint_slots.js (data-paint am Tab, data-paint-tile an Kacheln).
-// Der Server löst jeden Platz samt Rückfall auf ("subject-detail/sub_math" → "subject-detail").
+// Der Server liefert zu jedem Platz sein Bild (kein Rückfall auf ein Bild „für alle Fächer“).
 // Im Eltern-Modus keine Bilder (neutral). Hinter Tafel, Leser und Übungen nie (dort kein data-paint).
 // Das Kachelbild liegt als Hintergrund in der Kachel (CSS-Variable --paint-img): Rundung, Rand und
 // Schatten bleiben der Kachel, die Abdeckung und der Textschutz stehen in css/paintings.css.

@@ -168,7 +168,7 @@ function openSubjectDetail(subjectId, sourceTab = "dashboard") {
   document.querySelectorAll(".nav-tab").forEach((b) => b.classList.remove("active"));
   const tabEl = document.getElementById("tab-subject-detail");
   if (tabEl) {
-    tabEl.dataset.paint = `subject-detail/${subjectId}`;  // bemalbar, eigenes Bild je Fach (sonst für alle)
+    tabEl.dataset.paint = `subject-detail/${subjectId}`;  // bemalbar, eigenes Bild je Fach
     tabEl.classList.add("active");
   }
   document.body.classList.remove("reader-zen-mode");
