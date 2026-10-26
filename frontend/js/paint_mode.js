@@ -35,7 +35,7 @@ const PAINT_WIDTHS = [
 const PAINT_GHOSTS = [
   { id: "half", title: "Seite halb durchsichtig", icon: "Anzeigen" },
   { id: "outline", title: "Nur Umrisse der Seite", icon: "Übersicht" },
-  { id: "off", title: "Seite ausgeblendet", icon: "Verbergen" },
+  { id: "off", title: "Seite und Rahmen ausgeblendet", icon: "Verbergen" },
   { id: "full", title: "Seite voll sichtbar", icon: "Anzeigen" },
 ];
 

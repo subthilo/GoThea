@@ -344,7 +344,9 @@ body.paint-mode-open {
   opacity: 0.45;
 }
 
-.paint-ghost[data-ghost="off"] .paint-ghost-page {
+/* „Aus“ blendet alles aus, auch die Rahmen für quer und hoch – beim Ausmalen stören sie */
+.paint-ghost[data-ghost="off"] .paint-ghost-page,
+.paint-ghost[data-ghost="off"] .paint-frame {
   display: none;
 }
 

@@ -193,7 +193,10 @@ def test_paint_save_and_paint_on_later(app_page, clean_dashboard):
     ghost = app_page.locator(".paint-ghost")
     seen = []
     for _ in range(4):
-        seen.append(ghost.get_attribute("data-ghost"))
+        mode = ghost.get_attribute("data-ghost")
+        seen.append(mode)
+        # „aus“ blendet auch die Rahmen für quer und hoch aus (stören beim Ausmalen)
+        assert app_page.locator(".paint-frame").first.is_visible() == (mode != "off"), mode
         app_page.click('[data-paint-action="ghost"]')
     assert sorted(seen) == ["full", "half", "off", "outline"]
 
