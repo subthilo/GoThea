@@ -18,6 +18,10 @@ Dauer auf dem Pi für ein nachgezeichnetes Mandala mit rund 1800 Ringen: etwa 40
 """
 import json
 import logging
+import multiprocessing
+import os
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -43,6 +47,32 @@ SIMPLIFY_THUMB = 5.0           # Vorschaubild in Listen
 
 # Für die Hintergrund-Berechnung (Tests setzen eine eigene Sitzung)
 session_factory: Callable[[], Session] = SessionLocal
+
+# Rechnen in einem eigenen Prozess mit niedriger Priorität: im App-Prozess hielte die Berechnung (Minuten
+# auf dem Pi) die Python-Sperre und machte die ganze App träge. Unit-/Integrationstests rechnen direkt.
+use_subprocess = True
+_executor: "ProcessPoolExecutor | None" = None
+
+
+def _lower_priority() -> None:
+    try:
+        os.nice(10)
+    except OSError:
+        pass
+
+
+def _compute_isolated(data: bytes) -> dict:
+    global _executor
+    if not use_subprocess:
+        return compute(data)
+    if _executor is None:
+        _executor = ProcessPoolExecutor(max_workers=1, initializer=_lower_priority,
+                                        mp_context=multiprocessing.get_context("spawn"))
+    try:
+        return _executor.submit(compute, data).result()
+    except BrokenProcessPool:  # Rechenprozess abgestürzt (z. B. Speicher): beim nächsten Mal neu starten
+        _executor = None
+        raise
 
 
 def coloring_dir() -> Path:
@@ -84,7 +114,7 @@ def compute(data: bytes) -> dict:
     from shapely.geometry import LineString, Polygon, box
     from shapely.ops import unary_union
     from shapely.strtree import STRtree
-    from svgelements import SVG, Color, Path as SvgPath, Shape
+    from svgelements import SVG, Close, Color, CubicBezier, Line, Move, Path as SvgPath, QuadraticBezier, Shape
 
     try:
         svg = SVG.parse(BytesIO(data))
@@ -98,17 +128,45 @@ def compute(data: bytes) -> dict:
         return c.alpha > 80 and c.brightness < 0.5
 
     shapes = [el for el in svg.elements() if isinstance(el, Shape)]
-    boxes = [el.bbox() for el in shapes if el.bbox() is not None]
-    if not boxes:
+    if not shapes:
         raise ColoringError("In der Datei sind keine Formen.")
-    W = float(svg.width or 0) or max(b[2] for b in boxes)
-    H = float(svg.height or 0) or max(b[3] for b in boxes)
+    W, H = float(svg.width or 0), float(svg.height or 0)
+    if not W or not H:  # ohne Größenangabe: aus den Formen (teuer, deshalb nur dann)
+        boxes = [b for b in (el.bbox() for el in shapes) if b is not None]
+        if not boxes:
+            raise ColoringError("In der Datei sind keine Formen.")
+        W = W or max(b[2] for b in boxes)
+        H = H or max(b[3] for b in boxes)
     size = max(W, H)
     step = size * SAMPLE
 
     def sample(path) -> List[tuple]:
-        n = max(8, int(path.length(error=1e-3) / step))
-        return [tuple(p) for p in path.npoint(np.linspace(0, 1, n + 1))]
+        """Punkte entlang des Pfads, etwa alle `step`. Bézier-Kurven rechnet numpy für viele Punkte auf einmal
+        (svgelements tut das Punkt für Punkt in Python – bei nachgezeichneten Bildern mit Millionen Punkten
+        waren das über die Hälfte der Rechenzeit)."""
+        pts: List[tuple] = []
+        for seg in path:
+            if isinstance(seg, Move):
+                pts.append((seg.end.x, seg.end.y))
+            elif isinstance(seg, (Line, Close)):
+                if seg.end is not None:
+                    pts.append((seg.end.x, seg.end.y))
+            elif isinstance(seg, (CubicBezier, QuadraticBezier)):
+                ctrl = [seg.start] + ([seg.control1, seg.control2] if isinstance(seg, CubicBezier) else [seg.control]) \
+                    + [seg.end]
+                c = np.array([(q.x, q.y) for q in ctrl])
+                length = float(np.sum(np.hypot(*np.diff(c, axis=0).T)))  # Kontrollpolygon ≥ Kurvenlänge
+                t = np.linspace(0, 1, max(2, int(length / step) + 1))[1:, None]
+                u = 1 - t
+                if len(c) == 4:
+                    xy = u ** 3 * c[0] + 3 * u * u * t * c[1] + 3 * u * t * t * c[2] + t ** 3 * c[3]
+                else:
+                    xy = u * u * c[0] + 2 * u * t * c[1] + t * t * c[2]
+                pts.extend(map(tuple, xy))
+            else:  # Bögen u. Ä. (selten): wie svgelements sie liefert
+                n = max(4, int(seg.length(error=1e-2) / step))
+                pts.extend(tuple(q) for q in seg.npoint(np.linspace(0, 1, n + 1)[1:]))
+        return pts
 
     rings, strokes = [], []
     for el in shapes:
@@ -119,6 +177,8 @@ def compute(data: bytes) -> dict:
             for sub in path.as_subpaths():
                 pts = sample(SvgPath(sub))
                 if len(pts) >= 4:
+                    # buffer(0) bereinigt die Form (doppelte Punkte, Selbstschnitte); ohne wird die spätere
+                    # Vereinigung um ein Vielfaches langsamer (gemessen: 24 s → 374 s)
                     poly = Polygon(pts).buffer(0)
                     if not poly.is_empty and poly.area > 0:
                         rings.append(poly)
@@ -170,7 +230,8 @@ def compute(data: bytes) -> dict:
     # Wie weit reicht ein Feld unter die Linie? Etwa die halbe Linienbreite (Fläche / Randlänge)
     bleed = max(0.3, min(4.0, ink.area / max(ink.boundary.length, 1.0)))
     fields.sort(key=lambda f: (round(f.centroid.y / 20), f.centroid.x))
-    clips = [f.buffer(bleed, join_style=2).intersection(outline).simplify(SIMPLIFY_FIELDS) for f in fields]
+    # Kein Schnitt mit dem Umriss nötig: ein Feld reicht höchstens eine halbe Linienbreite unter die Linie
+    clips = [f.buffer(bleed, join_style=2).simplify(SIMPLIFY_FIELDS) for f in fields]
 
     return {
         "version": VERSION, "width": round(w, 1), "height": round(h, 1), "bleed": round(bleed, 2),
@@ -216,7 +277,7 @@ def process(page_id: str) -> None:
         if page is None:
             return
         try:
-            result = compute(svg_path(page).read_bytes())
+            result = _compute_isolated(svg_path(page).read_bytes())
         except ColoringError as e:
             page.status, page.error = "fehler", str(e)
         except Exception as e:

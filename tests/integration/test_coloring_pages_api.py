@@ -31,6 +31,7 @@ class _Session:
 def setup(tmp_path, monkeypatch, db_session):
     monkeypatch.setattr(config, "DATA_DIR", tmp_path)
     monkeypatch.setattr(svc, "session_factory", lambda: _Session(db_session))
+    monkeypatch.setattr(svc, "use_subprocess", False)  # im Testprozess rechnen (schneller)
 
 
 def parent():
