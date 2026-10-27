@@ -429,14 +429,14 @@ async function loadTodayDashboardWidget() {
           <div class="dash-tt-slot-icon-wrap" style="background: ${subColor}20; border-color: ${subColor}40;">
             ${subjectIcon(l.subject_name, "dash-tt-slot-icon")}
           </div>
-          <span class="dash-tt-slot-time">${escapeHtml(String(l.period_label || l.period).replace(/\.?\s*Std\.?$/, ""))} · ${escapeHtml(l.start_time || "")}</span>
-        </div>
-        <div class="dash-tt-slot-subject">
-          <span>${escapeHtml(l.subject_name)}</span>
+          <span class="dash-tt-slot-subject">${escapeHtml(l.subject_name)}</span>
         </div>
         <div class="dash-tt-slot-meta">
-          ${roomStr ? `<span class="dash-tt-badge-room">${escapeHtml(roomStr)}</span>` : ""}
-          ${l.teacher ? `<span class="dash-tt-badge-teacher">${escapeHtml(l.teacher)}</span>` : ""}
+          <span class="dash-tt-slot-time">${escapeHtml(String(l.period_label || l.period).replace(/\.?\s*Std\.?$/, ""))} · ${escapeHtml(l.start_time || "")}</span>
+          <span class="dash-tt-slot-where">
+            ${roomStr ? `<span class="dash-tt-badge-room">${escapeHtml(roomStr)}</span>` : ""}
+            ${l.teacher ? `<span class="dash-tt-badge-teacher">${escapeHtml(l.teacher)}</span>` : ""}
+          </span>
         </div>
       `;
 
