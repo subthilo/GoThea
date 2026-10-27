@@ -61,6 +61,26 @@ function updateParentModeUI(active, isDefault = isDefaultParentPin) {
   if (currentDetailSubjectId) {
     loadSubjectScores(currentDetailSubjectId);
   }
+  refreshBackupWarning();
+}
+
+// Warnzeichen neben dem Eltern-Symbol, wenn die nächtliche Sicherung scheiterte oder zu alt ist
+async function refreshBackupWarning() {
+  const el = document.getElementById("backup-warning");
+  if (!el) return;
+  el.hidden = true;
+  if (!isParentActive) return;
+  try {
+    const s = await apiJson("/api/v1/backup/status");
+    if (s.state !== "error" && s.state !== "stale") return;
+    const since = s.last_success ? new Date(s.last_success).toLocaleString("de-DE") : "nie";
+    el.title = `Sicherung: letzte erfolgreiche ${since}` + (s.error ? ` – ${s.error}` : "");
+    el.setAttribute("aria-label", el.title);
+    el.innerHTML = icon("Warnung");
+    el.hidden = false;
+  } catch (err) {
+    console.warn("Sicherungsstatus nicht abrufbar:", err);
+  }
 }
 
 async function checkParentAuthStatus() {

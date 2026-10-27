@@ -299,3 +299,17 @@ body.parent-mode-active .parent-status-pill {
   min-height: 44px;
   padding: 6px;
 }
+
+/* Warnzeichen neben dem Modus-Schalter: nächtliche Sicherung gescheitert oder zu alt (nur Eltern-Modus) */
+.backup-warning {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  color: var(--warning);
+  font-size: 1.25rem;
+  cursor: help;
+}
+
+.backup-warning[hidden] {
+  display: none;
+}
