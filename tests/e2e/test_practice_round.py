@@ -87,11 +87,9 @@ def test_subject_page_replaces_an_open_exercise_of_another_subject(app_page, che
 
 def test_parents_see_which_battery_thea_chose(app_page):
     from tests.e2e.test_practice import practice_list
-    _open_practice(app_page)
-    with app_page.expect_response(lambda r: "/api/v1/practice/round?" in r.url):
-        app_page.click('.pr-battery-btn[data-akku="fast_leer"]')
-    app_page.wait_for_load_state("networkidle")  # sonst bräche das Neuladen die Liste der Runde ab
-    app_page.reload()  # eine laufende Runde ginge vor der Liste
+    # Runde im Thea-Modus direkt anfragen (wie der Akku-Knopf): eine laufende Runde ginge sonst vor der Liste
+    status = app_page.evaluate("fetch('/api/v1/practice/round?akku=fast_leer').then((r) => r.status)")
+    assert status == 200
     practice_list(app_page)
     stat = app_page.locator('.practice-battery-stat[data-akku="fast_leer"]')
     assert int(stat.inner_text()) >= 1  # der Testserver ist geteilt: frühere Runden zählen mit
