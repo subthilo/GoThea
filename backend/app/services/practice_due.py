@@ -15,8 +15,8 @@ Die Runde, in dieser Reihenfolge:
    Generalprobe (letzter Tag) → schon Geschafftes aus allen Knoten des Tests; am Prüfungstag nichts,
 3. „gerade dran“ → nächste Stufe der offenen Knoten,
 dazwischen (an zweiter Stelle) eine fällige Wiederholung. Ist nichts dran: fällige Wiederholungen, auf der
-Fachseite auch Auffrischen von Geschafftem. Akku „fast leer“: etwas schon Geschafftes, sonst die leichteste
-Stufe einer offenen Übung. Tafel-Stufen nur bei vollem Akku und nach dem Einstieg.
+Fachseite auch Auffrischen von Geschafftem. Akku „fast leer“: eine Aufgabe, abwechselnd etwas schon
+Geschafftes und die leichteste Stufe einer neuen Übung. Tafel-Stufen nur bei vollem Akku und nach dem Einstieg.
 Reine Rechnung ohne Datenbank: die Daten sammelt ``collect`` (Router).
 """
 from __future__ import annotations
@@ -122,9 +122,11 @@ def _best_solved(fam: dict, progress: dict, board: bool) -> Optional[int]:
 
 
 def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geht_so",
-                fach: Optional[str] = None, solved_days: int = 0, now: Optional[datetime] = None) -> dict:
-    """plan = Ergebnis von practice_plan.plan (stand, offen, wiederholen). Liefert Runde, Anzahl für den
-    Hinweis am Üben-Symbol und je Übung, ob sie dran oder gesperrt ist."""
+                fach: Optional[str] = None, solved_days: int = 0, now: Optional[datetime] = None,
+                low_prev: Optional[str] = None) -> dict:
+    """plan = Ergebnis von practice_plan.plan (stand, offen, wiederholen); low_prev = Art der letzten Runde mit
+    Akku „fast leer“ ('sicher'/'leicht'). Liefert Runde, Anzahl für den Hinweis am Üben-Symbol und je Übung, ob
+    sie dran oder gesperrt ist."""
     from backend.app.services.practice_plan import REPEAT_AFTER
 
     now = now or datetime.utcnow()
@@ -157,17 +159,22 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
     open_count = sum(1 for f in due if f["id"] not in shut and _next_stage(f, progress, board) is not None) + len(repeats)
 
     if akku == "fast_leer":
-        # Nur etwas Sicheres: Geschafftes, zuletzt am längsten nicht geübt, auf der höchsten Stufe ohne Tafel
+        # Eine Aufgabe, abwechselnd (low_prev = Art der letzten „fast leer“-Runde): etwas Sicheres – Geschafftes,
+        # zuletzt am längsten nicht geübt, auf der höchsten Stufe ohne Tafel – und etwas Neues auf der leichtesten
+        # Stufe. Sonst käme bei Dauer-„fast leer“ immer dieselbe geschaffte Übung und Thea käme nicht weiter.
         solved = [f for f in families if _best_solved(f, progress, False) is not None]
         solved.sort(key=lambda f: (not why[f["id"]], progress.get(f["id"], {}).get("zuletzt") or ""))
-        if solved:
-            add(solved[0], _best_solved(solved[0], progress, False), "sicher")
-        else:
-            # Noch nichts geschafft (z. B. neues Fach): die leichteste Stufe der ersten offenen Übung, die dran ist
-            exam_day = {t.fach for t in scope.tests if t.phase == 0}
-            easy = [f for f in due if f["id"] not in shut and f["fach"] not in exam_day and _allowed(f, False)]
-            if easy:
-                add(easy[0], min(_allowed(easy[0], False)), "leicht")
+        exam_day = {t.fach for t in scope.tests if t.phase == 0}
+        easy = [f for f in due if f["id"] not in shut and f["fach"] not in exam_day
+                and not progress.get(f["id"], {}).get("geschafft") and _allowed(f, False)]
+        picks = [("sicher", solved), ("leicht", easy)]
+        if low_prev == "sicher":
+            picks.reverse()
+        for art, candidates in picks:
+            if candidates:
+                f = candidates[0]
+                add(f, _best_solved(f, progress, False) if art == "sicher" else min(_allowed(f, False)), art)
+                break
     else:
         fresh: List[Tuple[dict, int, str]] = []
         for o in plan.get("offen", []):

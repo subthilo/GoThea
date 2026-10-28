@@ -103,6 +103,19 @@ def test_low_battery_gives_one_safe_task_and_subject_page_refreshes_when_nothing
     assert {i["art"] for i in out["runde"]} == {"auffrischen"}
 
 
+def test_low_battery_alternates_safe_and_new_so_thea_still_moves_on():
+    scope = Scope(themen={"top_sicher"})
+    progress = done("labor", "regeln", stages=(-1, 1))
+    def pick(low_prev, stand=progress):
+        out = build_round(ALL, scope, plan(stand), akku="fast_leer", low_prev=low_prev, now=NOW)
+        return [(i["familie"], i["stufe"], i["art"]) for i in out["runde"]]
+    assert pick(None) == [("labor", 1, "sicher")]
+    assert pick("leicht") == [("labor", 1, "sicher")]
+    assert pick("sicher") == [("brenner", -1, "leicht")]  # Neues auf der leichtesten Stufe
+    # Nichts Neues mehr offen: wieder etwas Sicheres
+    assert pick("sicher", done("labor", "regeln", "brenner")) == [("labor", 1, "sicher")]
+
+
 def test_subject_page_only_shows_that_subject_and_count_feeds_the_dock_hint():
     scope = Scope(themen={"top_sicher", "top_dreisatz"})
     out = build_round(ALL, scope, plan(), fach="sub_math", now=NOW)

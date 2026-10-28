@@ -15,6 +15,7 @@ from backend.app.models.whiteboard import TutorSession, TutorMessage, TutorExerc
 from backend.app.models.exercise_score import ExerciseScore
 from backend.app.models.practice_attempt import PracticeAttempt, PracticeEvent
 from backend.app.models.practice_release import PracticeRelease
+from backend.app.models.practice_round import PracticeRound
 from backend.app.models.painting import Painting, PaintingSlot
 from backend.app.models.coloring_page import ColoringPage
 
@@ -40,6 +41,7 @@ __all__ = [
     "PracticeAttempt",
     "PracticeEvent",
     "PracticeRelease",
+    "PracticeRound",
     "Painting",
     "PaintingSlot",
     "ColoringPage",

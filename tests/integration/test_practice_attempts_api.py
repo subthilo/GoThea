@@ -205,3 +205,19 @@ def test_round_contains_what_is_due(client, db_session):
     listed = client.get("/api/v1/practice").json()
     assert listed["anzahl_dran"] == out["anzahl_dran"] and "ch-grundregeln" in listed["dran"]
     assert client.get("/api/v1/practice/round?akku=kaputt").status_code == 422
+
+
+def test_started_rounds_are_recorded_for_the_parents_and_low_battery_alternates(client, db_session):
+    from backend.app.models.practice_round import PracticeRound
+    _chemie_current(db_session)
+    client.get("/api/v1/practice/round")                                          # Punkt am Üben-Symbol
+    client.get("/api/v1/practice/round?akku=voll", headers=_parent_headers())      # „Runde wie Thea“
+    assert db_session.query(PracticeRound).count() == 0
+    first = client.get("/api/v1/practice/round?akku=fast_leer").json()["runde"]
+    assert [i["art"] for i in first] == ["leicht"]  # noch nichts geschafft
+    client.get("/api/v1/practice/round?akku=geht_so")
+    rounds = db_session.query(PracticeRound).order_by(PracticeRound.created_at).all()
+    assert [(r.akku, r.art, r.aufgaben) for r in rounds] == [("fast_leer", "leicht", 1), ("geht_so", "neu", 2)]
+    akku = client.get("/api/v1/practice", headers=_parent_headers()).json()["akku"]
+    assert akku == {"tage": 14, "runden": {"fast_leer": 1, "geht_so": 1, "voll": 0}}
+    assert "akku" not in client.get("/api/v1/practice").json()  # nur für die Eltern

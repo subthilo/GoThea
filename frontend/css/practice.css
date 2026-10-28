@@ -2374,6 +2374,25 @@ body.practice-zen-mode .kr .gg-scratch {
   gap: 12px;
 }
 
+.practice-battery-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.practice-battery-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.practice-battery-stat .ui-icon {
+  width: 22px;
+  height: 22px;
+}
+
 .practice-list-bar .practice-try-round {
   margin: 0 0 0 auto;
 }

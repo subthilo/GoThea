@@ -24,7 +24,7 @@ from backend.app.models.whiteboard import TutorSession
 from backend.app.models.practice_attempt import PracticeAttempt
 from backend.app.services import (exercise_types, llm, practice_attempts, practice_check, practice_check_schriftlich,
                                   practice_check_zuordnen, practice_due,
-                                  practice_exercises, practice_plan)
+                                  practice_exercises, practice_plan, practice_rounds)
 from backend.app.services.exercise_types import zuordnen
 from backend.app.services.parent_auth import is_parent, require_parent
 
@@ -105,8 +105,11 @@ def list_practice(db: Session = Depends(get_db), parent: bool = Depends(is_paren
     plan = _plan(db, families)
     scope, solved_days = practice_due.collect(db)
     due = practice_due.build_round(families, scope, plan, solved_days=solved_days)
-    return {"enabled": True, "exercises": families, **plan, "dran": due["dran"], "anzahl_dran": due["anzahl_dran"],
-            **_names(db, families)}
+    out = {"enabled": True, "exercises": families, **plan, "dran": due["dran"], "anzahl_dran": due["anzahl_dran"],
+           **_names(db, families)}
+    if parent:
+        out["akku"] = practice_rounds.summary(db)
+    return out
 
 
 def _names(db: Session, families: List[dict]) -> dict:
@@ -141,16 +144,21 @@ def _plan(db: Session, families: List[dict]) -> dict:
 
 
 @router.get("/round")
-def practice_round(fach: Optional[str] = None, akku: str = "geht_so", db: Session = Depends(get_db),
+def practice_round(fach: Optional[str] = None, akku: Optional[str] = None, db: Session = Depends(get_db),
                    parent: bool = Depends(is_parent)) -> dict:
-    """Die Runde für Thea: was dran ist (Lernplan), in der Reihenfolge von services/practice_due.py."""
+    """Die Runde für Thea: was dran ist (Lernplan), in der Reihenfolge von services/practice_due.py.
+    Mit Akku = Thea startet eine Runde (wird festgehalten, außer im Eltern-Modus); ohne = nur der Punkt am
+    Üben-Symbol."""
     if not config.EXERCISE_TRIAL_ENABLED:
         return {"enabled": False, "runde": [], "anzahl_dran": 0}
-    if akku not in practice_due.AKKU:
+    if akku is not None and akku not in practice_due.AKKU:
         raise HTTPException(status_code=422, detail=f"akku: {', '.join(practice_due.AKKU)}")
     families = _families(db, parent)
     scope, solved_days = practice_due.collect(db)
-    out = practice_due.build_round(families, scope, _plan(db, families), akku=akku, fach=fach, solved_days=solved_days)
+    out = practice_due.build_round(families, scope, _plan(db, families), akku=akku or "geht_so", fach=fach,
+                                   solved_days=solved_days, low_prev=practice_rounds.last_low_art(db))
+    if akku is not None and not parent:
+        practice_rounds.record(db, akku, fach, out["runde"])
     return {"enabled": True, **out}
 
 

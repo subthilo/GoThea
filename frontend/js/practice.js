@@ -72,6 +72,7 @@ function registerPracticeType(typ, view) {
     const bar = document.createElement("div");
     bar.className = "practice-list-bar";
     bar.appendChild(filterBar(data.exercises));
+    if (data.akku) bar.appendChild(batteryStats(data.akku));
     bar.appendChild(tryRound);
     listEl.appendChild(bar);
     if (data.vorschlag) listEl.appendChild(buildSuggestion(data.vorschlag, families[data.vorschlag.familie]));
@@ -85,6 +86,15 @@ function registerPracticeType(typ, view) {
       listEl.appendChild(h);
       data.wiederholen.forEach((r) => listEl.appendChild(buildRepeatRow(r, families[r.familie])));
     }
+  }
+
+  // Wie oft Thea welchen Akku gewählt hat (letzte Tage, services/practice_rounds.py)
+  function batteryStats({ tage, runden }) {
+    const el = document.createElement("div");
+    el.className = "practice-battery-stats";
+    el.title = `Akku, letzte ${tage} Tage`;
+    el.innerHTML = BATTERY.map((b) => `<span class="practice-battery-stat" data-akku="${b.akku}" title="${b.title}">${icon(b.icon)}<span>${runden[b.akku] || 0}</span></span>`).join("");
+    return el;
   }
 
   // ---------- Baum für die Eltern: Fach › Thema › Übung, aufklappbar; Filter alle / wartend / freigegeben ----------
