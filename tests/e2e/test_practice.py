@@ -217,9 +217,9 @@ def test_correct_check_offers_next_stage_and_twin(app_page):
     assert app_page.problems.errors == []
 
 
-def test_list_shows_suggestion_and_marks_solved_stage(app_page):
+def test_list_marks_solved_stage_without_suggestion_card(app_page):
     practice_list(app_page)
-    app_page.wait_for_selector(".practice-suggest")
+    assert app_page.locator(".practice-suggest").count() == 0  # was Thea bekommt, zeigt „Runde wie Thea“
     assert app_page.locator(".practice-group-title").count() >= 2  # nach Abschnitt gruppiert
     # Stufe 0 lösen, zurück zur Liste: Punkt 0 ist gefüllt
     open_practice(app_page)

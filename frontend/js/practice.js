@@ -75,7 +75,6 @@ function registerPracticeType(typ, view) {
     if (data.akku) bar.appendChild(batteryStats(data.akku));
     bar.appendChild(tryRound);
     listEl.appendChild(bar);
-    if (data.vorschlag) listEl.appendChild(buildSuggestion(data.vorschlag, families[data.vorschlag.familie]));
     listEl.appendChild(buildTree(data));
 
     if (data.wiederholen.length) {
@@ -249,30 +248,10 @@ function registerPracticeType(typ, view) {
     return openExercise(exerciseId, onBoard ? tabStages[tabStages.length - 1] : stage);
   }
 
-  const SUGGESTION_ICONS = { weiter: "Pfeil rechts", wiederholen: "Wiederholen", neu: "Rakete" };
-
   function draftMark(ex, el) {
     if (ex.status !== "entwurf") return;
     el.classList.add("practice-draft");
     el.title = `${el.title ? el.title + " · " : ""}Entwurf (nur Eltern)`;
-  }
-
-  function buildSuggestion(sug, family) {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "practice-suggest";
-    card.title = sug.art === "wiederholen" ? "Wiederholen" : sug.art === "neu" ? "Neue Aufgabe" : "Weiter";
-    card.style.setProperty("--subject-color", subjectColor(family.fach));
-    card.innerHTML = `
-      ${icon("Luna", "practice-suggest-luna")}
-      <span class="practice-row-text">
-        <span class="practice-suggest-task">${esc(family.aufgabentext)}</span>
-        <span class="practice-row-src">${esc(sourceLine(family.quelle))}${sug.exercise_id !== family.id ? " · ähnliche Aufgabe" : ""}</span>
-      </span>
-      <span class="practice-suggest-go">${icon(SUGGESTION_ICONS[sug.art] || "Pfeil rechts")}<span class="practice-stage-no">${stageMark(family.typ, sug.stufe)}</span></span>`;
-    card.addEventListener("click", () => startPractice(sug, family));
-    draftMark(family, card);
-    return card;
   }
 
   function stageDots(ex, stand) {
