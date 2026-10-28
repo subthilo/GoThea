@@ -92,6 +92,11 @@ def test_low_battery_gives_one_safe_task_and_subject_page_refreshes_when_nothing
     progress = done("labor", "regeln", stages=(-1, 1, 3))
     out = build_round(ALL, Scope(themen={"top_sicher"}), plan(progress), akku="fast_leer", now=NOW)
     assert [(i["stufe"], i["art"]) for i in out["runde"]] == [(1, "sicher")]  # ohne Tafel-Stufe
+    # Noch nichts geschafft: leichteste Stufe der ersten offenen Übung statt „nichts dran“
+    out = build_round(ALL, Scope(themen={"top_sicher", "top_dreisatz"}), plan(), akku="fast_leer",
+                      fach="sub_math", now=NOW)
+    assert [(i["familie"], i["stufe"], i["art"]) for i in out["runde"]] == [("dreisatz", -1, "leicht")]
+    assert build_round(ALL, Scope(), plan(), akku="fast_leer", now=NOW)["runde"] == []
     # Nichts dran: in „Üben“ leer, auf der Fachseite Auffrischen
     assert build_round(ALL, Scope(), plan(progress), now=NOW)["runde"] == []
     out = build_round(ALL, Scope(), plan(progress), fach="sub_chemie", now=NOW)

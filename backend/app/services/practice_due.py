@@ -15,7 +15,8 @@ Die Runde, in dieser Reihenfolge:
    Generalprobe (letzter Tag) → schon Geschafftes aus allen Knoten des Tests; am Prüfungstag nichts,
 3. „gerade dran“ → nächste Stufe der offenen Knoten,
 dazwischen (an zweiter Stelle) eine fällige Wiederholung. Ist nichts dran: fällige Wiederholungen, auf der
-Fachseite auch Auffrischen von Geschafftem. Tafel-Stufen nur bei vollem Akku und nach dem Einstieg.
+Fachseite auch Auffrischen von Geschafftem. Akku „fast leer“: etwas schon Geschafftes, sonst die leichteste
+Stufe einer offenen Übung. Tafel-Stufen nur bei vollem Akku und nach dem Einstieg.
 Reine Rechnung ohne Datenbank: die Daten sammelt ``collect`` (Router).
 """
 from __future__ import annotations
@@ -161,6 +162,12 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
         solved.sort(key=lambda f: (not why[f["id"]], progress.get(f["id"], {}).get("zuletzt") or ""))
         if solved:
             add(solved[0], _best_solved(solved[0], progress, False), "sicher")
+        else:
+            # Noch nichts geschafft (z. B. neues Fach): die leichteste Stufe der ersten offenen Übung, die dran ist
+            exam_day = {t.fach for t in scope.tests if t.phase == 0}
+            easy = [f for f in due if f["id"] not in shut and f["fach"] not in exam_day and _allowed(f, False)]
+            if easy:
+                add(easy[0], min(_allowed(easy[0], False)), "leicht")
     else:
         fresh: List[Tuple[dict, int, str]] = []
         for o in plan.get("offen", []):
