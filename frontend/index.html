@@ -26,7 +26,6 @@
   <link rel="stylesheet" href="/static/css/uploads.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/subject_detail.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/material_dialogs.css?v={{v}}">
-  <link rel="stylesheet" href="/static/css/scores.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/parent_mode.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/themes.css?v={{v}}">
   <link rel="stylesheet" href="/static/css/dashboard_header.css?v={{v}}">
@@ -527,48 +526,6 @@
           </div>
           <div class="subject-topics-chips" id="subject-detail-topics" style="display: none;">
             <!-- Dynamisch befüllt -->
-          </div>
-        </div>
-
-        <!-- Trainingsstand, Scores & Adaptives Niveau des Fachs -->
-        <div class="subject-scores-card" id="subject-scores-card">
-          <div class="subject-scores-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span class="subject-scores-icon"><span class="ui-icon i-ziel" aria-hidden="true"></span></span>
-              <div>
-                <h3 class="sr-only">Trainingsstand</h3>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <span class="badge-adaptive-level" id="subject-adaptive-level-badge"><span class="ui-icon i-ziel" aria-hidden="true"></span> Stufe 2 (Mittel)</span>
-              <button id="btn-toggle-subject-scores-visibility" class="btn-secondary-xs" title="Scores einblenden oder ausblenden, um Leistungsdruck zu vermeiden">
-                <span id="btn-toggle-subject-scores-icon"><span class="ui-icon i-anzeigen" aria-hidden="true"></span></span>
-                <span id="btn-toggle-subject-scores-text" class="sr-only">Scores ausblenden</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Modus: Scores sichtbar -->
-          <div class="subject-scores-body" id="subject-scores-body">
-            <div class="subject-scores-methods-grid" id="subject-scores-methods-grid">
-              <!-- Dynamisch mit Methoden-Karten (Lückentext etc.) befüllt -->
-            </div>
-            <div class="subject-scores-adaptive-hint">
-              <span><span class="ui-icon i-tipp" aria-hidden="true"></span></span>
-              <span id="subject-scores-adaptive-hint-text">
-                Luna passt die Übungen automatisch an: Bei vielen Fehlern wird es leichter, damit Thea stets motiviert bleibt und das meiste sicher löst.
-              </span>
-            </div>
-          </div>
-
-          <!-- Modus: Sanfter Schutzmodus (Scores ausgeblendet) -->
-          <div class="subject-scores-hidden-state" id="subject-scores-hidden-state" style="display: none;">
-            <div class="subject-scores-hidden-content">
-              <span><span class="ui-icon i-pflanze" aria-hidden="true"></span></span>
-              <div>
-
-              </div>
-            </div>
           </div>
         </div>
 

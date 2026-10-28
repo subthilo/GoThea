@@ -58,9 +58,6 @@ function updateParentModeUI(active, isDefault = isDefaultParentPin) {
     el.disabled = !isParentActive;
   });
 
-  if (currentDetailSubjectId) {
-    loadSubjectScores(currentDetailSubjectId);
-  }
   refreshBackupWarning();
 }
 
