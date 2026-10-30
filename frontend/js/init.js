@@ -13,24 +13,32 @@ async function initApp() {
     }
   };
 
+  // Knöpfe sofort verdrahten (brauchen keine Daten) – sonst reagiert die Seite erst nach dem Laden
   safeRun(setupParentModeEvents, "setupParentModeEvents");
   safeRun(initThemeManager, "initThemeManager");
-  await safeRun(checkParentAuthStatus, "checkParentAuthStatus");
-  await safeRun(checkEnvironment, "checkEnvironment");
-  await safeRun(loadGamificationOverview, "loadGamificationOverview");
-  await safeRun(loadProfile, "loadProfile");
-  await safeRun(loadTaxonomy, "loadTaxonomy");
-  await safeRun(loadPlan, "loadPlan");
-  await safeRun(loadMaterials, "loadMaterials");
-  await safeRun(checkInboxStatus, "checkInboxStatus");
-  await safeRun(loadTodayDashboardWidget, "loadTodayDashboardWidget");
-  await safeRun(loadTimetable, "loadTimetable");
-  await safeRun(loadBooks, "loadBooks");
   safeRun(setupBookBrowserEvents, "setupBookBrowserEvents");
   safeRun(setupSubjectDetailEvents, "setupSubjectDetailEvents");
   safeRun(setupUploadsPageEvents, "setupUploadsPageEvents");
   safeRun(applyInitialZenMode, "applyInitialZenMode");
   safeRun(setupSearchEvents, "setupSearchEvents");
+
+  // Daten gleichzeitig holen statt nacheinander (jede Anfrage kostet auf dem iPad einen WLAN-Weg).
+  // Lernplan und Materialliste zeigen Fachnamen und hängen deshalb an den Fächern.
+  const taxonomy = safeRun(loadTaxonomy, "loadTaxonomy");
+  await Promise.all([
+    safeRun(checkParentAuthStatus, "checkParentAuthStatus"),
+    safeRun(checkEnvironment, "checkEnvironment"),
+    safeRun(loadGamificationOverview, "loadGamificationOverview"),
+    safeRun(loadProfile, "loadProfile"),
+    safeRun(checkInboxStatus, "checkInboxStatus"),
+    safeRun(loadTodayDashboardWidget, "loadTodayDashboardWidget"),
+    safeRun(loadTimetable, "loadTimetable"),
+    safeRun(loadBooks, "loadBooks"),
+    taxonomy.then(() => Promise.all([
+      safeRun(loadPlan, "loadPlan"),
+      safeRun(loadMaterials, "loadMaterials"),
+    ])),
+  ]);
   safeRun(connectWebSocket, "connectWebSocket");
 }
 
