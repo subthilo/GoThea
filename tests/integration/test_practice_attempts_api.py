@@ -195,8 +195,10 @@ def test_round_contains_what_is_due(client, db_session):
     assert client.get("/api/v1/practice/round").json()["runde"] == []  # nichts dran
     _chemie_current(db_session)
     out = client.get("/api/v1/practice/round").json()
-    # Erster Knoten (Arbeitsheft S. 1 Nr. 1, beide Teile); Einstieg = 2 Aufgaben, Grundregeln/Brenner gesperrt
-    assert out["einstieg"] and [i["exercise_id"] for i in out["runde"]] == ["ch-laborgeraete-1", "ch-laborgeraete-2"]
+    # Erster Knoten (Arbeitsheft S. 1 Nr. 1, beide Teile), in derselben Runde öffnen Grundregeln und Brenner;
+    # Einstieg = 4 Aufgaben. Über Runden hinweg bleibt der Brenner gesperrt, bis die Knoten davor geschafft sind.
+    assert out["einstieg"] and [i["exercise_id"] for i in out["runde"]] == [
+        "ch-laborgeraete-1", "ch-laborgeraete-2", "ch-grundregeln", "ch-brenner"]
     assert out["runde"][0]["grund"] == {"art": "aktuell"} and out["runde"][0]["stufe"] == -1
     assert out["dran"]["ch-brenner"]["gesperrt"]
     # Fachseite eines anderen Fachs: nichts dran, nichts geschafft → leer
@@ -217,7 +219,7 @@ def test_started_rounds_are_recorded_for_the_parents_and_low_battery_alternates(
     assert [i["art"] for i in first] == ["leicht"]  # noch nichts geschafft
     client.get("/api/v1/practice/round?akku=geht_so")
     rounds = db_session.query(PracticeRound).order_by(PracticeRound.created_at).all()
-    assert [(r.akku, r.art, r.aufgaben) for r in rounds] == [("fast_leer", "leicht", 1), ("geht_so", "neu", 2)]
+    assert [(r.akku, r.art, r.aufgaben) for r in rounds] == [("fast_leer", "leicht", 1), ("geht_so", "neu", 4)]
     akku = client.get("/api/v1/practice", headers=_parent_headers()).json()["akku"]
     assert akku == {"tage": 14, "runden": {"fast_leer": 1, "geht_so": 1, "voll": 0}}
     assert "akku" not in client.get("/api/v1/practice").json()  # nur für die Eltern

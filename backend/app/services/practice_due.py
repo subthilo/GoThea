@@ -7,7 +7,7 @@ oder auf einer Fachseite (ein Fach), stellt der Server eine Runde zusammen. Die 
 Dran ist eine Übung, wenn ihr Thema gewählt ist oder ihre Quelle bzw. Fundstelle (Material + Seite in der
 Datei) in einem gewählten Abschnitt liegt. Innerhalb eines Themas sind die Abschnitte der Übungen Knoten in
 Buchreihenfolge; der nächste Knoten öffnet, wenn jede Übung des vorigen einmal geschafft ist (egal auf
-welcher Stufe).
+welcher Stufe) – oder schon in derselben Runde, wenn alle Übungen davor darin vorkommen.
 
 Die Runde, in dieser Reihenfolge:
 1. Angefangenes (dran),
@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Set, Tuple
 
 # Runde: so viele Aufgaben (Einstieg = die ersten Übungstage, gemeinsam mit den Eltern)
-ROUND_SIZE = {"einstieg": 2, "gewohnheit": 4}
+ROUND_SIZE = {"einstieg": 4, "gewohnheit": 6}
 EINSTIEG_TAGE = 5          # bis Thea an so vielen Tagen etwas geschafft hat, gilt der Einstieg
 AKKU = ("fast_leer", "geht_so", "voll")
 
@@ -191,21 +191,31 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
                           if _best_solved(f, progress, board) is not None]
             elif t.phase in (1, 2):
                 fresh += [(f, _next_stage(f, progress, board), "neu" if not progress.get(f["id"], {}).get("geschafft") else "weiter")
-                          for f in in_test if f["id"] not in shut]
-        current = [f for f in due if any(g["art"] == "aktuell" for g in why[f["id"]]) and f["id"] not in shut]
+                          for f in in_test]
+        current = [f for f in due if any(g["art"] == "aktuell" for g in why[f["id"]])]
         fresh += [(f, _next_stage(f, progress, board), "neu" if not progress.get(f["id"], {}).get("geschafft") else "weiter")
                   for f in current]
 
         size = ROUND_SIZE["einstieg" if beginner else "gewohnheit"]
         exam_day = {t.fach for t in scope.tests if t.phase == 0}
         queue = [(f, s, a) for f, s, a in fresh if s is not None and f["fach"] not in exam_day]
+
+        def still_locked(fam: dict) -> bool:
+            # Gesperrt bleibt nur, wer auch dann noch gesperrt wäre, wenn alles in dieser Runde schon geschafft
+            # wäre: so öffnet der nächste Knoten in derselben Runde (Laborgeräte → Grundregeln → Brenner).
+            if fam["id"] not in shut:
+                return False
+            planned = {**progress, **{i: {"geschafft": [0]} for i in used}}
+            return fam["id"] in locked(due, planned)
+
         while len(items) < size and (queue or repeats):
             if len(items) == 1 and repeats:
                 fam, r = repeats.pop(0)
                 add(fam, r["stufe"], "wiederholen", r["exercise_id"])
             elif queue:
                 fam, stage, art = queue.pop(0)
-                add(fam, stage, art)
+                if not still_locked(fam):
+                    add(fam, stage, art)
             else:
                 fam, r = repeats.pop(0)
                 add(fam, r["stufe"], "wiederholen", r["exercise_id"])

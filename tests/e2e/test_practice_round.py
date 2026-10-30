@@ -42,9 +42,9 @@ def test_round_leads_through_what_is_due(app_page, chemie_current):
     app_page.wait_for_selector('.nav-tab[data-tab="practice"].has-due')
     _open_practice(app_page)
     app_page.click('.pr-battery-btn[data-akku="geht_so"]')
-    # Erste Aufgabe: Laborgeräte, Stufe „Anschauen“; Fortschritt 1 von 2; nach dem Lösen nur „Weiter“
+    # Erste Aufgabe: Laborgeräte, Stufe „Anschauen“; Fortschritt 1 von 4; nach dem Lösen nur „Weiter“
     app_page.wait_for_selector(".zo-figure img")
-    assert app_page.locator(".px-topbar .pr-dot").count() == 2
+    assert app_page.locator(".px-topbar .pr-dot").count() == 4
     _look_at_every_term(app_page)
     assert app_page.locator('[data-action="back"][title="Zur Liste"]').count() == 0
     app_page.click('[data-action="round-next"]')
@@ -52,8 +52,9 @@ def test_round_leads_through_what_is_due(app_page, chemie_current):
     app_page.wait_for_selector(".px-topbar .pr-dot.done")
     app_page.click('.px-topbar [data-action="back"]')
     app_page.click('[data-action="round-resume"]')
-    _look_at_every_term(app_page)
-    app_page.click('[data-action="round-next"]')
+    for _ in range(3):  # Laborgeräte 2, Grundregeln, Brenner – alle „Anschauen“
+        _look_at_every_term(app_page)
+        app_page.click('[data-action="round-next"]')
     app_page.wait_for_selector(".pr-done")
     app_page.click('[data-action="round-home"]')
     app_page.wait_for_selector("#tab-dashboard.active")

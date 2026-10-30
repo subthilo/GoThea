@@ -45,14 +45,22 @@ def test_nodes_follow_book_order_and_open_one_after_another():
     assert locked(ALL, done("labor", "regeln")) == set()
 
 
-def test_round_starts_with_the_first_open_node_and_stays_small_at_first():
+def test_round_follows_the_nodes_and_opens_the_next_one_within_the_round():
     scope = Scope(themen={"top_sicher"})
     out = build_round(ALL, scope, plan(), now=NOW)
-    assert [(i["familie"], i["stufe"], i["art"]) for i in out["runde"]] == [("labor", -1, "neu")]
-    assert out["einstieg"] and out["dran"]["brenner"]["gesperrt"]
-    # Labor geschafft → Regeln öffnen; Einstieg: höchstens 2 Aufgaben
+    # Labor steht in der Runde → Regeln öffnen gleich mit, danach Brenner (Nutzer 31.10.: sonst zu wenig)
+    assert [(i["familie"], i["stufe"], i["art"]) for i in out["runde"]] == [
+        ("labor", -1, "neu"), ("regeln", -1, "neu"), ("brenner", -1, "neu")]
+    assert out["einstieg"] and out["dran"]["brenner"]["gesperrt"]  # über Runden hinweg weiter gesperrt
     out = build_round(ALL, scope, plan(done("labor", stages=(-1,))), now=NOW)
-    assert [(i["familie"], i["stufe"]) for i in out["runde"]] == [("labor", 1), ("regeln", -1)]
+    assert [(i["familie"], i["stufe"]) for i in out["runde"]] == [("labor", 1), ("regeln", -1), ("brenner", -1)]
+
+
+def test_a_full_round_does_not_skip_ahead_past_a_node_left_out():
+    many = [{**LABOR, "id": f"labor{n}", "abschnitt": LABOR.get("abschnitt")} for n in range(5)]
+    scope = Scope(themen={"top_sicher"})
+    out = build_round(many + [REGELN, BRENNER], scope, plan(), now=NOW)
+    assert len(out["runde"]) == 4 and {i["familie"] for i in out["runde"]} <= {f["id"] for f in many}
 
 
 def test_board_stages_only_with_full_battery_after_the_beginning():
@@ -70,7 +78,7 @@ def test_test_topics_come_first_and_a_due_repeat_is_mixed_in():
     repeat = {"familie": "labor", "exercise_id": "labor", "stufe": 1, "seit": (NOW - timedelta(days=2)).isoformat()}
     out = build_round(ALL, scope, plan(done("labor"), wiederholen=[repeat]), solved_days=10, now=NOW)
     assert [(i["familie"], i["art"]) for i in out["runde"]] == [
-        ("dreisatz", "neu"), ("labor", "wiederholen"), ("regeln", "neu")]
+        ("dreisatz", "neu"), ("labor", "wiederholen"), ("regeln", "neu"), ("brenner", "neu")]
     assert out["runde"][0]["grund"] == {"art": "test", "test_id": "tst_1", "tage": 4, "phase": 1}
     # Frische Wiederholung (unter 20 h) wartet noch
     fresh = {**repeat, "seit": (NOW - timedelta(hours=3)).isoformat()}
