@@ -513,8 +513,10 @@
   }
 
   // 9.1 Unterlagen- & Arbeitsblatt-Verwaltung für die Tafel
+  let materialsLoaded = false;  // Unterlagen-Menü schon einmal gefüllt (restoreLastBoardOnce)
   async function loadMaterialsForSubject(subjectId) {
     if (!materialSelect) return;
+    materialsLoaded = true;
     materialSelect.innerHTML = `<option value="">Lade Unterlagen...</option>`;
     currentSubjectMaterialsList = [];
 
@@ -570,7 +572,7 @@
 
   async function initSession() {
     try {
-      // 1. Fächer in Dropdown einbinden
+      // Fächer in Dropdown einbinden
       const subRes = await apiFetch("/api/v1/taxonomy/subjects");
       if (subRes.ok) {
         const subjects = await subRes.json();
@@ -578,14 +580,30 @@
           <option value="${s.id}">${escapeHtml(s.name)}</option>
         `).join("");
       }
-
-      // 2. Zuletzt geöffnete Tafel wieder öffnen (oder eine neue anlegen)
-      await openLastBoard(null);
-      await loadMaterialsForSubject(subjectSelect.value);
     } catch (e) {
       console.error("Fehler beim Initialisieren der Sitzung:", e);
     }
   }
+
+  // Die zuletzt geöffnete Tafel erst laden, wenn die Tafel zum ersten Mal gezeigt wird: beim Start der App
+  // kostete sie auf dem iPad zwei große Downloads und das Zeichnen aller Striche, auch wenn niemand die Tafel
+  // öffnet. Einstiege wie openBoardOnWhiteboard öffnen ihre Tafel selbst (die Warteschlange hält die
+  // Reihenfolge ein), dann bleibt es dabei.
+  let lastBoardRestored = false;
+  function restoreLastBoardOnce() {
+    if (lastBoardRestored) return;
+    lastBoardRestored = true;
+    setTimeout(() => queued(async () => {
+      try {
+        if (!surface.currentSession && !surface.isBookPageMode) await openLastBoard(null);
+        if (!materialsLoaded) await loadMaterialsForSubject(subjectSelect.value);
+      } catch (e) {
+        console.error("Fehler beim Öffnen der letzten Tafel:", e);
+      }
+    })(), 0);
+  }
+  const boardTabBtn = document.querySelector('.nav-tab[data-tab="whiteboard"]');
+  if (boardTabBtn) boardTabBtn.addEventListener("click", restoreLastBoardOnce);
 
   async function createNewSession() {
     await startNewBoard(subjectSelect.value || "sub_math");
@@ -1596,6 +1614,8 @@
   setTimeout(() => {
     surface.resizeCanvases();
     queued(initSession)();
+    const tabWb = document.getElementById("tab-whiteboard");
+    if (tabWb && tabWb.classList.contains("active")) restoreLastBoardOnce();
   }, 150);
 
 })();

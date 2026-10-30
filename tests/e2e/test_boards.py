@@ -302,3 +302,20 @@ def test_board_row_loads_preview_on_expand_and_stays_open(app_page):
     row.locator(".doc-row-head").press("Enter")
     assert "open" not in row.get_attribute("class")
     assert app_page.problems.errors == []
+
+
+def test_last_board_loads_only_when_the_board_is_opened(browser, server_url):
+    """Beim Start der App lädt die Tafel nichts Großes (auf dem iPad zwei Downloads und alle Striche zeichnen)."""
+    b, device = browser
+    context = b.new_context(**device)
+    page = context.new_page()
+    board_requests = []
+    page.on("request", lambda r: board_requests.append(r.url) if "/api/v1/boards/" in r.url else None)
+    page.goto(server_url)
+    page.wait_for_load_state("networkidle")
+    assert board_requests == []
+    page.click('.nav-tab[data-tab="whiteboard"]')
+    page.wait_for_selector("#wb-board-title")
+    page.wait_for_function("document.querySelector('#wb-board-title').textContent.trim() !== ''")
+    assert any("/boards/" in u for u in board_requests)
+    context.close()
