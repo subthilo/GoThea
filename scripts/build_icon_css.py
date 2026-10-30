@@ -6,6 +6,7 @@ dieses Skript laufen lassen; tests/unit/test_icons.py prüft, dass die CSS-Datei
 
 Aufruf: .venv/bin/python scripts/build_icon_css.py
 """
+import hashlib
 from pathlib import Path
 from urllib.parse import quote
 
@@ -42,7 +43,8 @@ def icon_slug(name: str) -> str:
 def build_css() -> str:
     rules = []
     for svg in sorted(ICON_DIR.glob("*.svg"), key=lambda p: icon_slug(p.stem)):
-        url = "/static/Icons/" + quote(svg.name)
+        # Fingerabdruck des Inhalts: der Server liefert versionierte Dateien dauerhaft zwischenspeicherbar aus
+        url = f"/static/Icons/{quote(svg.name)}?v={hashlib.sha1(svg.read_bytes()).hexdigest()[:8]}"
         rules.append(f'.i-{icon_slug(svg.stem)} {{ -webkit-mask-image: url("{url}"); mask-image: url("{url}"); }}')
     return HEADER + "\n" + "\n".join(rules) + "\n"
 

@@ -99,9 +99,20 @@ app.include_router(practice_router)
 app.include_router(paintings_router)
 app.include_router(coloring_pages_router)
 
+class VersionedStaticFiles(StaticFiles):
+    """Mit ?v=… (Version aus services/frontend_page.py bzw. Inhalts-Fingerabdruck der Icons) ändert sich die
+    Adresse mit dem Inhalt: dauerhaft zwischenspeichern. Ohne Version wie bisher jedes Mal nachfragen."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code in (200, 304) and b"v=" in scope.get("query_string", b""):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
 # Statische Frontend-Dateien einbinden
 if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+    app.mount("/static", VersionedStaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def get_index():

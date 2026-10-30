@@ -61,3 +61,16 @@ def test_include_outside_the_folder_or_missing_fails(tmp_path, target):
     (root / "index.html").write_text(f"<!-- include: {target} -->\n")
     with pytest.raises(FileNotFoundError):
         render_index(root)
+
+
+def test_every_static_reference_is_versioned_so_safari_keeps_it():
+    html = render_index(FRONTEND)
+    assert not re.findall(r'(?:src|href)="/static/[^"?]+"', html)
+    icons = re.findall(r'src="/static/(Icons/[^"?]+)\?v=', html)
+    assert icons and all((FRONTEND / i).is_file() for i in icons)
+
+
+def test_versioned_static_files_are_cached_for_good(client):
+    versioned = client.get(f"/static/js/api.js?v={asset_version(FRONTEND)}")
+    assert versioned.status_code == 200 and "immutable" in versioned.headers["cache-control"]
+    assert "cache-control" not in client.get("/static/js/api.js").headers  # ohne Version: nachfragen wie bisher
