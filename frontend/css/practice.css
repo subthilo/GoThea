@@ -1869,6 +1869,17 @@ button.sr-cell.in.active {
 .pr-battery-btn[data-akku="geht_so"] { color: var(--warning-text); }
 .pr-battery-btn[data-akku="voll"] { color: #4ade80; }
 
+/* Angetippt: sofort sichtbar, die anderen treten zurück, bis die Übung steht */
+.pr-battery-btn.pressed {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 18%, var(--bg-card));
+  transform: scale(0.96);
+}
+
+.pr-battery[aria-busy="true"] .pr-battery-btn:not(.pressed) {
+  opacity: 0.35;
+}
+
 .pr-actions .px-check {
   min-width: 120px;
   min-height: 64px;

@@ -430,8 +430,20 @@ function registerPracticeType(typ, view) {
       <div class="pr-battery" role="group" aria-label="Akku">
         ${BATTERY.map((b) => `<button type="button" class="pr-battery-btn" data-akku="${b.akku}" title="${b.title}" aria-label="${b.title}">${icon(b.icon)}</button>`).join("")}
       </div>`);
+    // Sofort sichtbar gedrückt, weitere Tipper zählen nicht: auf dem iPad dauert es einen Moment, bis die
+    // Übung steht, und mehrfaches Tippen startete sonst mehrere Runden (je mit eigenem Versuch)
+    const group = roundView.querySelector(".pr-battery");
     roundView.querySelectorAll(".pr-battery-btn").forEach((btn) =>
-      btn.addEventListener("click", () => startRound(fach, btn.dataset.akku)));
+      btn.addEventListener("click", () => {
+        if (group.getAttribute("aria-busy") === "true") return;
+        group.setAttribute("aria-busy", "true");
+        btn.classList.add("pressed");
+        startRound(fach, btn.dataset.akku).catch((err) => {
+          console.warn("Runde nicht gestartet:", err);
+          group.removeAttribute("aria-busy");
+          btn.classList.remove("pressed");
+        });
+      }));
   }
 
   async function startRound(fach, akku) {
@@ -554,12 +566,13 @@ function registerPracticeType(typ, view) {
     switchToTab("practice");
   };
 
-  // Tab nur zeigen, wenn der Probebetrieb eingeschaltet ist
-  apiJson("/api/v1/practice")
+  // Tab nur zeigen, wenn der Probebetrieb eingeschaltet ist; dieselbe Antwort setzt den Punkt am Symbol
+  // (die Runde ohne Akku ist klein – die ganze Übungsliste braucht es beim Start nicht)
+  apiJson("/api/v1/practice/round")
     .then((data) => {
       window.practiceEnabled = data.enabled;  // die Fachseite blendet danach ihre Karte „Üben“ ein
       show(navBtn, data.enabled);
-      if (data.enabled) refreshDueHint();
+      navBtn.classList.toggle("has-due", data.anzahl_dran > 0);
     })
     .catch(() => show(navBtn, false));
 

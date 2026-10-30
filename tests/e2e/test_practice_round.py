@@ -94,3 +94,16 @@ def test_parents_see_which_battery_thea_chose(app_page):
     stat = app_page.locator('.practice-battery-stat[data-akku="fast_leer"]')
     assert int(stat.inner_text()) >= 1  # der Testserver ist geteilt: frühere Runden zählen mit
     assert app_page.problems.errors == []
+
+
+def test_battery_takes_only_the_first_tap(app_page, chemie_current):
+    _open_practice(app_page)
+    rounds = []
+    app_page.on("request", lambda r: rounds.append(r.url) if "/api/v1/practice/round?akku=" in r.url else None)
+    # Wie ein ungeduldiges Tippen auf dem iPad: zweimal hintereinander, noch bevor die Übung steht
+    app_page.evaluate("""() => { const b = document.querySelectorAll('.pr-battery-btn');
+                                 b[1].click(); b[1].click(); b[2].click(); }""")
+    assert app_page.locator(".pr-battery-btn.pressed").count() == 1
+    app_page.wait_for_selector(".zo-figure img")
+    assert len(rounds) == 1
+    assert app_page.problems.errors == []
