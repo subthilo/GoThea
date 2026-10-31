@@ -492,6 +492,50 @@
   gap: 6px;
 }
 
+/* ?-Knopf und Anleitung (js/practice_help.js); der Kasten hängt am body, auch über der Tafel */
+.px-help-btn.active,
+#btn-wb-practice-help.active {
+  color: var(--accent);
+}
+
+.px-help {
+  position: fixed;
+  z-index: 2000;
+  padding: 10px 14px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 12px 32px rgba(var(--shade-rgb), 0.45);
+}
+
+.px-help-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.px-help-head strong {
+  flex: 1;
+  font-size: 0.95rem;
+}
+
+.px-help-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+}
+
+.px-help .practice-icon-btn.active {
+  color: var(--accent);
+}
+
+.px-help p {
+  margin: 4px 0 0;
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
 .px-stage {
   min-width: 44px;
   min-height: 44px;

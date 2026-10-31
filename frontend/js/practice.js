@@ -44,6 +44,7 @@ function registerPracticeType(typ, view) {
   const stageMark = (typ, n) => (stageInfo(typ, n).icon ? icon(stageInfo(typ, n).icon) : String(n));
   const stageName = (typ, n) => stageInfo(typ, n).name || `Stufe ${n}`;
   const stageTitle = (typ, n) => stageInfo(typ, n).title || stageName(typ, n);
+  window.practiceStageTitle = stageTitle;  // für den ?-Knopf der Übungstafel (whiteboard.js)
 
   function sourceLine(q) {
     if (q.grundwissen) return `${q.material}: ${q.grundwissen}`;  // vom Code erzeugt (Einmaleins …)
@@ -362,7 +363,14 @@ function registerPracticeType(typ, view) {
         <span class="px-src">${esc(sourceLine(ex.quelle))}${ex.ableitung === "B" ? " · ähnliche Aufgabe" : ""}</span>
         ${round ? roundDotsHtml() : ""}
         <div class="px-stages" role="group" aria-label="Stufe">${stageButtons(ex, stage)}</div>
+        ${helpButtonHtml(ex, stage)}
       </div>`;
+  }
+
+  // ?-Knopf: Anleitung zur Stufe, vorgelesen (js/practice_help.js); Einmaleins-Check hat eine eigene
+  function helpButtonHtml(ex, stage) {
+    const stufe = ex.check ? "check" : String(stage);
+    return `<button type="button" class="practice-icon-btn px-help-btn" data-practice-help data-typ="${esc(ex.typ)}" data-stufe="${stufe}" data-titel="${esc(stageTitle(ex.typ, stage))}" title="Anleitung" aria-label="Anleitung">${icon("Hilfe")}</button>`;
   }
 
   // Ansichten, die die ganze Bildschirmhöhe ohne Seiten-Scrollen nutzen (z. B. der Gedankengang)

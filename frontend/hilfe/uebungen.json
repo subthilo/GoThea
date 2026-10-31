@@ -1,0 +1,45 @@
+{
+  "_hinweis": "Anleitungen hinter dem ?-Knopf der Übungen, je Typ und Stufe (\"check\" = Einmaleins-Check). Nach jeder Änderung: .venv/bin/python scripts/build_practice_help_audio.py (spricht nur geänderte Texte neu ein).",
+  "zuordnen": {
+    "-1": "Hier schaust du dir die Begriffe erst mal nur an. Tippe nacheinander jede Ziffer im Bild oder jede Zeile an, dann erscheint, wie das Teil heißt. Wenn du alle angeschaut hast, ist die Aufgabe geschafft.",
+    "1": "Bring jeden Begriff zur richtigen Ziffer. Du kannst einen Begriff auf eine Zeile ziehen, oder erst den Begriff und dann die Zeile antippen. Vertan? Tippe die Zeile zweimal an, dann ist sie wieder leer. Oder leg einfach einen anderen Begriff darauf. Wenn alles belegt ist, tippst du auf den Haken. Das Buch zeigt dir die Stelle im Buch, das Auge zeigt die Lösung.",
+    "2": "Wie vorher: Bring jeden Begriff zur richtigen Ziffer. Aber Achtung, ein paar Begriffe passen gar nicht, die bleiben übrig. Vertan? Tippe die Zeile zweimal an, dann ist sie wieder leer. Zum Schluss tippst du auf den Haken.",
+    "3": "Jetzt schreibst du selbst. Schreib mit dem Stift zu jeder Nummer den richtigen Begriff auf die Linie. Verschrieben? Nimm den Radierer. Wenn du fertig bist, tippst du auf den Knopf ganz links mit der Sprechblase. Dann liest Luna, was du geschrieben hast, und sagt dir, was stimmt. Das Auge zeigt dir die Lösung."
+  },
+  "schubladen": {
+    "-1": "Hier schaust du erst mal nur. Tippe jede Schublade an, dann siehst du, welche Kärtchen hineingehören. Wenn du alle Schubladen angeschaut hast, ist die Aufgabe geschafft.",
+    "1": "Sortiere die Kärtchen in die richtigen Schubladen. In jeder Schublade liegt schon ein Beispiel. Tippe ein Kärtchen an und dann die Schublade, oder zieh es einfach hinein. Liegt ein Kärtchen falsch, tippst du es in der Schublade an und legst es woanders hin. Wenn alle Kärtchen einsortiert sind, tippst du auf den Haken.",
+    "2": "Sortiere alle Kärtchen in die richtigen Schubladen, diesmal ohne Beispiel. Kärtchen antippen und dann die Schublade, oder ziehen. Ein falsch gelegtes Kärtchen holst du durch Antippen wieder heraus. Zum Schluss tippst du auf den Haken.",
+    "3": "Hier ist schon alles einsortiert, aber zwei Kärtchen liegen in der falschen Schublade. Finde sie! Tippe ein falsches Kärtchen an und dann die richtige Schublade. Danach tippst du auf den Haken."
+  },
+  "ordnen": {
+    "-1": "Hier schaust du dir die Reihenfolge erst mal an. Tippe nacheinander die Plätze an, dann erscheint, welcher Schritt dort hingehört. Wenn du alle angeschaut hast, ist die Aufgabe geschafft.",
+    "1": "Bring die Schritte in die richtige Reihenfolge. Der Anfang steht schon da. Tippe ein Kärtchen an, dann kommt es auf den nächsten freien Platz. Oder zieh es auf einen Platz. Steht etwas falsch, tippst du den Platz an, dann geht das Kärtchen zurück. Wenn alle Plätze voll sind, tippst du auf den Haken.",
+    "2": "Bring alle Schritte in die richtige Reihenfolge, diesmal ganz ohne Hilfe. Kärtchen antippen oder ziehen. Ziehst du ein Kärtchen auf einen anderen Platz, tauschen die beiden. Steht etwas falsch, tippst du den Platz an, dann geht das Kärtchen zurück. Zum Schluss tippst du auf den Haken.",
+    "3": "Bring die Schritte in die richtige Reihenfolge. Achtung, ein paar Kärtchen gehören gar nicht dazu, die bleiben liegen. Steht etwas falsch, tippst du den Platz an, dann geht das Kärtchen zurück. Zum Schluss tippst du auf den Haken.",
+    "4": "Die Schritte stehen durcheinander. Schreib zu jedem Schritt seine Nummer, mit dem Stift ins Schreibfeld oder mit den Zahlentasten. Danach geht es von selbst zum nächsten leeren Kästchen. Willst du eine Nummer ändern, tippst du ihr Kästchen an. Der Pfeil zurück löscht. Wenn alle Nummern stehen, tippst du auf den Haken."
+  },
+  "sachaufgabe": {
+    "-1": "Hier rechnest du die Aufgabe Schritt für Schritt. Lies den Satz und setz die fehlende Zahl ein: Tippe auf das Kästchen und dann auf die Zahlentasten. Der Pfeil zurück löscht eine Ziffer. Daneben kannst du mit dem Stift rechnen, das ist deine Nebenrechnung. Dann tippst du auf den Haken. Kommst du nicht weiter, hilft dir die Glühbirne.",
+    "0": "Zuerst schätzt du: Tippe an, was ungefähr herauskommt. Dann setzt du die Bausteine ein: Tippe einen Wert oder einen Rechenschritt an und dann das passende Feld, oder zieh ihn hinein. Ein gefülltes Feld tippst du an, dann ist es wieder leer. Zum Schluss wählst du den richtigen Antwortsatz und tippst auf den Haken.",
+    "1": "Jetzt rechnest du mit dem Stift auf der Tafel. Die Tabelle steht schon da, und der Antwortsatz ist angefangen. Füll die Tabelle aus, schreib die Rechnung dazu und mach den Antwortsatz fertig. Verschrieben? Nimm den Radierer. Wenn du fertig bist, tippst du auf den Knopf ganz links mit der Sprechblase. Dann schaut Luna sich deine Tafel an. Das Auge zeigt dir die Lösung.",
+    "2": "Rechne mit dem Stift auf der Tafel. Diesmal steht nur der Kopf der Tabelle da: Trag die Zahlen selbst ein, rechne und schreib einen Antwortsatz. Verschrieben? Nimm den Radierer. Wenn du fertig bist, tippst du auf den Knopf ganz links mit der Sprechblase. Dann schaut Luna sich deine Tafel an.",
+    "3": "Rechne mit dem Stift auf der Tafel. Es stehen nur noch R für Rechnung und A für Antwort da. Schreib deinen Rechenweg hinter R und den Antwortsatz hinter A. Wenn du fertig bist, tippst du auf den Knopf ganz links mit der Sprechblase. Dann schaut Luna sich deine Tafel an.",
+    "4": "Wie in einem Test: ein leeres Blatt. Schreib mit dem Stift deinen ganzen Rechenweg und am Ende einen Antwortsatz. Wenn du fertig bist, tippst du auf den Knopf ganz links mit der Sprechblase. Dann schaut Luna sich deine Tafel an."
+  },
+  "kurzrechnung": {
+    "-1": "Hier kommen kurze Rechnungen, eine nach der anderen. Tippe das richtige Ergebnis an, eins von vier. Bist du unsicher, kannst du daneben mit dem Stift rechnen.",
+    "1": "Kurze Rechnungen, eine nach der anderen. Zuerst überschlägst du: Tippe an, was ungefähr herauskommt. Dann tippst du das genaue Ergebnis mit den Zahlentasten ein. Der Pfeil zurück löscht die letzte Ziffer. Bei einem Bruch wechselst du mit dem Pfeil nach oben oder unten zwischen Zähler und Nenner. Daneben kannst du mit dem Stift rechnen. Dann tippst du auf den Haken.",
+    "2": "Kurze Rechnungen, eine nach der anderen. Tippe das Ergebnis gleich mit den Zahlentasten ein. Der Pfeil zurück löscht die letzte Ziffer. Daneben kannst du mit dem Stift rechnen. Dann tippst du auf den Haken. Stimmt etwas nicht, hilft dir ein Überschlag.",
+    "check": "Hier kommen Einmaleins-Aufgaben. Tippe das Ergebnis mit den Zahlentasten ein und dann auf den Pfeil nach rechts. Es gibt keine Uhr, rechne in Ruhe. War etwas falsch, siehst du gleich das richtige Ergebnis."
+  },
+  "schriftlich": {
+    "-2": "Hier schaust du zu, wie die Rechnung Schritt für Schritt geht. Lies bei jedem Schritt, was passiert, und tippe dann auf den Pfeil nach rechts.",
+    "-1": "Die Rechnung geht Schritt für Schritt. Bei jedem Schritt kommt eine Frage mit drei Antworten. Tippe die richtige an.",
+    "1": "Die Rechnung steht schon im Gitter, nur das Ergebnis fehlt. Tippe ein Kästchen an und dann die Zahlentasten. Es geht von selbst zum nächsten Kästchen weiter. Die Komma-Taste setzt das Komma, der Pfeil zurück löscht. Dann tippst du auf den Haken.",
+    "2": "Jetzt trägst du alles ein: Zwischenzeilen, Überträge und das Ergebnis. Tippe ein Kästchen an und dann die Zahlentasten. Für einen Übertrag tippst du dasselbe Kästchen noch einmal an, dann schreibst du klein unten rechts. Die Komma-Taste setzt das Komma, der Pfeil zurück löscht. Dann tippst du auf den Haken. Die Glühbirne gibt dir einen Tipp.",
+    "3": "Schreib die Aufgabe selbst ins Gitter, jede Ziffer an ihren richtigen Platz, und rechne sie dann. Kästchen antippen, dann die Zahlentasten. Dasselbe Kästchen noch einmal antippen gibt einen Übertrag. Dann tippst du auf den Haken.",
+    "4": "In dieser Rechnung steckt ein Fehler. Tippe das Kästchen an, in dem er steckt. Dann verbesserst du ihn mit den Zahlentasten und tippst auf den Haken.",
+    "5": "Jetzt rechnest du ganz allein mit dem Stift auf dem Kästchenblatt. Jede Ziffer kommt in ein Kästchen, Überträge klein unten rechts. Verschrieben? Nimm den Radierer. Wenn du fertig bist, tippst du auf den Knopf ganz links mit der Sprechblase. Dann liest Luna deine Rechnung."
+  }
+}

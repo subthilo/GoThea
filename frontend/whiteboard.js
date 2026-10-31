@@ -41,6 +41,7 @@
   const docUnderlayImg = document.getElementById("wb-doc-underlay-img");
   const docTopbar = document.getElementById("wb-doc-topbar");
   const btnPracticeSolution = document.getElementById("btn-wb-practice-solution");
+  const btnPracticeHelp = document.getElementById("btn-wb-practice-help");
   // Übungstafel (Tab „Üben“): { ex, stage, solution } – oben deklariert, weil setPattern sie nutzt
   let practiceContext = null;
   const docPageInfo = document.getElementById("wb-doc-page-info");
@@ -1083,6 +1084,12 @@
       btnPracticeSolution.classList.toggle("active", practiceContext.solution);
       btnPracticeSolution.title = practiceContext.solution ? "Lösung ausblenden" : "Lösung zeigen";
     }
+    if (btnPracticeHelp) {
+      btnPracticeHelp.style.display = "";
+      btnPracticeHelp.dataset.typ = practiceContext.ex.typ;
+      btnPracticeHelp.dataset.stufe = String(practiceContext.stage);
+      btnPracticeHelp.dataset.titel = window.practiceStageTitle ? window.practiceStageTitle(practiceContext.ex.typ, practiceContext.stage) : "";
+    }
   }
 
   function hidePracticeSheet() {
@@ -1091,6 +1098,8 @@
     surface.zoomEnabled = true;
     hidePracticeDone();
     if (btnPracticeSolution) btnPracticeSolution.style.display = "none";
+    if (btnPracticeHelp) btnPracticeHelp.style.display = "none";
+    if (window.closePracticeHelp) window.closePracticeHelp();
     if (!shown) return;
     docUnderlayImg.classList.remove("practice-sheet");
     if (!surface.isBookPageMode) {

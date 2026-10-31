@@ -649,6 +649,10 @@
             <button id="btn-wb-practice-solution" class="wb-btn-subtle wb-btn-square" title="Lösung zeigen" aria-label="Lösung zeigen" style="display: none;">
               <span class="ui-icon i-anzeigen" aria-hidden="true"></span>
             </button>
+            <!-- Nur auf Übungstafeln: Anleitung zur Stufe, vorgelesen (js/practice_help.js) -->
+            <button id="btn-wb-practice-help" class="wb-btn-subtle wb-btn-square" data-practice-help title="Anleitung" aria-label="Anleitung" style="display: none;">
+              <span class="ui-icon i-hilfe" aria-hidden="true"></span>
+            </button>
             <div class="wb-session-info">
               <select id="wb-subject-select" class="wb-select" title="Fach" aria-label="Fach">
                 <!-- Dynamisch mit Schulfächern befüllt -->
@@ -964,6 +968,7 @@
   <script src="/static/js/practice_sheet.js?v={{v}}"></script>
   <script src="/static/js/digit_ink.js?v={{v}}"></script>
   <script src="/static/js/practice.js?v={{v}}"></script>
+  <script src="/static/js/practice_help.js?v={{v}}"></script>
   <script src="/static/js/practice_sachaufgabe.js?v={{v}}"></script>
   <script src="/static/js/practice_zuordnen.js?v={{v}}"></script>
   <script src="/static/js/practice_ordnen.js?v={{v}}"></script>
