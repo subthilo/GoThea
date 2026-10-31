@@ -38,7 +38,7 @@ def test_dreisatz_table_comes_from_the_exercise():
 def test_validate_finds_wrong_calculation_foreign_number_unknown_element_and_missing_mark():
     ex = _ex()
     data = ex["erklaerung"]
-    data["schritte"][3][2]["satz"] = "Denn 150 geteilt durch 3 ist 60."
+    data["schritte"][3][2]["satz"] = "Denn 150 g geteilt durch 3 ist 60 g."
     data["schritte"][0][0]["satz"] = "Stell dir 777 Gummibärchen vor."
     data["schritte"][1][1]["zeige"].append("z9l")
     data["markierungen"]["weg"] = "steht nicht im Text"
@@ -52,3 +52,35 @@ def test_validate_finds_wrong_calculation_foreign_number_unknown_element_and_mis
 def test_only_exercises_with_an_explanation_have_the_stage():
     assert pe.get_exercise("sa-gummibaerchen")["stufen"][0] == -2
     assert -2 not in pe.get_exercise("sa-gummibaerchen-z1")["stufen"]  # Zwilling ohne Erklärung
+
+
+def test_short_answers_are_spoken_as_a_whole_sentence():
+    built = pe.get_exercise("sa-gummibaerchen")["erklaeren"]["abfrage"][0]
+    assert explanations.spoken_answer(built["frage"], "größer") == "Der Preis wird größer."
+    assert built["audio"]["antworten"][built["antworten"].index("größer")] == \
+        explanations.sentence_url("Der Preis wird größer.")
+    assert explanations.spoken_answer("Was bedeuten die 30,60 €?", "Das Trinkgeld.") == "Das Trinkgeld."
+
+
+def test_validate_wants_short_answers_to_complete_the_question():
+    ex = _ex()
+    ex["erklaerung"]["abfrage"][0]["frage"] = "Du kaufst mehr Gummibärchen. Wie ändert sich der Preis?"
+    assert any("kurze Antworten" in e for e in pe.validate(ex))
+
+
+def test_validate_wants_units_in_every_calculation():
+    """„150 geteilt durch 3 ist 50“ ist für 150 g falsch (Nutzer 31.10.): Größen tragen ihre Einheit."""
+    ex = _ex()
+    beat = ex["erklaerung"]["schritte"][3][2]
+    for wrong, why in [("Denn 150 geteilt durch 3 ist 50.", "Größen immer mit Einheit"),
+                       ("Denn 150 g geteilt durch 3 ist 50.", "Größen immer mit Einheit"),
+                       ("Denn 150 g geteilt durch 3 ist 50 €.", "dieselbe Einheit"),
+                       ("Denn 150 g geteilt durch 3 ist 50 Stück.", "dieselbe Einheit")]:
+        beat["satz"] = wrong
+        assert any(why in e for e in pe.validate(ex)), wrong
+    beat["satz"] = "Denn 150 g geteilt durch 3 ist 50 g."
+    assert pe.validate(ex) == []
+    # geteilt durch dieselbe Einheit ergibt eine Anzahl; Einzahl/Mehrzahl zählt als gleich
+    assert explanations._unit_error("Liter", "geteilt durch", "Liter", "") == ""
+    assert explanations._unit_error("Liter", "geteilt durch", "Liter", "Liter") != ""
+    assert explanations._unit_error("Personen", "geteilt durch", "", "Person") == ""

@@ -231,7 +231,7 @@
               ]
             },
             {
-              "satz": "Denn 150 geteilt durch 3 ist 50.",
+              "satz": "Denn 150 g geteilt durch 3 ist 50 g.",
               "zeige": [
                 "z1l",
                 "p1l",
@@ -281,7 +281,7 @@
               "neu": []
             },
             {
-              "satz": "50 mal 10 ist 500. Das ist zehnmal so viel.",
+              "satz": "50 g mal 10 ist 500 g. Das ist zehnmal so viel.",
               "zeige": [
                 "z2l",
                 "p2l",
@@ -336,7 +336,7 @@
               "neu": []
             },
             {
-              "satz": "10 € ist mehr. Das passt!",
+              "satz": "10 € sind mehr. Das passt!",
               "zeige": [
                 "z3r",
                 "ok"
@@ -372,7 +372,7 @@
             "antworten": [
               "größer",
               "kleiner",
-              "bleibt gleich"
+              "gleich bleiben"
             ],
             "richtig": 0,
             "warum": [
@@ -382,7 +382,7 @@
             ]
           },
           {
-            "frage": "Links rechnest du geteilt durch 3. Was rechnest du rechts?",
+            "frage": "Links rechnest du geteilt durch 3. Rechts rechnest du …",
             "antworten": [
               "geteilt durch 3",
               "mal 3",
@@ -404,7 +404,7 @@
             ],
             "richtig": 0,
             "warum": [
-              "Genau. 50 passt in 150 und in 500 hinein.",
+              "Genau. Von 50 g kommst du mit mal 10 direkt zu 500 g.",
               "Darum geht es nicht. Die 50 g sind ein Zwischenschritt zwischen 150 g und 500 g.",
               "50 steht nicht in der Aufgabe. Wir haben es uns als Zwischenschritt ausgesucht."
             ]
@@ -626,7 +626,7 @@
         },
         "karten": {
           "ok": {
-            "text": "3000 Flaschen sind mehr als 2100. Das passt zum Überschlag.",
+            "text": "3000 Flaschen sind mehr als 2100 Flaschen. Das passt zum Überschlag.",
             "bleibt": true,
             "art": "ok"
           }
@@ -688,7 +688,7 @@
               ]
             },
             {
-              "satz": "Also 2100 geteilt durch 0,7.",
+              "satz": "Also 2100 Liter geteilt durch 0,7 Liter.",
               "zeige": [
                 "r1",
                 "saft",
@@ -740,14 +740,14 @@
               ]
             },
             {
-              "satz": "2100 mal 10 ist 21000.",
+              "satz": "2100 Liter mal 10 ist 21000 Liter.",
               "zeige": [
                 "r2"
               ],
               "neu": []
             },
             {
-              "satz": "0,7 mal 10 ist 7.",
+              "satz": "0,7 Liter mal 10 ist 7 Liter.",
               "zeige": [
                 "r2"
               ],
@@ -756,7 +756,7 @@
           ],
           [
             {
-              "satz": "Jetzt ohne Komma: 21000 geteilt durch 7 ist 3000.",
+              "satz": "Jetzt ohne Komma: 21000 Liter geteilt durch 7 Liter ist 3000.",
               "zeige": [
                 "r2",
                 "r3"
@@ -775,7 +775,7 @@
               "neu": []
             },
             {
-              "satz": "3000 ist mehr als 2100. Das passt!",
+              "satz": "3000 Flaschen sind mehr als 2100 Flaschen. Das passt!",
               "zeige": [
                 "r3",
                 "ok"
@@ -807,11 +807,11 @@
         ],
         "abfrage": [
           {
-            "frage": "Die Flaschen sind kleiner als 1 Liter. Wie viele Flaschen braucht man dann?",
+            "frage": "Die Flaschen sind kleiner als 1 Liter. Man braucht dann …",
             "antworten": [
-              "mehr als 2100",
-              "weniger als 2100",
-              "genau 2100"
+              "mehr als 2100 Flaschen",
+              "weniger als 2100 Flaschen",
+              "genau 2100 Flaschen"
             ],
             "richtig": 0,
             "warum": [
@@ -835,7 +835,7 @@
             ]
           },
           {
-            "frage": "Was rechnest du, um Saft auf Flaschen zu verteilen?",
+            "frage": "Um Saft auf Flaschen zu verteilen, rechnest du …",
             "antworten": [
               "Saftmenge geteilt durch Flaschengröße",
               "Saftmenge mal Flaschengröße",
@@ -1061,7 +1061,7 @@
             "text": "Doppelt so viel Zeit → doppelt so viele Seiten"
           },
           "ok": {
-            "text": "12 Minuten sind mehr als 5 Minuten. Also mehr als 250 Seiten. 600 passt.",
+            "text": "12 Minuten sind mehr als 5 Minuten. Also mehr als 250 Seiten. 600 Seiten passen.",
             "bleibt": true,
             "art": "ok"
           }
@@ -1153,7 +1153,7 @@
               ]
             },
             {
-              "satz": "Denn 5 geteilt durch 5 ist 1.",
+              "satz": "Denn 5 Minuten geteilt durch 5 ist 1 Minute.",
               "zeige": [
                 "z1l",
                 "p1l",
@@ -1173,7 +1173,7 @@
               "neu": []
             },
             {
-              "satz": "250 geteilt durch 5 ist 50.",
+              "satz": "250 Seiten geteilt durch 5 ist 50 Seiten.",
               "zeige": [
                 "z1r",
                 "p1r",
@@ -1203,7 +1203,7 @@
               "neu": []
             },
             {
-              "satz": "1 mal 12 ist 12.",
+              "satz": "1 Minute mal 12 ist 12 Minuten.",
               "zeige": [
                 "z2l",
                 "p2l",
@@ -1225,7 +1225,7 @@
               ]
             },
             {
-              "satz": "50 mal 12 ist 600.",
+              "satz": "50 Seiten mal 12 ist 600 Seiten.",
               "zeige": [
                 "z2r",
                 "p2r",
@@ -1258,7 +1258,7 @@
               "neu": []
             },
             {
-              "satz": "600 ist mehr. Das passt!",
+              "satz": "600 Seiten sind mehr. Das passt!",
               "zeige": [
                 "z3r",
                 "ok"
@@ -1294,7 +1294,7 @@
             "antworten": [
               "größer",
               "kleiner",
-              "bleibt gleich"
+              "gleich bleiben"
             ],
             "richtig": 0,
             "warum": [
@@ -1318,7 +1318,7 @@
             ]
           },
           {
-            "frage": "Links rechnest du mal 12. Was rechnest du rechts?",
+            "frage": "Links rechnest du mal 12. Rechts rechnest du …",
             "antworten": [
               "mal 12",
               "geteilt durch 12",
@@ -1685,7 +1685,7 @@
               ]
             },
             {
-              "satz": "Denn 3 geteilt durch 6 ist 0,5.",
+              "satz": "Denn 3 Stunden geteilt durch 6 ist 0,5 Stunden.",
               "zeige": [
                 "z1l",
                 "p1l",
@@ -1735,7 +1735,7 @@
               "neu": []
             },
             {
-              "satz": "0,5 mal 5 ist 2,5.",
+              "satz": "0,5 Stunden mal 5 ist 2,5 Stunden.",
               "zeige": [
                 "z2l",
                 "p2l",
@@ -1790,7 +1790,7 @@
               "neu": []
             },
             {
-              "satz": "2200 km ist weniger. Das passt!",
+              "satz": "2200 km sind weniger. Das passt!",
               "zeige": [
                 "z3r",
                 "ok"
@@ -1844,13 +1844,13 @@
             ],
             "richtig": 0,
             "warum": [
-              "Genau. 0,5 passt in 3 und in 2,5 hinein.",
+              "Genau. Von 0,5 Stunden kommst du mit mal 5 direkt zu 2,5 Stunden.",
               "Von einer Pause steht nichts in der Aufgabe. Die halbe Stunde ist ein Zwischenschritt.",
               "0,5 steht nicht in der Aufgabe. Wir haben es uns als Zwischenschritt ausgesucht."
             ]
           },
           {
-            "frage": "Links rechnest du mal 5. Was rechnest du rechts?",
+            "frage": "Links rechnest du mal 5. Rechts rechnest du …",
             "antworten": [
               "mal 5",
               "geteilt durch 5",
@@ -2220,7 +2220,7 @@
               ]
             },
             {
-              "satz": "Denn 125 geteilt durch 25 ist 5.",
+              "satz": "Denn 125 Liter geteilt durch 25 ist 5 Liter.",
               "zeige": [
                 "z1l",
                 "p1l",
@@ -2270,7 +2270,7 @@
               "neu": []
             },
             {
-              "satz": "5 mal 4 ist 20.",
+              "satz": "5 Liter mal 4 ist 20 Liter.",
               "zeige": [
                 "z2l",
                 "p2l",
@@ -2325,7 +2325,7 @@
               "neu": []
             },
             {
-              "satz": "40 kg ist weniger. Das passt!",
+              "satz": "40 kg sind weniger. Das passt!",
               "zeige": [
                 "z3r",
                 "ok"
@@ -2357,11 +2357,11 @@
         ],
         "abfrage": [
           {
-            "frage": "Man will weniger Saft machen. Wie viele Äpfel braucht man dann?",
+            "frage": "Man will weniger Saft machen. Man braucht dann …",
             "antworten": [
-              "weniger",
-              "mehr",
-              "gleich viele"
+              "weniger Äpfel",
+              "mehr Äpfel",
+              "gleich viele Äpfel"
             ],
             "richtig": 0,
             "warum": [
@@ -2373,19 +2373,19 @@
           {
             "frage": "Wozu brauchen wir die 5 Liter?",
             "antworten": [
-              "Als Zwischenschritt: 5 passt in 125 und in 20.",
+              "Als Zwischenschritt: Von 5 Litern kommt man leicht auf 20 Liter.",
               "Weil 5 Liter in eine Flasche passen.",
               "Weil 5 in der Aufgabe steht."
             ],
             "richtig": 0,
             "warum": [
-              "Genau. Von 5 Litern kommt man leicht auf 20 Liter.",
+              "Genau. Von 5 Litern kommst du mit mal 4 direkt zu 20 Litern.",
               "Um Flaschen geht es hier nicht. Die 5 Liter sind ein Zwischenschritt.",
               "5 steht nicht in der Aufgabe. Wir haben es uns als Zwischenschritt ausgesucht."
             ]
           },
           {
-            "frage": "Links rechnest du geteilt durch 25. Was rechnest du rechts?",
+            "frage": "Links rechnest du geteilt durch 25. Rechts rechnest du …",
             "antworten": [
               "geteilt durch 25",
               "mal 25",
@@ -2723,7 +2723,7 @@
               ]
             },
             {
-              "satz": "Von 2 Helfern auf 1 Helfer: 2 geteilt durch 2 ist 1.",
+              "satz": "Von 2 Helfern auf 1 Helfer: 2 Helfer geteilt durch 2 ist 1 Helfer.",
               "zeige": [
                 "z1l",
                 "p1l",
@@ -2766,7 +2766,7 @@
           ],
           [
             {
-              "satz": "Jetzt von 1 Helfer auf 3 Helfer: 1 mal 3 ist 3.",
+              "satz": "Jetzt von 1 Helfer auf 3 Helfer: 1 Helfer mal 3 ist 3 Helfer.",
               "zeige": [
                 "z2l",
                 "p2l",
@@ -2821,7 +2821,7 @@
               "neu": []
             },
             {
-              "satz": "8 Stunden ist weniger. Das passt!",
+              "satz": "8 Stunden sind weniger. Das passt!",
               "zeige": [
                 "z3r",
                 "ok"
@@ -2867,7 +2867,7 @@
             ]
           },
           {
-            "frage": "Links rechnest du geteilt durch 2. Was rechnest du rechts?",
+            "frage": "Links rechnest du geteilt durch 2. Rechts rechnest du …",
             "antworten": [
               "mal 2",
               "geteilt durch 2",
@@ -3183,7 +3183,7 @@
               ]
             },
             {
-              "satz": "Doppelt so viele Personen zahlen jeder nur die Hälfte. Das heißt antiproportional.",
+              "satz": "Bei doppelt so vielen Personen zahlt jeder nur die Hälfte. Das heißt antiproportional.",
               "zeige": [
                 "mehr"
               ],
@@ -3209,7 +3209,7 @@
               ]
             },
             {
-              "satz": "Von 3 Personen auf 1 Person: 3 geteilt durch 3 ist 1.",
+              "satz": "Von 3 Personen auf 1 Person: 3 Personen geteilt durch 3 ist 1 Person.",
               "zeige": [
                 "z1l",
                 "p1l",
@@ -3251,7 +3251,7 @@
           ],
           [
             {
-              "satz": "Jetzt von 1 Person auf 4 Personen: 1 mal 4 ist 4.",
+              "satz": "Jetzt von 1 Person auf 4 Personen: 1 Person mal 4 ist 4 Personen.",
               "zeige": [
                 "z2l",
                 "p2l",
@@ -3306,7 +3306,7 @@
               "neu": []
             },
             {
-              "satz": "7,65 € ist weniger. Das passt!",
+              "satz": "7,65 € sind weniger. Das passt!",
               "zeige": [
                 "z3r",
                 "ok"
@@ -3352,7 +3352,7 @@
             ]
           },
           {
-            "frage": "Links rechnest du geteilt durch 3. Was rechnest du rechts?",
+            "frage": "Links rechnest du geteilt durch 3. Rechts rechnest du …",
             "antworten": [
               "mal 3",
               "geteilt durch 3",
