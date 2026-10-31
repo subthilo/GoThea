@@ -20,9 +20,17 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-6-luna")
 # der Messung (scripts/eval_document_classification.py) schlechter klassifizierte und für
 # Seitenbilder ein Vielfaches an Tokens verbrauchte.
 OPENAI_ANALYSIS_MODEL = os.getenv("OPENAI_ANALYSIS_MODEL", OPENAI_MODEL)
-# Sprachausgabe (bisher fest im Code: tts-1 mit Stimme nova)
-OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "tts-1")
+# Sprachausgabe: tts-1-hd mit Stimme nova (31.10. gemessen und angehört: sauberer als tts-1 und als das neuere
+# gpt-4o-mini-tts, das Satzenden verschluckte; Hörprobe des Nutzers: „klingt wirklich am besten“)
+OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "tts-1-hd")
 OPENAI_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "nova")
+# Pause zwischen zwei Sätzen (llm.speech_wav)
+OPENAI_TTS_PAUSE_MS = int(os.getenv("OPENAI_TTS_PAUSE_MS", "700"))
+# Nur für neuere Sprachmodelle (gpt-4o-mini-tts …): wie gesprochen wird
+OPENAI_TTS_INSTRUCTIONS = os.getenv("OPENAI_TTS_INSTRUCTIONS", (
+    "Sprich ausschließlich Hochdeutsch mit deutscher Aussprache, auch bei Zahlen, Einheiten und Fachwörtern. "
+    "Freundlich und ruhig wie eine junge Lehrerin, die einem Kind etwas erklärt. Deutlich, jede Silbe "
+    "ausgesprochen, mittleres Tempo, kurze Pausen an Satzzeichen."))
 # Schaubilder für Übungen nachzeichnen (nur in Sessions am Mac, scripts/figure_tool.py) und das Ergebnis
 # gegen das Original prüfen lassen (im Machbarkeitsversuch fand gpt-6.1-sol feinste Fachfehler in Grafiken)
 OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-2.5-sunburst")

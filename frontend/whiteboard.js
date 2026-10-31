@@ -181,7 +181,7 @@
     }
   }
 
-  function playTutorSpeech(audioBase64, speechText) {
+  function playTutorSpeech(audioBase64, speechText, mime = "audio/mp3") {
     stopTutorSpeech();
 
     // Sprechblase auf der Tafel einblenden
@@ -193,7 +193,7 @@
     if (!tutorAudioEnabled || !audioBase64) return;
 
     try {
-      const audioUrl = `data:audio/mp3;base64,${audioBase64}`;
+      const audioUrl = `data:${mime};base64,${audioBase64}`;
       currentTutorAudio = new Audio(audioUrl);
 
       currentTutorAudio.onended = () => {
@@ -1149,11 +1149,11 @@
     if (data.status === "richtig") {
       // Lunas Satz steht in der Geschafft-Leiste; die Sprechblase würde sie verdecken (nur die Stimme)
       if (tutorBubble) tutorBubble.style.display = "none";
-      playTutorSpeech(data.audio_base64, null);
+      playTutorSpeech(data.audio_base64, null, data.audio_mime);
       showPracticeDone(data.text);
       return;
     }
-    playTutorSpeech(data.audio_base64, data.text);
+    playTutorSpeech(data.audio_base64, data.text, data.audio_mime);
     if (data.status === "noch_nicht") {
       ctx.attempt += 1;
       ctx.hadError = true;

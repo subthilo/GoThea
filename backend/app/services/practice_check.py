@@ -267,11 +267,6 @@ def log_check(ex_id: str, stage: int, image_base64: str, read: dict, outcome: di
         logger.warning(f"Übungsprüfung nicht protokolliert: {e}")
 
 
-def speech_text(text: str) -> str:
-    """Für die Sprachausgabe: Rechenzeichen ausschreiben."""
-    return text.replace("·", " mal ").replace(" : ", " geteilt durch ").replace("→", "zu")
-
-
 def describe_read(read: dict, ex: dict) -> Dict[str, str]:
     """Kurzfassung der gelesenen Werte für die Anzeige („gelesen: …“)."""
     out = {}

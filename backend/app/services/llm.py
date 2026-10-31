@@ -11,9 +11,13 @@ Einziger Zugang zu OpenAI.
 """
 import base64
 import json
+import io
 import logging
+import re
 import threading
 import time
+import wave
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence
@@ -268,11 +272,16 @@ def _run_tool(tool: Tool, arguments: Dict[str, Any], purpose: str) -> Any:
 
 
 def speech(text: str, *, purpose: str, voice: Optional[str] = None, model: Optional[str] = None,
-           speed: Optional[float] = None) -> bytes:
-    """Sprachausgabe als MP3-Bytes."""
+           speed: Optional[float] = None, german: bool = True, response_format: str = "mp3") -> bytes:
+    """Sprachausgabe als MP3-Bytes. Deutsch (Standard): Rechenzeichen, Einheiten, Dezimalzahlen gehen als Wörter an
+    die Stimme (services/speech_text.py), neuere Modelle bekommen dazu die Sprech-Anweisung aus der Konfiguration."""
+    from backend.app.services.speech_text import spoken_german
+
     model = model or config.OPENAI_TTS_MODEL
     params: Dict[str, Any] = {"model": model, "voice": voice or config.OPENAI_TTS_VOICE,
-                              "input": text, "response_format": "mp3"}
+                              "input": spoken_german(text) if german else text, "response_format": response_format}
+    if german and not model.startswith("tts-1"):  # tts-1/-hd kennen keine Anweisung
+        params["instructions"] = config.OPENAI_TTS_INSTRUCTIONS
     if speed is not None:
         params["speed"] = speed
 
@@ -286,6 +295,35 @@ def speech(text: str, *, purpose: str, voice: Optional[str] = None, model: Optio
         raise LLMError(f"Sprachausgabe '{purpose}' fehlgeschlagen: {e}") from e
     _record(purpose, model, time.monotonic() - start, characters=len(text))
     return audio
+
+
+# Satzgrenze: Satzzeichen, Leerraum, Großbuchstabe oder Anführung – nicht nach kurzen Abkürzungen („z. B.“, „S. 22“)
+_SENTENCE_END = re.compile(r"(?<![\s.][A-Za-zÄÖÜäöü]\.)(?<![\s.][A-Za-zÄÖÜäöü]{2}\.)(?<=[.!?])\s+(?=[A-ZÄÖÜ„\"])")
+_PCM_RATE = 24000  # Rohton der Sprach-API: 24 kHz, 16 Bit, mono
+
+
+def sentences(text: str) -> List[str]:
+    return [s for s in (part.strip() for part in _SENTENCE_END.split(text.strip())) if s]
+
+
+def speech_wav(text: str, *, purpose: str, pause_ms: Optional[int] = None, voice: Optional[str] = None,
+               model: Optional[str] = None) -> bytes:
+    """Sprachausgabe als WAV mit fester Pause zwischen den Sätzen (Nutzer 31.10.: Sätze liefen ineinander; die
+    Stimme selbst pausiert unterschiedlich lang, Satzzeichen-Tricks halfen nicht). Jeder Satz einzeln als Rohton,
+    parallel geholt, dazwischen Stille."""
+    pause_ms = config.OPENAI_TTS_PAUSE_MS if pause_ms is None else pause_ms
+    parts = sentences(text) or [text]
+    with ThreadPoolExecutor(max_workers=min(4, len(parts))) as pool:
+        pcm = list(pool.map(lambda s: speech(s, purpose=purpose, voice=voice, model=model, response_format="pcm"),
+                            parts))
+    silence = b"\x00\x00" * (_PCM_RATE * pause_ms // 1000)
+    out = io.BytesIO()
+    with wave.open(out, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(_PCM_RATE)
+        w.writeframes(silence.join(pcm))
+    return out.getvalue()
 
 
 def image_edit(image: bytes, prompt: str, *, purpose: str, model: Optional[str] = None,

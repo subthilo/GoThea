@@ -313,7 +313,7 @@ def check_practice(exercise_id: str, payload: CheckRequest, db: Session = Depend
     audio = None
     if payload.audio_enabled:
         try:
-            audio = base64.b64encode(llm.speech(practice_check.speech_text(text), purpose="Übung prüfen – Stimme")).decode()
+            audio = base64.b64encode(llm.speech_wav(text, purpose="Übung prüfen – Stimme")).decode()
         except llm.LLMError as e:
             logger.warning(f"Sprachausgabe der Übungsprüfung fehlgeschlagen: {e}")
 
@@ -324,4 +324,5 @@ def check_practice(exercise_id: str, payload: CheckRequest, db: Session = Depend
         "gelesen": checker.describe_read(read, ex),
         "actions": checker.marks(read, outcome),
         "audio_base64": audio,
+        "audio_mime": "audio/wav",
     }

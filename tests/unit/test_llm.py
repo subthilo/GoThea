@@ -112,6 +112,29 @@ def test_speech_uses_configured_voice(fake_key, monkeypatch):
     assert (kwargs["model"], kwargs["voice"], kwargs["input"]) == ("tts-x", "nova", "Hallo")
 
 
+def test_speech_text_is_prepared_for_german(fake_key):
+    client = MagicMock()
+    client.audio.speech.create.return_value = MagicMock(content=b"mp3")
+    with patch("openai.OpenAI", return_value=client):
+        llm.speech("7 · 8 = 56", purpose="Test")
+    assert client.audio.speech.create.call_args.kwargs["input"] == "7 mal 8 gleich 56"
+
+
+def test_speech_wav_puts_a_fixed_pause_between_sentences(fake_key, monkeypatch):
+    import io
+    import wave
+    monkeypatch.setattr(config, "OPENAI_TTS_PAUSE_MS", 500)
+    client = MagicMock()
+    client.audio.speech.create.side_effect = lambda **kw: MagicMock(content=b"\x01\x00" * 100)
+    with patch("openai.OpenAI", return_value=client):
+        wav = llm.speech_wav("Schau z. B. auf S. 22 nach. Dann tippst du auf den Haken!", purpose="Test")
+    inputs = sorted(c.kwargs["input"] for c in client.audio.speech.create.call_args_list)
+    assert inputs == ["Dann tippst du auf den Haken!", "Schau z. B. auf S. 22 nach."]
+    assert all(c.kwargs["response_format"] == "pcm" for c in client.audio.speech.create.call_args_list)
+    with wave.open(io.BytesIO(wav)) as w:
+        assert w.getframerate() == 24000 and w.getnframes() == 100 + 12000 + 100  # 2 Sätze + 0,5 s Stille
+
+
 # --- Streaming und Werkzeug-Aufrufe (Responses API) ------------------------------------------------
 
 def _event(type, **kw):
