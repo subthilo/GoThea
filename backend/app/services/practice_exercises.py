@@ -235,8 +235,12 @@ def _visible(include_drafts: bool) -> Dict[str, dict]:
 def _stages(ex: dict) -> dict:
     """Stufen des Typs; eine Übung kann einzelne weglassen (``stufen``), z. B. das freie Schreiben ganzer Sätze."""
     exercise_type = exercise_types.get(ex["typ"])
-    stages = [s for s in exercise_type.STAGES if s in ex.get("stufen", exercise_type.STAGES)]
-    return {"stufen": stages, "tafel_stufen": [s for s in exercise_type.BOARD_STAGES if s in stages]}
+    available = getattr(exercise_type, "available_stages", lambda e: exercise_type.STAGES)(ex)
+    stages = [s for s in available if s in ex.get("stufen", exercise_type.STAGES)]
+    # Erklär-Stufe (services/explanations.py): bei Akku „fast leer“ kommen nur Erklärungen (practice_due.py)
+    explain = getattr(exercise_type, "EXPLAIN_STAGE", None)
+    return {"stufen": stages, "tafel_stufen": [s for s in exercise_type.BOARD_STAGES if s in stages],
+            "erklaeren": explain if explain in stages else None}
 
 
 def list_exercises(include_drafts: bool = False) -> List[dict]:

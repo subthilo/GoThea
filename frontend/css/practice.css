@@ -2545,3 +2545,339 @@ body.practice-zen-mode .kr .gg-scratch {
   width: 32px;
   height: 32px;
 }
+
+/* ==========================================================================
+   Erklär-Stufe (js/practice_explain.js): feste Seite wie der Gedankengang.
+   Quer: links Aufgabe + Kärtchen, rechts Lunas Satz + Tabelle/Rechnung bzw.
+   Abfrage; unten Zurück, Fortschritt, Weiter. Hoch: untereinander.
+   Leuchten = genau das, wovon Luna gerade spricht.
+   ========================================================================== */
+
+.pe-host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+body.practice-zen-mode .pe-host {
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+.pe {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+body.practice-zen-mode .pe {
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+.pe-left,
+.pe-right {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.pe-task,
+.pe-display,
+.pe-quiz {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.pe-task p {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.7;
+}
+
+.pe-hl {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 1px 3px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.pe-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.pe-card.lit {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg-card));
+}
+
+.pe-card.ok {
+  border-color: color-mix(in srgb, var(--success) 50%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-card));
+}
+
+.pe-card.ok.lit {
+  border-color: var(--success);
+}
+
+.pe-card.ok .ui-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  color: var(--success);
+}
+
+.pe-card.answer b {
+  color: var(--accent-light);
+}
+
+.pe-say {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 84px;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-active);
+}
+
+.pe-say p {
+  flex: 1;
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.45;
+}
+
+.pe-say .px-luna-icon {
+  width: 34px;
+  height: 34px;
+}
+
+/* Echte Tabelle (Safari auf dem iPad rechnete Grid-Zeilenhöhen falsch, siehe Bausteine) */
+.pe-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 6px 4px;
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pe-table th:first-child,
+.pe-table th:last-child,
+.pe-table td:first-child,
+.pe-table td:last-child {
+  width: 18%;
+}
+
+.pe-head {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 6px 4px;
+  border-radius: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pe-head.lit {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+.pe-cell {
+  height: 52px;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.pe-cell.on {
+  background: var(--bg-card-hover);
+}
+
+.pe-cell.ask {
+  color: var(--accent-light);
+  font-weight: 700;
+}
+
+.pe-cell.lit,
+.pe-op.lit,
+.pe-calc span.lit {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--text-primary);
+}
+
+.pe-oprow td {
+  height: 30px;
+}
+
+.pe-op {
+  color: var(--accent-light);
+  font-size: 1.15rem;
+  font-weight: 600;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.pe-op.l {
+  text-align: right;
+  padding-right: 8px;
+}
+
+.pe-op.r {
+  text-align: left;
+  padding-left: 8px;
+}
+
+.pe-calcs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pe-calc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pe-calc b {
+  color: var(--accent-light);
+  margin-right: 4px;
+}
+
+.pe-calc span {
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.pe-quiz {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pe-quiz-head {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.pe-answer {
+  min-height: 56px;
+  text-align: left;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.pe-answer.lit {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg-card));
+}
+
+.pe-answer.ok {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 16%, var(--bg-card));
+}
+
+.pe-answer.wrong {
+  border-color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 14%, var(--bg-card));
+}
+
+.pe-answer:disabled {
+  cursor: default;
+}
+
+.pe-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--success) 50%, transparent);
+}
+
+.pe-done > .ui-icon {
+  width: 52px;
+  height: 52px;
+  color: var(--success);
+}
+
+.pe-done .px-actions {
+  width: 100%;
+}
+
+.pe-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pe-nav .px-check {
+  flex: none;
+  min-width: 64px;
+  min-height: 56px;
+}
+
+.pe-next {
+  min-width: 96px !important;
+  opacity: 0.55;
+}
+
+.pe-next.ready {
+  opacity: 1;
+}
+
+.pe-dots {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pe-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border-color);
+}
+
+.pe-dot.done {
+  background: var(--success);
+}
+
+.pe-dot.now {
+  background: var(--accent);
+}
+
+@media (orientation: portrait), (max-width: 820px) {
+  .pe {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}

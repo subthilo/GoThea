@@ -115,6 +115,301 @@
       "fehlerbeispiel": {
         "wert": 1,
         "fehler": "nur bis 50 g gerechnet"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "art": "proportional",
+          "bekannt": "kosten 150 g Gummibärchen 3 €",
+          "gefragt": "den Preis für 500 g Gummibärchen"
+        },
+        "karten": {
+          "doppelt": {
+            "text": "Doppelt so viel Gramm → doppelt so viel Euro"
+          },
+          "drittel": {
+            "text": "Ein Drittel der Gramm → ein Drittel der Euro"
+          },
+          "ok": {
+            "text": "500 g sind mehr als 150 g. Also mehr als 3 €. 10 € passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "150 g Gummibärchen kosten 3 €.",
+              "zeige": [
+                "bekannt",
+                "z1l",
+                "z1r"
+              ],
+              "neu": [
+                "z1l",
+                "z1r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Der Preis für 500 g.",
+              "zeige": [
+                "gefragt",
+                "z3l",
+                "z3r"
+              ],
+              "neu": [
+                "z3l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Die Zuordnung ist proportional.",
+              "zeige": [
+                "art"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Das heißt: Doppelt so viel Gramm kostet doppelt so viel Euro.",
+              "zeige": [
+                "doppelt"
+              ],
+              "neu": [
+                "doppelt"
+              ]
+            },
+            {
+              "satz": "Und ein Drittel der Gramm kostet ein Drittel der Euro.",
+              "zeige": [
+                "drittel"
+              ],
+              "neu": [
+                "drittel"
+              ]
+            },
+            {
+              "satz": "Was du links mit den Gramm machst, machst du rechts genauso mit den Euro.",
+              "zeige": [
+                "kopf_l",
+                "kopf_r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Von 150 g kommt man schwer direkt auf 500 g.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Ein Zwischenschritt hilft: 50 g.",
+              "zeige": [
+                "z2l"
+              ],
+              "neu": [
+                "z2l"
+              ]
+            },
+            {
+              "satz": "Denn 150 geteilt durch 3 ist 50.",
+              "zeige": [
+                "z1l",
+                "p1l",
+                "z2l"
+              ],
+              "neu": [
+                "p1l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was links passiert, passiert auch rechts.",
+              "zeige": [
+                "p1l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "3 € geteilt durch 3 ist 1 €.",
+              "zeige": [
+                "z1r",
+                "p1r",
+                "z2r"
+              ],
+              "neu": [
+                "p1r",
+                "z2r"
+              ]
+            },
+            {
+              "satz": "50 g kosten also 1 €.",
+              "zeige": [
+                "z2l",
+                "z2r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt von 50 g auf 500 g.",
+              "zeige": [
+                "z2l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "50 mal 10 ist 500. Das ist zehnmal so viel.",
+              "zeige": [
+                "z2l",
+                "p2l",
+                "z3l"
+              ],
+              "neu": [
+                "p2l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Also auch rechts mal 10.",
+              "zeige": [
+                "p2r"
+              ],
+              "neu": [
+                "p2r"
+              ]
+            },
+            {
+              "satz": "1 € mal 10 ist 10 €.",
+              "zeige": [
+                "z2r",
+                "p2r",
+                "z3r"
+              ],
+              "neu": [
+                "z3r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "500 g sind mehr als 150 g.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also muss es mehr als 3 € kosten.",
+              "zeige": [
+                "z1r"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "10 € ist mehr. Das passt!",
+              "zeige": [
+                "z3r",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "500 g Gummibärchen kosten 10 €.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Du kaufst mehr Gummibärchen. Der Preis wird …",
+            "antworten": [
+              "größer",
+              "kleiner",
+              "bleibt gleich"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Mehr Gramm, mehr Euro. Das heißt proportional.",
+              "Überleg mal: Wer mehr kauft, muss mehr bezahlen.",
+              "Mehr Gummibärchen kosten auch mehr Geld."
+            ]
+          },
+          {
+            "frage": "Links rechnest du geteilt durch 3. Was rechnest du rechts?",
+            "antworten": [
+              "geteilt durch 3",
+              "mal 3",
+              "minus 3"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Links und rechts immer dasselbe.",
+              "Links wird geteilt, also auch rechts.",
+              "Beim Dreisatz rechnen wir links und rechts dasselbe, und zwar mal oder geteilt."
+            ]
+          },
+          {
+            "frage": "Wozu brauchen wir die 50 g?",
+            "antworten": [
+              "Als Zwischenschritt: Von 50 g kommt man leicht auf 500 g.",
+              "Weil 50 g am billigsten sind.",
+              "Weil 50 in der Aufgabe steht."
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. 50 passt in 150 und in 500 hinein.",
+              "Darum geht es nicht. Die 50 g sind ein Zwischenschritt zwischen 150 g und 500 g.",
+              "50 steht nicht in der Aufgabe. Wir haben es uns als Zwischenschritt ausgesucht."
+            ]
+          }
+        ]
       }
     },
     {
@@ -322,7 +617,239 @@
         "wert": 300,
         "fehler": "Komma nur bei einer Zahl verschoben (Theas Fehler in der Matheprobe)"
       },
-      "einstieg": "In der Matheprobe hattest du „3 Flaschen“ geschrieben. Passen 2100 Liter in 3 Flaschen? Lass uns das noch mal anschauen."
+      "einstieg": "In der Matheprobe hattest du „3 Flaschen“ geschrieben. Passen 2100 Liter in 3 Flaschen? Lass uns das noch mal anschauen.",
+      "erklaerung": {
+        "markierungen": {
+          "saft": "2100 Liter Apfelsaft",
+          "flasche": "0,7-Liter-Flaschen",
+          "gefragt": "Wie viele Flaschen"
+        },
+        "karten": {
+          "ok": {
+            "text": "3000 Flaschen sind mehr als 2100. Das passt zum Überschlag.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "saft",
+                "flasche"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Es gibt 2100 Liter Saft.",
+              "zeige": [
+                "saft"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "In jede Flasche passen 0,7 Liter.",
+              "zeige": [
+                "flasche"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wie viele Flaschen werden voll?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Wir verteilen den Saft auf die Flaschen.",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "Darum teilen wir: die Saftmenge geteilt durch die Flaschengröße.",
+              "zeige": [
+                "r1"
+              ],
+              "neu": [
+                "r1"
+              ]
+            },
+            {
+              "satz": "Also 2100 geteilt durch 0,7.",
+              "zeige": [
+                "r1",
+                "saft",
+                "flasche"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Zuerst ein Überschlag: Mit 1-Liter-Flaschen bräuchte man 2100 Flaschen.",
+              "zeige": [
+                "u"
+              ],
+              "neu": [
+                "u"
+              ]
+            },
+            {
+              "satz": "Unsere Flaschen sind kleiner als 1 Liter.",
+              "zeige": [
+                "flasche"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also brauchen wir mehr als 2100 Flaschen.",
+              "zeige": [
+                "u"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Mit dem Komma rechnet es sich schwer.",
+              "zeige": [
+                "r1"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wir nehmen beide Zahlen mal 10. Das Ergebnis bleibt gleich.",
+              "zeige": [
+                "r2"
+              ],
+              "neu": [
+                "r2"
+              ]
+            },
+            {
+              "satz": "2100 mal 10 ist 21000.",
+              "zeige": [
+                "r2"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "0,7 mal 10 ist 7.",
+              "zeige": [
+                "r2"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt ohne Komma: 21000 geteilt durch 7 ist 3000.",
+              "zeige": [
+                "r2",
+                "r3"
+              ],
+              "neu": [
+                "r3"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [
+                "u"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "3000 ist mehr als 2100. Das passt!",
+              "zeige": [
+                "r3",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Es werden 3000 Flaschen mit Apfelsaft gefüllt.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Die Flaschen sind kleiner als 1 Liter. Wie viele Flaschen braucht man dann?",
+            "antworten": [
+              "mehr als 2100",
+              "weniger als 2100",
+              "genau 2100"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. In kleinere Flaschen passt weniger, also braucht man mehr Flaschen.",
+              "Überleg mal: In eine kleine Flasche passt wenig. Dann braucht man mehr Flaschen.",
+              "Genau 2100 wären es nur mit 1-Liter-Flaschen."
+            ]
+          },
+          {
+            "frage": "Warum nehmen wir beide Zahlen mal 10?",
+            "antworten": [
+              "Damit das Komma wegfällt. Das Ergebnis bleibt gleich.",
+              "Damit mehr Flaschen herauskommen.",
+              "Weil 10 Flaschen in eine Kiste passen."
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Ohne Komma rechnet es sich leichter.",
+              "Es kommen nicht mehr Flaschen heraus. Wenn man beide Zahlen mal 10 nimmt, bleibt das Ergebnis gleich.",
+              "Von Kisten steht nichts in der Aufgabe. Mal 10 macht das Komma weg."
+            ]
+          },
+          {
+            "frage": "Was rechnest du, um Saft auf Flaschen zu verteilen?",
+            "antworten": [
+              "Saftmenge geteilt durch Flaschengröße",
+              "Saftmenge mal Flaschengröße",
+              "Saftmenge minus Flaschengröße"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Verteilen heißt teilen.",
+              "Mal passt hier nicht. Verteilen heißt teilen.",
+              "Minus passt nicht. Verteilen heißt teilen."
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "sa-apfelsaft-flaschen-z1",
@@ -522,6 +1049,289 @@
       "fehlerbeispiel": {
         "wert": 50,
         "fehler": "nur bis 1 Minute gerechnet"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "art": "proportional",
+          "bekannt": "Für 250 Seiten benötigt der Drucker 5 Minuten",
+          "gefragt": "wie viele Seiten er in 12 Minuten druckt"
+        },
+        "karten": {
+          "doppelt": {
+            "text": "Doppelt so viel Zeit → doppelt so viele Seiten"
+          },
+          "ok": {
+            "text": "12 Minuten sind mehr als 5 Minuten. Also mehr als 250 Seiten. 600 passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "In 5 Minuten druckt der Drucker 250 Seiten.",
+              "zeige": [
+                "bekannt",
+                "z1l",
+                "z1r"
+              ],
+              "neu": [
+                "z1l",
+                "z1r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wie viele Seiten druckt er in 12 Minuten?",
+              "zeige": [
+                "gefragt",
+                "z3l",
+                "z3r"
+              ],
+              "neu": [
+                "z3l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Die Zuordnung ist proportional.",
+              "zeige": [
+                "art"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Das heißt: Doppelt so viel Zeit, doppelt so viele Seiten.",
+              "zeige": [
+                "doppelt"
+              ],
+              "neu": [
+                "doppelt"
+              ]
+            },
+            {
+              "satz": "Was du links mit den Minuten machst, machst du rechts genauso mit den Seiten.",
+              "zeige": [
+                "kopf_l",
+                "kopf_r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Von 5 Minuten kommt man schwer direkt auf 12 Minuten.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Ein Zwischenschritt hilft: 1 Minute.",
+              "zeige": [
+                "z2l"
+              ],
+              "neu": [
+                "z2l"
+              ]
+            },
+            {
+              "satz": "Denn 5 geteilt durch 5 ist 1.",
+              "zeige": [
+                "z1l",
+                "p1l",
+                "z2l"
+              ],
+              "neu": [
+                "p1l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was links passiert, passiert auch rechts.",
+              "zeige": [
+                "p1l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "250 geteilt durch 5 ist 50.",
+              "zeige": [
+                "z1r",
+                "p1r",
+                "z2r"
+              ],
+              "neu": [
+                "p1r",
+                "z2r"
+              ]
+            },
+            {
+              "satz": "In 1 Minute druckt er also 50 Seiten.",
+              "zeige": [
+                "z2l",
+                "z2r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt von 1 Minute auf 12 Minuten.",
+              "zeige": [
+                "z2l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "1 mal 12 ist 12.",
+              "zeige": [
+                "z2l",
+                "p2l",
+                "z3l"
+              ],
+              "neu": [
+                "p2l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Also auch rechts mal 12.",
+              "zeige": [
+                "p2r"
+              ],
+              "neu": [
+                "p2r"
+              ]
+            },
+            {
+              "satz": "50 mal 12 ist 600.",
+              "zeige": [
+                "z2r",
+                "p2r",
+                "z3r"
+              ],
+              "neu": [
+                "z3r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "12 Minuten sind mehr als 5 Minuten.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also muss er mehr als 250 Seiten drucken.",
+              "zeige": [
+                "z1r"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "600 ist mehr. Das passt!",
+              "zeige": [
+                "z3r",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "In 12 Minuten druckt der Drucker 600 Seiten.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Der Drucker druckt länger. Die Zahl der Seiten wird …",
+            "antworten": [
+              "größer",
+              "kleiner",
+              "bleibt gleich"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Mehr Zeit, mehr Seiten.",
+              "Überleg mal: In mehr Zeit schafft er mehr Seiten.",
+              "Der Drucker hört ja nicht auf. In mehr Zeit druckt er mehr."
+            ]
+          },
+          {
+            "frage": "Warum rechnen wir zuerst auf 1 Minute herunter?",
+            "antworten": [
+              "Von 1 Minute kommt man leicht auf jede andere Zeit.",
+              "Weil 1 Minute in der Aufgabe steht.",
+              "Weil der Drucker in 1 Minute am schnellsten ist."
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Von 1 Minute kommst du mit mal 12 direkt zu 12 Minuten.",
+              "1 Minute steht nicht in der Aufgabe. Wir haben sie uns als Zwischenschritt ausgesucht.",
+              "Der Drucker ist immer gleich schnell. Die 1 Minute ist nur ein Zwischenschritt."
+            ]
+          },
+          {
+            "frage": "Links rechnest du mal 12. Was rechnest du rechts?",
+            "antworten": [
+              "mal 12",
+              "geteilt durch 12",
+              "plus 12"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Links und rechts dasselbe.",
+              "Links wird mal gerechnet, also auch rechts.",
+              "Beim Dreisatz rechnen wir links und rechts dasselbe, und zwar mal oder geteilt."
+            ]
+          }
+        ]
       }
     },
     {
@@ -767,6 +1577,293 @@
       "fehlerbeispiel": {
         "wert": 22000,
         "fehler": "Komma bei 2,5 übersehen (mit 50 statt 5 multipliziert)"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "begruende": "Begründe, dass die Zuordnung proportional ist",
+          "bekannt": "in drei Stunden 2640 km",
+          "gefragt": "wie weit es in 2,5 Stunden fliegt"
+        },
+        "karten": {
+          "doppelt": {
+            "text": "Doppelte Zeit → doppelte Strecke"
+          },
+          "ok": {
+            "text": "2,5 Stunden sind weniger als 3 Stunden. Also weniger als 2640 km. 2200 km passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Zuerst sollen wir begründen, warum die Zuordnung proportional ist.",
+              "zeige": [
+                "begruende"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Das Flugzeug fliegt immer gleich schnell.",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "In der doppelten Zeit schafft es dann die doppelte Strecke.",
+              "zeige": [
+                "doppelt"
+              ],
+              "neu": [
+                "doppelt"
+              ]
+            },
+            {
+              "satz": "Doppelte Zeit, doppelte Strecke: Das heißt proportional.",
+              "zeige": [
+                "doppelt"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "In 3 Stunden fliegt das Flugzeug 2640 km.",
+              "zeige": [
+                "bekannt",
+                "z1l",
+                "z1r"
+              ],
+              "neu": [
+                "z1l",
+                "z1r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wie weit fliegt es in 2,5 Stunden?",
+              "zeige": [
+                "gefragt",
+                "z3l",
+                "z3r"
+              ],
+              "neu": [
+                "z3l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Von 3 Stunden kommt man schwer direkt auf 2,5 Stunden.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Ein Zwischenschritt hilft: eine halbe Stunde, also 0,5 Stunden.",
+              "zeige": [
+                "z2l"
+              ],
+              "neu": [
+                "z2l"
+              ]
+            },
+            {
+              "satz": "Denn 3 geteilt durch 6 ist 0,5.",
+              "zeige": [
+                "z1l",
+                "p1l",
+                "z2l"
+              ],
+              "neu": [
+                "p1l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was links passiert, passiert auch rechts.",
+              "zeige": [
+                "p1l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "2640 km geteilt durch 6 ist 440 km.",
+              "zeige": [
+                "z1r",
+                "p1r",
+                "z2r"
+              ],
+              "neu": [
+                "p1r",
+                "z2r"
+              ]
+            },
+            {
+              "satz": "In einer halben Stunde fliegt es also 440 km.",
+              "zeige": [
+                "z2l",
+                "z2r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "2,5 Stunden sind fünf halbe Stunden.",
+              "zeige": [
+                "z2l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "0,5 mal 5 ist 2,5.",
+              "zeige": [
+                "z2l",
+                "p2l",
+                "z3l"
+              ],
+              "neu": [
+                "p2l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Also auch rechts mal 5.",
+              "zeige": [
+                "p2r"
+              ],
+              "neu": [
+                "p2r"
+              ]
+            },
+            {
+              "satz": "440 km mal 5 ist 2200 km.",
+              "zeige": [
+                "z2r",
+                "p2r",
+                "z3r"
+              ],
+              "neu": [
+                "z3r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "2,5 Stunden sind weniger als 3 Stunden.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also muss es weniger als 2640 km sein.",
+              "zeige": [
+                "z1r"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "2200 km ist weniger. Das passt!",
+              "zeige": [
+                "z3r",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "In 2,5 Stunden fliegt das Flugzeug 2200 km.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Warum ist die Zuordnung proportional?",
+            "antworten": [
+              "Das Flugzeug fliegt gleich schnell: doppelte Zeit, doppelte Strecke.",
+              "Je länger es fliegt, desto weiter kommt es.",
+              "Weil man den Dreisatz benutzen kann."
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Gleich schnell heißt: doppelte Zeit, genau doppelte Strecke.",
+              "„Je mehr, desto mehr“ reicht nicht. Proportional heißt: doppelte Zeit, genau doppelte Strecke.",
+              "Andersherum: Den Dreisatz darf man erst benutzen, wenn die Zuordnung proportional ist."
+            ]
+          },
+          {
+            "frage": "Warum rechnen wir mit einer halben Stunde?",
+            "antworten": [
+              "Von 0,5 Stunden kommt man leicht auf 2,5 Stunden.",
+              "Weil das Flugzeug eine halbe Stunde Pause macht.",
+              "Weil 0,5 in der Aufgabe steht."
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. 0,5 passt in 3 und in 2,5 hinein.",
+              "Von einer Pause steht nichts in der Aufgabe. Die halbe Stunde ist ein Zwischenschritt.",
+              "0,5 steht nicht in der Aufgabe. Wir haben es uns als Zwischenschritt ausgesucht."
+            ]
+          },
+          {
+            "frage": "Links rechnest du mal 5. Was rechnest du rechts?",
+            "antworten": [
+              "mal 5",
+              "geteilt durch 5",
+              "plus 5"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Links und rechts dasselbe.",
+              "Links wird mal gerechnet, also auch rechts.",
+              "Beim Dreisatz rechnen wir links und rechts dasselbe, und zwar mal oder geteilt."
+            ]
+          }
+        ]
       }
     },
     {
@@ -1012,6 +2109,296 @@
       "fehlerbeispiel": {
         "wert": 10,
         "fehler": "Spalten vertauscht: Liter Saft aus 20 kg Äpfeln berechnet"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "aepfel": "250 kg Äpfeln",
+          "saft": "125 Liter Apfelsaft",
+          "gefragt": "wie viele Kilogramm Äpfel man für 20 Liter Apfelsaft benötigt"
+        },
+        "karten": {
+          "doppelt": {
+            "text": "Doppelt so viel Saft → doppelt so viele Äpfel"
+          },
+          "ok": {
+            "text": "20 Liter sind weniger als 125 Liter. Also weniger als 250 kg. 40 kg passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "aepfel",
+                "saft"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Für 125 Liter Saft braucht man 250 kg Äpfel.",
+              "zeige": [
+                "saft",
+                "aepfel",
+                "z1l",
+                "z1r"
+              ],
+              "neu": [
+                "z1l",
+                "z1r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wie viele Kilogramm Äpfel braucht man für 20 Liter Saft?",
+              "zeige": [
+                "gefragt",
+                "z3l",
+                "z3r"
+              ],
+              "neu": [
+                "z3l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Wie hängen Saft und Äpfel zusammen?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "Doppelt so viel Saft braucht doppelt so viele Äpfel.",
+              "zeige": [
+                "doppelt"
+              ],
+              "neu": [
+                "doppelt"
+              ]
+            },
+            {
+              "satz": "Das heißt proportional.",
+              "zeige": [
+                "doppelt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Was du links mit den Litern machst, machst du rechts genauso mit den Kilogramm.",
+              "zeige": [
+                "kopf_l",
+                "kopf_r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Von 125 Litern kommt man schwer direkt auf 20 Liter.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Ein Zwischenschritt hilft: 5 Liter.",
+              "zeige": [
+                "z2l"
+              ],
+              "neu": [
+                "z2l"
+              ]
+            },
+            {
+              "satz": "Denn 125 geteilt durch 25 ist 5.",
+              "zeige": [
+                "z1l",
+                "p1l",
+                "z2l"
+              ],
+              "neu": [
+                "p1l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was links passiert, passiert auch rechts.",
+              "zeige": [
+                "p1l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "250 kg geteilt durch 25 ist 10 kg.",
+              "zeige": [
+                "z1r",
+                "p1r",
+                "z2r"
+              ],
+              "neu": [
+                "p1r",
+                "z2r"
+              ]
+            },
+            {
+              "satz": "Für 5 Liter braucht man also 10 kg Äpfel.",
+              "zeige": [
+                "z2l",
+                "z2r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt von 5 Litern auf 20 Liter.",
+              "zeige": [
+                "z2l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "5 mal 4 ist 20.",
+              "zeige": [
+                "z2l",
+                "p2l",
+                "z3l"
+              ],
+              "neu": [
+                "p2l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Also auch rechts mal 4.",
+              "zeige": [
+                "p2r"
+              ],
+              "neu": [
+                "p2r"
+              ]
+            },
+            {
+              "satz": "10 kg mal 4 ist 40 kg.",
+              "zeige": [
+                "z2r",
+                "p2r",
+                "z3r"
+              ],
+              "neu": [
+                "z3r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "20 Liter sind viel weniger als 125 Liter.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also braucht man auch viel weniger als 250 kg.",
+              "zeige": [
+                "z1r"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "40 kg ist weniger. Das passt!",
+              "zeige": [
+                "z3r",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Für 20 Liter Apfelsaft benötigt man 40 kg Äpfel.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Man will weniger Saft machen. Wie viele Äpfel braucht man dann?",
+            "antworten": [
+              "weniger",
+              "mehr",
+              "gleich viele"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Weniger Saft, weniger Äpfel.",
+              "Überleg mal: Für weniger Saft presst man weniger Äpfel.",
+              "Für weniger Saft braucht man auch weniger Äpfel."
+            ]
+          },
+          {
+            "frage": "Wozu brauchen wir die 5 Liter?",
+            "antworten": [
+              "Als Zwischenschritt: 5 passt in 125 und in 20.",
+              "Weil 5 Liter in eine Flasche passen.",
+              "Weil 5 in der Aufgabe steht."
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Von 5 Litern kommt man leicht auf 20 Liter.",
+              "Um Flaschen geht es hier nicht. Die 5 Liter sind ein Zwischenschritt.",
+              "5 steht nicht in der Aufgabe. Wir haben es uns als Zwischenschritt ausgesucht."
+            ]
+          },
+          {
+            "frage": "Links rechnest du geteilt durch 25. Was rechnest du rechts?",
+            "antworten": [
+              "geteilt durch 25",
+              "mal 25",
+              "minus 25"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Links und rechts dasselbe.",
+              "Links wird geteilt, also auch rechts.",
+              "Beim Dreisatz rechnen wir links und rechts dasselbe, und zwar mal oder geteilt."
+            ]
+          }
+        ]
       }
     },
     {
@@ -1228,6 +2615,286 @@
       "fehlerbeispiel": {
         "wert": 18,
         "fehler": "proportional statt antiproportional gerechnet"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "art": "antiproportional",
+          "bekannt": "Mit 2 Helfern würde der Umzug 12 Stunden dauern",
+          "gefragt": "wie lange er mit 3 Helfern dauert"
+        },
+        "karten": {
+          "doppelt": {
+            "text": "Doppelt so viele Helfer → halb so lange"
+          },
+          "halb": {
+            "text": "Halb so viele Helfer → doppelt so lange"
+          },
+          "ok": {
+            "text": "Mehr Helfer, also kürzer als 12 Stunden. 8 Stunden passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Mit 2 Helfern dauert der Umzug 12 Stunden.",
+              "zeige": [
+                "bekannt",
+                "z1l",
+                "z1r"
+              ],
+              "neu": [
+                "z1l",
+                "z1r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wie lange dauert es mit 3 Helfern?",
+              "zeige": [
+                "gefragt",
+                "z3l",
+                "z3r"
+              ],
+              "neu": [
+                "z3l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Die Zuordnung ist antiproportional.",
+              "zeige": [
+                "art"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Das heißt: Doppelt so viele Helfer brauchen nur halb so lange.",
+              "zeige": [
+                "doppelt"
+              ],
+              "neu": [
+                "doppelt"
+              ]
+            },
+            {
+              "satz": "Und halb so viele Helfer brauchen doppelt so lange.",
+              "zeige": [
+                "halb"
+              ],
+              "neu": [
+                "halb"
+              ]
+            },
+            {
+              "satz": "Was du links machst, machst du rechts genau umgekehrt.",
+              "zeige": [
+                "kopf_l",
+                "kopf_r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Wir rechnen zuerst aus, wie lange 1 Helfer allein braucht.",
+              "zeige": [
+                "z2l"
+              ],
+              "neu": [
+                "z2l"
+              ]
+            },
+            {
+              "satz": "Von 2 Helfern auf 1 Helfer: 2 geteilt durch 2 ist 1.",
+              "zeige": [
+                "z1l",
+                "p1l",
+                "z2l"
+              ],
+              "neu": [
+                "p1l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Rechts machen wir es umgekehrt: mal 2.",
+              "zeige": [
+                "p1r"
+              ],
+              "neu": [
+                "p1r"
+              ]
+            },
+            {
+              "satz": "12 Stunden mal 2 ist 24 Stunden.",
+              "zeige": [
+                "z1r",
+                "p1r",
+                "z2r"
+              ],
+              "neu": [
+                "z2r"
+              ]
+            },
+            {
+              "satz": "Allein bräuchte 1 Helfer also 24 Stunden.",
+              "zeige": [
+                "z2l",
+                "z2r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt von 1 Helfer auf 3 Helfer: 1 mal 3 ist 3.",
+              "zeige": [
+                "z2l",
+                "p2l",
+                "z3l"
+              ],
+              "neu": [
+                "p2l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Rechts wieder umgekehrt: geteilt durch 3.",
+              "zeige": [
+                "p2r"
+              ],
+              "neu": [
+                "p2r"
+              ]
+            },
+            {
+              "satz": "24 Stunden geteilt durch 3 ist 8 Stunden.",
+              "zeige": [
+                "z2r",
+                "p2r",
+                "z3r"
+              ],
+              "neu": [
+                "z3r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "3 Helfer sind mehr als 2 Helfer.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Mit mehr Helfern geht es schneller, also unter 12 Stunden.",
+              "zeige": [
+                "z1r"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "8 Stunden ist weniger. Das passt!",
+              "zeige": [
+                "z3r",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Mit 3 Helfern dauert der Umzug 8 Stunden.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Es kommen mehr Helfer dazu. Der Umzug dauert dann …",
+            "antworten": [
+              "kürzer",
+              "länger",
+              "gleich lang"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Mehr Helfer, weniger Zeit. Das heißt antiproportional.",
+              "Überleg mal: Wenn mehr Leute mit anpacken, geht es schneller.",
+              "Mit mehr Helfern geht es schneller."
+            ]
+          },
+          {
+            "frage": "Links rechnest du geteilt durch 2. Was rechnest du rechts?",
+            "antworten": [
+              "mal 2",
+              "geteilt durch 2",
+              "minus 2"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Antiproportional heißt: rechts genau umgekehrt.",
+              "Das wäre proportional. Hier ist es antiproportional, also rechts umgekehrt: mal 2.",
+              "Beim Dreisatz rechnen wir nur mal oder geteilt. Hier rechts umgekehrt: mal 2."
+            ]
+          },
+          {
+            "frage": "Warum rechnen wir zuerst mit 1 Helfer?",
+            "antworten": [
+              "Von 1 Helfer kommt man leicht auf 3 Helfer.",
+              "Weil 1 Helfer am schnellsten ist.",
+              "Weil 1 in der Aufgabe steht."
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. 1 Helfer ist ein guter Zwischenschritt.",
+              "Im Gegenteil: 1 Helfer allein braucht am längsten.",
+              "1 Helfer steht nicht in der Aufgabe. Wir haben ihn uns als Zwischenschritt ausgesucht."
+            ]
+          }
+        ]
       }
     },
     {
@@ -1439,6 +3106,280 @@
       "fehlerbeispiel": {
         "wert": 13.6,
         "fehler": "proportional statt antiproportional gerechnet"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "personen": "Drei Personen teilen sich ein Taxi",
+          "preis": "jeder 10,20 € bezahlen",
+          "gefragt": "wie viel jeder bezahlen müsste, wenn sich vier Personen das Taxi teilen"
+        },
+        "karten": {
+          "mehr": {
+            "text": "Doppelt so viele Personen → jeder zahlt die Hälfte"
+          },
+          "ok": {
+            "text": "Mehr Personen, also zahlt jeder weniger als 10,20 €. 7,65 € passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "personen",
+                "preis"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Bei 3 Personen zahlt jeder 10,20 €.",
+              "zeige": [
+                "personen",
+                "preis",
+                "z1l",
+                "z1r"
+              ],
+              "neu": [
+                "z1l",
+                "z1r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Was zahlt jeder bei 4 Personen?",
+              "zeige": [
+                "gefragt",
+                "z3l",
+                "z3r"
+              ],
+              "neu": [
+                "z3l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Wie hängen Personen und Preis zusammen?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "Je mehr Personen sich das Taxi teilen, desto weniger zahlt jeder.",
+              "zeige": [
+                "mehr"
+              ],
+              "neu": [
+                "mehr"
+              ]
+            },
+            {
+              "satz": "Doppelt so viele Personen zahlen jeder nur die Hälfte. Das heißt antiproportional.",
+              "zeige": [
+                "mehr"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Was du links machst, machst du rechts genau umgekehrt.",
+              "zeige": [
+                "kopf_l",
+                "kopf_r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Wir rechnen zuerst aus, was 1 Person allein zahlen müsste.",
+              "zeige": [
+                "z2l"
+              ],
+              "neu": [
+                "z2l"
+              ]
+            },
+            {
+              "satz": "Von 3 Personen auf 1 Person: 3 geteilt durch 3 ist 1.",
+              "zeige": [
+                "z1l",
+                "p1l",
+                "z2l"
+              ],
+              "neu": [
+                "p1l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Rechts umgekehrt: mal 3.",
+              "zeige": [
+                "p1r"
+              ],
+              "neu": [
+                "p1r"
+              ]
+            },
+            {
+              "satz": "10,20 € mal 3 ist 30,60 €.",
+              "zeige": [
+                "z1r",
+                "p1r",
+                "z2r"
+              ],
+              "neu": [
+                "z2r"
+              ]
+            },
+            {
+              "satz": "Das ist der ganze Preis für das Taxi.",
+              "zeige": [
+                "z2r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt von 1 Person auf 4 Personen: 1 mal 4 ist 4.",
+              "zeige": [
+                "z2l",
+                "p2l",
+                "z3l"
+              ],
+              "neu": [
+                "p2l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Rechts umgekehrt: geteilt durch 4.",
+              "zeige": [
+                "p2r"
+              ],
+              "neu": [
+                "p2r"
+              ]
+            },
+            {
+              "satz": "30,60 € geteilt durch 4 ist 7,65 €.",
+              "zeige": [
+                "z2r",
+                "p2r",
+                "z3r"
+              ],
+              "neu": [
+                "z3r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "4 Personen sind mehr als 3 Personen.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also zahlt jeder weniger als 10,20 €.",
+              "zeige": [
+                "z1r"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "7,65 € ist weniger. Das passt!",
+              "zeige": [
+                "z3r",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Bei vier Personen müsste jeder 7,65 € bezahlen.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Noch eine Person fährt mit. Jeder zahlt dann …",
+            "antworten": [
+              "weniger",
+              "mehr",
+              "gleich viel"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Der Preis wird auf mehr Leute verteilt.",
+              "Überleg mal: Der Taxipreis wird auf mehr Leute aufgeteilt.",
+              "Der Preis wird auf mehr Leute verteilt, also zahlt jeder weniger."
+            ]
+          },
+          {
+            "frage": "Links rechnest du geteilt durch 3. Was rechnest du rechts?",
+            "antworten": [
+              "mal 3",
+              "geteilt durch 3",
+              "plus 3"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Antiproportional heißt: rechts genau umgekehrt.",
+              "Das wäre proportional. Hier ist es antiproportional, also rechts umgekehrt: mal 3.",
+              "Beim Dreisatz rechnen wir nur mal oder geteilt. Hier rechts umgekehrt: mal 3."
+            ]
+          },
+          {
+            "frage": "Was bedeuten die 30,60 €?",
+            "antworten": [
+              "Den ganzen Preis, wenn eine Person allein fährt.",
+              "Den Preis für 4 Personen zusammen.",
+              "Das Trinkgeld."
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Allein müsste man das ganze Taxi bezahlen.",
+              "Nicht ganz. 30,60 € zahlt eine Person, wenn sie allein fährt. Das ist der ganze Preis.",
+              "Von Trinkgeld steht nichts in der Aufgabe. 30,60 € ist der ganze Preis."
+            ]
+          }
+        ]
       }
     },
     {

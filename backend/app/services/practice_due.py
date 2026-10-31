@@ -15,7 +15,8 @@ Die Runde, in dieser Reihenfolge:
    Generalprobe (letzter Tag) → schon Geschafftes aus allen Knoten des Tests; am Prüfungstag nichts,
 3. „gerade dran“ → nächste Stufe der offenen Knoten,
 dazwischen (an zweiter Stelle) eine fällige Wiederholung. Ist nichts dran: fällige Wiederholungen, auf der
-Fachseite auch Auffrischen von Geschafftem. Akku „fast leer“: eine Aufgabe, abwechselnd etwas schon
+Fachseite auch Auffrischen von Geschafftem. Akku „fast leer“: eine Aufgabe – gibt es Übungen mit Erklär-Stufe
+(services/explanations.py), nur Erklärungen (Nutzer 31.10.: dann nur Tutorien); sonst abwechselnd etwas schon
 Geschafftes und die leichteste Stufe einer neuen Übung. Tafel-Stufen nur bei vollem Akku und nach dem Einstieg.
 Reine Rechnung ohne Datenbank: die Daten sammelt ``collect`` (Router).
 """
@@ -158,13 +159,19 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
             repeats.append((fam, r))
     open_count = sum(1 for f in due if f["id"] not in shut and _next_stage(f, progress, board) is not None) + len(repeats)
 
-    if akku == "fast_leer":
+    exam_day = {t.fach for t in scope.tests if t.phase == 0}
+    explainable = [f for f in due if f.get("erklaeren") is not None and f["id"] not in shut and f["fach"] not in exam_day]
+    if akku == "fast_leer" and explainable:
+        # Nur Erklärungen: zuerst eine noch nicht angesehene (Buchreihenfolge), sonst die am längsten nicht gesehene
+        unseen = [f for f in explainable if f["erklaeren"] not in (progress.get(f["id"], {}).get("geschafft") or [])]
+        pick = unseen[0] if unseen else min(explainable, key=lambda f: progress.get(f["id"], {}).get("zuletzt") or "")
+        add(pick, pick["erklaeren"], "erklaeren")
+    elif akku == "fast_leer":
         # Eine Aufgabe, abwechselnd (low_prev = Art der letzten „fast leer“-Runde): etwas Sicheres – Geschafftes,
         # zuletzt am längsten nicht geübt, auf der höchsten Stufe ohne Tafel – und etwas Neues auf der leichtesten
         # Stufe. Sonst käme bei Dauer-„fast leer“ immer dieselbe geschaffte Übung und Thea käme nicht weiter.
         solved = [f for f in families if _best_solved(f, progress, False) is not None]
         solved.sort(key=lambda f: (not why[f["id"]], progress.get(f["id"], {}).get("zuletzt") or ""))
-        exam_day = {t.fach for t in scope.tests if t.phase == 0}
         easy = [f for f in due if f["id"] not in shut and f["fach"] not in exam_day
                 and not progress.get(f["id"], {}).get("geschafft") and _allowed(f, False)]
         picks = [("sicher", solved), ("leicht", easy)]
@@ -197,7 +204,6 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
                   for f in current]
 
         size = ROUND_SIZE["einstieg" if beginner else "gewohnheit"]
-        exam_day = {t.fach for t in scope.tests if t.phase == 0}
         queue = [(f, s, a) for f, s, a in fresh if s is not None and f["fach"] not in exam_day]
 
         def still_locked(fam: dict) -> bool:

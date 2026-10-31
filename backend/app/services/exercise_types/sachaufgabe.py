@@ -2,7 +2,8 @@
 
 Grundsatz „Luna liest, der Code rechnet“: ``validate`` rechnet jede Lösung exakt nach,
 ``building_blocks`` erzeugt die Bausteine für Stufe 0 (Tabelle per Antippen/Ziehen füllen).
-Stufen: -1 Gedankengang (Rechenweg in Sätzen, nur Zahlen ergänzen), 0 Bausteine, 1–4 Tafel
+Stufen: -2 Erklären (Luna erklärt den Rechenweg, services/explanations.py; nur mit ``erklaerung``),
+-1 Gedankengang (Rechenweg in Sätzen, nur Zahlen ergänzen), 0 Bausteine, 1–4 Tafel
 (Blatt als Unterlage, geprüft von services/practice_check.py).
 """
 from __future__ import annotations
@@ -11,16 +12,71 @@ import re
 from fractions import Fraction
 from typing import List
 
+from backend.app.services import explanations
 from backend.app.services.exercise_types.common import shuffled as _shuffled
 
 TYP = "sachaufgabe"
-STAGES = [-1, 0, 1, 2, 3, 4]
+STAGES = [-2, -1, 0, 1, 2, 3, 4]
 BOARD_STAGES = [1, 2, 3, 4]
+EXPLAIN_STAGE = -2
+
+
+def available_stages(ex: dict) -> List[int]:
+    """Erklären gibt es nur, wenn die Übung eine Erklärung mitbringt (Zwillinge haben keine)."""
+    return [s for s in STAGES if s != EXPLAIN_STAGE or ex.get("erklaerung")]
 
 
 def prepare(ex: dict) -> dict:
     """Zusätzliche Felder für die Ansicht einer Übung."""
-    return {"bausteine": building_blocks(ex)}
+    out = {"bausteine": building_blocks(ex)}
+    if ex.get("erklaerung"):
+        out["erklaeren"] = explanations.build(ex, explain_display(ex))
+    return out
+
+
+# --- Stufe -2: Veranschaulichung für die Erklärung ------------------------------------------------
+# Dreisatz: Tabelle mit Kopf (kopf_l/kopf_r), Zeilen z1–z3 (l/r) und Pfeilen p1/p2 (l/r) zwischen den Zeilen.
+# Rechnung: Überschlag (u) und die Rechnung in drei Stücken r1 „2100 : 0,7“, r2 „= 21000 : 7“, r3 „= 3000“.
+
+
+def explain_display(ex: dict) -> dict:
+    if ex["schema"] == "rechnung":
+        a, b = ex["rechnung"]["zahlen"]
+        left, right = (t.strip() for t in ex["rechnung"]["umformung"].split(":"))
+        result = fmt_number(ex["ergebnis"]["wert"])
+        over = (ex.get("ueberschlag") or {}).get("ausdruck") or f"{fmt_number(a)} : 1 = {fmt_number(a)}"
+        return {"art": "rechnung", "teile": [
+            {"id": "u", "zeile": "Ü", "text": over},
+            {"id": "r1", "zeile": "R", "text": f"{fmt_number(a)} : {fmt_number(b)}"},
+            {"id": "r2", "zeile": "R", "text": f"= {left} : {right}"},
+            {"id": "r3", "zeile": "R", "text": f"= {result}"},
+        ]}
+    money = is_money_column(ex)
+    head = [g["name"] + (f" ({g['einheit']})" if g["einheit"] else "") for g in ex["groessen"]]
+    rows = [[fmt_number(x), fmt_number(y, money)] for x, y in ex["zeilen"]]
+    return {"art": "dreisatz", "kopf": head, "zeilen": rows,
+            "pfeile": [list(pair) for pair in zip(ex["schritte"], right_ops(ex))]}
+
+
+def display_ids(ex: dict) -> List[str]:
+    if ex["schema"] == "rechnung":
+        return ["u", "r1", "r2", "r3"]
+    return ["kopf_l", "kopf_r"] + [f"{k}{n}{side}" for k, n in (("z", 1), ("z", 2), ("z", 3), ("p", 1), ("p", 2))
+                                   for side in "lr"]
+
+
+def solution_numbers(ex: dict) -> set:
+    """Zahlen, die in einer Erklärung vorkommen dürfen: aus Tabelle, Rechenschritten, Rechnung, Überschlag,
+    Ergebnis und Gedankengang (dort stehen auch Hilfszahlen wie „· 10“ beim Komma-Verschieben)."""
+    texts = [str(ex["ergebnis"]["wert"]), ex["antwortsatz"]]
+    for row in ex.get("zeilen") or []:
+        texts += [str(v) for v in row]
+    texts += [op[1:] for op in ex.get("schritte") or []]
+    if ex.get("rechnung"):
+        texts += [ex["rechnung"]["ausdruck"], ex["rechnung"]["umformung"]] + [str(z) for z in ex["rechnung"]["zahlen"]]
+    texts.append((ex.get("ueberschlag") or {}).get("ausdruck") or "")
+    texts += [fill_blanks(step["satz"]) for step in ex.get("gedankengang") or []]
+    return {value for t in texts for value in explanations.numbers_in(t.replace(".", ","))}
 
 
 def summary(ex: dict) -> dict:
@@ -107,6 +163,7 @@ def validate(ex: dict) -> List[str]:
     if _num(ex["fehlerbeispiel"]["wert"]) == result:
         errors.append("Fehlerbeispiel ist gleich dem Ergebnis")
     errors += validate_reasoning_steps(ex)
+    errors += explanations.validate(ex, display_ids(ex), solution_numbers(ex))
     reasoning = ex.get("begruendung") or {}
     if reasoning.get("verlangt"):
         options = reasoning.get("optionen") or []

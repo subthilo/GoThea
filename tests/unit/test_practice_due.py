@@ -136,3 +136,20 @@ def test_started_attempt_comes_first():
     offen = [{"familie": "dreisatz", "exercise_id": "dreisatz", "stufe": 1, "board_id": None}]
     out = build_round(ALL, scope, plan(offen=offen), now=NOW)
     assert (out["runde"][0]["familie"], out["runde"][0]["art"]) == ("dreisatz", "weiter")
+
+
+def test_low_battery_brings_only_explanations_when_there_are_any():
+    sa = {**fam("gummi", 1, "Dreisatz", thema="top_dreisatz", fach="sub_math", stufen=(-2, -1, 0)), "erklaeren": -2}
+    sb = {**fam("drucker", 2, "Dreisatz", thema="top_dreisatz", fach="sub_math", stufen=(-2, -1, 0)), "erklaeren": -2}
+    scope = Scope(themen={"top_sicher", "top_dreisatz"})
+    families = ALL + [sa, sb]
+    pick = lambda progress: [(i["familie"], i["stufe"], i["art"])
+                             for i in build_round(families, scope, plan(progress), akku="fast_leer", now=NOW)["runde"]]
+    assert pick({}) == [("gummi", -2, "erklaeren")]
+    # Angesehen → die nächste Erklärung; alle angesehen → die am längsten nicht gesehene
+    assert pick(done("gummi", stages=(-2,))) == [("drucker", -2, "erklaeren")]
+    seen = {**done("gummi", stages=(-2,)), "drucker": {"geschafft": [-2], "zuletzt": "2026-10-10T10:00:00"}}
+    assert pick(seen) == [("drucker", -2, "erklaeren")]
+    # Andere Akkus: Erklären ist einfach die erste Stufe
+    out = build_round(families, scope, plan(), akku="geht_so", now=NOW)
+    assert ("gummi", -2) in [(i["familie"], i["stufe"]) for i in out["runde"]]

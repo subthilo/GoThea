@@ -168,14 +168,15 @@ def test_every_exercise_lists_the_stages_of_its_type():
     raw = pe._load_all()
     for fam in pe.list_exercises(include_drafts=True):
         exercise_type = exercise_types.get(fam["typ"])
-        stages = [s for s in exercise_type.STAGES if s in raw[fam["id"]].get("stufen", exercise_type.STAGES)]
+        stages = [s for s in exercise_type.STAGES if s in raw[fam["id"]].get("stufen", exercise_type.STAGES)
+                  and (s != getattr(exercise_type, "EXPLAIN_STAGE", None) or raw[fam["id"]].get("erklaerung"))]
         assert fam["stufen"] == stages
         assert fam["tafel_stufen"] == [s for s in exercise_type.BOARD_STAGES if s in stages]
 
 
 def test_exercise_can_leave_out_stages_of_its_type():
     ex = pe.get_exercise("ch-brenner")
-    assert pe._stages({**ex, "stufen": [-1, 1, 2]}) == {"stufen": [-1, 1, 2], "tafel_stufen": []}
+    assert pe._stages({**ex, "stufen": [-1, 1, 2]}) == {"stufen": [-1, 1, 2], "tafel_stufen": [], "erklaeren": None}
     assert pe.validate_header({**ex, "zwillinge": [], "stufen": [-1, 1, 2]}) == []
     assert pe.validate_header({**ex, "zwillinge": [], "stufen": [0]}) == ["stufen: nur Stufen des Typs (-1, 1, 2, 3)"]
 

@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 
 from backend.app import config
-from scripts.build_practice_help_audio import AUDIO, MANIFEST, TEXTS, entries, fingerprint
+from backend.app.services.spoken_audio import SENTENCE_DIR, audio_key
+from scripts.build_practice_help_audio import AUDIO, MANIFEST, TEXTS, entries, explanation_texts, fingerprint
 
 TYPES = sorted(p.stem for p in (Path(__file__).resolve().parents[2] / "backend/app/services/exercise_types").glob("*.py")
                if p.stem not in ("__init__", "common"))
@@ -25,3 +26,11 @@ def test_audio_matches_the_current_texts():
     for key, text in entries().items():
         assert manifest[key]["fp"] == fingerprint(text, config.OPENAI_TTS_VOICE, config.OPENAI_TTS_MODEL), key
         assert (AUDIO / manifest[key]["datei"]).stat().st_size > 10_000, key
+
+
+def test_every_sentence_of_the_explanations_is_spoken():
+    """Schlägt an, wenn eine Erklärung neu ist oder sich geändert hat, ohne dass das Skript lief."""
+    texts = explanation_texts()
+    assert texts
+    missing = [t for t in texts if not (SENTENCE_DIR / f"{audio_key(t)}.m4a").is_file()]
+    assert missing == []

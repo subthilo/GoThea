@@ -168,6 +168,7 @@
 
 
   function renderRun() {
+    if (run.stage === -2) return renderExplain();
     if (run.stage < 0) return renderGuided();
     core.setZen(false);
     const ex = run.ex;
@@ -200,6 +201,27 @@
     return `
       <button type="button" class="px-check" data-action="open" data-id="${esc(twinId)}" title="${ex.zwilling_von ? "Original" : "Ähnliche Aufgabe"}">${icon("Wiederholen")}</button>
       <button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;
+  }
+
+  // ---------- Stufe -2: Erklären (js/practice_explain.js, Daten: services/explanations.py) ----------
+  let explain = null;
+  const stopExplain = () => { if (explain) explain.close(); explain = null; };
+
+  function explainNextButtons() {
+    if (core.inRound()) return core.roundNextHtml();
+    return `<button type="button" class="px-check" data-stage="-1" title="Weiter mit dem Gedankengang" aria-label="Weiter mit dem Gedankengang">${icon("Tipp")}</button>
+      <button type="button" class="px-check secondary" data-action="back" title="Zur Liste">${icon("Erledigt")}</button>`;
+  }
+
+  function renderExplain() {
+    stopExplain();
+    core.setZen(true);
+    runView.innerHTML = `${core.topbarHtml(run.ex, run.stage)}<div class="pe-host"></div>`;
+    const attempt = run.attempt;
+    explain = window.openPracticeExplain(runView.querySelector(".pe-host"), run.ex.erklaeren, {
+      onDone: (falsch) => logPracticeEvent(attempt, "check", { status: "richtig", fragen_falsch: falsch }),
+      doneHtml: explainNextButtons,
+    });
   }
 
   // ---------- Stufe -1: Gedankengang ----------
@@ -499,6 +521,7 @@
   registerPracticeType("sachaufgabe", {
     // Die leichteste Stufe trägt ein Icon statt einer Zahl, damit die Nummern der Tafel-Stufen bleiben
     stages: {
+      "-2": { title: "Erklären: Luna zeigt den Rechenweg", name: "Erklären", icon: "Lesen" },
       "-1": { title: "Gedankengang: Schritt für Schritt", name: "Gedankengang", icon: "Tipp" },
       0: { title: "Bausteine einsetzen" },
       1: { title: "Tafel: Tabelle vorgegeben, Antwort angefangen" },
@@ -510,7 +533,9 @@
     sheet: { render: (ex, stage, options) => renderPracticeSheet(ex, stage, options) },  // Tafel-Stufen 1–4
     open(ex, stage, coreApi) {
       core = coreApi;
-      if (stage < 0 && !(ex.gedankengang || []).length) stage = 0;
+      stopExplain();
+      if (stage === -2 && !ex.erklaeren) stage = -1;
+      if (stage === -1 && !(ex.gedankengang || []).length) stage = 0;
       run = { ex, stage, guess: null, placed: {}, answer: null, reason: null, checked: false, hint: 0, selected: null,
               attempt: startPracticeAttempt(ex.id, stage),
               guided: { step: 0, values: {}, wrong: new Set(), fails: 0, tip: false, empty: false, done: false, active: null } };
@@ -519,6 +544,7 @@
       return stage;
     },
     close() {
+      stopExplain();
       run = null;
     },
   });
