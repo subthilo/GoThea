@@ -349,6 +349,9 @@ function registerPracticeType(typ, view) {
   }
 
   function stageButtons(ex, stage) {
+    // In der Runde bestimmt die Runde die Stufe: nur die aktuelle als Anzeige, nichts zum Springen (Nutzer 31.10.:
+    // Thea tippte sich durch die Stufen, ohne sie zu bearbeiten)
+    if (round) return `<span class="px-stage active" title="${esc(stageTitle(ex.typ, stage))}" aria-label="${stageName(ex.typ, stage)}: ${esc(stageTitle(ex.typ, stage))}">${stageMark(ex.typ, stage)}</span>`;
     const family = ex.zwilling_von || ex.id;
     const done = new Set(overview && overview.stand[family] ? overview.stand[family].geschafft : []);
     return ex.stufen.map((n) =>
@@ -397,7 +400,7 @@ function registerPracticeType(typ, view) {
     if (t.dataset.action === "back") return closeExercise();
     if (t.dataset.action === "round-next") return nextInRound();
     if (t.dataset.action === "open") return openExercise(t.dataset.id, Number(t.dataset.at || 0));
-    if (t.dataset.stage !== undefined) {
+    if (t.dataset.stage !== undefined && !round) {
       const stage = Number(t.dataset.stage);
       const ex = current.ex;
       if (!ex.tafel_stufen.includes(stage)) return stage === current.stage ? undefined : openExercise(ex.id, stage);

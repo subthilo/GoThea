@@ -45,6 +45,9 @@ def test_round_leads_through_what_is_due(app_page, chemie_current):
     # Erste Aufgabe: Laborgeräte, Stufe „Anschauen“; Fortschritt 1 von 4; nach dem Lösen nur „Weiter“
     app_page.wait_for_selector(".zo-figure img")
     assert app_page.locator(".px-topbar .pr-dot").count() == 4
+    # Die Runde bestimmt die Stufe: nur die aktuelle wird angezeigt, keine Knöpfe zum Springen
+    assert app_page.locator(".px-topbar button.px-stage").count() == 0
+    assert app_page.locator(".px-topbar .px-stage.active").count() == 1
     _look_at_every_term(app_page)
     assert app_page.locator('[data-action="back"][title="Zur Liste"]').count() == 0
     app_page.click('[data-action="round-next"]')
