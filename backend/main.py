@@ -1,9 +1,13 @@
 import logging
+import mimetypes
 from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
+
+# Anleitungen der Übungen (frontend/hilfe/audio) sind AAC; der Pi kennt .m4a sonst als audio/mpeg
+mimetypes.add_type("audio/mp4", ".m4a")
 
 from backend.app.database import engine, Base, SessionLocal, ensure_schema_migrations
 import backend.app.models  # noqa: F401  (registriert alle Tabellen für create_all)

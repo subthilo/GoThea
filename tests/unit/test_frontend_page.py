@@ -74,3 +74,8 @@ def test_versioned_static_files_are_cached_for_good(client):
     versioned = client.get(f"/static/js/api.js?v={asset_version(FRONTEND)}")
     assert versioned.status_code == 200 and "immutable" in versioned.headers["cache-control"]
     assert "cache-control" not in client.get("/static/js/api.js").headers  # ohne Version: nachfragen wie bisher
+
+
+def test_help_audio_is_served_as_aac(client):
+    res = client.get("/static/hilfe/audio/zuordnen_1.m4a")
+    assert res.status_code == 200 and res.headers["content-type"] == "audio/mp4"
