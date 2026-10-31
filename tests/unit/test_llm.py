@@ -117,7 +117,7 @@ def test_speech_text_is_prepared_for_german(fake_key):
     client.audio.speech.create.return_value = MagicMock(content=b"mp3")
     with patch("openai.OpenAI", return_value=client):
         llm.speech("7 · 8 = 56", purpose="Test")
-    assert client.audio.speech.create.call_args.kwargs["input"] == "7 mal 8 gleich 56"
+    assert client.audio.speech.create.call_args.kwargs["input"] == "sieben mal acht gleich sechsundfünfzig"
 
 
 def test_speech_wav_puts_a_fixed_pause_between_sentences(fake_key, monkeypatch):
@@ -129,7 +129,7 @@ def test_speech_wav_puts_a_fixed_pause_between_sentences(fake_key, monkeypatch):
     with patch("openai.OpenAI", return_value=client):
         wav = llm.speech_wav("Schau z. B. auf S. 22 nach. Dann tippst du auf den Haken!", purpose="Test")
     inputs = sorted(c.kwargs["input"] for c in client.audio.speech.create.call_args_list)
-    assert inputs == ["Dann tippst du auf den Haken!", "Schau z. B. auf S. 22 nach."]
+    assert inputs == ["Dann tippst du auf den Haken!", "Schau zum Beispiel auf Seite zweiundzwanzig nach."]
     assert all(c.kwargs["response_format"] == "pcm" for c in client.audio.speech.create.call_args_list)
     with wave.open(io.BytesIO(wav)) as w:
         assert w.getframerate() == 24000 and w.getnframes() == 100 + 12000 + 100  # 2 Sätze + 0,5 s Stille

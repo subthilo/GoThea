@@ -34,3 +34,12 @@ def test_every_sentence_of_the_explanations_is_spoken():
     assert texts
     missing = [t for t in texts if not (SENTENCE_DIR / f"{audio_key(t)}.m4a").is_file()]
     assert missing == []
+
+
+def test_every_noun_after_a_one_has_a_known_gender():
+    """„1 Helfer“ → „ein/einen/einem Helfer“ braucht das Geschlecht (services/speech_text._GENDER)."""
+    import re
+    from backend.app.services.speech_text import _GENDER_OF
+    texts = list(explanation_texts()) + list(entries().values())
+    nouns = {m.group(1) for t in texts for m in re.finditer(r"(?<![\d,])\b1\s+([A-ZÄÖÜ][\wäöüß]*)", t)}
+    assert sorted(n for n in nouns if n not in _GENDER_OF) == []
