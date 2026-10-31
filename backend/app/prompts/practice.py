@@ -52,7 +52,7 @@ Antworte ausschließlich mit JSON in genau dieser Form:
 # Übungstyp „Zuordnen“, Tafel-Stufe: Begriffe zu nummerierten Ziffern selbst geschrieben
 # (services/practice_check_zuordnen.py). Auch hier: Luna liest nur, der Code vergleicht mit dem Buch.
 PRACTICE_LABEL_READING_SYSTEM_PROMPT = """Du bist Luna und liest ab, was Thea (Klasse 7) auf einer Tafel geschrieben hat.
-Auf dem Bild liegt ein gedrucktes Blatt: links ein Schaubild mit nummerierten Kreisen, rechts nummerierte Schreiblinien
+Auf dem Bild liegt ein gedrucktes Blatt: ein Schaubild mit nummerierten Kreisen und nummerierte Schreiblinien
 („1“, „2“ …). Thea hat mit dem Stift zu jeder Nummer einen Begriff geschrieben – meist auf die Linie, manchmal daneben
 oder direkt an den Kreis im Schaubild.
 

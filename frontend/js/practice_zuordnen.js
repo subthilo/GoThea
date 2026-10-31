@@ -234,7 +234,9 @@
 
   // ---------- Tafel-Stufe: Blatt mit Schaubild und Schreiblinien ----------
   // Wie das Mathe-Blatt (js/practice_sheet.js): feste Breite, durchsichtig, damit das Tafel-Gitter durchscheint;
-  // links das Schaubild, rechts „1 ____“, „2 ____“ … zum Schreiben. Mit solution schreibt Luna die Begriffe hinein.
+  // links das Schaubild, rechts „1 ____“, „2 ____“ … zum Schreiben. Breite Schaubilder (z. B. zwei Reihen
+  // Laborgeräte) liegen über die ganze Breite oben, die Linien zweispaltig darunter – links daneben wären sie
+  // winzig (Nutzer 31.10.). Mit solution schreibt Luna die Begriffe hinein.
 
   function loadFigure(ex) {
     return new Promise((resolve, reject) => {
@@ -254,8 +256,11 @@
     // Auch im Querformat ohne Scrollen: Aufgabe und Bild links, die Linien rechts ab ganz oben; bei vielen
     // Begriffen werden die Zeilen enger (40–56 px), damit alle über der Werkzeugleiste der Tafel liegen
     const fields = ex.felder;
-    const figW = 340, colX = pad + figW + 28;
-    const lineH = Math.max(40, Math.min(56, Math.floor(470 / fields.length)));
+    const wide = !!figure && figure.naturalWidth > 1.3 * figure.naturalHeight;
+    const figW = wide ? Math.min(right - pad, 300 * figure.naturalWidth / figure.naturalHeight) : 340;
+    const textW = wide ? right - pad : figW;
+    const perCol = wide ? Math.ceil(fields.length / 2) : fields.length;
+    const lineH = wide ? 52 : Math.max(40, Math.min(56, Math.floor(470 / fields.length)));
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -265,12 +270,14 @@
     let line = "";
     words.forEach((w) => {
       const next = line ? `${line} ${w}` : w;
-      if (ctx.measureText(next).width > figW && line) { taskLines.push(line); line = w; } else line = next;
+      if (ctx.measureText(next).width > textW && line) { taskLines.push(line); line = w; } else line = next;
     });
     if (line) taskLines.push(line);
     const top = pad + taskLines.length * 30 + 18;
     const figH = figure ? figW * figure.naturalHeight / figure.naturalWidth : figW;
-    const height = Math.max(top + figH, pad + fields.length * lineH) + pad + 200;  // Platz zum Schreiben darunter
+    const linesTop = wide ? top + figH + 16 : pad;
+    const colWidth = wide ? (right - pad - 28) / 2 : right - (pad + figW + 28);
+    const height = Math.max(top + figH, linesTop + perCol * lineH) + pad + 200;  // Platz zum Schreiben darunter
 
     canvas.width = W * dpr;
     canvas.height = Math.ceil(height * dpr);
@@ -290,7 +297,10 @@
     }
 
     fields.forEach((f, i) => {
-      const base = pad + (i + 1) * lineH - 10;
+      const col = Math.floor(i / perCol), row = i % perCol;
+      const colX = wide ? pad + col * (colWidth + 28) : pad + figW + 28;
+      const lineEnd = colX + colWidth;
+      const base = linesTop + (row + 1) * lineH - 10;
       ctx.strokeStyle = ink;
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -304,12 +314,12 @@
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(colX + 38, base + 4);
-      ctx.lineTo(right, base + 4);
+      ctx.lineTo(lineEnd, base + 4);
       ctx.stroke();
       if (solution) {
         ctx.font = `italic 600 21px ${font}`;
         ctx.fillStyle = luna;
-        ctx.fillText(f.begriff, colX + 44, base - 2, right - colX - 48);
+        ctx.fillText(f.begriff, colX + 44, base - 2, lineEnd - colX - 48);
         ctx.fillStyle = ink;
       }
     });
