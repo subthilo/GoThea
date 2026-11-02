@@ -150,6 +150,13 @@ def test_low_battery_brings_only_explanations_when_there_are_any():
     assert pick(done("gummi", stages=(-2,))) == [("drucker", -2, "erklaeren")]
     seen = {**done("gummi", stages=(-2,)), "drucker": {"geschafft": [-2], "zuletzt": "2026-10-10T10:00:00"}}
     assert pick(seen) == [("drucker", -2, "erklaeren")]
-    # Andere Akkus: Erklären ist einfach die erste Stufe
-    out = build_round(families, scope, plan(), akku="geht_so", now=NOW)
-    assert ("gummi", -2) in [(i["familie"], i["stufe"]) for i in out["runde"]]
+    # Andere Akkus: nie Erklären (Thea, 2.11.) – neue Sachaufgaben beginnen beim Gedankengang, auch wenn die
+    # Erklärung angefangen oder geschafft ist
+    for akku in ("geht_so", "voll"):
+        for progress in ({}, done("gummi", stages=(-2,))):
+            out = build_round(families, scope, plan(progress), akku=akku, now=NOW)
+            stages = {i["familie"]: i["stufe"] for i in out["runde"]}
+            assert stages.get("gummi") == -1 and -2 not in stages.values(), (akku, progress, stages)
+    started = {"stand": {}, "offen": [{"familie": "gummi", "exercise_id": "gummi", "stufe": -2}], "wiederholen": []}
+    out = build_round(families, scope, started, akku="geht_so", now=NOW)
+    assert -2 not in [i["stufe"] for i in out["runde"]]

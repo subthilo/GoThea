@@ -108,7 +108,8 @@ def is_beginner(solved_days: int) -> bool:
 
 
 def _allowed(fam: dict, board: bool) -> List[int]:
-    return [s for s in fam["stufen"] if board or s not in fam["tafel_stufen"]]
+    # Erklären nur bei Akku „fast leer“ (eigener Zweig in build_round; Thea, 2.11.: sonst nicht)
+    return [s for s in fam["stufen"] if (board or s not in fam["tafel_stufen"]) and s != fam.get("erklaeren")]
 
 
 def _next_stage(fam: dict, progress: dict, board: bool) -> Optional[int]:
@@ -155,7 +156,7 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
     repeats = []
     for r in plan.get("wiederholen", []):
         fam = by_id.get(r["familie"])
-        if fam and (now - datetime.fromisoformat(r["seit"])) >= REPEAT_AFTER and (board or r["stufe"] not in fam["tafel_stufen"]):
+        if fam and (now - datetime.fromisoformat(r["seit"])) >= REPEAT_AFTER and r["stufe"] in _allowed(fam, board):
             repeats.append((fam, r))
     open_count = sum(1 for f in due if f["id"] not in shut and _next_stage(f, progress, board) is not None) + len(repeats)
 
@@ -186,7 +187,7 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
         fresh: List[Tuple[dict, int, str]] = []
         for o in plan.get("offen", []):
             fam = by_id.get(o["familie"])
-            if fam and why[fam["id"]] and fam["id"] not in shut and (board or o["stufe"] not in fam["tafel_stufen"]):
+            if fam and why[fam["id"]] and fam["id"] not in shut and o["stufe"] in _allowed(fam, board):
                 items_before = len(items)
                 add(fam, o["stufe"], "weiter", o["exercise_id"], o.get("board_id"))
                 if len(items) > items_before:
