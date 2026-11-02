@@ -40,6 +40,7 @@ def _look_at_every_term(page):
 def test_round_leads_through_what_is_due(app_page, chemie_current):
     app_page.reload()  # Punkt am Üben-Symbol wird beim Laden berechnet
     app_page.wait_for_selector('.nav-tab[data-tab="practice"].has-due')
+    xp_before = int(app_page.inner_text("#game-total-xp"))
     _open_practice(app_page)
     app_page.click('.pr-battery-btn[data-akku="geht_so"]')
     # Erste Aufgabe: Laborgeräte, Stufe „Anschauen“; Fortschritt 1 von 4; nach dem Lösen nur „Weiter“
@@ -61,6 +62,8 @@ def test_round_leads_through_what_is_due(app_page, chemie_current):
     app_page.wait_for_selector(".pr-done")
     app_page.click('[data-action="round-home"]')
     app_page.wait_for_selector("#tab-dashboard.active")
+    # Punkte auf der Startseite gleich aktuell, nicht erst nach Neustart der App
+    app_page.wait_for_function(f"+document.getElementById('game-total-xp').textContent > {xp_before}")
     assert app_page.problems.errors == []
 
 

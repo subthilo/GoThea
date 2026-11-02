@@ -40,6 +40,8 @@ document.querySelectorAll(".nav-tab").forEach((btn) => {
       if (typeof loadColoringPages === "function") loadColoringPages();
     }
     applyTabViewModes(btn.dataset.tab);
+    // Punkte können sich seit dem Start geändert haben (Übungen, abgebrochene Runde)
+    if (btn.dataset.tab === "dashboard") loadGamificationOverview();
     if (btn.dataset.tab === "timetable") {
       loadTimetable();
     }
