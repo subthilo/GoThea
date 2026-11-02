@@ -211,7 +211,7 @@
     return `<div class="kr-line">
           ${it.nummer ? `<span class="kr-no">${esc(it.nummer)}</span>` : ""}
           <span class="kr-expr">${mathHtml(it.zeige)}</span>
-          <span class="kr-eq">${it.vor ? "→" : "="}</span>
+          <span class="kr-eq">${it.pfeil ? `<span class="kr-eq-op">${esc(it.pfeil)}</span>` : ""}${it.vor ? "→" : "="}</span>
           ${run.state === "korrigiert" ? `<s class="kr-given" aria-label="Deine Antwort">${esc(run.given)}</s>` : ""}
           ${answerBoxHtml()}
           ${it.nach ? `<span class="kr-unit">${esc(it.nach)}</span>` : ""}

@@ -52,6 +52,12 @@ def test_reduce_asks_for_exactly_that_fraction():
         kr.solve({"kuerzen": "15/24", "mit": 5})
 
 
+def test_reduce_by_a_number_shows_it_over_the_arrow():
+    sol = kr.solve({"kuerzen": "35/60", "mit": 5})
+    assert kr.display({"kuerzen": "35/60", "mit": 5}, sol)["pfeil"] == ": 5"
+    assert "pfeil" not in kr.display({"kuerzen": "48/96", "mit": "vollständig"}, kr.solve({"kuerzen": "48/96", "mit": "vollständig"}))
+
+
 def test_dividing_a_fraction_accepts_any_equal_fraction_and_shows_the_sheet_form():
     item = {"rechnung": "15/24 : 3", "antwort": "bruch", "gekuerzt": False, "ergebnis": "5/24"}
     sol = kr.solve(item)

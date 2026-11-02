@@ -2063,9 +2063,27 @@ button.sr-cell.in.active {
 .kr-dot.shown { background: var(--warning); }
 .kr-dot.now { background: var(--accent); box-shadow: 0 0 0 3px var(--theme-glow); }
 
+/* Arbeitsauftrag („Kürze mit 5“): gut sichtbar, nicht nur als Unterzeile */
 .kr-vor {
-  color: var(--text-secondary);
-  font-size: 1.15rem;
+  color: var(--text-primary);
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  font-weight: 700;
+}
+
+.kr-eq {
+  position: relative;
+}
+
+/* Zahl über dem Pfeil wie im Heft („: 5“) */
+.kr-eq-op {
+  position: absolute;
+  left: 50%;
+  bottom: 78%;
+  transform: translateX(-50%);
+  font-size: 0.5em;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
 }
 
 .kr-line {

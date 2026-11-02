@@ -299,10 +299,14 @@ def choice_options(item: dict, sol: dict, seed: str) -> dict:
 
 
 def display(item: dict, sol: dict) -> dict:
-    """Was Thea sieht: optional ein Wort davor, die Aufgabe, nach dem Antwortkästchen ggf. die Einheit."""
+    """Was Thea sieht: optional ein Wort davor, die Aufgabe, nach dem Antwortkästchen ggf. die Einheit. Beim Kürzen
+    mit einer Zahl steht sie zusätzlich über dem Pfeil („: 5“ wie im Heft) – „Kürze mit 5“ allein übersah man leicht
+    (Nutzer, 2.11.)."""
     if "kuerzen" in item:
         mit = item["mit"]
-        return {"vor": "Kürze vollständig" if mit == "vollständig" else f"Kürze mit {mit}", "zeige": item["kuerzen"], "nach": ""}
+        if mit == "vollständig":
+            return {"vor": "Kürze vollständig", "zeige": item["kuerzen"], "nach": ""}
+        return {"vor": f"Kürze mit {mit}", "pfeil": f": {mit}", "zeige": item["kuerzen"], "nach": ""}
     if "umrechnen" in item:
         return {"vor": item.get("vor", ""), "zeige": item["umrechnen"], "nach": item["in"]}
     return {"vor": item.get("vor", ""), "zeige": item.get("zeige", item["rechnung"]), "nach": ""}
