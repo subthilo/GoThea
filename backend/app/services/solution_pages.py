@@ -11,7 +11,7 @@ einmal geschafft (egal auf welcher Stufe, auch über einen Zwilling; wie das Öf
 Danach lernt sie mit der Lösung. Später (Bearbeitungs-Ablauf): auch nach Abgabe.
 """
 import json
-from typing import Set
+from typing import Dict, List, Optional, Set
 
 from sqlalchemy.orm import Session
 
@@ -46,6 +46,28 @@ def pages(material) -> Set[int]:
 
 def is_solution_page(material, page: int) -> bool:
     return whole_document(material) or page in pages(material)
+
+
+def _as_json(numbers) -> Optional[str]:
+    return json.dumps(sorted(numbers)) if numbers else None
+
+
+def after_reorder(material, page_order: List[int]) -> Optional[str]:
+    """Lösungsseiten nach Umsortieren/Löschen (page_order[i] = alte Seite an Position i+1): jede Sperre wandert
+    mit ihrer Seite – sonst läge sie danach auf einer Aufgabenseite und die Lösung wäre für Thea frei."""
+    old = pages(material)
+    return _as_json({new for new, prev in enumerate(page_order, start=1) if prev in old})
+
+
+def after_merge(materials, page_counts: Dict[str, int], page_offsets: Dict[str, int]) -> Optional[str]:
+    """Lösungsseiten des zusammengeführten Dokuments: die der Quellen, verschoben um die Seiten davor. Ist eine
+    Quelle ganz ein Lösungsdokument, sind alle ihre Seiten gesperrt (das neue Dokument trägt die Art der ersten)."""
+    locked = set()
+    for mat in materials:
+        offset = page_offsets[mat.id]
+        own = range(1, page_counts[mat.id] + 1) if whole_document(mat) else pages(mat)
+        locked |= {offset + p for p in own if 1 <= p <= page_counts[mat.id]}
+    return _as_json(locked)
 
 
 def unlocked(db: Session, material) -> bool:

@@ -14,6 +14,7 @@ import logging
 
 from backend.app.config import MATERIALS_DIR, TEMP_UPLOADS_DIR, PAGE_CACHE_DIR
 from backend.app.services.document_kinds import ARBEITSBLATT, BUCHAUSZUG, normalize_kind
+from backend.app.services import solution_pages
 from backend.app.models.taxonomy import Subject, Topic
 from backend.app.models.material import Material, MaterialChunk
 from backend.app.schemas.material import (
@@ -523,6 +524,7 @@ def merge_materials(db: Session, request: MaterialMergeRequest) -> Material:
     all_texts: List[str] = []
 
     page_offsets: Dict[str, int] = {}  # Material-ID -> Seiten davor im neuen Dokument
+    page_counts: Dict[str, int] = {}   # Material-ID -> eigene Seiten im neuen Dokument
     for mat in materials:
         page_offsets[mat.id] = len(writer.pages)
         mat_path = Path(mat.file_path)
@@ -540,6 +542,7 @@ def merge_materials(db: Session, request: MaterialMergeRequest) -> Material:
                 for page in img_reader.pages:
                     writer.add_page(page)
 
+        page_counts[mat.id] = len(writer.pages) - page_offsets[mat.id]
         if mat.extracted_text:
             all_texts.append(mat.extracted_text)
 
@@ -568,7 +571,12 @@ def merge_materials(db: Session, request: MaterialMergeRequest) -> Material:
         mime_type="application/pdf",
         page_count=page_count,
         extracted_text=combined_text,
-        summary=f"Zusammengeführt aus {len(materials)} Dokumenten"
+        summary=f"Zusammengeführt aus {len(materials)} Dokumenten",
+        # Lösungen bleiben gesperrt; „bearbeitet“/„bewertet“ gibt alle Lösungen frei, gilt also nur, wenn es für
+        # jede Quelle gilt – sonst würde ein bearbeitetes Blatt die Lösungen eines anderen freischalten
+        solution_pages_json=solution_pages.after_merge(materials, page_counts, page_offsets),
+        worked_on_paper=True if all(m.worked_on_paper for m in materials) else None,
+        teacher_graded=True if all(m.teacher_graded for m in materials) else None,
     )
     db.add(new_material)
     db.flush()
@@ -667,6 +675,7 @@ def reorder_material_pages(db: Session, material_id: str, page_order: List[int])
 
     temp_path.replace(mat_path)
 
+    material.solution_pages_json = solution_pages.after_reorder(material, page_order)
     material.page_count = len(page_order)
     material.file_size = os.path.getsize(mat_path)
 
