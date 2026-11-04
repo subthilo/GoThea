@@ -18,7 +18,7 @@ auf die Schreibweise). „Im Buch“ zeigt in den Stufen im Tab jederzeit den Bu
 |---|---|
 | `bild` | `{datei, original, breite, hoehe}` – von `figure_tool.py export` |
 | `felder` | `[{nr, x, y, begriff, auch?}]` – `x`, `y` = Mitte des Ziffernkreises (Anteil 0–1), `begriff` wortgleich wie im Buch, `auch` = weitere gültige Schreibweisen |
-| `ablenker` | ≥ 2 plausible Begriffe **aus demselben Kapitel**, die hier nicht passen (Brenner: Gashahn, Leuchtflamme, Drahtnetz, Dreifuß) – nie ein Synonym eines richtigen Begriffs |
+| `ablenker` | ≥ 2 plausible Begriffe **aus demselben Kapitel**, die hier nicht passen (Brenner: Gashahn, Leuchtflamme, Drahtnetz, Dreifuß) – nie ein Synonym eines richtigen Begriffs ; nur nötig mit Stufe 2 – gibt es keine ehrlichen Ablenker (ganze Sätze zu Kraftpfeil-Grafiken, `ph-kraftpfeile`), Stufe 2 per `stufen` weglassen |
 | `hilfen` | `{denkanstoss}` – Luna sagt ihn nach dem ersten Fehlversuch |
 | `stufen` | optional, Teilmenge von −1, 1, 2, 3 – z. B. `[-1, 1, 2]`, wenn die Begriffe ganze Sätze sind (Stufe 3 vergleicht buchstabengenau) |
 
@@ -38,6 +38,8 @@ auf die Schreibweise). „Im Buch“ zeigt in den Stufen im Tab jederzeit den Bu
 # 4. Ablegen; gibt bild + felder als JSON aus
 .venv/bin/python scripts/figure_tool.py export <name> <N> <übungs-id>
 ```
+
+**Beschriftete Abbildung, Original statt Nachzeichnen** (`ph-kraftmesser`): `original.png` als `buch.png` kopieren (für „Im Buch“), in `original.png` die Beschriftungen aus `labels.json` abdecken (Füllung aus dem Grau darüber/darunter, geglättet – sonst Streifen), Kreise an die Hinweislinien, dann `mark` und `export`.
 
 **Abbildung ohne Beschriftungen** (Arbeitsheft-Zeichnungen mit leeren Linien, z. B. `ch-laborgeraete-1`): nicht
 nachzeichnen lassen, sondern den Original-Ausschnitt nehmen. Nach `prepare` in key.json je Ziffer `x`, `y` (Pixel in

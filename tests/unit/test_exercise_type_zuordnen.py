@@ -33,6 +33,13 @@ def test_validate_catches_broken_data():
     assert any("fehlt in exercise_sets/bilder" in e for e in errors)
 
 
+def test_distractors_only_needed_with_stage_two():
+    # Kraftpfeil-Grafiken: ganze Sätze ohne ehrliche Ablenker, daher ohne Stufe 2
+    ex = pe.get_exercise("ph-kraftpfeile", include_drafts=True)
+    assert ex["stufen"] == [-1, 1] and not ex.get("ablenker") and zuordnen.validate(ex) == []
+    assert "Mindestens zwei Ablenker für Stufe 2" in zuordnen.validate({**ex, "stufen": [-1, 1, 2]})
+
+
 @pytest.fixture
 def trial_on(monkeypatch):
     monkeypatch.setattr(config, "EXERCISE_TRIAL_ENABLED", True)

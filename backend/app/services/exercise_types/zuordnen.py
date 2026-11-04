@@ -49,7 +49,9 @@ def validate(ex: dict) -> List[str]:
     if len(set(terms)) != len(terms):
         errors.append("Ein Begriff kommt doppelt vor")
     distractors = [_norm(d) for d in ex.get("ablenker") or []]
-    if len(distractors) < 2:
+    # Ablenker braucht nur Stufe 2; ohne sie (z. B. ganze Sätze zu Kraftpfeil-Grafiken, zu denen jeder weitere
+    # Satz irgendwie passen würde) dürfen sie fehlen
+    if 2 in ex.get("stufen", STAGES) and len(distractors) < 2:
         errors.append("Mindestens zwei Ablenker für Stufe 2")
     if set(distractors) & set(terms):
         errors.append("Ein Ablenker ist zugleich ein richtiger Begriff")
@@ -62,7 +64,7 @@ def prepare(ex: dict) -> dict:
         "bild_url": IMAGE_URL + ex["bild"]["datei"],
         "original_url": IMAGE_URL + ex["bild"]["original"],
         "wortbank": shuffled(terms, ex["id"] + "-bank"),
-        "wortbank_ablenker": shuffled(terms + list(ex["ablenker"]), ex["id"] + "-ablenker"),
+        "wortbank_ablenker": shuffled(terms + list(ex.get("ablenker") or []), ex["id"] + "-ablenker"),
     }
 
 
