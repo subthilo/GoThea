@@ -1,0 +1,100 @@
+{
+  "typ": "schubladen",
+  "version": 1,
+  "stand": "2026-11-04",
+  "hinweis": "Physik, Kapitel 1 Mechanik (Physik plus Klasse 7). Erstellt in einer Claude-Code-Session; Begriffe wortgleich aus Buch, Arbeitsblatt und Theas Mitschrift „Unterscheidung von Masse und Gewichtskraft“, Zuordnung nach Buch S. 11/12 und dem Grundwissen des Arbeitsblatts. ph-richtig-falsch: zu den vier Aussagen aus Nr. 3a kommen die zwei Sätze aus dem Grundwissen über der Aufgabe (als „richtig“).",
+  "uebungen": [
+    {
+      "id": "ph-masse-gewichtskraft",
+      "ableitung": "C",
+      "fach": "sub_physics",
+      "thema": "top_5c246771",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 11,
+        "seite": 15,
+        "nummer": "7"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 8,
+        "seite": 12,
+        "stelle": "Masse ist eine Körpereigenschaft, die Gewichtskraft ist ortsabhängig"
+      },
+      "abschnitt": "1.3 Gewichtskraft & Gravitation",
+      "aufgabentext": "Beschreibe den Unterschied zwischen Gewichtskraft und Masse eines Körpers! Ordne zu: Was gehört zur Masse, was zur Gewichtskraft?",
+      "gruppen": [
+        {
+          "name": "Masse",
+          "begriffe": [
+            "Balkenwaage",
+            "kg",
+            "ist überall gleich",
+            "gibt an, wie schwer oder träge ein Körper ist"
+          ]
+        },
+        {
+          "name": "Gewichtskraft",
+          "begriffe": [
+            "Federkraftmesser",
+            "N",
+            "hängt vom Ort ab",
+            "gibt an, wie stark ein Körper auf seine Unterlage drückt"
+          ]
+        }
+      ],
+      "hilfen": {
+        "denkanstoss": "Auf dem Mond ist ein Stein leichter zu heben. Hat sich dabei seine Masse geändert oder seine Gewichtskraft?"
+      }
+    },
+    {
+      "id": "ph-richtig-falsch",
+      "ableitung": "A",
+      "fach": "sub_physics",
+      "thema": "top_5c246771",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Masse und Gewichtskraft – Messen von Kräften",
+        "material_id": "mat_7b5a6bbf",
+        "material_seite": 1,
+        "seite": 4,
+        "nummer": "3a"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 8,
+        "seite": 12,
+        "stelle": "Masse ist eine Körpereigenschaft, die Gewichtskraft ist ortsabhängig"
+      },
+      "abschnitt": "1.3 Gewichtskraft & Gravitation",
+      "aufgabentext": "Entscheide, ob die Aussagen richtig oder falsch sind.",
+      "gruppen": [
+        {
+          "name": "richtig",
+          "begriffe": [
+            "Die Gewichtskraft gibt an, wie stark ein Körper auf seine Unterlage drückt oder an seiner Aufhängung zieht.",
+            "Die Masse ist unabhängig vom Ort, die Gewichtskraft nicht.",
+            "Die Gewichtskraft eines Körpers mit einer Masse von 100 g beträgt auf der Erdoberfläche etwa 1 N."
+          ]
+        },
+        {
+          "name": "falsch",
+          "begriffe": [
+            "Die Masse eines Astronauten ist auf dem Mond kleiner als auf der Erde.",
+            "Die Gewichtskraft eines Körpers mit der Masse von 1 kg beträgt auf der Erde 1 kN.",
+            "In der internationalen Raumstation ISS besitzen die Körper keine Masse."
+          ]
+        }
+      ],
+      "hilfen": {
+        "denkanstoss": "Die Masse bleibt überall gleich – auf dem Mond und in der ISS. Und 100 g ≙ 1 N."
+      }
+    }
+  ]
+}

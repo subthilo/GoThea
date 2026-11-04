@@ -136,4 +136,18 @@ def assert_fits(page, cases):
 
 def test_everything_fits_on_one_screen_in_both_orientations(app_page):
     assert_fits(app_page, [("km-zehnerzahlen-2", 1), ("km-bruch-division-1", 2), ("km-kuerzen-dividieren", -1),
-                           ("km-einmaleins-check", 2)])
+                           ("km-einmaleins-check", 2), ("ph-hebeltabelle-1", 2), ("ph-masse-in-newton", -1)])
+
+
+def test_lever_equation_above_and_weight_with_correspondence_sign(app_page):
+    # Physik: Hebelgesetz als Gleichung über der Zeile „F₂ = ☐ N“; Masse ↔ Gewichtskraft mit „≙“ statt „=“
+    open_kr(app_page, "ph-hebeltabelle-1", 2)
+    assert app_page.inner_text(".kr-gegeben") == "5 N · 4 cm = F₂ · 4 cm"
+    assert app_page.inner_text(".kr-line .kr-eq") == "=" and app_page.inner_text(".kr-unit") == "N"
+    type_number(app_page, "5")
+    app_page.click('[data-action="kr-submit"]')
+    app_page.wait_for_selector(".kr-dot.done")
+    app_page.click('[data-action="back"]')
+    open_kr(app_page, "ph-masse-in-newton", 2)
+    assert app_page.inner_text(".kr-line .kr-eq") == "≙"
+    assert app_page.problems.errors == []

@@ -1,0 +1,298 @@
+{
+  "typ": "kurzrechnung",
+  "version": 1,
+  "stand": "2026-11-04",
+  "hinweis": "Physik, Kapitel 1 Mechanik. Erstellt in einer Claude-Code-Session; Aufgaben am Seitenbild geprüft, Lösungen vom Code nachgerechnet. Masse ↔ Gewichtskraft wie im Unterricht mit 100 g ≙ 1 N. Hebeltabellen: jede Tabellenzeile als Gleichung des Hebelgesetzes (C).",
+  "uebungen": [
+    {
+      "id": "ph-kraft-einheiten",
+      "ableitung": "A",
+      "fach": "sub_physics",
+      "thema": "top_39c86799",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Kräfte und ihre Wirkungen – Kräfte",
+        "material_id": "mat_00a4cd80",
+        "material_seite": 2,
+        "seite": 3,
+        "nummer": "2b, 2c"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 11,
+        "seite": 15,
+        "stelle": "Zusammenfassung: Einheit der Kraft"
+      },
+      "abschnitt": "1.1 Kraft & Wirkungen von Kräften",
+      "aufgabentext": "Für große Kräfte kann man die Einheit kN verwenden, für sehr große Kräfte die Einheit MN. Rechne um.",
+      "stufen": [
+        -1,
+        2
+      ],
+      "aufgaben": [
+        {
+          "nummer": "b",
+          "umrechnen": "1 kN",
+          "in": "N",
+          "ergebnis": "1000"
+        },
+        {
+          "nummer": "b",
+          "umrechnen": "1 MN",
+          "in": "N",
+          "ergebnis": "1000000"
+        },
+        {
+          "nummer": "c",
+          "umrechnen": "12 000 N",
+          "in": "kN",
+          "ergebnis": "12"
+        },
+        {
+          "nummer": "c",
+          "umrechnen": "0,45 kN",
+          "in": "N",
+          "ergebnis": "450"
+        },
+        {
+          "nummer": "c",
+          "umrechnen": "3,2 kN",
+          "in": "N",
+          "ergebnis": "3200"
+        },
+        {
+          "nummer": "c",
+          "umrechnen": "2400 kN",
+          "in": "MN",
+          "ergebnis": "2,4"
+        },
+        {
+          "nummer": "c",
+          "umrechnen": "540 000 N",
+          "in": "MN",
+          "ergebnis": "0,54"
+        },
+        {
+          "nummer": "c",
+          "umrechnen": "88 N",
+          "in": "kN",
+          "ergebnis": "0,088"
+        }
+      ]
+    },
+    {
+      "id": "ph-masse-in-newton",
+      "ableitung": "A",
+      "fach": "sub_physics",
+      "thema": "top_5c246771",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Masse und Gewichtskraft – Messen von Kräften",
+        "material_id": "mat_7b5a6bbf",
+        "material_seite": 1,
+        "seite": 4,
+        "nummer": "3c"
+      },
+      "nachschlagen": {
+        "material": "Merksatz zur Umrechnung von Masse und Kraft",
+        "material_id": "mat_a74a8704",
+        "material_seite": 1,
+        "seite": 1,
+        "stelle": "100 g ≙ 1 N"
+      },
+      "abschnitt": "1.3 Gewichtskraft & Gravitation",
+      "aufgabentext": "Rechne um. Die Gewichtskraft eines Körpers mit einer Masse von 100 g beträgt auf der Erdoberfläche etwa 1 N.",
+      "stufen": [
+        -1,
+        2
+      ],
+      "aufgaben": [
+        {
+          "umrechnen": "1200 g",
+          "in": "N",
+          "ergebnis": "12"
+        },
+        {
+          "umrechnen": "1,5 t",
+          "in": "kN",
+          "ergebnis": "15"
+        },
+        {
+          "umrechnen": "8,4 N",
+          "in": "g",
+          "ergebnis": "840"
+        },
+        {
+          "umrechnen": "2,6 kN",
+          "in": "kg",
+          "ergebnis": "260"
+        },
+        {
+          "umrechnen": "55 kg",
+          "in": "N",
+          "ergebnis": "550"
+        },
+        {
+          "umrechnen": "150 mg",
+          "in": "N",
+          "ergebnis": "0,0015"
+        },
+        {
+          "umrechnen": "420 N",
+          "in": "kg",
+          "ergebnis": "42"
+        },
+        {
+          "umrechnen": "0,25 N",
+          "in": "kg",
+          "ergebnis": "0,025"
+        }
+      ]
+    },
+    {
+      "id": "ph-hebeltabelle-1",
+      "ableitung": "C",
+      "fach": "sub_physics",
+      "thema": "top_56bc9f9b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Einfache Maschinen – Hebel machen's möglich",
+        "material_id": "mat_24a6b6b8",
+        "material_seite": 2,
+        "seite": 8,
+        "nummer": "5 (linke Tabelle)"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 23,
+        "seite": 27,
+        "stelle": "Hebelgesetz"
+      },
+      "abschnitt": "1.9 Geneigte Ebene & Hebel",
+      "aufgabentext": "Ergänze die Tabelle. Der Hebel ist im Gleichgewicht: Last F₁ · Lastarm a₁ = Kraft F₂ · Kraftarm a₂.",
+      "stufen": [
+        -1,
+        2
+      ],
+      "aufgaben": [
+        {
+          "nummer": "1",
+          "gegeben": "5 N · 4 cm = F₂ · 4 cm",
+          "zeige": "F₂",
+          "rechnung": "5 · 4 : 4",
+          "einheit": "N",
+          "ergebnis": "5"
+        },
+        {
+          "nummer": "2",
+          "gegeben": "10 N · 2 cm = F₂ · 4 cm",
+          "zeige": "F₂",
+          "rechnung": "10 · 2 : 4",
+          "einheit": "N",
+          "ergebnis": "5",
+          "fehler": "2"
+        },
+        {
+          "nummer": "3",
+          "gegeben": "6 N · 2 cm = 2 N · a₂",
+          "zeige": "a₂",
+          "rechnung": "6 · 2 : 2",
+          "einheit": "cm",
+          "ergebnis": "6"
+        },
+        {
+          "nummer": "4",
+          "gegeben": "4 N · 40 cm = F₂ · 10 cm",
+          "zeige": "F₂",
+          "rechnung": "4 · 40 : 10",
+          "einheit": "N",
+          "ergebnis": "16",
+          "fehler": "1"
+        },
+        {
+          "nummer": "5",
+          "gegeben": "F₁ · 15 cm = 5 N · 12 cm",
+          "zeige": "F₁",
+          "rechnung": "5 · 12 : 15",
+          "einheit": "N",
+          "ergebnis": "4"
+        }
+      ]
+    },
+    {
+      "id": "ph-hebeltabelle-2",
+      "ableitung": "C",
+      "fach": "sub_physics",
+      "thema": "top_56bc9f9b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Einfache Maschinen – Hebel machen's möglich",
+        "material_id": "mat_24a6b6b8",
+        "material_seite": 2,
+        "seite": 8,
+        "nummer": "5 (rechte Tabelle)"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 23,
+        "seite": 27,
+        "stelle": "Hebelgesetz"
+      },
+      "abschnitt": "1.9 Geneigte Ebene & Hebel",
+      "aufgabentext": "Ergänze die Tabelle. Der Hebel ist im Gleichgewicht: Last F₁ · Lastarm a₁ = Kraft F₂ · Kraftarm a₂.",
+      "stufen": [
+        -1,
+        2
+      ],
+      "aufgaben": [
+        {
+          "nummer": "1",
+          "gegeben": "10 N · 3 cm = F₂ · 5 cm",
+          "zeige": "F₂",
+          "rechnung": "10 · 3 : 5",
+          "einheit": "N",
+          "ergebnis": "6"
+        },
+        {
+          "nummer": "2",
+          "gegeben": "F₁ · 50 cm = 10 N · 30 cm",
+          "zeige": "F₁",
+          "rechnung": "10 · 30 : 50",
+          "einheit": "N",
+          "ergebnis": "6"
+        },
+        {
+          "nummer": "3",
+          "gegeben": "F₁ · 20 cm = 1 N · 60 cm",
+          "zeige": "F₁",
+          "rechnung": "1 · 60 : 20",
+          "einheit": "N",
+          "ergebnis": "3"
+        },
+        {
+          "nummer": "4",
+          "gegeben": "12 N · 30 cm = 18 N · a₂",
+          "zeige": "a₂",
+          "rechnung": "12 · 30 : 18",
+          "einheit": "cm",
+          "ergebnis": "20"
+        },
+        {
+          "nummer": "5",
+          "gegeben": "9 N · 20 cm = F₂ · 30 cm",
+          "zeige": "F₂",
+          "rechnung": "9 · 20 : 30",
+          "einheit": "N",
+          "ergebnis": "6"
+        }
+      ]
+    }
+  ]
+}

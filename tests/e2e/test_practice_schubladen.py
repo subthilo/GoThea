@@ -94,3 +94,8 @@ def test_everything_fits_on_one_screen_in_both_orientations(app_page):
 def test_long_cards_fit_on_one_screen(app_page):
     # Mathe: neun Karten mit ganzen Zuordnungen statt einzelner Wörter; Stufe 3 legt alle in die Schubladen
     assert_fits(app_page, "ma-art-der-zuordnung", [1, 2, 3])
+
+
+def test_whole_sentences_fit_on_one_screen(app_page):
+    # Physik: sechs ganze Aussagen „richtig“/„falsch“ (Arbeitsblatt Masse und Gewichtskraft)
+    assert_fits(app_page, "ph-richtig-falsch", [1, 2, 3])

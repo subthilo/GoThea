@@ -1,0 +1,378 @@
+{
+  "typ": "sachaufgabe",
+  "version": 1,
+  "stand": "2026-11-04",
+  "hinweis": "Physik, Kapitel 1 Mechanik. Erstellt in einer Claude-Code-Session; Aufgaben aus dem Buch (S. 15, S. 33) und Theas Test, Lösungen vom Code nachgerechnet. Gewichtskraft wie im Unterricht mit 100 g ≙ 1 N (das Buch rechnet mit 9,81 N/kg).",
+  "uebungen": [
+    {
+      "id": "ph-federkonstante",
+      "ableitung": "A",
+      "fach": "sub_physics",
+      "thema": "top_0f46e77b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 11,
+        "seite": 15,
+        "nummer": "3"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 4,
+        "seite": 8,
+        "stelle": "Federkonstante D, Hooke’sches Gesetz"
+      },
+      "abschnitt": "1.2 Federkraftmesser & Darstellen von Kräften",
+      "aufgabentext": "Eine Schraubenfeder, für die das Hooke’sche Gesetz gilt, wird durch eine Kraft von 1 N um 2 cm gedehnt. Welchen Wert hat die Federkonstante D?",
+      "ueberschlag": null,
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung von Claude, vom Code nachgerechnet (im Buch nicht vorgegeben)"
+      },
+      "schema": "rechnung",
+      "rechnung": {
+        "ausdruck": "1 : 2",
+        "umformung": "1 : 2",
+        "zahlen": [
+          1,
+          2
+        ]
+      },
+      "ergebnis": {
+        "wert": 0.5,
+        "einheit": "N/cm"
+      },
+      "antwort_anfang": "Die Federkonstante beträgt",
+      "antwortsatz": "Die Federkonstante beträgt D = 0,5 N/cm.",
+      "gedankengang": [
+        {
+          "satz": "Die Kraft ist F = [[1]] N. Die Feder wird um s = [[2]] cm gedehnt.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Die Federkonstante ist Kraft geteilt durch Dehnung: D = 1 N : 2 cm = [[0,5]] N/cm.",
+          "tipp": "D = F : s. Die Einheit ist N/cm: Newton geteilt durch Zentimeter."
+        },
+        {
+          "satz": "Probe: 0,5 N/cm · 2 cm = [[1]] N. Das ist die Kraft aus der Aufgabe.",
+          "tipp": "Die Hälfte von 2 ist 1."
+        },
+        {
+          "satz": "Die Federkonstante beträgt D = [[0,5]] N/cm."
+        }
+      ],
+      "theas_loesung": "In der Mitschrift: „D = 1N/2cm  0,5“ – richtig gerechnet, aber ohne Einheit N/cm.",
+      "typische_fehler": [
+        "Einheit N/cm vergessen",
+        "Dehnung durch Kraft geteilt (s : F)"
+      ],
+      "hilfen": {
+        "denkanstoss": "Wie viel Newton braucht man für 1 cm Dehnung?",
+        "hinweis": "D = F : s = 1 N : 2 cm."
+      },
+      "schaetzfrage": {
+        "frage": "Braucht diese Feder für 1 cm Dehnung mehr oder weniger als 1 N?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "weniger",
+        "vergleichswert": 1,
+        "ergebnis_ist": "kleiner",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 2,
+        "fehler": "umgekehrt geteilt: 2 cm : 1 N"
+      }
+    },
+    {
+      "id": "ph-kotfluegel",
+      "ableitung": "A",
+      "fach": "sub_physics",
+      "thema": "top_0f46e77b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 11,
+        "seite": 15,
+        "nummer": "6"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 4,
+        "seite": 8,
+        "stelle": "Federkonstante D, Hooke’sches Gesetz"
+      },
+      "abschnitt": "1.2 Federkraftmesser & Darstellen von Kräften",
+      "aufgabentext": "Ein Mensch (70 kg) setzt sich auf den Kotflügel eines Autos und drückt die Schraubenfeder um 1 cm zusammen. Berechne die Federkonstante!",
+      "ueberschlag": null,
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung von Claude, vom Code nachgerechnet (im Buch nicht vorgegeben)"
+      },
+      "schema": "rechnung",
+      "rechnung": {
+        "ausdruck": "700 : 1",
+        "umformung": "700 : 1",
+        "zahlen": [
+          700,
+          1
+        ]
+      },
+      "ergebnis": {
+        "wert": 700,
+        "einheit": "N/cm"
+      },
+      "antwort_anfang": "Die Federkonstante beträgt",
+      "antwortsatz": "Die Federkonstante beträgt D = 700 N/cm.",
+      "gedankengang": [
+        {
+          "satz": "Der Mensch hat die Masse [[70]] kg. Die Feder wird um [[1]] cm zusammengedrückt.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "100 g ≙ 1 N, also 1 kg ≙ [[10]] N.",
+          "tipp": "1 kg sind 10-mal 100 g."
+        },
+        {
+          "satz": "Seine Gewichtskraft ist 70 · 10 N = [[700]] N."
+        },
+        {
+          "satz": "Die Federkonstante ist Kraft geteilt durch Dehnung: D = 700 N : 1 cm = [[700]] N/cm.",
+          "tipp": "Für D brauchst du die Kraft in N, nicht die Masse in kg."
+        },
+        {
+          "satz": "Die Federkonstante beträgt D = [[700]] N/cm."
+        }
+      ],
+      "typische_fehler": [
+        "Masse (kg) statt Gewichtskraft (N) eingesetzt",
+        "Einheit N/cm vergessen"
+      ],
+      "hilfen": {
+        "denkanstoss": "Mit welcher Kraft drückt der Mensch auf die Feder?",
+        "hinweis": "Erst 70 kg in N umrechnen (100 g ≙ 1 N), dann D = F : s."
+      },
+      "schaetzfrage": {
+        "frage": "Ist die Federkonstante größer oder kleiner als 70 N/cm?",
+        "optionen": [
+          "größer",
+          "kleiner"
+        ],
+        "antwort": "größer",
+        "vergleichswert": 70,
+        "ergebnis_ist": "groesser",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 70,
+        "fehler": "70 kg statt 700 N eingesetzt"
+      }
+    },
+    {
+      "id": "ph-proportionalitaetsfaktor",
+      "ableitung": "C",
+      "fach": "sub_physics",
+      "thema": "top_5c246771",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Test",
+        "material": "Untersuchung des Zusammenhangs von Masse und Gewichtskraft",
+        "material_id": "mat_3c95730d",
+        "material_seite": 2,
+        "seite": 2,
+        "nummer": "Erweiterung"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 7,
+        "seite": 11,
+        "stelle": "Fallbeschleunigung g = F_G : m"
+      },
+      "abschnitt": "1.3 Gewichtskraft & Gravitation",
+      "aufgabentext": "Ein Körper mit der Masse 50 g = 0,05 kg hat die Gewichtskraft 0,5 N. Ermittle den Proportionalitätsfaktor (Gewichtskraft geteilt durch Masse) in N/kg.",
+      "ueberschlag": null,
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung von Claude, vom Code nachgerechnet (im Buch nicht vorgegeben)"
+      },
+      "schema": "rechnung",
+      "rechnung": {
+        "ausdruck": "0,5 : 0,05",
+        "umformung": "50 : 5",
+        "zahlen": [
+          0.5,
+          0.05
+        ]
+      },
+      "ergebnis": {
+        "wert": 10,
+        "einheit": "N/kg"
+      },
+      "antwort_anfang": "Der Proportionalitätsfaktor beträgt",
+      "antwortsatz": "Der Proportionalitätsfaktor beträgt 10 N/kg.",
+      "gedankengang": [
+        {
+          "satz": "Die Gewichtskraft ist [[0,5]] N, die Masse ist [[0,05]] kg.",
+          "tipp": "Die Masse in kg steht in der Aufgabe."
+        },
+        {
+          "satz": "Mit Komma rechnet es sich schwer. Wir verschieben bei beiden Zahlen das Komma um zwei Stellen nach rechts: Aus 0,5 : 0,05 wird [[50]] : [[5]].",
+          "tipp": "0,5 · 100 und 0,05 · 100. Das Ergebnis bleibt gleich."
+        },
+        {
+          "satz": "Jetzt ohne Komma: 50 : 5 = [[10]]."
+        },
+        {
+          "satz": "Also ist der Faktor 0,5 N : 0,05 kg = [[10]] N/kg."
+        },
+        {
+          "satz": "Der Proportionalitätsfaktor beträgt [[10]] N/kg."
+        }
+      ],
+      "theas_loesung": "Im Test: Faktor 10 ohne Einheit; „in N/kg“ hat die Lehrkraft ergänzt.",
+      "einstieg": "Im Test fehlte beim Proportionalitätsfaktor die Einheit. Heute achten wir genau darauf.",
+      "typische_fehler": [
+        "Einheit N/kg vergessen",
+        "Komma nur bei einer Zahl verschoben",
+        "Masse durch Gewichtskraft geteilt"
+      ],
+      "hilfen": {
+        "denkanstoss": "Wie viel Newton gehören zu 1 kg?",
+        "hinweis": "Gewichtskraft : Masse = 0,5 N : 0,05 kg. Verschiebe bei beiden Zahlen das Komma."
+      },
+      "schaetzfrage": {
+        "frage": "Ist der Faktor größer oder kleiner als 1 N/kg?",
+        "optionen": [
+          "größer",
+          "kleiner"
+        ],
+        "antwort": "größer",
+        "vergleichswert": 1,
+        "ergebnis_ist": "groesser",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 1,
+        "fehler": "Komma nur bei einer Zahl verschoben (0,5 : 0,5)"
+      }
+    },
+    {
+      "id": "ph-kneifzange",
+      "ableitung": "A",
+      "fach": "sub_physics",
+      "thema": "top_56bc9f9b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 29,
+        "seite": 33,
+        "nummer": "18"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 23,
+        "seite": 27,
+        "stelle": "Hebelgesetz"
+      },
+      "abschnitt": "1.9 Geneigte Ebene & Hebel",
+      "aufgabentext": "Bei der Kneifzange drückt die Hand mit 100 N, 12 cm vom Drehpunkt entfernt. Der Nagel sitzt 2 cm vom Drehpunkt entfernt. Berechne die Kraft, die bei der Kneifzange auf den Nagel wirkt!",
+      "ueberschlag": null,
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung von Claude, vom Code nachgerechnet (im Buch nicht vorgegeben)"
+      },
+      "schema": "dreisatz_antiproportional",
+      "groessen": [
+        {
+          "name": "Hebelarm",
+          "einheit": "cm"
+        },
+        {
+          "name": "Kraft",
+          "einheit": "N"
+        }
+      ],
+      "zeilen": [
+        [
+          12,
+          100
+        ],
+        [
+          1,
+          1200
+        ],
+        [
+          2,
+          600
+        ]
+      ],
+      "schritte": [
+        ":12",
+        "·2"
+      ],
+      "ergebnis": {
+        "wert": 600,
+        "einheit": "N"
+      },
+      "antwort_anfang": "Auf den Nagel wirkt",
+      "antwortsatz": "Auf den Nagel wirkt eine Kraft von 600 N.",
+      "gedankengang": [
+        {
+          "satz": "Die Hand drückt mit [[100]] N. Ihr Hebelarm ist [[12]] cm lang.",
+          "tipp": "Beide Zahlen stehen in der Aufgabe."
+        },
+        {
+          "satz": "Der Nagel sitzt [[2]] cm vom Drehpunkt entfernt."
+        },
+        {
+          "satz": "Hebelgesetz: Kraft mal Hebelarm ist auf beiden Seiten gleich. Bei der Hand: 100 N · 12 cm = [[1200]] N·cm."
+        },
+        {
+          "satz": "Beim Nagel muss auch 1200 N·cm herauskommen, der Hebelarm ist aber nur 2 cm: F = 1200 N·cm : 2 cm = [[600]] N.",
+          "tipp": "Kurzer Hebelarm, große Kraft."
+        },
+        {
+          "satz": "Probe: 600 N · 2 cm = [[1200]] N·cm. Beide Seiten sind gleich."
+        },
+        {
+          "satz": "Auf den Nagel wirkt eine Kraft von [[600]] N."
+        }
+      ],
+      "typische_fehler": [
+        "mit dem kurzen statt dem langen Hebelarm malgenommen",
+        "Einheit vergessen"
+      ],
+      "hilfen": {
+        "denkanstoss": "Am kurzen Hebelarm ist die Kraft größer oder kleiner als an der Hand?",
+        "hinweis": "100 N · 12 cm = F · 2 cm."
+      },
+      "schaetzfrage": {
+        "frage": "Ist die Kraft am Nagel größer oder kleiner als 100 N?",
+        "optionen": [
+          "größer",
+          "kleiner"
+        ],
+        "antwort": "größer",
+        "vergleichswert": 100,
+        "ergebnis_ist": "groesser",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 1200,
+        "fehler": "vergessen, durch 2 cm zu teilen"
+      }
+    }
+  ]
+}
