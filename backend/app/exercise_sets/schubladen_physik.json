@@ -2,7 +2,7 @@
   "typ": "schubladen",
   "version": 1,
   "stand": "2026-11-04",
-  "hinweis": "Physik, Kapitel 1 Mechanik (Physik plus Klasse 7). Erstellt in einer Claude-Code-Session; Begriffe wortgleich aus Buch, Arbeitsblatt und Theas Mitschrift „Unterscheidung von Masse und Gewichtskraft“, Zuordnung nach Buch S. 11/12 und dem Grundwissen des Arbeitsblatts. ph-richtig-falsch: zu den vier Aussagen aus Nr. 3a kommen die zwei Sätze aus dem Grundwissen über der Aufgabe (als „richtig“).",
+  "hinweis": "Physik, Kapitel 1 Mechanik (Physik plus Klasse 7). Erstellt in einer Claude-Code-Session; Begriffe wortgleich aus Buch, Arbeitsblatt und Theas Mitschrift „Unterscheidung von Masse und Gewichtskraft“, Zuordnung nach Buch S. 11/12 und dem Grundwissen des Arbeitsblatts. ph-richtig-falsch: zu den vier Aussagen aus Nr. 3a kommen die zwei Sätze aus dem Grundwissen über der Aufgabe (als „richtig“). ph-wirkungen: Gruppen wie in Theas Mitschrift „Die physikalische Größe Kraft“, Beispiele aus dem Buch (S. 6/7: Speer, Torwart, Volleyball, Stange, Bogen), vom Arbeitsblatt (Teig) und aus der Mitschrift (Knete, Bremse, Lenkung). ph-hebelarten: Schere, Schubkarre vom Arbeitsblatt Nr. 4a, Kneifzange Nr. 3, Wippe und die beiden Steine aus dem Buch S. 27; Einordnung nach den Definitionen dort.",
   "uebungen": [
     {
       "id": "ph-masse-gewichtskraft",
@@ -94,6 +94,115 @@
       ],
       "hilfen": {
         "denkanstoss": "Die Masse bleibt überall gleich – auf dem Mond und in der ISS. Und 100 g ≙ 1 N."
+      }
+    },
+    {
+      "id": "ph-wirkungen",
+      "ableitung": "C",
+      "fach": "sub_physics",
+      "thema": "top_39c86799",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 11,
+        "seite": 15,
+        "nummer": "1"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 2,
+        "seite": 6,
+        "stelle": "Wirkungen von Kräften"
+      },
+      "abschnitt": "1.1 Kraft & Wirkungen von Kräften",
+      "aufgabentext": "Welche Wirkung hat die Kraft? Ordne die Beispiele zu.",
+      "gruppen": [
+        {
+          "name": "elastische Verformung",
+          "begriffe": [
+            "Ein Bogen wird gespannt.",
+            "Ein Sportler biegt eine Stange."
+          ]
+        },
+        {
+          "name": "plastische Verformung",
+          "begriffe": [
+            "Ein Hammer schlägt auf Knete.",
+            "Hände kneten Teig."
+          ]
+        },
+        {
+          "name": "Beschleunigung",
+          "begriffe": [
+            "Ein Sportler wirft einen Speer."
+          ]
+        },
+        {
+          "name": "Abbremsen",
+          "begriffe": [
+            "Die Bremse wirkt auf das Fahrrad.",
+            "Ein Torwart hält den Ball."
+          ]
+        },
+        {
+          "name": "Richtungsänderung",
+          "begriffe": [
+            "Die Lenkung wirkt auf das Fahrrad.",
+            "Beim Volleyball wird der Ball zurückgespielt."
+          ]
+        }
+      ],
+      "hilfen": {
+        "denkanstoss": "Ändert sich die Form – und bleibt sie so? Oder ändert sich die Bewegung: schneller, langsamer, andere Richtung?"
+      }
+    },
+    {
+      "id": "ph-hebelarten",
+      "ableitung": "C",
+      "fach": "sub_physics",
+      "thema": "top_56bc9f9b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Einfache Maschinen – Hebel machen's möglich",
+        "material_id": "mat_24a6b6b8",
+        "material_seite": 1,
+        "seite": 7,
+        "nummer": "4a"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 23,
+        "seite": 27,
+        "stelle": "Bild 2 und 3: zweiseitiger und einseitiger Hebel"
+      },
+      "abschnitt": "1.9 Geneigte Ebene & Hebel",
+      "aufgabentext": "Welche Hebelart ist es?",
+      "gruppen": [
+        {
+          "name": "zweiseitiger Hebel",
+          "begriffe": [
+            "Schere",
+            "Kneifzange",
+            "Wippe",
+            "Stange über einer Unterlage nach unten drücken"
+          ]
+        },
+        {
+          "name": "einseitiger Hebel",
+          "begriffe": [
+            "Schubkarre",
+            "Stange unter den Stein schieben und nach oben ziehen"
+          ]
+        }
+      ],
+      "buch": "ph-hebelarten_buch.jpg",
+      "hilfen": {
+        "denkanstoss": "Wo ist der Drehpunkt? Liegen Last und Kraft auf verschiedenen Seiten davon oder auf derselben Seite?"
       }
     }
   ]

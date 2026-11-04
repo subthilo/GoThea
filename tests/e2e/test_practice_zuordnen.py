@@ -157,3 +157,17 @@ def test_board_stage_of_another_figure_shows_the_sheet(app_page, parent_pin, ser
     # Aufräumen: sonst öffnen spätere Tests diese Tafel als letzte
     board_id = created.value.json()["id"]
     app_page.evaluate(f"apiFetch('/api/v1/boards/{board_id}', {{ method: 'DELETE' }})")
+
+
+def test_physics_figures_fit_on_one_screen(app_page, parent_pin):
+    # Physik: hoher, schmaler Kraftmesser (Stufe 2 mit Ablenkern) und sechs Kraftpfeil-Grafiken mit ganzen Sätzen
+    for exercise, stage in [("ph-kraftmesser", 2), ("ph-kraftpfeile", 1)]:
+        for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
+            app_page.set_viewport_size({"width": width, "height": height})
+            open_brenner(app_page, parent_pin, stage, exercise)
+            app_page.click(f'.zo-token[data-token="{terms(app_page, exercise)[0]["begriff"]}"]')
+            app_page.click('.zo-slot[data-row="2"]')
+            assert _overflow(app_page) == {"page": 0, "rows": 0, "bank": 0}, (exercise, width, height)
+            assert app_page.locator(".zo-figure").bounding_box()["height"] > 250, (exercise, width, height)
+            app_page.click('[data-action="back"]')
+    assert app_page.problems.errors == []

@@ -1,0 +1,147 @@
+{
+  "typ": "zuordnen",
+  "version": 1,
+  "stand": "2026-11-04",
+  "hinweis": "Physik, Kapitel 1 Mechanik. Kraftmesser: beschriftete Abbildung aus dem Buch (S. 9 Bild 1), Beschriftungen abgedeckt – das Arbeitsblatt zeigt ein unbeschriftetes Gerät ohne Lösung. Kraftpfeile: Original-Grafiken vom Arbeitsblatt, Theas Buchstaben abgedeckt; Lösung an den Pfeillängen abgelesen (stimmt mit Theas Antworten überein). Ohne Stufe 2: zu Kraftpfeil-Grafiken passt fast jeder weitere Satz irgendwo, ehrliche Ablenker gibt es nicht.",
+  "uebungen": [
+    {
+      "id": "ph-kraftmesser",
+      "ableitung": "C",
+      "fach": "sub_physics",
+      "thema": "top_23b0eb6a",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Kraftmesser und Darstellung von Kräften",
+        "material_id": "mat_d69a6bd9",
+        "material_seite": 1,
+        "seite": 53,
+        "nummer": "A1"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 5,
+        "seite": 9,
+        "stelle": "Bild 1: Federkraftmesser"
+      },
+      "abschnitt": "1.2 Federkraftmesser & Darstellen von Kräften",
+      "aufgabentext": "Beschrifte den Kraftmesser mit den richtigen Begriffen.",
+      "bild": {
+        "datei": "ph-kraftmesser.jpg",
+        "original": "ph-kraftmesser_original.jpg",
+        "breite": 585,
+        "hoehe": 898
+      },
+      "felder": [
+        {
+          "nr": 1,
+          "x": 0.4889,
+          "y": 0.1626,
+          "begriff": "Messbereich"
+        },
+        {
+          "nr": 2,
+          "x": 0.5197,
+          "y": 0.3452,
+          "begriff": "Schraubenfeder"
+        },
+        {
+          "nr": 3,
+          "x": 0.4906,
+          "y": 0.5835,
+          "begriff": "Skala"
+        },
+        {
+          "nr": 4,
+          "x": 0.4923,
+          "y": 0.853,
+          "begriff": "Nullpunkteinstellung"
+        }
+      ],
+      "ablenker": [
+        "Balkenwaage",
+        "Wägestück",
+        "Angriffspunkt"
+      ],
+      "hilfen": {
+        "denkanstoss": "Wo dehnt sich etwas, wo liest man ab, und wo stellt man vor dem Messen auf null?"
+      }
+    },
+    {
+      "id": "ph-kraftpfeile",
+      "ableitung": "A",
+      "fach": "sub_physics",
+      "thema": "top_23b0eb6a",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsblatt",
+        "material": "Kraftmesser und Darstellung von Kräften",
+        "material_id": "mat_d69a6bd9",
+        "material_seite": 2,
+        "seite": 54,
+        "nummer": "A1"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 5,
+        "seite": 9,
+        "stelle": "Darstellen von Kräften"
+      },
+      "abschnitt": "1.2 Federkraftmesser & Darstellen von Kräften",
+      "aufgabentext": "Ordne die folgenden Aussagen den richtigen Grafiken zu.",
+      "bild": {
+        "datei": "ph-kraftpfeile.jpg",
+        "original": "ph-kraftpfeile_original.jpg",
+        "breite": 1529,
+        "hoehe": 1111
+      },
+      "felder": [
+        {
+          "nr": 1,
+          "x": 0.0379,
+          "y": 0.0576,
+          "begriff": "Zwei Schülerinnen ziehen drei Schüler über die Grenzlinie."
+        },
+        {
+          "nr": 2,
+          "x": 0.7397,
+          "y": 0.0756,
+          "begriff": "Ein Heißluftballon steigt. Die Auftriebskraft ist größer als die Gewichtskraft."
+        },
+        {
+          "nr": 3,
+          "x": 0.1864,
+          "y": 0.2196,
+          "begriff": "Ein Heißluftballon sinkt, weil die Gewichtskraft größer geworden ist als die Auftriebskraft."
+        },
+        {
+          "nr": 4,
+          "x": 0.3663,
+          "y": 0.4086,
+          "begriff": "Herrchen will nach Hause gehen, Bello aber nicht. Beide ziehen gleich stark."
+        },
+        {
+          "nr": 5,
+          "x": 0.881,
+          "y": 0.4824,
+          "begriff": "Ein Heißluftballon schwebt, weil die Auftriebskraft und die Gewichtskraft gleich groß sind."
+        },
+        {
+          "nr": 6,
+          "x": 0.2714,
+          "y": 0.8434,
+          "begriff": "Drei Schüler ziehen zwei Schülerinnen beim Tauziehen über die Grenzlinie."
+        }
+      ],
+      "stufen": [
+        -1,
+        1
+      ],
+      "hilfen": {
+        "denkanstoss": "Ein längerer Pfeil bedeutet eine größere Kraft. Welche Seite ist stärker – oder sind beide gleich?"
+      }
+    }
+  ]
+}

@@ -374,6 +374,269 @@
         "fehler": "vergessen, durch 2 cm zu teilen"
       },
       "bild": "ph-kneifzange.jpg"
+    },
+    {
+      "id": "ph-federdehnung",
+      "ableitung": "A",
+      "fach": "sub_physics",
+      "thema": "top_0f46e77b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 11,
+        "seite": 15,
+        "nummer": "3"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 4,
+        "seite": 8,
+        "stelle": "Federkonstante D, Hooke’sches Gesetz"
+      },
+      "abschnitt": "1.2 Federkraftmesser & Darstellen von Kräften",
+      "aufgabentext": "Eine Schraubenfeder, für die das Hooke’sche Gesetz gilt, wird durch eine Kraft von 1 N um 2 cm gedehnt. Um wie viel verlängert sich die Feder durch eine Gewichtskraft von 0,2 N?",
+      "schema": "rechnung",
+      "rechnung": {
+        "ausdruck": "0,2 : 0,5",
+        "umformung": "2 : 5",
+        "zahlen": [
+          0.2,
+          0.5
+        ]
+      },
+      "ergebnis": {
+        "wert": 0.4,
+        "einheit": "cm"
+      },
+      "antwort_anfang": "Die Feder verlängert sich um",
+      "antwortsatz": "Die Feder verlängert sich um 0,4 cm.",
+      "gedankengang": [
+        {
+          "satz": "Die Feder hat die Federkonstante D = 1 N : 2 cm = [[0,5]] N/cm.",
+          "tipp": "D = F : s mit den Werten aus dem ersten Satz."
+        },
+        {
+          "satz": "Jetzt wirkt die Kraft F = [[0,2]] N.",
+          "tipp": "Die Kraft steht am Ende der Aufgabe."
+        },
+        {
+          "satz": "Mit Komma rechnet es sich schwer. Wir nehmen beide Zahlen mal 10: Aus 0,2 : 0,5 wird [[2]] : [[5]].",
+          "tipp": "Das Ergebnis bleibt gleich."
+        },
+        {
+          "satz": "Die Dehnung ist Kraft geteilt durch Federkonstante: s = 0,2 N : 0,5 N/cm = [[0,4]] cm.",
+          "tipp": "s = F : D. N geteilt durch N/cm ergibt cm."
+        },
+        {
+          "satz": "Die Feder verlängert sich um [[0,4]] cm."
+        }
+      ],
+      "ueberschlag": null,
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung von Claude, vom Code nachgerechnet (im Buch nicht vorgegeben)"
+      },
+      "typische_fehler": [
+        "mit D malgenommen statt geteilt",
+        "Komma nur bei einer Zahl verschoben"
+      ],
+      "hilfen": {
+        "denkanstoss": "Für 1 N dehnt sich die Feder um 2 cm. Ist die Kraft jetzt größer oder kleiner als 1 N?",
+        "hinweis": "s = F : D = 0,2 N : 0,5 N/cm."
+      },
+      "schaetzfrage": {
+        "frage": "Dehnt sich die Feder mehr oder weniger als 2 cm?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "weniger",
+        "vergleichswert": 2,
+        "ergebnis_ist": "kleiner",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 0.1,
+        "fehler": "mit D malgenommen: 0,2 · 0,5"
+      },
+      "theas_loesung": "In der Mitschrift richtig: F = 0,2 N → s = 0,4 cm, F = 0,5 N → s = 1 cm, F = 2 N → s = 4 cm (über das Diagramm)."
+    },
+    {
+      "id": "ph-federdehnung-z1",
+      "ableitung": "B",
+      "fach": "sub_physics",
+      "thema": "top_0f46e77b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 11,
+        "seite": 15,
+        "nummer": "3"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 4,
+        "seite": 8,
+        "stelle": "Federkonstante D, Hooke’sches Gesetz"
+      },
+      "abschnitt": "1.2 Federkraftmesser & Darstellen von Kräften",
+      "aufgabentext": "Eine Schraubenfeder, für die das Hooke’sche Gesetz gilt, wird durch eine Kraft von 1 N um 2 cm gedehnt. Um wie viel verlängert sich die Feder durch eine Gewichtskraft von 0,5 N?",
+      "schema": "rechnung",
+      "rechnung": {
+        "ausdruck": "0,5 : 0,5",
+        "umformung": "5 : 5",
+        "zahlen": [
+          0.5,
+          0.5
+        ]
+      },
+      "ergebnis": {
+        "wert": 1,
+        "einheit": "cm"
+      },
+      "antwort_anfang": "Die Feder verlängert sich um",
+      "antwortsatz": "Die Feder verlängert sich um 1 cm.",
+      "gedankengang": [
+        {
+          "satz": "Die Feder hat die Federkonstante D = 1 N : 2 cm = [[0,5]] N/cm.",
+          "tipp": "D = F : s mit den Werten aus dem ersten Satz."
+        },
+        {
+          "satz": "Jetzt wirkt die Kraft F = [[0,5]] N.",
+          "tipp": "Die Kraft steht am Ende der Aufgabe."
+        },
+        {
+          "satz": "Die Dehnung ist Kraft geteilt durch Federkonstante: s = 0,5 N : 0,5 N/cm = [[1]] cm.",
+          "tipp": "s = F : D. N geteilt durch N/cm ergibt cm."
+        },
+        {
+          "satz": "Die Feder verlängert sich um [[1]] cm."
+        }
+      ],
+      "ueberschlag": null,
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung von Claude, vom Code nachgerechnet (im Buch nicht vorgegeben)"
+      },
+      "typische_fehler": [
+        "mit D malgenommen statt geteilt",
+        "Komma nur bei einer Zahl verschoben"
+      ],
+      "hilfen": {
+        "denkanstoss": "Für 1 N dehnt sich die Feder um 2 cm. Ist die Kraft jetzt größer oder kleiner als 1 N?",
+        "hinweis": "s = F : D = 0,5 N : 0,5 N/cm."
+      },
+      "schaetzfrage": {
+        "frage": "Dehnt sich die Feder mehr oder weniger als 2 cm?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "weniger",
+        "vergleichswert": 2,
+        "ergebnis_ist": "kleiner",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 0.25,
+        "fehler": "mit D malgenommen: 0,5 · 0,5"
+      },
+      "zwilling_von": "ph-federdehnung"
+    },
+    {
+      "id": "ph-federdehnung-z2",
+      "ableitung": "B",
+      "fach": "sub_physics",
+      "thema": "top_0f46e77b",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Buch",
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 11,
+        "seite": 15,
+        "nummer": "3"
+      },
+      "nachschlagen": {
+        "material": "Physik plus Klasse 7",
+        "material_id": "mat_a26ac9ba_ch01",
+        "material_seite": 4,
+        "seite": 8,
+        "stelle": "Federkonstante D, Hooke’sches Gesetz"
+      },
+      "abschnitt": "1.2 Federkraftmesser & Darstellen von Kräften",
+      "aufgabentext": "Eine Schraubenfeder, für die das Hooke’sche Gesetz gilt, wird durch eine Kraft von 1 N um 2 cm gedehnt. Um wie viel verlängert sich die Feder durch eine Gewichtskraft von 2 N?",
+      "schema": "rechnung",
+      "rechnung": {
+        "ausdruck": "2 : 0,5",
+        "umformung": "20 : 5",
+        "zahlen": [
+          2,
+          0.5
+        ]
+      },
+      "ergebnis": {
+        "wert": 4,
+        "einheit": "cm"
+      },
+      "antwort_anfang": "Die Feder verlängert sich um",
+      "antwortsatz": "Die Feder verlängert sich um 4 cm.",
+      "gedankengang": [
+        {
+          "satz": "Die Feder hat die Federkonstante D = 1 N : 2 cm = [[0,5]] N/cm.",
+          "tipp": "D = F : s mit den Werten aus dem ersten Satz."
+        },
+        {
+          "satz": "Jetzt wirkt die Kraft F = [[2]] N.",
+          "tipp": "Die Kraft steht am Ende der Aufgabe."
+        },
+        {
+          "satz": "Mit Komma rechnet es sich schwer. Wir nehmen beide Zahlen mal 10: Aus 2 : 0,5 wird [[20]] : [[5]].",
+          "tipp": "2 · 10 = 20 und 0,5 · 10 = 5."
+        },
+        {
+          "satz": "Die Dehnung ist Kraft geteilt durch Federkonstante: s = 2 N : 0,5 N/cm = [[4]] cm.",
+          "tipp": "s = F : D. N geteilt durch N/cm ergibt cm."
+        },
+        {
+          "satz": "Die Feder verlängert sich um [[4]] cm."
+        }
+      ],
+      "ueberschlag": null,
+      "freigabe": {
+        "noetig": true,
+        "grund": "Lösung von Claude, vom Code nachgerechnet (im Buch nicht vorgegeben)"
+      },
+      "typische_fehler": [
+        "mit D malgenommen statt geteilt",
+        "Komma nur bei einer Zahl verschoben"
+      ],
+      "hilfen": {
+        "denkanstoss": "Für 1 N dehnt sich die Feder um 2 cm. Ist die Kraft jetzt größer oder kleiner als 1 N?",
+        "hinweis": "s = F : D = 2 N : 0,5 N/cm."
+      },
+      "schaetzfrage": {
+        "frage": "Dehnt sich die Feder mehr oder weniger als 2 cm?",
+        "optionen": [
+          "mehr",
+          "weniger"
+        ],
+        "antwort": "mehr",
+        "vergleichswert": 2,
+        "ergebnis_ist": "groesser",
+        "aktiv": true
+      },
+      "fehlerbeispiel": {
+        "wert": 1,
+        "fehler": "mit D malgenommen: 2 · 0,5"
+      },
+      "zwilling_von": "ph-federdehnung"
     }
   ]
 }

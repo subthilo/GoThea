@@ -99,3 +99,5 @@ def test_long_cards_fit_on_one_screen(app_page):
 def test_whole_sentences_fit_on_one_screen(app_page):
     # Physik: sechs ganze Aussagen „richtig“/„falsch“ (Arbeitsblatt Masse und Gewichtskraft)
     assert_fits(app_page, "ph-richtig-falsch", [1, 2, 3])
+    # fünf Schubladen (Wirkungen von Kräften)
+    assert_fits(app_page, "ph-wirkungen", [1, 2, 3])
