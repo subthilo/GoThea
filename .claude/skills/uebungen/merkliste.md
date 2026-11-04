@@ -18,3 +18,9 @@ Aus den Sessions gesammelt; neue Typen entstehen nach `neuer-typ.md`. Erledigtes
 | 24.10.2026 | Mathe | Test Zuordnungen Nr. 5 + Zusatz, Buch S. 13 Nr. 13 | Entscheiden und mit Beispiel begründen | „Begründen“ (gemeinsam mit Chemie Fahrrad); Entscheiden allein geht schon mit „Schubladen“ |
 | 24.10.2026 | Mathe | Test Zuordnungen Nr. 2 (Dusche, „jede angefangene Minute“) | Stufenpreis, keine proportionale Zuordnung | passt in keinen Typ; nicht in „Sachaufgabe“ verbiegen |
 | 24.10.2026 | Mathe | Test Zuordnungen Nr. 1, Buch S. 12 Nr. 4 | Graph ablesen (Zeitraum statt Zeitpunkt) | später: Bereich auf dem Graphen antippen |
+| 04.11.2026 | Physik | Arbeitsblatt Masse und Gewichtskraft Nr. 3b | Mond/Jupiter-Tabelle (1/6, 2,5-fach) ergänzen | „Tabelle ergänzen“ (wie Mathe) |
+| 04.11.2026 | Physik | Arbeitsblatt Kräfte Nr. 2d–f, „Darstellung von Kräften“ A2a | Kraftpfeile zeichnen, Betrag aus Pfeillänge und Maßstab | später: Zeichnen auf der Tafel, Luna misst |
+| 04.11.2026 | Physik | Arbeitsblatt Masse und Gewichtskraft Nr. 4a/4b | Lückentext Federkraftmesser, Skalen ablesen | „Lückentext“; Skala ablesen am Originalbild |
+| 04.11.2026 | Physik | Kraftmesser-Blatt A2d, Buch S. 15 Nr. 7/14 | „Begründe …“ (Gummiband als Kraftmesser, „15 Kilo gegen die Tür“) | „Begründen“ (mit Mathe/Chemie) |
+| 04.11.2026 | Physik | Buch S. 33 Nr. 17 (Brechstange) | Drehpunkt im Text offen (einseitig 450 N / zweiseitig 500 N) | Sachaufgabe passt; erst Nutzer fragen |
+| 04.11.2026 | Physik | Arbeitsblatt Kräfte Nr. 1a | „physikalischer Kraftbegriff?“ – Satz C (Gewichtskraft) unklar | Schubladen passt; Lösung vom Nutzer |
