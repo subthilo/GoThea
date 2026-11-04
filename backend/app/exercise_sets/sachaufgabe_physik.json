@@ -2,7 +2,7 @@
   "typ": "sachaufgabe",
   "version": 1,
   "stand": "2026-11-04",
-  "hinweis": "Physik, Kapitel 1 Mechanik. Erstellt in einer Claude-Code-Session; Aufgaben aus dem Buch (S. 15, S. 33) und Theas Test, Lösungen vom Code nachgerechnet. Gewichtskraft wie im Unterricht mit 100 g ≙ 1 N (das Buch rechnet mit 9,81 N/kg).",
+  "hinweis": "Physik, Kapitel 1 Mechanik. Erstellt in einer Claude-Code-Session; Aufgaben aus dem Buch (S. 15, S. 33) und Theas Test, Lösungen vom Code nachgerechnet. Gewichtskraft wie im Unterricht mit 100 g ≙ 1 N (das Buch rechnet mit 9,81 N/kg). Kneifzange: Abbildung 4 von S. 33 als Ausschnitt aus dem Buch.",
   "uebungen": [
     {
       "id": "ph-federkonstante",
@@ -287,7 +287,7 @@
         "stelle": "Hebelgesetz"
       },
       "abschnitt": "1.9 Geneigte Ebene & Hebel",
-      "aufgabentext": "Bei der Kneifzange drückt die Hand mit 100 N, 12 cm vom Drehpunkt entfernt. Der Nagel sitzt 2 cm vom Drehpunkt entfernt. Berechne die Kraft, die bei der Kneifzange auf den Nagel wirkt!",
+      "aufgabentext": "Berechne die Kraft, die bei der Kneifzange auf den Nagel wirkt!",
       "ueberschlag": null,
       "freigabe": {
         "noetig": true,
@@ -372,7 +372,8 @@
       "fehlerbeispiel": {
         "wert": 1200,
         "fehler": "vergessen, durch 2 cm zu teilen"
-      }
+      },
+      "bild": "ph-kneifzange.jpg"
     }
   ]
 }
