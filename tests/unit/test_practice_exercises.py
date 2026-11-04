@@ -77,6 +77,13 @@ def test_reshaped_exercise_gets_its_own_row(monkeypatch):
     assert [(f["id"], f["zwillinge"]) for f in pe.list_exercises()] == [("c", ["c-z1"])]
 
 
+def test_book_figure_must_exist_and_is_delivered():
+    ex = pe.get_exercise("ph-kneifzange", include_drafts=True)
+    assert ex["bild_url"].endswith("/ph-kneifzange.jpg")
+    assert any("fehlt in exercise_sets/bilder" in e for e in pe.validate({**ex, "bild": "gibt-es-nicht.jpg"}))
+    assert pe.get_exercise("sa-gummibaerchen")["bild_url"] is None
+
+
 def test_validate_catches_wrong_row():
     ex = pe.get_exercise("sa-gummibaerchen")
     broken = {**ex, "zeilen": [[150, 3], [50, 1], [500, 11]]}

@@ -5,6 +5,8 @@ Grundsatz „Luna liest, der Code rechnet“: ``validate`` rechnet jede Lösung 
 Stufen: -2 Erklären (Luna erklärt den Rechenweg, services/explanations.py; nur mit ``erklaerung``),
 -1 Gedankengang (Rechenweg in Sätzen, nur Zahlen ergänzen), 0 Bausteine, 1–4 Tafel
 (Blatt als Unterlage, geprüft von services/practice_check.py).
+Optional ``bild``: Abbildung aus dem Buch (Ausschnitt in exercise_sets/bilder, z. B. die Kneifzange mit 100 N,
+12 cm, 2 cm), steht unter dem Aufgabentext in jeder Stufe und auf dem Tafel-Blatt – nie nachgezeichnet.
 """
 from __future__ import annotations
 
@@ -14,6 +16,7 @@ from typing import List
 
 from backend.app.services import explanations
 from backend.app.services.exercise_types.common import shuffled as _shuffled
+from backend.app.services.exercise_types.zuordnen import IMAGE_URL, IMAGES_DIR
 
 TYP = "sachaufgabe"
 STAGES = [-2, -1, 0, 1, 2, 3, 4]
@@ -28,7 +31,7 @@ def available_stages(ex: dict) -> List[int]:
 
 def prepare(ex: dict) -> dict:
     """Zusätzliche Felder für die Ansicht einer Übung."""
-    out = {"bausteine": building_blocks(ex)}
+    out = {"bausteine": building_blocks(ex), "bild_url": IMAGE_URL + ex["bild"] if ex.get("bild") else None}
     if ex.get("erklaerung"):
         out["erklaeren"] = explanations.build(ex, explain_display(ex))
     return out
@@ -123,6 +126,8 @@ def is_money_column(ex: dict) -> bool:
 def validate(ex: dict) -> List[str]:
     """Fehlerliste einer Übung (leer = alles nachgerechnet und stimmig)."""
     errors: List[str] = []
+    if ex.get("bild") and not (IMAGES_DIR / ex["bild"]).is_file():
+        errors.append(f"Bild „{ex['bild']}“ fehlt in exercise_sets/bilder")
     result = _num(ex["ergebnis"]["wert"])
     if ex["schema"] == "rechnung":
         a, b = (_num(z) for z in ex["rechnung"]["zahlen"])

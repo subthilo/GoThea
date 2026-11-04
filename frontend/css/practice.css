@@ -191,6 +191,20 @@
   max-width: 62ch;
 }
 
+/* Abbildung aus dem Buch unter der Aufgabe (Sachaufgabe mit bild) */
+.px-figure {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.px-figure img {
+  display: block;
+  max-width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
 .px-label {
   font-weight: 700;
 }
@@ -966,6 +980,18 @@ body.practice-zen-mode .gg-left .px-task {
   margin: 0;
   max-height: 34%;
   overflow: auto;
+}
+
+/* Gedankengang: Abbildung darf schrumpfen, damit die Sätze Platz behalten */
+body.practice-zen-mode .gg-left .px-figure {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 26%;
+  display: flex;
+}
+
+body.practice-zen-mode .gg-left .px-figure img {
+  max-height: 100%;
 }
 
 /* Sätze: eigener Scrollbereich, beginnt oben; ist er voll, rutschen die ersten Sätze oben hinaus */

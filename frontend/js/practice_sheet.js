@@ -46,7 +46,18 @@ function practiceBoardTitle(quelle, ableitung, stage) {
   return (src.slice(0, 60 - suffix.length) + suffix).trim();
 }
 
-function renderPracticeSheet(ex, stage, { light = false, solution = false } = {}) {
+// Abbildung der Aufgabe vorab laden (Blatt wird in einem Zug gezeichnet); ohne Bild oder bei Fehler: null
+function loadPracticeSheetImage(url) {
+  if (!url) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => { console.warn("Abbildung der Übung nicht geladen:", url); resolve(null); };
+    img.src = url;
+  });
+}
+
+function renderPracticeSheet(ex, stage, { light = false, solution = false } = {}, image = null) {
   const W = PRACTICE_SHEET_WIDTH;
   const dpr = 2;
   const font = '-apple-system, "Helvetica Neue", Arial, sans-serif';
@@ -109,6 +120,13 @@ function renderPracticeSheet(ex, stage, { light = false, solution = false } = {}
   setFont(23);
   wrap(ex.aufgabentext, right - pad).forEach((l) => { text(l, pad, y); y += 33; });
   y += 30;
+
+  // Abbildung aus dem Buch (Originalausschnitt), höchstens volle Breite bzw. 260 px hoch
+  if (image && image.naturalWidth) {
+    const scale = Math.min((right - pad) / image.naturalWidth, 260 / image.naturalHeight);
+    ctx.drawImage(image, pad, y - 16, image.naturalWidth * scale, image.naturalHeight * scale);
+    y += image.naturalHeight * scale + 30;
+  }
 
   // Begründung (falls die Aufgabe eine verlangt)
   if (ex.begruendung && ex.begruendung.verlangt && stage <= 3) {

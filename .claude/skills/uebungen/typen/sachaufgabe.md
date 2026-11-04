@@ -27,6 +27,7 @@ wie im Test“; Luna liest, der Code rechnet).
 | `begruendung` | optional `{verlangt, erwartung, quelle, optionen: [{text, richtig, grund}]}` – genau eine richtig, falsche mit Grund |
 | `fehlerbeispiel` | `{wert, fehler}` – typischer falscher Wert (wird Ablenker), nie das Ergebnis |
 | `typische_fehler`, `hilfen` | Liste; `{denkanstoss, hinweis}` |
+| `bild` | optional: Abbildung aus dem Buch (`<id>.jpg` in `exercise_sets/bilder`), wenn die Aufgabe ohne Bild nicht lösbar ist – Originalausschnitt, nie nachgezeichnet. Ausschneiden mit `cut()` aus `scripts/figure_tool.py` (Seite des Kapitel-PDFs, Ausschnitt in Prozent), selbst ansehen. Steht unter dem Aufgabentext in allen Stufen und auf dem Tafel-Blatt; Aufgabentext dann wörtlich wie im Buch. Beispiel: `ph-kneifzange` |
 | `theas_loesung`, `einstieg` | bei Testaufgaben: was Thea damals geschrieben hat; optional Lunas erster Satz dazu |
 
 ## Stolperfallen

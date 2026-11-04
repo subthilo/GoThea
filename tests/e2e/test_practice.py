@@ -160,10 +160,10 @@ def test_stage_opens_sheet_on_new_board_with_solution_toggle(app_page):
     assert app_page.problems.errors == []
 
 
-def _open_practice_board(page, stage=1):
+def _open_practice_board(page, stage=1, exercise_id="sa-gummibaerchen"):
     """Öffnet die Übung auf einer neuen Tafel und wartet, bis genau diese Tafel samt Blatt offen ist
     (beim Laden öffnet die Tafel sonst noch die zuletzt benutzte, evtl. eine Übungstafel eines anderen Tests)."""
-    open_practice(page)
+    open_practice(page, exercise_id)
     with page.expect_response(lambda r: r.url.endswith("/api/v1/boards") and r.request.method == "POST") as created:
         page.click(f'.px-stage[data-stage="{stage}"]')
     board_id = created.value.json()["id"]
@@ -359,4 +359,31 @@ def test_reasoning_path_with_side_calculation_fits_on_one_screen(app_page):
         assert over == 0, (width, height)
         assert app_page.locator(".gg-scratch .gg-write-area").bounding_box()["height"] >= 280
         app_page.click('[data-action="back"]')
+    assert app_page.problems.errors == []
+
+
+def test_book_figure_under_the_task_fits_and_lies_on_the_sheet(app_page):
+    # Physik: Kneifzange mit Abbildung aus dem Buch – in Gedankengang und Bausteinen sichtbar; der Gedankengang
+    # (feste Seite) scrollt nicht. Die Bausteine scrollen schon ohne Bild ein Stück (bekannt, CLAUDE.md).
+    for width, height in [(1194, 834), (834, 1194), (1133, 744), (744, 1133)]:
+        app_page.set_viewport_size({"width": width, "height": height})
+        for stage, ready in [(-1, ".gg-steps"), (0, ".px-palette")]:
+            practice_list(app_page)
+            app_page.evaluate(f"window.openPracticeExercise('ph-kneifzange', {stage})")
+            app_page.wait_for_selector(ready)
+            app_page.wait_for_function("document.querySelector('.px-figure img').complete")
+            assert app_page.locator(".px-figure img").bounding_box()["height"] >= 60, (stage, width, height)
+            if stage == -1:
+                assert app_page.evaluate("document.scrollingElement.scrollHeight - innerHeight") == 0, (width, height)
+            app_page.click('[data-action="back"]')
+    # Tafel-Blatt: mit Abbildung höher als ohne
+    app_page.set_viewport_size({"width": 1194, "height": 834})
+    _open_practice_board(app_page, 4, "ph-kneifzange")
+    app_page.wait_for_function("document.getElementById('wb-doc-underlay-img').naturalHeight > 0")
+    heights = app_page.evaluate("""async () => {
+        const ex = await apiJson('/api/v1/practice/ph-kneifzange');
+        const size = (url) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i.naturalHeight); i.src = url; });
+        return [document.getElementById('wb-doc-underlay-img').naturalHeight, await size(renderPracticeSheet(ex, 4, {}))];
+    }""")
+    assert heights[0] > heights[1] + 100, heights
     assert app_page.problems.errors == []

@@ -19,6 +19,9 @@
   let run = null;  // aktuelle Übung: { ex, guess, placed, answer, checked, hint, selected }
 
   const esc = (s) => escapeHtml(String(s));
+  // Abbildung aus dem Buch unter dem Aufgabentext (optional, z. B. Kneifzange mit 100 N, 12 cm, 2 cm)
+  const figureHtml = (ex) => (ex.bild_url
+    ? `<figure class="px-figure"><img src="${esc(ex.bild_url)}" alt="Abbildung aus dem Buch" draggable="false"></figure>` : "");
   const isUp = (opt) => opt === "mehr" || opt === "länger";
   const num = (s) => Number(String(s).replace(/\./g, "").replace(",", "."));
 
@@ -178,6 +181,7 @@
       <div class="px-layout">
         <div class="px-sheet">
           <p class="px-task">${esc(ex.aufgabentext)}</p>
+          ${figureHtml(ex)}
           ${ex.bausteine.begruendungen.length ? `<div class="px-answers"><span class="px-label">Begründung:</span>${reasonsHtml(ex)}</div>` : ""}
           ${ex.schema === "rechnung" ? calcHtml(ex) : tableHtml(ex)}
           <div class="px-answers"><span class="px-label">A:</span>${answersHtml(ex)}</div>
@@ -337,6 +341,7 @@
       <div class="gg">
         <div class="gg-left">
           <p class="px-task">${esc(ex.aufgabentext)}</p>
+          ${figureHtml(ex)}
           <ol class="gg-steps">
             ${shown.map((s, i) => `<li class="gg-step${g.done || i < g.step ? " done" : " current"}">${guidedSentence(s.satz, i)}</li>`).join("")}
           </ol>
@@ -530,7 +535,10 @@
       4: { title: "Tafel: leeres Blatt wie im Test" },
     },
     rowNote: (ex) => (ex.schema === "dreisatz_antiproportional" ? "antiproportional" : ""),
-    sheet: { render: (ex, stage, options) => renderPracticeSheet(ex, stage, options) },  // Tafel-Stufen 1–4
+    sheet: {  // Tafel-Stufen 1–4; die Abbildung wird vorher geladen, gezeichnet wird auf einmal
+      prepare: (ex) => loadPracticeSheetImage(ex.bild_url),
+      render: (ex, stage, options, image) => renderPracticeSheet(ex, stage, options, image),
+    },
     open(ex, stage, coreApi) {
       core = coreApi;
       stopExplain();
