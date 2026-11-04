@@ -2070,6 +2070,11 @@ button.sr-cell.in.active {
   font-weight: 700;
 }
 
+/* Gleichung, aus der die Unbekannte folgt (Hebel: 10 N · 2 cm = F₂ · 4 cm) */
+.kr-gegeben {
+  font-weight: 500;
+}
+
 .kr-eq {
   position: relative;
 }

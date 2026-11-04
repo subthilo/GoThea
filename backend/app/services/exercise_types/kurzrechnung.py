@@ -10,9 +10,13 @@ Daten einer Übung (``aufgaben``, je Aufgabe genau eine Art, ``ergebnis`` = Lös
   {"vor": "Dividiere durch 3", "zeige": "15/24", "rechnung": "15/24 : 3", "antwort": "bruch",
    "gekuerzt": false, "ergebnis": "5/24"}                              jeder Bruch mit dem richtigen Wert zählt
   {"kuerzen": "15/24", "mit": 3, "ergebnis": "5/8"}                    genau dieser Bruch („mit“: Zahl oder „vollständig“)
-  {"umrechnen": "3/4 l", "in": "cm³", "ergebnis": "750"}              Einheiten (Länge, Fläche, Volumen, Masse, Zeit)
+  {"umrechnen": "3/4 l", "in": "cm³", "ergebnis": "750"}              Einheiten (Länge, Fläche, Volumen, Masse, Zeit, Kraft)
+  {"umrechnen": "1200 g", "in": "N", "ergebnis": "12"}                Masse ↔ Gewichtskraft mit „≙“ (100 g ≙ 1 N)
+  {"gegeben": "10 N · 2 cm = F₂ · 4 cm", "zeige": "F₂", "rechnung": "10 · 2 : 4", "einheit": "N", "ergebnis": "5"}
+                                                                      Gleichung darüber, ``zeige`` ist die Unbekannte;
+                                                                      mit dem Ergebnis eingesetzt muss sie stimmen
 Optional je Aufgabe ``nummer`` (wie auf dem Blatt), ``fehler`` (Theas falsche Antwort im Original, zur Doku),
-``ueberschlag: false``.
+``ueberschlag: false``, ``einheit`` (bei ``rechnung``: steht hinter dem Antwortkästchen).
 
 Grundwissen (Ausnahme vom Grundsatz „nie frei erdacht“, Nutzer 24.10.): ``erzeugt`` statt ``aufgaben``.
   "einmaleins"          alle 36 Aufgaben 2·2 … 9·9 ohne Tauschaufgaben, als Check: Zeit still gemessen (erste
@@ -158,20 +162,36 @@ for _dim, _table in {
     "Volumen": {"mm³": 1, "cm³": 1000, "ml": 1000, "dm³": 10 ** 6, "l": 10 ** 6, "hl": 10 ** 8, "m³": 10 ** 9},
     "Masse": {"mg": 1, "g": 1000, "kg": 10 ** 6, "t": 10 ** 9},
     "Zeit": {"s": 1, "min": 60, "h": 3600, "d": 86400},
+    "Kraft": {"N": 1, "kN": 1000, "MN": 10 ** 6},
 }.items():
     for _u, _f in _table.items():
         UNITS[_u] = (_dim, Fraction(_f))
 
 
+# Masse ↔ Gewichtskraft wie in Theas Unterricht: 100 g ≙ 1 N (Arbeitsblatt, Mitschrift „Wichtig“; das Buch rechnet
+# genauer mit 9,81 N je kg – die Lehrkraft nicht, Nutzer 4.11.). Angezeigt mit „≙“ statt „=“.
+GRAMM_JE_NEWTON = 100
+
+
+def is_weight(item: dict) -> bool:
+    """Umrechnung zwischen Masse und Gewichtskraft (≙ statt =)?"""
+    m = re.fullmatch(r"\s*(.+?)\s*([a-zA-Z²³]+)\s*", item.get("umrechnen", ""))
+    dims = {UNITS.get(m.group(2), ("",))[0] if m else "", UNITS.get(item.get("in", ""), ("",))[0]}
+    return dims == {"Masse", "Kraft"}
+
+
 def convert(amount: str, target: str) -> Fraction:
-    """„3/4 l“ in „cm³“ → 750."""
+    """„3/4 l“ in „cm³“ → 750; „1200 g“ in „N“ → 12 (100 g ≙ 1 N)."""
     m = re.fullmatch(r"\s*(.+?)\s*([a-zA-Z²³]+)\s*", amount)
     if not m or m.group(2) not in UNITS:
         raise ValueError(f"Größe „{amount}“ nicht lesbar")
     if target not in UNITS:
         raise ValueError(f"Einheit „{target}“ unbekannt")
     (dim_from, f_from), (dim_to, f_to) = UNITS[m.group(2)], UNITS[target]
-    if dim_from != dim_to:
+    if {dim_from, dim_to} == {"Masse", "Kraft"}:
+        newton = GRAMM_JE_NEWTON * UNITS["g"][1]          # so viel Masse (in mg) ≙ 1 N
+        f_from, f_to = (f_from / newton, f_to) if dim_from == "Masse" else (f_from, f_to / newton)
+    elif dim_from != dim_to:
         raise ValueError(f"{m.group(2)} und {target} passen nicht zusammen")
     return number(m.group(1)) * f_from / f_to
 
@@ -308,8 +328,26 @@ def display(item: dict, sol: dict) -> dict:
             return {"vor": "Kürze vollständig", "zeige": item["kuerzen"], "nach": ""}
         return {"vor": f"Kürze mit {mit}", "pfeil": f": {mit}", "zeige": item["kuerzen"], "nach": ""}
     if "umrechnen" in item:
-        return {"vor": item.get("vor", ""), "zeige": item["umrechnen"], "nach": item["in"]}
-    return {"vor": item.get("vor", ""), "zeige": item.get("zeige", item["rechnung"]), "nach": ""}
+        return {"vor": item.get("vor", ""), "zeige": item["umrechnen"], "nach": item["in"],
+                **({"gleich": "≙"} if is_weight(item) else {})}
+    return {"vor": item.get("vor", ""), "gegeben": item.get("gegeben", ""),
+            "zeige": item.get("zeige", item["rechnung"]), "nach": item.get("einheit", "")}
+
+
+def check_given(item: dict, sol: dict) -> Optional[str]:
+    """„10 N · 2 cm = F₂ · 4 cm“ mit dem Ergebnis für F₂ eingesetzt: stimmen beide Seiten? Einheiten fallen weg."""
+    given, unknown = item.get("gegeben", ""), item.get("zeige", "")
+    if not given:
+        return None
+    if "rechnung" not in item or not unknown or given.count(unknown) != 1 or given.count("=") != 1:
+        return "gegeben braucht rechnung, zeige (die Unbekannte, genau einmal darin) und genau ein „=“"
+    filled = given.replace(unknown, f"({fmt_decimal(sol['wert'])})")
+    sides = [re.sub(r"[A-Za-zÄÖÜäöüß₀-₉²³/]+(?=\s|$|[·:)])", "", side) for side in filled.split("=")]
+    try:
+        left, right = (evaluate(x) for x in sides)
+    except ValueError as e:
+        return f"gegeben nicht lesbar: {e}"
+    return None if left == right else f"gegeben stimmt mit {fmt_decimal(sol['wert'])} nicht ({left} ≠ {right})"
 
 
 def _value_hint(item: dict, sol: dict) -> str:
@@ -371,6 +409,9 @@ def validate(ex: dict) -> List[str]:
             errors.append(f"{label}: ergebnis fehlt (Lösung {sol['text']})")
         elif not _matches(sol, item["ergebnis"]):
             errors.append(f"{label}: ergebnis {item['ergebnis']} stimmt nicht, richtig ist {sol['text']}")
+        problem = check_given(item, sol)
+        if problem:
+            errors.append(f"{label}: {problem}")
         if item.get("fehler") is not None and _matches(sol, str(item["fehler"])):
             errors.append(f"{label}: fehler {item['fehler']} ist gar nicht falsch")
         if len(choice_options(item, sol, "pruefen")["angebote"]) < 3:

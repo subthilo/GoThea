@@ -40,6 +40,33 @@ def test_units_convert_within_one_dimension():
     assert kr.convert("1,5 km", "m") == 1500
     with pytest.raises(ValueError):
         kr.convert("1 l", "kg")
+    assert kr.convert("540 000 N", "MN") == Fraction("0.54")
+    assert kr.convert("88 N", "kN") == Fraction("0.088")
+
+
+def test_mass_and_weight_force_like_in_class():
+    # 100 g ≙ 1 N (Regel der Lehrkraft), in beide Richtungen und über alle Einheiten
+    assert kr.convert("1200 g", "N") == 12
+    assert kr.convert("1,5 t", "kN") == 15
+    assert kr.convert("150 mg", "N") == Fraction("0.0015")
+    assert kr.convert("8,4 N", "g") == 840
+    assert kr.convert("2,6 kN", "kg") == 260
+    item = {"umrechnen": "55 kg", "in": "N", "ergebnis": "550"}
+    shown = kr.prepare_item(item, "x", 1)
+    assert shown["gleich"] == "≙" and shown["loesung"] == "550"
+    assert "gleich" not in kr.prepare_item({"umrechnen": "12 000 N", "in": "kN", "ergebnis": "12"}, "x", 1)
+
+
+def test_given_equation_must_hold_with_the_result():
+    lever = {"gegeben": "10 N · 2 cm = F₂ · 4 cm", "zeige": "F₂", "rechnung": "10 · 2 : 4",
+             "einheit": "N", "ergebnis": "5"}
+    assert kr.validate(_ex(aufgaben=[lever], stufen=[-1, 2])) == []
+    shown = kr.prepare_item(lever, "x", 1)
+    assert shown["gegeben"] == lever["gegeben"] and shown["zeige"] == "F₂" and shown["nach"] == "N"
+    wrong = {**lever, "rechnung": "10 · 4 : 2", "ergebnis": "20"}
+    assert any("gegeben stimmt" in e for e in kr.validate(_ex(aufgaben=[wrong], stufen=[-1, 2])))
+    left = {"gegeben": "F₁ · 15 cm = 5 N · 12 cm", "zeige": "F₁", "rechnung": "5 · 12 : 15", "ergebnis": "4"}
+    assert kr.validate(_ex(aufgaben=[left], stufen=[-1, 2])) == []
 
 
 # --- Lösung und Datenprüfung -------------------------------------------------------------------------------

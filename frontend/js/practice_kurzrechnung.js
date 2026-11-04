@@ -205,13 +205,14 @@
     return `<span class="kr-box${st}${run.state === "offen" ? " active" : ""}">${esc(run.input.zahl)}</span>`;
   }
 
-  // Aufgabe in einer Zeile: Nummer, Rechnung, = (bei „Kürze …“/„Dividiere …“ ein Pfeil wie auf dem Blatt), Antwort, Einheit
+  // Aufgabe in einer Zeile: Nummer, Rechnung, = (bei „Kürze …“/„Dividiere …“ ein Pfeil wie auf dem Blatt,
+  // zwischen Masse und Gewichtskraft „≙“), Antwort, Einheit
   function lineHtml() {
     const it = item();
     return `<div class="kr-line">
           ${it.nummer ? `<span class="kr-no">${esc(it.nummer)}</span>` : ""}
           <span class="kr-expr">${mathHtml(it.zeige)}</span>
-          <span class="kr-eq">${it.pfeil ? `<span class="kr-eq-op">${esc(it.pfeil)}</span>` : ""}${it.vor ? "→" : "="}</span>
+          <span class="kr-eq">${it.pfeil ? `<span class="kr-eq-op">${esc(it.pfeil)}</span>` : ""}${it.vor ? "→" : it.gleich || "="}</span>
           ${run.state === "korrigiert" ? `<s class="kr-given" aria-label="Deine Antwort">${esc(run.given)}</s>` : ""}
           ${answerBoxHtml()}
           ${it.nach ? `<span class="kr-unit">${esc(it.nach)}</span>` : ""}
@@ -224,6 +225,7 @@
       <div class="kr-task">
         ${dotsHtml()}
         ${it.vor ? `<div class="kr-vor">${esc(it.vor)}</div>` : ""}
+        ${it.gegeben ? `<div class="kr-vor kr-gegeben">${mathHtml(it.gegeben)}</div>` : ""}
         ${lineHtml()}
       </div>`;
   }

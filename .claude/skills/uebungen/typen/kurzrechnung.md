@@ -1,4 +1,4 @@
-# Typ „kurzrechnung“ – Päckchen kurzer Rechnungen (Mathe)
+# Typ „kurzrechnung“ – Päckchen kurzer Rechnungen (Mathe, Physik)
 
 Code: `backend/app/services/exercise_types/kurzrechnung.py`, Ansicht `frontend/js/practice_kurzrechnung.js`.
 Datei: `backend/app/exercise_sets/kurzrechnung_mathe.json`. Beispiele: `km-zehnerzahlen-1` (Dezimalzahl, mit
@@ -27,9 +27,11 @@ sonst `"stufen": [-1, 2]`.
 | Bruch aus Rechnung | `{"rechnung": "11/18 : 22/6", "antwort": "bruch", "ergebnis": "1/6"}` | genau der vollständig gekürzte Bruch |
 | Bruch, jeder gleichwertige | `{"vor": "Dividiere durch 3", "zeige": "15/24", "rechnung": "15/24 : 3", "antwort": "bruch", "gekuerzt": false, "ergebnis": "5/24"}` | Wert; gezeigt wird `ergebnis` |
 | Kürzen | `{"kuerzen": "15/24", "mit": 3, "ergebnis": "5/8"}` (`mit`: Zahl oder `"vollständig"`) | genau dieser Bruch |
-| Einheiten | `{"umrechnen": "3/4 l", "in": "cm³", "ergebnis": "750"}` | Wert; Länge, Fläche, Volumen (ml, l, hl), Masse, Zeit |
+| Einheiten | `{"umrechnen": "3/4 l", "in": "cm³", "ergebnis": "750"}` | Wert; Länge, Fläche, Volumen (ml, l, hl), Masse, Zeit, Kraft (N, kN, MN) |
+| Masse ↔ Gewichtskraft | `{"umrechnen": "1200 g", "in": "N", "ergebnis": "12"}` | Wert; 100 g ≙ 1 N wie im Unterricht (nicht 9,81), angezeigt mit „≙“ |
+| Gleichung mit Unbekannter | `{"gegeben": "10 N · 2 cm = F₂ · 4 cm", "zeige": "F₂", "rechnung": "10 · 2 : 4", "einheit": "N", "ergebnis": "5"}` | Wert; die Gleichung steht über der Zeile „F₂ = ☐ N“ und muss mit dem Ergebnis stimmen (Einheiten fallen beim Prüfen weg) |
 
-Optional je Aufgabe: `nummer` (wie auf dem Blatt), `fehler` (Theas falsche Antwort im Original – muss falsch
+Optional je Aufgabe: `einheit` (bei `rechnung`, hinter dem Kästchen), `nummer` (wie auf dem Blatt), `fehler` (Theas falsche Antwort im Original – muss falsch
 sein), `ueberschlag: false`, `vor` (Wort vor der Aufgabe, dann steht „→“ statt „=“), `zeige` (statt der Rechnung).
 
 **Grundwissen** (vom Code erzeugt, Ausnahme vom Grundsatz „nie frei erdacht“): `erzeugt` statt `aufgaben`,
