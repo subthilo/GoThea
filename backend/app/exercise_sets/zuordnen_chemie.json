@@ -398,26 +398,26 @@
       "bild": {
         "datei": "ch-gefahrenpiktogramme-bedeutung.jpg",
         "original": "ch-gefahrenpiktogramme-bedeutung_original.jpg",
-        "breite": 1270,
-        "hoehe": 380
+        "breite": 1536,
+        "hoehe": 481
       },
       "felder": [
         {
           "nr": 1,
-          "x": 0.0472,
-          "y": 0.2684,
+          "x": 0.043,
+          "y": 0.2553,
           "begriff": "explosionsgefährlich"
         },
         {
           "nr": 2,
-          "x": 0.2441,
-          "y": 0.2684,
+          "x": 0.2401,
+          "y": 0.2553,
           "begriff": "leicht entzündlich"
         },
         {
           "nr": 3,
-          "x": 0.4409,
-          "y": 0.2684,
+          "x": 0.4373,
+          "y": 0.2553,
           "begriff": "Gas unter Druck",
           "auch": [
             "Gase unter Druck"
@@ -425,8 +425,8 @@
         },
         {
           "nr": 4,
-          "x": 0.6378,
-          "y": 0.2684,
+          "x": 0.6344,
+          "y": 0.2553,
           "begriff": "brandfördernd",
           "auch": [
             "oxidierend"
@@ -434,26 +434,26 @@
         },
         {
           "nr": 5,
-          "x": 0.8346,
-          "y": 0.2684,
+          "x": 0.8315,
+          "y": 0.2553,
           "begriff": "giftig"
         },
         {
           "nr": 6,
-          "x": 0.0472,
-          "y": 0.7421,
+          "x": 0.043,
+          "y": 0.7322,
           "begriff": "gesundheitsgefährdend"
         },
         {
           "nr": 7,
-          "x": 0.2441,
-          "y": 0.7421,
+          "x": 0.2401,
+          "y": 0.7322,
           "begriff": "ätzend"
         },
         {
           "nr": 8,
-          "x": 0.4409,
-          "y": 0.7421,
+          "x": 0.4373,
+          "y": 0.7322,
           "begriff": "gesundheitsschädlich",
           "auch": [
             "reizend"
@@ -461,8 +461,8 @@
         },
         {
           "nr": 9,
-          "x": 0.6378,
-          "y": 0.7421,
+          "x": 0.6344,
+          "y": 0.7322,
           "begriff": "umweltgefährdend"
         }
       ],
@@ -501,62 +501,62 @@
       "bild": {
         "datei": "ch-gefahrenpiktogramme-code.jpg",
         "original": "ch-gefahrenpiktogramme-code_original.jpg",
-        "breite": 1270,
-        "hoehe": 380
+        "breite": 1536,
+        "hoehe": 481
       },
       "felder": [
         {
           "nr": 1,
-          "x": 0.0472,
-          "y": 0.2684,
+          "x": 0.043,
+          "y": 0.2553,
           "begriff": "GHS01"
         },
         {
           "nr": 2,
-          "x": 0.2441,
-          "y": 0.2684,
+          "x": 0.2401,
+          "y": 0.2553,
           "begriff": "GHS02"
         },
         {
           "nr": 3,
-          "x": 0.4409,
-          "y": 0.2684,
+          "x": 0.4373,
+          "y": 0.2553,
           "begriff": "GHS04"
         },
         {
           "nr": 4,
-          "x": 0.6378,
-          "y": 0.2684,
+          "x": 0.6344,
+          "y": 0.2553,
           "begriff": "GHS03"
         },
         {
           "nr": 5,
-          "x": 0.8346,
-          "y": 0.2684,
+          "x": 0.8315,
+          "y": 0.2553,
           "begriff": "GHS06"
         },
         {
           "nr": 6,
-          "x": 0.0472,
-          "y": 0.7421,
+          "x": 0.043,
+          "y": 0.7322,
           "begriff": "GHS08"
         },
         {
           "nr": 7,
-          "x": 0.2441,
-          "y": 0.7421,
+          "x": 0.2401,
+          "y": 0.7322,
           "begriff": "GHS05"
         },
         {
           "nr": 8,
-          "x": 0.4409,
-          "y": 0.7421,
+          "x": 0.4373,
+          "y": 0.7322,
           "begriff": "GHS07"
         },
         {
           "nr": 9,
-          "x": 0.6378,
-          "y": 0.7421,
+          "x": 0.6344,
+          "y": 0.7322,
           "begriff": "GHS09"
         }
       ],
