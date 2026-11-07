@@ -394,6 +394,7 @@
         "stelle": "Umgang mit Chemikalien, Abb. 3"
       },
       "abschnitt": "Gefahrenpiktogramme",
+      "schwerpunkt_bis": "2026-11-11",
       "aufgabentext": "Ordne den Gefahrenpiktogrammen ihre Bedeutung zu.",
       "bild": {
         "datei": "ch-gefahrenpiktogramme-bedeutung.jpg",
@@ -497,6 +498,7 @@
         "stelle": "Umgang mit Chemikalien, Abb. 3"
       },
       "abschnitt": "Gefahrenpiktogramme",
+      "schwerpunkt_bis": "2026-11-11",
       "aufgabentext": "Ordne den Gefahrenpiktogrammen ihre Piktogrammcodes zu.",
       "bild": {
         "datei": "ch-gefahrenpiktogramme-code.jpg",

@@ -83,6 +83,7 @@ mit `typ`, `version`, `stand`, `hinweis` und `uebungen`. Kopf jeder Übung:
 }
 ```
 
+- Optional `"schwerpunkt_bis": "JJJJ-MM-TT"` (nach `abschnitt`): bis zu diesem Tag kommt die Übung in Theas Runde vor allem anderen und ist nie gesperrt (z. B. vor einem Test; Nutzer 7.11.). Danach wieder Buchreihenfolge – Feld kann stehen bleiben.
 - `material` ist bei Buchkapiteln der **Buchtitel**, sonst der Dokumenttitel (die Prüfung vergleicht ihn).
 - **Ableitung:** A und C stehen als eigene Zeile in Theas Liste, B hängt am Original (gleicher Typ, Original muss
   vorher oder zugleich freigegeben werden). C nennt in `quelle` die Originalaufgabe und darf einen anderen Typ haben

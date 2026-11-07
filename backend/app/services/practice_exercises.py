@@ -66,6 +66,8 @@ def validate_header(ex: dict) -> List[str]:
         errors.append("zwilling_von gehört genau zu Zwillingen (B)")
     if ex.get("status") == FREIGEGEBEN and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(ex.get("freigegeben_am") or "")):
         errors.append("freigegeben_am fehlt (JJJJ-MM-TT)")
+    if "schwerpunkt_bis" in ex and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(ex["schwerpunkt_bis"] or "")):
+        errors.append("schwerpunkt_bis: Datum JJJJ-MM-TT")
     for key in REFERENCE_KEYS:
         ref = ex.get(key)
         if not ref or is_basic_knowledge(ex, key):
@@ -260,6 +262,7 @@ def list_exercises(include_drafts: bool = False) -> List[dict]:
             "freigegeben_am": ex.get("freigegeben_am"),
             "aufgabentext": ex["aufgabentext"],
             "abschnitt": ex.get("abschnitt"),
+            "schwerpunkt_bis": ex.get("schwerpunkt_bis"),
             "quelle": ex["quelle"],
             "nachschlagen": ex.get("nachschlagen"),
             "zwillinge": twins.get(ex["id"], []),

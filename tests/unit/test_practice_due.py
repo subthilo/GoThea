@@ -160,3 +160,21 @@ def test_low_battery_brings_only_explanations_when_there_are_any():
     started = {"stand": {}, "offen": [{"familie": "gummi", "exercise_id": "gummi", "stufe": -2}], "wiederholen": []}
     out = build_round(families, scope, started, akku="geht_so", now=NOW)
     assert -2 not in [i["stufe"] for i in out["runde"]]
+
+
+def test_focus_comes_first_unlocked_until_its_day_then_book_order_again():
+    # Nutzer 7.11.: vor dem Chemie-Test zuerst die Gefahrenpiktogramme – obwohl Brenner davor noch offen ist
+    gefahr = {**fam("gefahr", 3, "Gefahrenpiktogramme", nach=5), "schwerpunkt_bis": "2026-10-24"}
+    families = ALL + [gefahr]
+    scope = Scope(themen={"top_sicher"})
+    stand = done("labor", "regeln")
+    offen = [{"familie": "brenner", "exercise_id": "brenner", "stufe": -1, "board_id": None}]
+    out = build_round(families, scope, plan(stand, offen=offen), now=NOW)
+    assert [i["familie"] for i in out["runde"]] == ["gefahr", "labor", "regeln", "brenner"]
+    assert not out["dran"]["gefahr"]["gesperrt"]
+    # 23:30 UTC am 24.10. ist in Berlin schon der 25.: Schwerpunkt vorbei, Angefangenes vorne, Gefahr gesperrt
+    out = build_round(families, scope, plan(stand, offen=offen), now=datetime(2026, 10, 24, 23, 30))
+    assert out["runde"][0]["familie"] == "brenner" and out["dran"]["gefahr"]["gesperrt"]
+    # Fast leer: das Neue ist die Schwerpunkt-Übung
+    out = build_round(families, scope, plan(stand), akku="fast_leer", now=NOW, low_prev="sicher")
+    assert [(i["familie"], i["art"]) for i in out["runde"]] == [("gefahr", "leicht")]

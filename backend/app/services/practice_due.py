@@ -14,7 +14,10 @@ Die Runde, in dieser Reihenfolge:
 2. Test-Stoff nach der Phase des Lernplans: Erarbeiten/Üben → nächste Stufe der offenen Knoten,
    Generalprobe (letzter Tag) → schon Geschafftes aus allen Knoten des Tests; am Prüfungstag nichts,
 3. „gerade dran“ → nächste Stufe der offenen Knoten,
-dazwischen (an zweiter Stelle) eine fällige Wiederholung. Ist nichts dran: fällige Wiederholungen, auf der
+dazwischen (an zweiter Stelle) eine fällige Wiederholung. **Schwerpunkt** (``schwerpunkt_bis`` in den
+Übungsdaten, Nutzer 7.11.: vor dem Chemie-Test zuerst die Gefahrenpiktogramme): bis zu diesem Tag (Berliner
+Zeit) stehen solche Übungen vor allen anderen dran-Übungen, auch vor Angefangenem, und sind nie gesperrt;
+danach gilt wieder die Buchreihenfolge. Ist nichts dran: fällige Wiederholungen, auf der
 Fachseite auch Auffrischen von Geschafftem. Akku „fast leer“: eine Aufgabe – gibt es Übungen mit Erklär-Stufe
 (services/explanations.py), nur Erklärungen (Nutzer 31.10.: dann nur Tutorien); sonst abwechselnd etwas schon
 Geschafftes und die leichteste Stufe einer neuen Übung. Tafel-Stufen nur bei vollem Akku und nach dem Einstieg.
@@ -23,7 +26,8 @@ Reine Rechnung ohne Datenbank: die Daten sammelt ``collect`` (Router).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from typing import Dict, List, Optional, Set, Tuple
 
 # Runde: so viele Aufgaben (Einstieg = die ersten Übungstage, gemeinsam mit den Eltern)
@@ -82,6 +86,13 @@ def _order_key(fam: dict) -> tuple:
     return (q.get("material_seite") or 0, q.get("material_id") or "", str(q.get("nummer") or ""), fam["id"])
 
 
+def _focus(fam: dict, now: datetime) -> bool:
+    """Schwerpunkt bis einschließlich ``schwerpunkt_bis`` (Berliner Datum; ``now`` ist UTC ohne Zeitzone)."""
+    until = fam.get("schwerpunkt_bis")
+    today = now.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Europe/Berlin")).date().isoformat()
+    return bool(until) and today <= until
+
+
 def nodes(families: List[dict]) -> Dict[str, List[List[dict]]]:
     """Thema → Knoten (Abschnitte der Übungen) in Buchreihenfolge, je Knoten die Übungen."""
     by_topic: Dict[str, Dict[str, List[dict]]] = {}
@@ -135,11 +146,15 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
     beginner = is_beginner(solved_days)
     board = akku == "voll" and not beginner
     progress = plan.get("stand", {})
-    families = sorted((f for f in families if fach is None or f["fach"] == fach), key=_order_key)  # Buchreihenfolge
+    # Buchreihenfolge, Schwerpunkt-Übungen vorneweg
+    focus = {f["id"] for f in families if _focus(f, now)}
+    families = sorted((f for f in families if fach is None or f["fach"] == fach),
+                      key=lambda f: (f["id"] not in focus, _order_key(f)))
     by_id = {f["id"]: f for f in families}
     why = {f["id"]: reasons(f, scope) for f in families}
     due = [f for f in families if why[f["id"]]]
-    shut = locked(due, progress)
+    shut = locked(due, progress) - focus
+    focus_open = any(f["id"] in focus and _next_stage(f, progress, board) is not None for f in due)
 
     items: List[dict] = []
     used: Set[str] = set()
@@ -187,6 +202,8 @@ def build_round(families: List[dict], scope: Scope, plan: dict, akku: str = "geh
         fresh: List[Tuple[dict, int, str]] = []
         for o in plan.get("offen", []):
             fam = by_id.get(o["familie"])
+            if focus_open and fam and fam["id"] not in focus:
+                continue  # Schwerpunkt geht vor Angefangenem
             if fam and why[fam["id"]] and fam["id"] not in shut and o["stufe"] in _allowed(fam, board):
                 items_before = len(items)
                 add(fam, o["stufe"], "weiter", o["exercise_id"], o.get("board_id"))
