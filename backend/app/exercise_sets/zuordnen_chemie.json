@@ -1,7 +1,7 @@
 {
   "typ": "zuordnen",
   "version": 1,
-  "stand": "2026-10-23",
+  "stand": "2026-11-07",
   "hinweis": "Chemie, Kapitel 1 „Was ist Chemie?“. Erstellt in einer Claude-Code-Session; Schaubilder mit scripts/figure_tool.py aus der Buchabbildung nachgezeichnet und geprüft bzw. – wo die Abbildung keine Beschriftung hat – der Original-Ausschnitt mit Ziffern, Begriffe wortgleich aus dem Buch.",
   "uebungen": [
     {
@@ -371,6 +371,203 @@
       "hilfen": {
         "denkanstoss": "Achte auf die Form: rund oder kegelförmig? Mit Ansatz oder ohne?"
       }
+    },
+    {
+      "id": "ch-gefahrenpiktogramme-bedeutung",
+      "ableitung": "A",
+      "fach": "sub_chemie",
+      "thema": "top_dfbb0dd9",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 3,
+        "seite": 3,
+        "nummer": "4"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 5,
+        "seite": 10,
+        "stelle": "Umgang mit Chemikalien, Abb. 3"
+      },
+      "abschnitt": "Gefahrenpiktogramme",
+      "aufgabentext": "Ordne den Gefahrenpiktogrammen ihre Bedeutung zu.",
+      "bild": {
+        "datei": "ch-gefahrenpiktogramme-bedeutung.jpg",
+        "original": "ch-gefahrenpiktogramme-bedeutung_original.jpg",
+        "breite": 1270,
+        "hoehe": 380
+      },
+      "felder": [
+        {
+          "nr": 1,
+          "x": 0.0472,
+          "y": 0.2684,
+          "begriff": "explosionsgefährlich"
+        },
+        {
+          "nr": 2,
+          "x": 0.2441,
+          "y": 0.2684,
+          "begriff": "leicht entzündlich"
+        },
+        {
+          "nr": 3,
+          "x": 0.4409,
+          "y": 0.2684,
+          "begriff": "Gas unter Druck",
+          "auch": [
+            "Gase unter Druck"
+          ]
+        },
+        {
+          "nr": 4,
+          "x": 0.6378,
+          "y": 0.2684,
+          "begriff": "brandfördernd",
+          "auch": [
+            "oxidierend"
+          ]
+        },
+        {
+          "nr": 5,
+          "x": 0.8346,
+          "y": 0.2684,
+          "begriff": "giftig"
+        },
+        {
+          "nr": 6,
+          "x": 0.0472,
+          "y": 0.7421,
+          "begriff": "gesundheitsgefährdend"
+        },
+        {
+          "nr": 7,
+          "x": 0.2441,
+          "y": 0.7421,
+          "begriff": "ätzend"
+        },
+        {
+          "nr": 8,
+          "x": 0.4409,
+          "y": 0.7421,
+          "begriff": "gesundheitsschädlich",
+          "auch": [
+            "reizend"
+          ]
+        },
+        {
+          "nr": 9,
+          "x": 0.6378,
+          "y": 0.7421,
+          "begriff": "umweltgefährdend"
+        }
+      ],
+      "hilfen": {
+        "denkanstoss": "Schau genau aufs Bild: Flamme, Totenkopf, toter Baum – was könnte der Stoff anrichten?"
+      },
+      "stufen": [
+        -1,
+        1,
+        3
+      ]
+    },
+    {
+      "id": "ch-gefahrenpiktogramme-code",
+      "ableitung": "A",
+      "fach": "sub_chemie",
+      "thema": "top_dfbb0dd9",
+      "status": "entwurf",
+      "quelle": {
+        "art": "Arbeitsheft",
+        "material": "Fokus Chemie 7/8 Arbeitsheft",
+        "material_id": "mat_3a98b56c_ch01",
+        "material_seite": 3,
+        "seite": 3,
+        "nummer": "4"
+      },
+      "nachschlagen": {
+        "material": "Fokus Chemie 7/8 Berlin/Brandenburg",
+        "material_id": "mat_5407a000_ch01",
+        "material_seite": 5,
+        "seite": 10,
+        "stelle": "Umgang mit Chemikalien, Abb. 3"
+      },
+      "abschnitt": "Gefahrenpiktogramme",
+      "aufgabentext": "Ordne den Gefahrenpiktogrammen ihre Piktogrammcodes zu.",
+      "bild": {
+        "datei": "ch-gefahrenpiktogramme-code.jpg",
+        "original": "ch-gefahrenpiktogramme-code_original.jpg",
+        "breite": 1270,
+        "hoehe": 380
+      },
+      "felder": [
+        {
+          "nr": 1,
+          "x": 0.0472,
+          "y": 0.2684,
+          "begriff": "GHS01"
+        },
+        {
+          "nr": 2,
+          "x": 0.2441,
+          "y": 0.2684,
+          "begriff": "GHS02"
+        },
+        {
+          "nr": 3,
+          "x": 0.4409,
+          "y": 0.2684,
+          "begriff": "GHS04"
+        },
+        {
+          "nr": 4,
+          "x": 0.6378,
+          "y": 0.2684,
+          "begriff": "GHS03"
+        },
+        {
+          "nr": 5,
+          "x": 0.8346,
+          "y": 0.2684,
+          "begriff": "GHS06"
+        },
+        {
+          "nr": 6,
+          "x": 0.0472,
+          "y": 0.7421,
+          "begriff": "GHS08"
+        },
+        {
+          "nr": 7,
+          "x": 0.2441,
+          "y": 0.7421,
+          "begriff": "GHS05"
+        },
+        {
+          "nr": 8,
+          "x": 0.4409,
+          "y": 0.7421,
+          "begriff": "GHS07"
+        },
+        {
+          "nr": 9,
+          "x": 0.6378,
+          "y": 0.7421,
+          "begriff": "GHS09"
+        }
+      ],
+      "hilfen": {
+        "denkanstoss": "Die Bilder sind nach Gefahr geordnet, nicht nach Code: Die Ziffer am Bild ist nicht immer die Nummer im Code."
+      },
+      "stufen": [
+        -1,
+        1,
+        3
+      ]
     }
   ]
 }
