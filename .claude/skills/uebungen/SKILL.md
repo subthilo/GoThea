@@ -18,9 +18,13 @@ auf den Nutzer warten. Deutsch, knapp, Tabellen statt Fließtext.
   der Code rechnet“).
   Einzige Ausnahme **„Grundwissen“** (Nutzer, 24.10.): Einmaleins, Mal/Geteilt mit 10/100/1000 und
   Umrechnungszahlen der Einheiten darf der Code erzeugen – geschlossene Menge, vom Code geprüft, keine KI.
-- **Wie im Buch.** Begriffe, Schreibweisen und Abbildungen genau wie in Theas Buch. Schaubilder sind die
-  Originalabbildung (nachgezeichnet mit `scripts/figure_tool.py`), nie eine nachempfundene Zeichnung – ein
-  KI-Brenner mit anderer Bauart und anderen Begriffen hat den Nutzer verwirrt.
+- **Wie im Buch.** Begriffe, Schreibweisen und Abbildungen genau wie in Theas Buch. Bilder sind **saubere
+  Nachzeichnungen der Originalabbildung** (Nutzer 7.11.: Buch-Scans gefallen nicht) – gleiche Bauteile,
+  Anordnung, Pfeile und Begriffe, nie frei erfunden (ein KI-Brenner mit anderer Bauart und anderen Begriffen hat
+  den Nutzer verwirrt). Bildmodell (`scripts/figure_tool.py redraw`, oder ohne Text zeichnen lassen und die
+  Beschriftungen per Code setzen – Zahlen und Formelzeichen nie vom Bildmodell); wo Längen, Werte oder Lagen
+  zählen (Kraftpfeile, Diagramme, Skalen) oder das Bildmodell ablehnt: vom Code (`scripts/draw_figures.py`).
+  Jede Nachzeichnung selbst Stück für Stück mit dem Original vergleichen.
 - **Theas Fehler zuerst.** Bearbeitete Arbeitsheftseiten, Tests und Arbeiten zeigen, wo es hakt. Mitschriften
   sind keine Quelle, zeigen aber, was dran war.
 - **Entwurf, bis der Nutzer „passt“ sagt.** Entwürfe sieht nur der Eltern-Modus; Probeklicks werden nicht gespeichert.

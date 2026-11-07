@@ -2,7 +2,7 @@
   "typ": "zuordnen",
   "version": 1,
   "stand": "2026-11-04",
-  "hinweis": "Physik, Kapitel 1 Mechanik. Kraftmesser: beschriftete Abbildung aus dem Buch (S. 9 Bild 1), Beschriftungen abgedeckt – das Arbeitsblatt zeigt ein unbeschriftetes Gerät ohne Lösung. Kraftpfeile: Original-Grafiken vom Arbeitsblatt, Theas Buchstaben abgedeckt; Lösung an den Pfeillängen abgelesen (stimmt mit Theas Antworten überein). Ohne Stufe 2: zu Kraftpfeil-Grafiken passt fast jeder weitere Satz irgendwo, ehrliche Ablenker gibt es nicht.",
+  "hinweis": "Physik, Kapitel 1 Mechanik. Kraftmesser: nach der beschrifteten Abbildung im Buch (S. 9 Bild 1) vom Code gezeichnet (scripts/draw_figures.py; das Bildmodell scheiterte zweimal an seinem Sicherheitsfilter) – das Arbeitsblatt zeigt ein unbeschriftetes Gerät ohne Lösung. Kraftpfeile: Grafiken vom Arbeitsblatt mit denselben Pfeillängen vom Code nachgezeichnet; Lösung an den Pfeillängen abgelesen (stimmt mit Theas Antworten überein). Ohne Stufe 2: zu Kraftpfeil-Grafiken passt fast jeder weitere Satz irgendwo, ehrliche Ablenker gibt es nicht.",
   "uebungen": [
     {
       "id": "ph-kraftmesser",
@@ -30,32 +30,32 @@
       "bild": {
         "datei": "ph-kraftmesser.jpg",
         "original": "ph-kraftmesser_original.jpg",
-        "breite": 585,
-        "hoehe": 898
+        "breite": 600,
+        "hoehe": 900
       },
       "felder": [
         {
           "nr": 1,
-          "x": 0.4889,
-          "y": 0.1626,
+          "x": 0.4167,
+          "y": 0.1556,
           "begriff": "Messbereich"
         },
         {
           "nr": 2,
-          "x": 0.5197,
-          "y": 0.3452,
+          "x": 0.4167,
+          "y": 0.3333,
           "begriff": "Schraubenfeder"
         },
         {
           "nr": 3,
-          "x": 0.4906,
-          "y": 0.5835,
+          "x": 0.4167,
+          "y": 0.5778,
           "begriff": "Skala"
         },
         {
           "nr": 4,
-          "x": 0.4923,
-          "y": 0.853,
+          "x": 0.4167,
+          "y": 0.8278,
           "begriff": "Nullpunkteinstellung"
         }
       ],
@@ -94,44 +94,44 @@
       "bild": {
         "datei": "ph-kraftpfeile.jpg",
         "original": "ph-kraftpfeile_original.jpg",
-        "breite": 1529,
-        "hoehe": 1111
+        "breite": 1500,
+        "hoehe": 760
       },
       "felder": [
         {
           "nr": 1,
-          "x": 0.0379,
-          "y": 0.0576,
+          "x": 0.0373,
+          "y": 0.1711,
           "begriff": "Zwei Schülerinnen ziehen drei Schüler über die Grenzlinie."
         },
         {
           "nr": 2,
-          "x": 0.7397,
-          "y": 0.0756,
+          "x": 0.7067,
+          "y": 0.1316,
           "begriff": "Ein Heißluftballon steigt. Die Auftriebskraft ist größer als die Gewichtskraft."
         },
         {
           "nr": 3,
-          "x": 0.1864,
-          "y": 0.2196,
+          "x": 0.8067,
+          "y": 0.2171,
           "begriff": "Ein Heißluftballon sinkt, weil die Gewichtskraft größer geworden ist als die Auftriebskraft."
         },
         {
           "nr": 4,
-          "x": 0.3663,
-          "y": 0.4086,
+          "x": 0.0373,
+          "y": 0.5,
           "begriff": "Herrchen will nach Hause gehen, Bello aber nicht. Beide ziehen gleich stark."
         },
         {
           "nr": 5,
-          "x": 0.881,
-          "y": 0.4824,
+          "x": 0.9067,
+          "y": 0.1513,
           "begriff": "Ein Heißluftballon schwebt, weil die Auftriebskraft und die Gewichtskraft gleich groß sind."
         },
         {
           "nr": 6,
-          "x": 0.2714,
-          "y": 0.8434,
+          "x": 0.0373,
+          "y": 0.8289,
           "begriff": "Drei Schüler ziehen zwei Schülerinnen beim Tauziehen über die Grenzlinie."
         }
       ],

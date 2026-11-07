@@ -39,7 +39,10 @@ auf die Schreibweise). „Im Buch“ zeigt in den Stufen im Tab jederzeit den Bu
 .venv/bin/python scripts/figure_tool.py export <name> <N> <übungs-id>
 ```
 
-**Beschriftete Abbildung, Original statt Nachzeichnen** (`ph-kraftmesser`): `original.png` als `buch.png` kopieren (für „Im Buch“), in `original.png` die Beschriftungen aus `labels.json` abdecken (Füllung aus dem Grau darüber/darunter, geglättet – sonst Streifen), Kreise an die Hinweislinien, dann `mark` und `export`.
+**Vom Code gezeichnet** (`ph-kraftmesser`, `ph-kraftpfeile`, 7.11.): `scripts/draw_figures.py <name>` zeichnet
+die Abbildung zweimal (Ziffernkreise = Übung, Begriffe = `_original` für „Im Buch“) und gibt `bild` + `felder` aus.
+Für Kraftpfeile, Skalen und alles, wo Längen zählen, und wenn das Bildmodell ablehnt (der Kraftmesser fiel zweimal
+durch dessen Sicherheitsfilter, „violence“).
 
 **Abbildung ohne Beschriftungen** (Arbeitsheft-Zeichnungen mit leeren Linien, z. B. `ch-laborgeraete-1`): nicht
 nachzeichnen lassen, sondern den Original-Ausschnitt nehmen. Nach `prepare` in key.json je Ziffer `x`, `y` (Pixel in
