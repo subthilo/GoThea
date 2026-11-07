@@ -2930,3 +2930,9 @@ body.practice-zen-mode .pe {
     grid-template-rows: auto minmax(0, 1fr);
   }
 }
+
+/* Erklär-Stufe mit Abbildung (z. B. Kneifzange: die Zahlen stehen nur im Bild) */
+.pe-figure {
+  flex: 0 0 auto;
+  margin: 0;
+}

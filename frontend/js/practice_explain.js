@@ -153,6 +153,7 @@
         <div class="pe">
           <div class="pe-left">
             <div class="pe-task"><p>${taskHtml(lit)}</p></div>
+            ${data.bild ? `<figure class="px-figure pe-figure"><img src="${esc(data.bild)}" alt="Abbildung" draggable="false"></figure>` : ""}
             ${cardsHtml(shown, lit)}
           </div>
           <div class="pe-right">

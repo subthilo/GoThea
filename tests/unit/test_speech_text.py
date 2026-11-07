@@ -14,6 +14,10 @@ from backend.app.services.speech_text import number_words, spoken_german
     ("· 3", "mal drei"),  # einzeln las die Stimme „malt three“
     ("1.500 g", "tausendfünfhundert Gramm"),
     ("Schau z. B. auf S. 22, Nr. 3", "Schau zum Beispiel auf Seite zweiundzwanzig, Nummer drei"),
+    # Physik (7.11.): Kraft-Einheiten, auch ohne Zahl davor, und „≙“ wie im Unterricht
+    ("1 N geteilt durch 2 cm ist 0,5 N/cm.", "Ein Newton geteilt durch zwei Zentimeter ist null Komma fünf Newton pro Zentimeter."),
+    ("Also N/kg, 3 kN.", "Also Newton pro Kilogramm, drei Kilonewton."),
+    ("100 g ≙ 1 N", "hundert Gramm entspricht einem Newton"),
 ])
 def test_signs_units_and_decimals_are_spoken_as_words(text, spoken):
     assert spoken_german(text) == spoken

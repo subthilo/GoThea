@@ -39,6 +39,10 @@
         "zahlen": [
           1,
           2
+        ],
+        "einheiten": [
+          "N",
+          "cm"
         ]
       },
       "ergebnis": {
@@ -87,6 +91,213 @@
       "fehlerbeispiel": {
         "wert": 2,
         "fehler": "umgekehrt geteilt: 2 cm : 1 N"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "bekannt": "durch eine Kraft von 1 N um 2 cm gedehnt",
+          "gefragt": "die Federkonstante D"
+        },
+        "karten": {
+          "formel": {
+            "text": "Federkonstante D = Kraft F : Dehnung s",
+            "bleibt": true
+          },
+          "einheit": {
+            "text": "Einheit von D: N/cm (Newton pro Zentimeter)",
+            "bleibt": true
+          },
+          "ok": {
+            "text": "Für 1 cm braucht man 0,5 N. Das ist weniger als 1 N. Passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Eine Kraft von 1 N dehnt die Feder um 2 cm.",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Die Federkonstante.",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Sie sagt, wie viel Newton man für 1 cm Dehnung braucht.",
+              "zeige": [],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Dafür gibt es eine Formel.",
+              "zeige": [
+                "formel"
+              ],
+              "neu": [
+                "formel"
+              ]
+            },
+            {
+              "satz": "Die Federkonstante ist Kraft geteilt durch Dehnung.",
+              "zeige": [
+                "formel"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Wir setzen ein: 1 N geteilt durch 2 cm.",
+              "zeige": [
+                "bekannt",
+                "r1"
+              ],
+              "neu": [
+                "r1"
+              ]
+            },
+            {
+              "satz": "1 N geteilt durch 2 cm ist 0,5 N/cm.",
+              "zeige": [
+                "r1",
+                "r3"
+              ],
+              "neu": [
+                "r3"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Ganz wichtig ist die Einheit.",
+              "zeige": [
+                "einheit"
+              ],
+              "neu": [
+                "einheit"
+              ]
+            },
+            {
+              "satz": "Ohne N/cm ist die Antwort nicht vollständig.",
+              "zeige": [
+                "einheit",
+                "r3"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "Für 2 cm braucht man 1 N.",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Für 1 cm also nur die Hälfte.",
+              "zeige": [
+                "r3"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Das sind 0,5 N. Das passt!",
+              "zeige": [
+                "r3",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Die Federkonstante beträgt D = 0,5 N/cm.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Die Federkonstante rechnest du so: Kraft …",
+            "antworten": [
+              "geteilt durch Dehnung",
+              "mal Dehnung"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Die Federkonstante ist Kraft geteilt durch Dehnung.",
+              "Nicht mal. Wir teilen die Kraft durch die Dehnung."
+            ]
+          },
+          {
+            "frage": "Die Einheit der Federkonstante ist …",
+            "antworten": [
+              "Newton pro Zentimeter",
+              "Zentimeter pro Newton"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Oben steht die Kraft, unten die Dehnung.",
+              "Umgekehrt. Die Kraft steht vorne, also Newton pro Zentimeter."
+            ]
+          },
+          {
+            "frage": "Eine härtere Feder dehnt sich bei gleicher Kraft weniger. Ihre Federkonstante ist …",
+            "antworten": [
+              "größer",
+              "kleiner"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Die härtere Feder hat die größere Federkonstante.",
+              "Überleg mal: Sie braucht für jeden Zentimeter mehr Kraft."
+            ]
+          }
+        ]
       }
     },
     {
@@ -124,6 +335,10 @@
         "zahlen": [
           700,
           1
+        ],
+        "einheiten": [
+          "N",
+          "cm"
         ]
       },
       "ergebnis": {
@@ -174,6 +389,249 @@
       "fehlerbeispiel": {
         "wert": 70,
         "fehler": "70 kg statt 700 N eingesetzt"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "masse": "Ein Mensch (70 kg)",
+          "bekannt": "drückt die Schraubenfeder um 1 cm zusammen",
+          "gefragt": "Berechne die Federkonstante"
+        },
+        "karten": {
+          "formel": {
+            "text": "Federkonstante D = Kraft F : Dehnung s",
+            "bleibt": true
+          },
+          "regel": {
+            "text": "100 g ≙ 1 N, also 1 kg ≙ 10 N",
+            "bleibt": true
+          },
+          "kraft": {
+            "text": "Gewichtskraft: 700 N",
+            "bleibt": true
+          },
+          "ok": {
+            "text": "Die Feder trägt einen ganzen Menschen. Sie ist sehr hart. Passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "masse"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Der Mensch hat eine Masse von 70 kg.",
+              "zeige": [
+                "masse"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Er drückt die Feder um 1 cm zusammen.",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Die Federkonstante.",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Dafür gibt es eine Formel.",
+              "zeige": [
+                "formel"
+              ],
+              "neu": [
+                "formel"
+              ]
+            },
+            {
+              "satz": "Die Federkonstante ist Kraft geteilt durch Dehnung.",
+              "zeige": [
+                "formel"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Dafür brauchen wir eine Kraft in Newton.",
+              "zeige": [
+                "formel"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "In der Aufgabe steht aber eine Masse in Kilogramm.",
+              "zeige": [
+                "masse"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Erst rechnen wir die Masse in eine Kraft um.",
+              "zeige": [
+                "masse"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wie im Unterricht: 100 g ≙ 1 N.",
+              "zeige": [
+                "regel"
+              ],
+              "neu": [
+                "regel"
+              ]
+            },
+            {
+              "satz": "Also 1 kg ≙ 10 N.",
+              "zeige": [
+                "regel"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "70 kg sind 70-mal so viel.",
+              "zeige": [
+                "masse"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "10 N mal 70 ist 700 N.",
+              "zeige": [
+                "kraft"
+              ],
+              "neu": [
+                "kraft"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt setzen wir ein: 700 N geteilt durch 1 cm.",
+              "zeige": [
+                "kraft",
+                "bekannt",
+                "r1"
+              ],
+              "neu": [
+                "r1"
+              ]
+            },
+            {
+              "satz": "700 N geteilt durch 1 cm ist 700 N/cm.",
+              "zeige": [
+                "r1",
+                "r3"
+              ],
+              "neu": [
+                "r3"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "Eine Autofeder muss einen ganzen Menschen tragen.",
+              "zeige": [
+                "masse"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Darum ist sie sehr hart und die Federkonstante groß. Das passt!",
+              "zeige": [
+                "r3",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Die Federkonstante beträgt D = 700 N/cm.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Für die Federkonstante setzt du ein …",
+            "antworten": [
+              "die Kraft in Newton",
+              "die Masse in Kilogramm"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Erst die Masse in eine Kraft umrechnen.",
+              "Nein, die Formel braucht eine Kraft. Erst umrechnen: 70 kg ≙ 700 N."
+            ]
+          },
+          {
+            "frage": "Im Unterricht gilt: 70 kg entsprechen …",
+            "antworten": [
+              "700 N",
+              "70 N"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. 1 kg ≙ 10 N, also 70 kg ≙ 700 N.",
+              "Zu wenig. 1 kg entspricht 10 N, also 70-mal 10 N."
+            ]
+          },
+          {
+            "frage": "Eine sehr harte Feder hat eine Federkonstante, die …",
+            "antworten": [
+              "groß ist",
+              "klein ist"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Für jeden Zentimeter braucht man viel Kraft.",
+              "Überleg mal: Eine harte Feder braucht viel Kraft für jeden Zentimeter."
+            ]
+          }
+        ]
       }
     },
     {
@@ -211,6 +669,10 @@
         "zahlen": [
           0.5,
           0.05
+        ],
+        "einheiten": [
+          "N",
+          "kg"
         ]
       },
       "ergebnis": {
@@ -263,6 +725,231 @@
       "fehlerbeispiel": {
         "wert": 1,
         "fehler": "Komma nur bei einer Zahl verschoben (0,5 : 0,5)"
+      },
+      "erklaerung": {
+        "markierungen": {
+          "masse": "Masse 50 g = 0,05 kg",
+          "kraft": "Gewichtskraft 0,5 N",
+          "gefragt": "Ermittle den Proportionalitätsfaktor",
+          "wie": "Gewichtskraft geteilt durch Masse"
+        },
+        "karten": {
+          "komma": {
+            "text": "Komma bei beiden Zahlen gleich verschieben: Das Ergebnis bleibt gleich."
+          },
+          "einheit": {
+            "text": "Einheit: N/kg (Newton pro Kilogramm)",
+            "bleibt": true
+          },
+          "ok": {
+            "text": "Zu jedem Kilogramm gehören 10 N, wie im Unterricht. Passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "masse",
+                "kraft"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Die Masse ist 0,05 kg.",
+              "zeige": [
+                "masse"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Die Gewichtskraft ist 0,5 N.",
+              "zeige": [
+                "kraft"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Der Proportionalitätsfaktor.",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Die Aufgabe sagt sogar, wie: Gewichtskraft geteilt durch Masse.",
+              "zeige": [
+                "wie"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Wir setzen ein: 0,5 N geteilt durch 0,05 kg.",
+              "zeige": [
+                "kraft",
+                "masse",
+                "r1"
+              ],
+              "neu": [
+                "r1"
+              ]
+            },
+            {
+              "satz": "Mit Komma rechnet es sich schwer.",
+              "zeige": [
+                "r1"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wir verschieben bei beiden Zahlen das Komma um zwei Stellen nach rechts.",
+              "zeige": [
+                "komma"
+              ],
+              "neu": [
+                "komma"
+              ]
+            },
+            {
+              "satz": "So wird daraus 50 : 5.",
+              "zeige": [
+                "r2"
+              ],
+              "neu": [
+                "r2"
+              ]
+            },
+            {
+              "satz": "Und 50 : 5 = 10.",
+              "zeige": [
+                "r2",
+                "r3"
+              ],
+              "neu": [
+                "r3"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt die Einheit.",
+              "zeige": [
+                "einheit"
+              ],
+              "neu": [
+                "einheit"
+              ]
+            },
+            {
+              "satz": "Newton geteilt durch Kilogramm, also N/kg.",
+              "zeige": [
+                "einheit",
+                "r3"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Im Test hat hier die Einheit gefehlt. Sie gehört immer dazu.",
+              "zeige": [
+                "einheit"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "Zu jedem Kilogramm gehören 10 N, so wie im Unterricht.",
+              "zeige": [
+                "r3",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            },
+            {
+              "satz": "Das passt!",
+              "zeige": [
+                "ok"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Der Proportionalitätsfaktor beträgt 10 N/kg.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Der Proportionalitätsfaktor ist Gewichtskraft …",
+            "antworten": [
+              "geteilt durch Masse",
+              "mal Masse"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. So steht es auch in der Aufgabe.",
+              "Nicht mal. Die Gewichtskraft wird durch die Masse geteilt."
+            ]
+          },
+          {
+            "frage": "Verschiebst du das Komma nur bei einer Zahl, dann …",
+            "antworten": [
+              "ändert sich das Ergebnis",
+              "bleibt das Ergebnis gleich"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Darum immer bei beiden Zahlen gleich verschieben.",
+              "Leider nicht. Nur wenn du bei beiden Zahlen gleich verschiebst, bleibt es gleich."
+            ]
+          },
+          {
+            "frage": "Die Einheit des Faktors ist …",
+            "antworten": [
+              "Newton pro Kilogramm",
+              "Kilogramm pro Newton"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Die Gewichtskraft steht vorne, die Masse hinten.",
+              "Umgekehrt. Wir teilen Newton durch Kilogramm."
+            ]
+          }
+        ]
       }
     },
     {
@@ -373,7 +1060,303 @@
         "wert": 1200,
         "fehler": "vergessen, durch 2 cm zu teilen"
       },
-      "bild": "ph-kneifzange.jpg"
+      "bild": "ph-kneifzange.jpg",
+      "erklaerung": {
+        "markierungen": {
+          "gefragt": "die Kraft, die bei der Kneifzange auf den Nagel wirkt"
+        },
+        "karten": {
+          "hebel": {
+            "text": "Hebelgesetz: Kraft · Hebelarm ist auf beiden Seiten gleich.",
+            "bleibt": true
+          },
+          "anti": {
+            "text": "Halber Hebelarm → doppelte Kraft"
+          },
+          "ok": {
+            "text": "Kurzer Hebelarm, große Kraft. 600 N sind mehr als 100 N. Passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir? Das steht im Bild.",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "Die Hand drückt mit 100 N.",
+              "zeige": [
+                "kopf_r",
+                "z1r"
+              ],
+              "neu": [
+                "kopf_r",
+                "z1r"
+              ]
+            },
+            {
+              "satz": "Ihr Hebelarm ist 12 cm lang.",
+              "zeige": [
+                "kopf_l",
+                "z1l"
+              ],
+              "neu": [
+                "kopf_l",
+                "z1l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Die Kraft am Nagel.",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Der Nagel sitzt 2 cm vom Drehpunkt entfernt.",
+              "zeige": [
+                "z3l"
+              ],
+              "neu": [
+                "z3l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Hier gilt das Hebelgesetz.",
+              "zeige": [
+                "hebel"
+              ],
+              "neu": [
+                "hebel"
+              ]
+            },
+            {
+              "satz": "Je kürzer der Hebelarm, desto größer die Kraft.",
+              "zeige": [
+                "anti"
+              ],
+              "neu": [
+                "anti"
+              ]
+            },
+            {
+              "satz": "Die Zuordnung ist antiproportional.",
+              "zeige": [
+                "kopf_l",
+                "kopf_r"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Was du links mit den Zentimetern machst, machst du rechts umgekehrt.",
+              "zeige": [
+                "kopf_l",
+                "kopf_r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Erst rechnen wir auf 1 cm herunter.",
+              "zeige": [
+                "z1l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "12 cm geteilt durch 12 ist 1 cm.",
+              "zeige": [
+                "z1l",
+                "p1l",
+                "z2l"
+              ],
+              "neu": [
+                "p1l",
+                "z2l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Rechts machen wir es umgekehrt: mal 12.",
+              "zeige": [
+                "p1r"
+              ],
+              "neu": [
+                "p1r"
+              ]
+            },
+            {
+              "satz": "100 N mal 12 ist 1200 N.",
+              "zeige": [
+                "z1r",
+                "p1r",
+                "z2r"
+              ],
+              "neu": [
+                "z2r"
+              ]
+            },
+            {
+              "satz": "Mit 1 cm Hebelarm bräuchte man also 1200 N.",
+              "zeige": [
+                "z2l",
+                "z2r"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt von 1 cm auf 2 cm.",
+              "zeige": [
+                "z2l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "1 cm mal 2 ist 2 cm.",
+              "zeige": [
+                "z2l",
+                "p2l",
+                "z3l"
+              ],
+              "neu": [
+                "p2l"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Rechts wieder umgekehrt: geteilt durch 2.",
+              "zeige": [
+                "p2r"
+              ],
+              "neu": [
+                "p2r"
+              ]
+            },
+            {
+              "satz": "1200 N geteilt durch 2 ist 600 N.",
+              "zeige": [
+                "z2r",
+                "p2r",
+                "z3r"
+              ],
+              "neu": [
+                "z3r"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "Der Nagel hat den kürzeren Hebelarm.",
+              "zeige": [
+                "z1l",
+                "z3l"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also muss die Kraft dort größer sein als 100 N.",
+              "zeige": [
+                "z1r"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "600 N sind viel größer. Das passt!",
+              "zeige": [
+                "z3r",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Auf den Nagel wirkt eine Kraft von 600 N.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Der Hebelarm wird kürzer. Die Kraft wird …",
+            "antworten": [
+              "größer",
+              "kleiner",
+              "gleich bleiben"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Kurzer Hebelarm, große Kraft.",
+              "Umgekehrt. Am kurzen Hebelarm ist die Kraft größer.",
+              "Sie ändert sich. Am kurzen Hebelarm wird sie größer."
+            ]
+          },
+          {
+            "frage": "Links rechnest du mal 2. Rechts rechnest du …",
+            "antworten": [
+              "geteilt durch 2",
+              "mal 2"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Antiproportional heißt: rechts umgekehrt.",
+              "Nicht ganz. Antiproportional heißt: rechts machst du das Umgekehrte."
+            ]
+          },
+          {
+            "frage": "Mit längeren Griffen geht das Zwicken …",
+            "antworten": [
+              "leichter",
+              "schwerer"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Langer Hebelarm, kleine Kraft.",
+              "Überleg mal: Je länger der Hebelarm an der Hand, desto weniger Kraft brauchst du."
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "ph-federdehnung",
@@ -405,6 +1388,10 @@
         "zahlen": [
           0.2,
           0.5
+        ],
+        "einheiten": [
+          "N",
+          "N/cm"
         ]
       },
       "ergebnis": {
@@ -462,7 +1449,238 @@
         "wert": 0.1,
         "fehler": "mit D malgenommen: 0,2 · 0,5"
       },
-      "theas_loesung": "In der Mitschrift richtig: F = 0,2 N → s = 0,4 cm, F = 0,5 N → s = 1 cm, F = 2 N → s = 4 cm (über das Diagramm)."
+      "theas_loesung": "In der Mitschrift richtig: F = 0,2 N → s = 0,4 cm, F = 0,5 N → s = 1 cm, F = 2 N → s = 4 cm (über das Diagramm).",
+      "erklaerung": {
+        "markierungen": {
+          "bekannt": "durch eine Kraft von 1 N um 2 cm gedehnt",
+          "gefragt": "Um wie viel verlängert sich die Feder",
+          "kraft": "Gewichtskraft von 0,2 N"
+        },
+        "karten": {
+          "d": {
+            "text": "D = 1 N : 2 cm = 0,5 N/cm",
+            "bleibt": true
+          },
+          "formel": {
+            "text": "Dehnung s = Kraft F : Federkonstante D",
+            "bleibt": true
+          },
+          "ok": {
+            "text": "0,2 N ist weniger als 1 N, also weniger als 2 cm. Passt.",
+            "bleibt": true,
+            "art": "ok"
+          }
+        },
+        "schritte": [
+          [
+            {
+              "satz": "Was wissen wir?",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "1 N dehnt die Feder um 2 cm.",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Was ist gefragt?",
+              "zeige": [
+                "gefragt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wie lang wird die Feder bei 0,2 N?",
+              "zeige": [
+                "gefragt",
+                "kraft"
+              ],
+              "neu": []
+            }
+          ],
+          [
+            {
+              "satz": "Zuerst die Federkonstante.",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "1 N geteilt durch 2 cm ist 0,5 N/cm.",
+              "zeige": [
+                "bekannt",
+                "d"
+              ],
+              "neu": [
+                "d"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Jetzt drehen wir die Formel um.",
+              "zeige": [
+                "formel"
+              ],
+              "neu": [
+                "formel"
+              ]
+            },
+            {
+              "satz": "Die Dehnung ist Kraft geteilt durch Federkonstante.",
+              "zeige": [
+                "formel"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also 0,2 N geteilt durch 0,5 N/cm.",
+              "zeige": [
+                "kraft",
+                "d",
+                "r1"
+              ],
+              "neu": [
+                "r1"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Mit Komma rechnet es sich schwer.",
+              "zeige": [
+                "r1"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Wir nehmen beide Zahlen mal 10.",
+              "zeige": [
+                "r1"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "So wird daraus 2 : 5.",
+              "zeige": [
+                "r2"
+              ],
+              "neu": [
+                "r2"
+              ]
+            },
+            {
+              "satz": "0,2 N geteilt durch 0,5 N/cm ist 0,4 cm.",
+              "zeige": [
+                "r1",
+                "r3"
+              ],
+              "neu": [
+                "r3"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Passt das?",
+              "zeige": [],
+              "neu": []
+            },
+            {
+              "satz": "0,2 N ist weniger als 1 N.",
+              "zeige": [
+                "kraft",
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "Also dehnt sich die Feder weniger als 2 cm.",
+              "zeige": [
+                "bekannt"
+              ],
+              "neu": []
+            },
+            {
+              "satz": "0,4 cm ist weniger. Das passt!",
+              "zeige": [
+                "r3",
+                "ok"
+              ],
+              "neu": [
+                "ok"
+              ]
+            }
+          ],
+          [
+            {
+              "satz": "Zum Schluss schreiben wir den Antwortsatz.",
+              "zeige": [
+                "antwort"
+              ],
+              "neu": [
+                "antwort"
+              ]
+            },
+            {
+              "satz": "Die Feder verlängert sich um 0,4 cm.",
+              "zeige": [
+                "antwort",
+                "gefragt"
+              ],
+              "neu": []
+            }
+          ]
+        ],
+        "abfrage": [
+          {
+            "frage": "Die Kraft wird kleiner. Die Dehnung wird …",
+            "antworten": [
+              "kleiner",
+              "größer"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Weniger Kraft, weniger Dehnung.",
+              "Umgekehrt. Mit weniger Kraft dehnt sich die Feder weniger."
+            ]
+          },
+          {
+            "frage": "Die Dehnung rechnest du so: Kraft …",
+            "antworten": [
+              "geteilt durch Federkonstante",
+              "mal Federkonstante"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Richtig. Die Dehnung ist Kraft geteilt durch Federkonstante.",
+              "Nicht mal. Wir teilen die Kraft durch die Federkonstante."
+            ]
+          },
+          {
+            "frage": "Mit doppelter Kraft ist die Dehnung …",
+            "antworten": [
+              "doppelt so groß",
+              "halb so groß",
+              "gleich"
+            ],
+            "richtig": 0,
+            "warum": [
+              "Genau. Das ist das Hookesche Gesetz.",
+              "Umgekehrt. Doppelte Kraft, doppelte Dehnung.",
+              "Sie ändert sich. Doppelte Kraft, doppelte Dehnung."
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "ph-federdehnung-z1",

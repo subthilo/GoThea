@@ -131,9 +131,21 @@ def _same_unit(u: str, v: str) -> bool:
     return u == v or any(x + end == y for x, y in ((u, v), (v, u)) for end in ("n", "en"))
 
 
+def _compound_ok(ua: str, op: str, ub: str, uc: str) -> bool:
+    """Zusammengesetzte Einheiten der Physik: 1 N geteilt durch 2 cm ist 0,5 N/cm, 0,2 N geteilt durch
+    0,5 N/cm ist 0,4 cm, 0,5 N/cm mal 2 cm ist 1 N."""
+    if not (ua and ub and uc):
+        return False
+    if op == "geteilt durch":
+        return uc == f"{ua}/{ub}" or ub == f"{ua}/{uc}"
+    return ua == f"{uc}/{ub}" or ub == f"{uc}/{ua}"
+
+
 def _unit_error(ua: str, op: str, ub: str, uc: str) -> str:
     """Größen tragen ihre Einheit: mal/geteilt durch eine reine Zahl behält die Einheit (150 g : 3 = 50 g),
     geteilt durch dieselbe Einheit ergibt eine Anzahl (21000 Liter : 7 Liter = 3000)."""
+    if _compound_ok(ua, op, ub, uc):
+        return ""
     if ub:
         if op == "mal":
             return "mit einer Einheit malnehmen geht hier nicht"
@@ -163,7 +175,12 @@ def validate(ex: dict, display_ids: Iterable[str], allowed_numbers: Set[Fraction
     known = set(marks) | set(display_ids) | set(data.get("karten", {})) | {"antwort"}
     known |= {f"a{i}" for i in range(1, len(_sentences(task)) + 1)}
     allowed = set(allowed_numbers) | set(numbers_in(task))
-    task_words = set(re.findall(r"[^\d\s.,:;!?()]+", task))
+    # Einheiten: aus der Aufgabe, dem Antwortsatz und den Größen der Lösung (bei der Kneifzange stehen
+    # „12 cm“ und „100 N“ nur im Bild); „N/cm“ zählt als „N“ und „cm“
+    unit_texts = [task, ex.get("antwortsatz", ""), (ex.get("ergebnis") or {}).get("einheit") or ""]
+    unit_texts += [g.get("einheit") or "" for g in ex.get("groessen") or []]
+    unit_texts += (ex.get("rechnung") or {}).get("einheiten") or []
+    task_words = {part for w in re.findall(r"[^\d\s.,:;!?()]+", " ".join(unit_texts)) for part in w.split("/")}
 
     def check_text(where: str, text: str) -> None:
         for value in numbers_in(text):
@@ -174,7 +191,9 @@ def validate(ex: dict, display_ids: Iterable[str], allowed_numbers: Set[Fraction
             if result != _num(c):
                 errors.append(f"Erklärung {where}: {a} {op} {b} ist nicht {c}")
             unit_error = _unit_error(ua, op, ub, uc)
-            foreign = [u for u in (ua, ub, uc) if u and not any(_same_unit(u, w) for w in task_words)]
+            # N/cm gilt, wenn N und cm in der Aufgabe stehen
+            foreign = [u for u in (ua, ub, uc) if u and not all(any(_same_unit(part, w) for w in task_words)
+                                                                for part in u.split("/"))]
             if not unit_error and foreign:
                 unit_error = f"„{foreign[0]}“ ist keine Einheit aus der Aufgabe"
             if unit_error:

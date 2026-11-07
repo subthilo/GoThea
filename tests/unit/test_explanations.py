@@ -84,3 +84,28 @@ def test_validate_wants_units_in_every_calculation():
     assert explanations._unit_error("Liter", "geteilt durch", "Liter", "") == ""
     assert explanations._unit_error("Liter", "geteilt durch", "Liter", "Liter") != ""
     assert explanations._unit_error("Personen", "geteilt durch", "", "Person") == ""
+
+
+def test_physics_units_combine_like_in_class():
+    """Physik (7.11.): N geteilt durch cm ist N/cm, N geteilt durch N/cm ist cm, N/cm mal cm ist N."""
+    assert explanations._unit_error("N", "geteilt durch", "cm", "N/cm") == ""
+    assert explanations._unit_error("N", "geteilt durch", "N/cm", "cm") == ""
+    assert explanations._unit_error("N/cm", "mal", "cm", "N") == ""
+    assert explanations._unit_error("N", "geteilt durch", "cm", "cm") != ""
+    assert explanations._unit_error("N", "geteilt durch", "kg", "N/cm") != ""
+
+
+def test_physics_explanation_checks_its_calculations():
+    ex = _ex("ph-federkonstante")
+    assert pe.validate(ex) == []
+    beat = ex["erklaerung"]["schritte"][3][1]
+    beat["satz"] = "1 N geteilt durch 2 cm ist 0,5 cm."
+    assert any("dieselbe Einheit" in e for e in pe.validate(ex))
+    beat["satz"] = "1 N geteilt durch 2 cm ist 2 N/cm."
+    assert any("ist nicht 2" in e for e in pe.validate(ex))
+
+
+def test_explanation_shows_the_figure_when_the_numbers_are_only_in_it():
+    from backend.app.services.exercise_types import sachaufgabe
+    view = sachaufgabe.prepare(_ex("ph-kneifzange"))
+    assert "/ph-kneifzange.jpg?v=" in view["erklaeren"]["bild"]

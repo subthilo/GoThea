@@ -78,3 +78,22 @@ def test_explanation_fits_on_one_screen_in_both_orientations(app_page):
         assert over <= 0, (width, height, over)
         app_page.click('.px-topbar [data-action="back"]')
     assert app_page.problems.errors == []
+
+
+def test_physics_explanation_shows_figure_units_and_fits(app_page):
+    """Kneifzange (7.11.): die Zahlen stehen nur im Bild – das Bild steht unter der Aufgabe, alles passt."""
+    for width, height in [(1194, 834), (834, 1194), (1080, 810), (744, 1133)]:
+        app_page.set_viewport_size({"width": width, "height": height})
+        open_explain(app_page, "ph-kneifzange")
+        app_page.wait_for_function("document.querySelector('.pe-figure img')?.complete")
+        assert app_page.evaluate("document.querySelector('.pe-figure img').naturalWidth") > 0
+        _until(app_page, ".pe-card.answer")
+        over = app_page.evaluate("document.scrollingElement.scrollHeight - innerHeight")
+        assert over <= 0, (width, height, over)
+        if (width, height) == (1194, 834):
+            app_page.screenshot(path="/tmp/pe_kneifzange.png")
+        app_page.click('.px-topbar [data-action="back"]')
+    open_explain(app_page, "ph-federkonstante")
+    _until(app_page, ".pe-calc")
+    assert app_page.locator(".pe-calc span").all_inner_texts() == ["1 N : 2 cm"]
+    assert app_page.problems.errors == []

@@ -15,7 +15,9 @@ _UNITS = {"g": "Gramm", "kg": "Kilogramm", "mg": "Milligramm", "t": "Tonnen", "l
           "hl": "Hektoliter", "cm": "Zentimeter", "mm": "Millimeter", "m": "Meter", "km": "Kilometer",
           "h": "Stunden", "min": "Minuten", "s": "Sekunden", "€": "Euro", "ct": "Cent", "%": "Prozent",
           "°C": "Grad Celsius", "m²": "Quadratmeter", "cm²": "Quadratzentimeter", "m³": "Kubikmeter",
-          "cm³": "Kubikzentimeter", "km/h": "Kilometer pro Stunde"}
+          "cm³": "Kubikzentimeter", "km/h": "Kilometer pro Stunde",
+          "N": "Newton", "kN": "Kilonewton", "MN": "Meganewton", "N/cm": "Newton pro Zentimeter",
+          "N/kg": "Newton pro Kilogramm"}
 _SINGULAR = {"Tonnen": "Tonne", "Stunden": "Stunde", "Minuten": "Minute", "Sekunden": "Sekunde"}
 _DENOM = {2: "Halbe", 3: "Drittel", 4: "Viertel", 5: "Fünftel", 6: "Sechstel", 7: "Siebtel", 8: "Achtel",
           9: "Neuntel", 10: "Zehntel", 12: "Zwölftel", 20: "Zwanzigstel", 100: "Hundertstel", 1000: "Tausendstel"}
@@ -30,10 +32,11 @@ _GENDER = {
     "f": "Stunde Minute Sekunde Tonne Person Flasche Packung Tüte Woche Pumpe Maschine Seite Kiste Dose Tafel "
          "Portion Runde Fahrt Schülerin Rolle Münze Stufe Zahl Reihe Strecke Schachtel Kugel Fahrkarte",
     "n": "Gramm Kilogramm Milligramm Prozent Grad Stück Jahr Kind Glas Paket Taxi Flugzeug Brot Ei Blatt "
-         "Viertel Drittel Fünftel Sechstel Achtel Zehntel Hundertstel Tausendstel Päckchen Bild Heft Buch",
+         "Viertel Drittel Fünftel Sechstel Achtel Zehntel Hundertstel Tausendstel Päckchen Bild Heft Buch "
+         "Newton Kilonewton Meganewton N kN",
 }
 _GENDER_OF = {w: g for g, words in _GENDER.items() for w in words.split()}
-_DATIVE = {"mit", "von", "vom", "in", "bei", "nach", "aus", "zu", "seit", "ab"}
+_DATIVE = {"entspricht", "mit", "von", "vom", "in", "bei", "nach", "aus", "zu", "seit", "ab"}
 _ACCUSATIVE = {"für", "durch", "ohne", "um", "gegen", "auf"}
 _ACC_VERBS = {"braucht", "brauchen", "bräuchte", "bräuchten", "kostet", "kosten", "hat", "haben", "gibt",
               "bekommt", "bekommen", "kauft", "kaufen", "zahlt", "zahlen", "nimmt", "nehmen", "schafft",
@@ -117,11 +120,15 @@ def spoken_german(text: str) -> str:
     t = text
     for short, long in _ABBREVIATIONS.items():
         t = re.sub(rf"(?<![\wäöüß]){re.escape(short)}", long, t)
+    t = re.sub(r"\s*≙\s*", " entspricht ", t)                          # 100 g ≙ 1 N (wie im Unterricht)
     t = re.sub(r"(?<=\d)\.(?=\d{3}(?!\d))", "", t)                     # 1.500 → 1500
     t = re.sub(r"(\d+),(\d{2})\s?€", r"\1 Euro \2", t)                  # 3,25 € → 3 Euro 25
     # Einheiten hinter Zahlen (längste zuerst, damit „km/h“ nicht als „km“ endet); „1 h“ → „1 Stunde“
     for unit in sorted(_UNITS, key=len, reverse=True):
         t = re.sub(rf"(\d)\s?{re.escape(unit)}(?![\wäöüß²³/])", lambda m, u=unit: _unit(m, u), t)
+    # zusammengesetzte Einheiten auch ohne Zahl davor („Ohne N/cm ist die Antwort nicht vollständig.“)
+    for unit in ("N/cm", "N/kg", "km/h"):
+        t = re.sub(rf"(?<![\wäöüß/]){re.escape(unit)}(?![\wäöüß/])", _UNITS[unit], t)
     t = re.sub(r"(?<![\d/])(\d+)\s?/\s?(\d+)(?![\d/])", _fraction, t)   # 3/4 → 3 Viertel
     t = re.sub(r"(?<![\d,])\b1-(?=[A-ZÄÖÜ])", "Ein-", t)                 # 1-Liter-Flaschen
     # 1 Helfer → ein Helfer, von 1 Minute → von einer Minute

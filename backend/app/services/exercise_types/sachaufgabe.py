@@ -33,7 +33,7 @@ def prepare(ex: dict) -> dict:
     """Zusätzliche Felder für die Ansicht einer Übung."""
     out = {"bausteine": building_blocks(ex), "bild_url": image_url(ex["bild"]) if ex.get("bild") else None}
     if ex.get("erklaerung"):
-        out["erklaeren"] = explanations.build(ex, explain_display(ex))
+        out["erklaeren"] = {**explanations.build(ex, explain_display(ex)), "bild": out["bild_url"]}
     return out
 
 
@@ -48,11 +48,14 @@ def explain_display(ex: dict) -> dict:
         left, right = (t.strip() for t in ex["rechnung"]["umformung"].split(":"))
         result = fmt_number(ex["ergebnis"]["wert"])
         over = (ex.get("ueberschlag") or {}).get("ausdruck") or f"{fmt_number(a)} : 1 = {fmt_number(a)}"
+        # Physik: Größen mit Einheit („1 N : 2 cm = 0,5 N/cm“), wenn die Rechnung ihre Einheiten nennt
+        ua, ub = (f" {u}" if u else "" for u in ex["rechnung"].get("einheiten") or ["", ""])
+        uc = f" {ex['ergebnis']['einheit']}" if ex["rechnung"].get("einheiten") else ""
         return {"art": "rechnung", "teile": [
             {"id": "u", "zeile": "Ü", "text": over},
-            {"id": "r1", "zeile": "R", "text": f"{fmt_number(a)} : {fmt_number(b)}"},
+            {"id": "r1", "zeile": "R", "text": f"{fmt_number(a)}{ua} : {fmt_number(b)}{ub}"},
             {"id": "r2", "zeile": "R", "text": f"= {left} : {right}"},
-            {"id": "r3", "zeile": "R", "text": f"= {result}"},
+            {"id": "r3", "zeile": "R", "text": f"= {result}{uc}"},
         ]}
     money = is_money_column(ex)
     head = [g["name"] + (f" ({g['einheit']})" if g["einheit"] else "") for g in ex["groessen"]]
