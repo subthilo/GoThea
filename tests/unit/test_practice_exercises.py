@@ -79,7 +79,7 @@ def test_reshaped_exercise_gets_its_own_row(monkeypatch):
 
 def test_book_figure_must_exist_and_is_delivered():
     ex = pe.get_exercise("ph-kneifzange", include_drafts=True)
-    assert ex["bild_url"].endswith("/ph-kneifzange.jpg")
+    assert ex["bild_url"].split("?")[0].endswith("/ph-kneifzange.jpg") and "?v=" in ex["bild_url"]
     assert any("fehlt in exercise_sets/bilder" in e for e in pe.validate({**ex, "bild": "gibt-es-nicht.jpg"}))
     assert pe.get_exercise("sa-gummibaerchen")["bild_url"] is None
 

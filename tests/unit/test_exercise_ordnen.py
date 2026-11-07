@@ -33,4 +33,4 @@ def test_cards_are_mixed_never_in_order_and_help_fixes_first_and_last():
 def test_burner_exercises_load_with_book_image():
     ex = pe.get_exercise("ch-brenner-entzuenden", include_drafts=True)
     assert ex["typ"] == "ordnen" and len(ex["schritte"]) == 6
-    assert ex["buch_url"].endswith("ch-brenner-ablauf_buch.jpg")
+    assert ex["buch_url"].split("?")[0].endswith("ch-brenner-ablauf_buch.jpg")

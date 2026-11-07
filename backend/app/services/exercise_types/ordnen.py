@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import List
 
 from backend.app.services.exercise_types.common import shuffled
-from backend.app.services.exercise_types.zuordnen import IMAGE_URL, IMAGES_DIR
+from backend.app.services.exercise_types.zuordnen import IMAGES_DIR, image_url
 
 TYP = "ordnen"
 STAGES = [-1, 1, 2, 3, 4]
@@ -72,7 +72,7 @@ def prepare(ex: dict) -> dict:
                                [s for i, s in enumerate(steps) if i not in fixed]),
         "karten_ablenker": _mixed(steps + list(ex["ablenker"]), ex["id"] + "-ablenker", steps),
         "fest": fixed,
-        "buch_url": IMAGE_URL + ex["buch"] if ex.get("buch") else None,
+        "buch_url": image_url(ex["buch"]) if ex.get("buch") else None,
     }
 
 

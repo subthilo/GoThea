@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Dict, List
 
 from backend.app.services.exercise_types.common import shuffled
-from backend.app.services.exercise_types.zuordnen import IMAGE_URL, IMAGES_DIR
+from backend.app.services.exercise_types.zuordnen import IMAGES_DIR, image_url
 
 TYP = "schubladen"
 STAGES = [-1, 1, 2, 3]
@@ -63,7 +63,7 @@ def prepare(ex: dict) -> dict:
         "karten": shuffled(terms, ex["id"] + "-karten"),
         "beispiele": [g["begriffe"][0] for g in ex["gruppen"]],  # Stufe 1: je Schublade das erste
         "fehler_belegung": wrong_layout(ex),
-        "buch_url": IMAGE_URL + ex["buch"] if ex.get("buch") else None,
+        "buch_url": image_url(ex["buch"]) if ex.get("buch") else None,
     }
 
 

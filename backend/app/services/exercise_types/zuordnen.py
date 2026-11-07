@@ -25,6 +25,16 @@ IMAGES_DIR = Path(__file__).resolve().parent.parent.parent / "exercise_sets" / "
 IMAGE_URL = "/api/v1/practice/bilder/"
 
 
+def image_url(name: str) -> str:
+    """Adresse eines Übungsbilds mit Fingerabdruck (Größe + Änderungszeit): ein ersetztes Bild bekommt eine
+    neue Adresse, Safari zeigt sonst bis zu einer Stunde das alte aus dem Zwischenspeicher."""
+    try:
+        st = (IMAGES_DIR / name).stat()
+        return f"{IMAGE_URL}{name}?v={st.st_size:x}{int(st.st_mtime):x}"
+    except OSError:
+        return IMAGE_URL + name
+
+
 def _norm(term: str) -> str:
     return " ".join(str(term).split()).lower()
 
@@ -61,8 +71,8 @@ def validate(ex: dict) -> List[str]:
 def prepare(ex: dict) -> dict:
     terms = [f["begriff"] for f in ex["felder"]]
     return {
-        "bild_url": IMAGE_URL + ex["bild"]["datei"],
-        "original_url": IMAGE_URL + ex["bild"]["original"],
+        "bild_url": image_url(ex["bild"]["datei"]),
+        "original_url": image_url(ex["bild"]["original"]),
         "wortbank": shuffled(terms, ex["id"] + "-bank"),
         "wortbank_ablenker": shuffled(terms + list(ex.get("ablenker") or []), ex["id"] + "-ablenker"),
     }

@@ -17,7 +17,7 @@ def test_burner_uses_the_terms_of_the_book():
     assert "Stellschraube für Luftzufuhr" in terms and "Brennerfuß" in terms
     assert sorted(ex["wortbank"]) == sorted(terms)
     assert set(ex["wortbank_ablenker"]) == set(terms) | set(ex["ablenker"])
-    assert ex["bild_url"].endswith("ch-brenner.jpg") and ex["original_url"].endswith("ch-brenner_original.jpg")
+    assert ex["bild_url"].split("?")[0].endswith("ch-brenner.jpg") and ex["original_url"].split("?")[0].endswith("ch-brenner_original.jpg")
 
 
 def test_validate_catches_broken_data():

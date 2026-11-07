@@ -16,7 +16,7 @@ from typing import List
 
 from backend.app.services import explanations
 from backend.app.services.exercise_types.common import shuffled as _shuffled
-from backend.app.services.exercise_types.zuordnen import IMAGE_URL, IMAGES_DIR
+from backend.app.services.exercise_types.zuordnen import IMAGES_DIR, image_url
 
 TYP = "sachaufgabe"
 STAGES = [-2, -1, 0, 1, 2, 3, 4]
@@ -31,7 +31,7 @@ def available_stages(ex: dict) -> List[int]:
 
 def prepare(ex: dict) -> dict:
     """Zusätzliche Felder für die Ansicht einer Übung."""
-    out = {"bausteine": building_blocks(ex), "bild_url": IMAGE_URL + ex["bild"] if ex.get("bild") else None}
+    out = {"bausteine": building_blocks(ex), "bild_url": image_url(ex["bild"]) if ex.get("bild") else None}
     if ex.get("erklaerung"):
         out["erklaeren"] = explanations.build(ex, explain_display(ex))
     return out
