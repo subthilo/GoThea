@@ -38,3 +38,13 @@ def test_examples_are_one_per_drawer():
 def test_chemistry_drafts_load():
     ex = pe.get_exercise("ch-reinstoffe-gemische", include_drafts=True)
     assert ex["typ"] == "schubladen" and len(ex["karten"]) == 8 and ex["buch_url"]
+
+
+def test_picture_cards_need_a_known_term_and_an_existing_file():
+    """Kärtchen mit Zeichnung (Hebelarten, 8.11.): Bild nur zu einem echten Begriff, Datei muss da sein."""
+    assert schubladen.validate(_ex(bilder={"a1": "ph-hebel-schere.jpg"})) == []
+    errors = schubladen.validate(_ex(bilder={"zz": "ph-hebel-schere.jpg", "a2": "fehlt.jpg"}))
+    assert any("„zz“" in e for e in errors) and any("fehlt.jpg" in e for e in errors)
+    ex = pe.get_exercise("ph-hebelarten", include_drafts=True)
+    assert sorted(ex["bilder_url"]) == sorted(ex["karten"])
+    assert all("/ph-hebel-" in url for url in ex["bilder_url"].values())

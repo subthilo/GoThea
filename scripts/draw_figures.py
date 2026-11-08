@@ -9,6 +9,7 @@ Ausgabe: backend/app/exercise_sets/bilder/<übung>.jpg und <übung>_original.jpg
 
     .venv/bin/python scripts/draw_figures.py kraftmesser
     .venv/bin/python scripts/draw_figures.py kraftpfeile
+    .venv/bin/python scripts/draw_figures.py hebelstangen
 """
 import json
 import sys
@@ -209,8 +210,50 @@ def kraftpfeile() -> None:
     emit("ph-kraftpfeile", W, H, fields)
 
 
+# --- Stange als Hebel (Arbeitsblatt „Hebel machen's möglich (1)“, Nr. 2) --------------------------------
+# Links: Stange liegt auf einem Klotz (Drehpunkt), ein Ende unter der Kiste, am anderen wird nach unten
+# gedrückt (zweiseitig). Rechts: Stange stützt sich am Boden ab (Drehpunkt), die Kiste liegt nahe dem
+# Drehpunkt auf, am Ende wird nach oben gezogen (einseitig). Ohne Beschriftung – Kärtchen in „Hebelarten“.
+
+def _bar(c: Canvas, x0, y0, x1, y1, thick=16, segments=8):
+    """Stange als Doppellinie mit Querstrichen wie im Arbeitsblatt."""
+    dx, dy = x1 - x0, y1 - y0
+    length = (dx * dx + dy * dy) ** 0.5
+    nx, ny = -dy / length * thick / 2, dx / length * thick / 2
+    c.polygon([(x0 + nx, y0 + ny), (x1 + nx, y1 + ny), (x1 - nx, y1 - ny), (x0 - nx, y0 - ny)], fill=(236, 226, 205))
+    for sx, sy in ((nx, ny), (-nx, -ny)):
+        c.line(x0 + sx, y0 + sy, x1 + sx, y1 + sy, width=2)
+    for i in range(segments + 1):
+        t = i / segments
+        px, py = x0 + dx * t, y0 + dy * t
+        c.line(px + nx, py + ny, px - nx, py - ny, width=2)
+
+
+def hebelstangen() -> None:
+    W, H = 600, 400
+    box, ground = (150, 152, 158), (205, 207, 212)
+
+    c = Canvas(W, H)                                 # zweiseitig: nach unten drücken
+    c.rect(0, 330, W, 352, fill=ground)
+    c.rect(30, 160, 170, 262, fill=box)               # Kiste auf Sockel
+    c.rect(70, 262, 130, 330, fill=box)
+    c.rect(245, 202, 325, 330, fill=box)              # Klotz unter der Stange
+    _bar(c, 125, 270, 565, 60)                        # unter der Kiste; liegt bei x = 285 auf dem Klotz auf
+    c.ellipse(278, 187, 292, 201, fill=INK)           # Drehpunkt auf dem Klotz
+    c.arrow(565, 75, 565, 190, width=5, head=22, fill=RED)
+    c.save("ph-hebel-stange-druecken.jpg")
+
+    c = Canvas(W, H)                                 # einseitig: nach oben ziehen
+    c.rect(0, 330, W, 352, fill=ground)
+    _bar(c, 70, 322, 560, 110)
+    c.rect(60, 116, 250, 236, fill=box)               # Kiste liegt auf der Stange nahe dem Drehpunkt
+    c.ellipse(62, 314, 78, 330, fill=INK)             # Drehpunkt am Boden
+    c.arrow(560, 120, 560, 20, width=5, head=22, fill=RED)
+    c.save("ph-hebel-stange-ziehen.jpg")
+
+
 if __name__ == "__main__":
-    figures = {"kraftmesser": kraftmesser, "kraftpfeile": kraftpfeile}
+    figures = {"kraftmesser": kraftmesser, "kraftpfeile": kraftpfeile, "hebelstangen": hebelstangen}
     if len(sys.argv) != 2 or sys.argv[1] not in figures:
         sys.exit(__doc__)
     figures[sys.argv[1]]()

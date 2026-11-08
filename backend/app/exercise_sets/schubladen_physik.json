@@ -171,7 +171,7 @@
         "material_id": "mat_24a6b6b8",
         "material_seite": 1,
         "seite": 7,
-        "nummer": "4a"
+        "nummer": "2, 3, 4a"
       },
       "nachschlagen": {
         "material": "Physik plus Klasse 7",
@@ -181,28 +181,36 @@
         "stelle": "Bild 2 und 3: zweiseitiger und einseitiger Hebel"
       },
       "abschnitt": "1.9 Geneigte Ebene & Hebel",
-      "aufgabentext": "Welche Hebelart ist es?",
+      "aufgabentext": "Welche Hebelart ist es? Schau, wo der Drehpunkt ist.",
       "gruppen": [
         {
           "name": "zweiseitiger Hebel",
           "begriffe": [
             "Schere",
             "Kneifzange",
-            "Wippe",
-            "Stange über einer Unterlage nach unten drücken"
+            "Stange nach unten drücken"
           ]
         },
         {
           "name": "einseitiger Hebel",
           "begriffe": [
             "Schubkarre",
-            "Stange unter den Stein schieben und nach oben ziehen"
+            "Gullydeckel anheben",
+            "Stange nach oben ziehen"
           ]
         }
       ],
       "buch": "ph-hebelarten_buch.jpg",
       "hilfen": {
         "denkanstoss": "Wo ist der Drehpunkt? Liegen Last und Kraft auf verschiedenen Seiten davon oder auf derselben Seite?"
+      },
+      "bilder": {
+        "Schere": "ph-hebel-schere.jpg",
+        "Kneifzange": "ph-hebel-kneifzange.jpg",
+        "Stange nach unten drücken": "ph-hebel-stange-druecken.jpg",
+        "Schubkarre": "ph-hebel-schubkarre.jpg",
+        "Gullydeckel anheben": "ph-hebel-gullydeckel.jpg",
+        "Stange nach oben ziehen": "ph-hebel-stange-ziehen.jpg"
       }
     }
   ]

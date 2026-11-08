@@ -3,6 +3,8 @@
 Reinstoff oder Stoffgemisch, löslich oder unlöslich, Pflanzen- oder Tierzelle, Pro oder Contra … Jede Gruppe
 (``gruppen``: ``[{name, begriffe}]``) ist eine Schublade; Namen und Begriffe wortgleich wie im Buch, jeder
 Begriff gehört in genau eine Schublade. Optional ``buch``: Bild des Buchausschnitts für „Im Buch“.
+Optional ``bilder``: ``{Begriff: Datei}`` – das Kärtchen zeigt die Zeichnung (nachgezeichnet wie im Original,
+Nutzer 8.11.: Hebelarten erkennt man am Bild, nicht am Wort), der Begriff steht klein darunter.
 
 Stufen: -1 Anschauen (Schublade antippen, ihr Inhalt erscheint), 1 Sortieren, in jeder Schublade liegt schon
 ein Beispiel, 2 alles sortieren, 3 Fehler finden: alle Kärtchen liegen schon, zwei davon falsch – finden und
@@ -44,6 +46,12 @@ def validate(ex: dict) -> List[str]:
         errors.append(f"Mindestens {WRONG_IN_STAGE_3 + 2} Begriffe")
     if ex.get("buch") and not (IMAGES_DIR / ex["buch"]).is_file():
         errors.append(f"Bild „{ex['buch']}“ fehlt in exercise_sets/bilder")
+    all_terms = {t for g in groups for t in g.get("begriffe") or []}
+    for term, name in (ex.get("bilder") or {}).items():
+        if term not in all_terms:
+            errors.append(f"Bild zu „{term}“: diesen Begriff gibt es nicht")
+        if not (IMAGES_DIR / name).is_file():
+            errors.append(f"Bild „{name}“ fehlt in exercise_sets/bilder")
     return errors
 
 
@@ -64,6 +72,7 @@ def prepare(ex: dict) -> dict:
         "beispiele": [g["begriffe"][0] for g in ex["gruppen"]],  # Stufe 1: je Schublade das erste
         "fehler_belegung": wrong_layout(ex),
         "buch_url": image_url(ex["buch"]) if ex.get("buch") else None,
+        "bilder_url": {t: image_url(name) for t, name in (ex.get("bilder") or {}).items()},
     }
 
 

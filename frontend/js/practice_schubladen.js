@@ -34,13 +34,17 @@
     const fixed = run.fixed.has(term);
     const state = fixed ? " fixed" : run.checked ? (isRight(term) ? " ok" : " wrong") : "";
     const selected = run.selected === term ? " selected" : "";
-    return `<button type="button" class="px-token sb-chip${state}${selected}" data-term="${esc(term)}"${fixed || done() ? " disabled" : ""}>${esc(term)}</button>`;
+    return `<button type="button" class="px-token sb-chip${state}${selected}${pic(term) ? " has-pic" : ""}" data-term="${esc(term)}"${fixed || done() ? " disabled" : ""}>${label(term)}</button>`;
   }
+  // Kärtchen mit Zeichnung (``bilder``): Bild, darunter klein der Begriff
+  const pic = (term) => (run.ex.bilder_url || {})[term];
+  const label = (term) => (pic(term)
+    ? `<img src="${esc(pic(term))}" alt="" draggable="false"><span>${esc(term)}</span>` : esc(term));
 
   function drawersHtml() {
     return `<div class="sb-drawers">${groups().map((g, gi) => {
       const content = run.stage < 0
-        ? (run.seen.has(gi) ? g.begriffe.map((t) => `<span class="px-token sb-chip fixed">${esc(t)}</span>`).join("") : "")
+        ? (run.seen.has(gi) ? g.begriffe.map((t) => `<span class="px-token sb-chip fixed${pic(t) ? " has-pic" : ""}">${label(t)}</span>`).join("") : "")
         : terms().filter((t) => run.place[t] === gi).map(chipHtml).join("");
       const target = run.selected !== null && run.stage >= 0 ? " target" : "";
       return `<div class="sb-drawer${target}" data-drawer="${gi}" role="button" tabindex="0" aria-label="Schublade ${esc(g.name)}">
@@ -192,7 +196,8 @@
       dragMoved = true;
       drag.ghost = document.createElement("div");
       drag.ghost.className = "px-token sb-chip px-ghost";
-      drag.ghost.textContent = drag.term;
+      drag.ghost.innerHTML = label(drag.term);
+      if (pic(drag.term)) drag.ghost.classList.add("has-pic");
       document.body.appendChild(drag.ghost);
     }
     if (drag.ghost) {

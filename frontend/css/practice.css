@@ -1663,6 +1663,27 @@ body.practice-zen-mode .gg-right .px-actions {
   text-align: left;
 }
 
+/* Kärtchen mit Zeichnung: Bild oben, Begriff klein darunter */
+.sb-chip.has-pic {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: clamp(120px, 15vw, 170px);
+  padding: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.sb-chip.has-pic img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: contain;
+  background: #fff;   /* Zeichnung auf Papier, wie die Übungsblätter */
+  border-radius: 8px;
+  pointer-events: none;
+}
+
 .sb-chip.selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
